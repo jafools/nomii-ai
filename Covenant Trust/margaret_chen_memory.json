@@ -1,0 +1,108 @@
+{
+  "personal_profile": {
+    "name": "Margaret Chen",
+    "age": 67,
+    "date_of_birth": "1958-09-14",
+    "location": "Portland, OR",
+    "family": {
+      "marital_status": "Married",
+      "spouse": { "name": "Robert Chen", "age": 69, "retired": true, "health_notes": "Heart condition — had a scare in Feb 2026" },
+      "children": [
+        { "name": "Lisa", "age": 38, "location": "Seattle, WA", "children": ["Emma (8)", "Noah (5)"] },
+        { "name": "David", "age": 35, "location": "Portland, OR", "children": ["Mia (3)"] }
+      ]
+    },
+    "career": "Retired high school English teacher (35 years, Portland Public Schools)",
+    "tech_comfort": "moderate",
+    "tech_details": "Uses iPad daily, comfortable with email and video calls, learning to use banking apps",
+    "communication_preference": "Warm, patient, uses analogies. Prefers bullet points. Best engagement on Tuesday mornings."
+  },
+  "financial_snapshot": {
+    "last_updated": "2026-03-01",
+    "total_estimated_assets": 1030000,
+    "monthly_income": 4200,
+    "monthly_expenses": 4200,
+    "accounts_summary": {
+      "401k": { "balance": 485000, "institution": "Vanguard", "details": "Target Retirement 2025 Fund" },
+      "ira": { "balance": 120000, "details": "Mixed bonds/equities — 60/40 split" },
+      "social_security": { "monthly": 2400, "started_age": 66 },
+      "pension": { "monthly": 1800, "source": "Portland Public Schools" },
+      "savings": { "balance": 45000, "type": "High-yield savings account", "institution": "Ally Bank" },
+      "real_estate": { "value": 380000, "type": "Primary residence", "mortgage": "Owned outright" }
+    },
+    "debts": "None"
+  },
+  "risk_profile": {
+    "tolerance": "conservative-moderate",
+    "biggest_fear": "Outliving savings — especially with Robert's health concerns",
+    "biggest_goal": "Travel while healthy enough to enjoy it",
+    "recent_shift": "More conservative-leaning after Robert's medical scare (March 2026)"
+  },
+  "life_plan": {
+    "travel": {
+      "dreams": "Visit grandchildren in Seattle monthly, annual trip to Europe",
+      "budget_target": 8000,
+      "timeline": "Next 10 years while mobility allows",
+      "specifics": "Wants to take Lisa's kids to Italy — where she studied abroad in college"
+    },
+    "healthcare": {
+      "current_coverage": "Medicare + Supplemental Plan G",
+      "concerns": ["Robert's heart condition", "Potential long-term care needs", "Rising prescription costs"],
+      "ltc_insurance": "None — exploring options. Escalated to James Rodriguez for guidance."
+    },
+    "housing": {
+      "current_plan": "Stay in current home 5-10 years, then consider downsizing",
+      "home_maintenance_budget": 5000,
+      "future_considerations": "Has discussed a retirement community with Robert but not committed"
+    },
+    "legacy": {
+      "primary_goal": "Leave home to children",
+      "education_fund": "Exploring 529 options for grandchildren — wants to contribute $500/year per grandchild",
+      "estate_planning": "Has basic will, needs to update beneficiaries"
+    },
+    "hobbies": {
+      "activities": ["Gardening club (weekly)", "Watercolor classes (twice monthly)", "Book club"],
+      "budget": 200
+    }
+  },
+  "conversation_history": [
+    {
+      "session": 1,
+      "date": "2026-02-15",
+      "type": "onboarding",
+      "summary": "Completed full life-plan interview. Margaret was open and engaged. Expressed anxiety about healthcare costs, especially with Robert's health. Excited about Europe trip planning. Agent noted: respond with reassurance on longevity concerns. She lit up talking about her grandchildren.",
+      "categories_covered": ["personal_background", "financial_overview", "retirement_dreams", "travel", "healthcare", "housing", "legacy", "hobbies", "risk_tolerance", "communication_preferences"],
+      "flags": []
+    },
+    {
+      "session": 2,
+      "date": "2026-02-22",
+      "type": "chat",
+      "summary": "Margaret asked about 401(k) withdrawal strategies. Discussed RMD timeline (starts at 73 under SECURE 2.0). Agent provided educational comparison of systematic withdrawal vs. bucket strategy vs. percentage-based approaches. Margaret was engaged but confused RMDs with early withdrawal penalties — need to simplify language on this topic in future.",
+      "categories_covered": ["withdrawal_strategy", "rmd_education"],
+      "flags": [
+        { "type": "confusion", "description": "Confused RMDs with early withdrawal penalties. Simplify language on tax-related withdrawal topics." }
+      ]
+    },
+    {
+      "session": 3,
+      "date": "2026-03-01",
+      "type": "chat",
+      "summary": "Robert had a medical scare earlier in the week — chest pains, ER visit, turned out to be non-cardiac but stressful. Margaret was visibly worried about costs and what would happen if Robert needed long-term care. Agent pivoted to emotional support first, validated her fears, then gently discussed emergency fund adequacy ($45k covers ~10 months of expenses). Escalated LTC insurance question to human advisor James Rodriguez. Updated risk profile to more conservative leaning.",
+      "categories_covered": ["healthcare", "emergency_planning", "risk_reassessment"],
+      "flags": [
+        { "type": "escalation", "description": "LTC insurance exploration — escalated to James Rodriguez" },
+        { "type": "high_emotion", "description": "Margaret very anxious about Robert's health and financial implications" }
+      ]
+    }
+  ],
+  "agent_notes": [
+    "Uses gardening metaphors — she responds well to them ('think of your portfolio like a garden — some plants grow fast, others are slow and steady')",
+    "Prefers bullet points over long paragraphs",
+    "Best engagement on Tuesday mornings",
+    "Husband Robert sometimes joins calls — when he does, he's more analytical and asks pointed questions. Adjust for two-person conversation.",
+    "Gets anxious when discussing healthcare costs — lead with reassurance, then facts",
+    "Loves talking about her grandchildren — good way to transition into legacy planning topics",
+    "After Session 2: avoid the term 'Required Minimum Distribution' without immediately explaining it in plain language"
+  ]
+}

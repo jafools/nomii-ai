@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit these)
+.env
+server/.env
+
+# Build output
+client/dist/
+client/build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker volumes
+pgdata/
+
+# Temporary files
+*.tmp
+*.bak
+
+# Ruflo / Claude Flow runtime data (keep config, exclude runtime)
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+.claude-flow/*.db
+.claude-flow/*.sqlite

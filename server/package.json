@@ -1,0 +1,30 @@
+{
+  "name": "nomii-ai-server",
+  "version": "0.1.0",
+  "description": "Nomii AI — Personalized retirement planning agent backend",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:migrate": "node db/migrate.js",
+    "db:seed": "node db/seed.js",
+    "db:reset": "node db/reset.js",
+    "db:seed-auth": "node db/seed-auth.js",
+    "db:seed-widget": "node db/seed-widget.js",
+    "db:seed-hftn": "node db/seed-hftn.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^6.9.14",
+    "pg": "^8.12.0",
+    "stripe": "^17.7.0",
+    "uuid": "^9.0.1"
+  }
+}

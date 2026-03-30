@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200" width="260" height="200">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF" />
+      <stop offset="100%" style="stop-color:#00D4AA" />
+    </linearGradient>
+    <linearGradient id="gradFade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  <!-- Centered icon -->
+  <g transform="translate(85, 10)">
+    <line x1="15" y1="10" x2="15" y2="82" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+    <line x1="15" y1="46" x2="60" y2="10" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+    <line x1="15" y1="46" x2="60" y2="82" stroke="url(#grad)" stroke-width="5" stroke-linecap="round"/>
+    <line x1="60" y1="10" x2="80" y2="18" stroke="url(#gradFade)" stroke-width="2" stroke-dasharray="3,3"/>
+    <line x1="60" y1="82" x2="80" y2="74" stroke="url(#gradFade)" stroke-width="2" stroke-dasharray="3,3"/>
+    <line x1="15" y1="10" x2="32" y2="2" stroke="url(#gradFade)" stroke-width="2" stroke-dasharray="3,3"/>
+    <circle cx="15" cy="10" r="6" fill="url(#grad)"/>
+    <circle cx="15" cy="46" r="7" fill="url(#grad)"/>
+    <circle cx="15" cy="82" r="6" fill="url(#grad)"/>
+    <circle cx="60" cy="10" r="6" fill="url(#grad)"/>
+    <circle cx="60" cy="82" r="6" fill="url(#grad)"/>
+    <circle cx="80" cy="18" r="3.5" fill="#00D4AA" opacity="0.8"/>
+    <circle cx="80" cy="74" r="3.5" fill="#6C63FF" opacity="0.8"/>
+    <circle cx="32" cy="2" r="3" fill="#00D4AA" opacity="0.6"/>
+  </g>
+  <!-- Centered wordmark below -->
+  <text x="130" y="170" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="48" font-weight="700" fill="#FFFFFF" letter-spacing="-1">Nomii<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
+</svg>

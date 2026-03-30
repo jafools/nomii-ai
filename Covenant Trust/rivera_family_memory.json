@@ -1,0 +1,119 @@
+{
+  "personal_profile": {
+    "name": "Diana & Carlos Rivera",
+    "primary_contact": "Diana Rivera",
+    "ages": { "diana": 62, "carlos": 64 },
+    "dates_of_birth": { "diana": "1963-06-22", "carlos": "1961-03-10" },
+    "location": "Lake Oswego, OR",
+    "family": {
+      "marital_status": "Married (second marriage for both — married 18 years)",
+      "children": [
+        { "name": "Sofia Rivera", "age": 28, "relationship": "Carlos's daughter from first marriage", "location": "San Francisco, CA", "notes": "Works in tech. Financially independent." },
+        { "name": "Marcus Webb", "age": 32, "relationship": "Diana's son from first marriage", "location": "Portland, OR", "notes": "Teacher. Diana helps him occasionally with expenses." },
+        { "name": "Isabela Rivera", "age": 16, "relationship": "Their daughter together", "location": "At home", "notes": "Junior in high school. College planning is a priority." }
+      ]
+    },
+    "careers": {
+      "diana": "Recently retired — VP of Operations at a healthcare company. Left with a strong 401(k) and stock options.",
+      "carlos": "Semi-retired — was a civil engineer. Does consulting 10-15 hours/week. Plans to fully retire at 66."
+    },
+    "tech_comfort": "high",
+    "tech_details": "Both are very comfortable with technology. Diana tracks their finances in a spreadsheet. They use Mint and have explored robo-advisors.",
+    "communication_preference": "Direct, data-driven, no fluff. Diana prefers email follow-ups after sessions. Carlos likes to brainstorm verbally."
+  },
+  "financial_snapshot": {
+    "last_updated": "2026-03-01",
+    "total_estimated_assets": 2150000,
+    "monthly_income": 6500,
+    "monthly_expenses": 7200,
+    "income_gap_notes": "Currently spending ~$700/month more than income. Drawing from savings. This is planned — will close when Carlos starts Social Security at 66 and Diana at 65.",
+    "accounts_summary": {
+      "diana_401k": { "balance": 680000, "institution": "Fidelity", "details": "Mix of index funds — S&P 500, total bond, international. Diana manages this actively." },
+      "carlos_ira": { "balance": 320000, "institution": "Schwab", "details": "Rolled over from old employer 401(k). Mostly target-date 2030 fund." },
+      "roth_ira_diana": { "balance": 185000, "institution": "Fidelity", "details": "Diana has been contributing max for 10+ years. Growth-oriented." },
+      "brokerage": { "balance": 250000, "institution": "Schwab", "details": "Joint taxable account. Mix of ETFs and individual stocks. Has some concentrated positions in healthcare stocks from Diana's career." },
+      "carlos_consulting": { "monthly": 3500, "details": "Variable — $3,000-$5,000/month. Will stop at 66." },
+      "diana_pension": { "monthly": 1200, "details": "Small pension from healthcare company. Started at retirement." },
+      "social_security_projected": {
+        "diana": { "at_62": 1800, "at_65": 2200, "at_67": 2500, "planned_start": 65 },
+        "carlos": { "at_62": 2000, "at_66": 2600, "at_67": 2800, "planned_start": 66 }
+      },
+      "savings": { "balance": 95000, "type": "High-yield savings", "institution": "Marcus by Goldman Sachs" },
+      "real_estate": {
+        "primary": { "value": 620000, "mortgage_remaining": 140000, "monthly_payment": 1800, "details": "Lake Oswego home — will be paid off in 7 years" },
+        "rental": { "value": 310000, "mortgage_remaining": 95000, "monthly_income": 2100, "monthly_costs": 1300, "net_monthly": 800, "details": "Rental condo in SE Portland. Considering selling in 3-5 years." }
+      }
+    },
+    "debts": {
+      "mortgage_primary": 140000,
+      "mortgage_rental": 95000,
+      "total": 235000
+    }
+  },
+  "risk_profile": {
+    "tolerance": "moderate",
+    "biggest_fear": "Running out of money before 90 — they plan for longevity. Also: Isabela's college costs eating into retirement.",
+    "biggest_goal": "Travel extensively in their 60s while energy is high, then settle into a comfortable routine",
+    "notes": "Diana is slightly more conservative than Carlos. Carlos wants to spend more on travel now; Diana wants to see the numbers work first. This tension is healthy but worth monitoring."
+  },
+  "life_plan": {
+    "travel": {
+      "dreams": "6-8 weeks of travel per year. Mix of domestic road trips and international. Dream trip: 3 months in Spain/Portugal in 2028.",
+      "budget_target": 25000,
+      "timeline": "Aggressive travel in ages 62-72, then taper",
+      "specifics": "Carlos wants to visit family in Mexico annually. Diana wants European cultural trips. They compromise well."
+    },
+    "healthcare": {
+      "current_coverage": "ACA marketplace plan — $1,400/month for both (subsidies help but limited due to income)",
+      "concerns": ["Pre-Medicare gap is expensive", "Roth conversions could push income up and reduce ACA subsidies", "Diana has a family history of breast cancer — values comprehensive coverage"],
+      "timeline": "Carlos Medicare-eligible at 65 (2026). Diana at 65 (2028). Two more years of ACA costs."
+    },
+    "housing": {
+      "current_plan": "Stay in Lake Oswego home long-term. Pay off mortgage aggressively if possible.",
+      "rental_property": "Evaluating whether to sell the rental condo in 3-5 years. Net income is good but management is a hassle.",
+      "future_considerations": "No plans to downsize — they love the house and Isabela is still at home."
+    },
+    "legacy": {
+      "blended_family_complexity": "Three children from different marriages. Want to be fair but equitable. Sofia and Marcus are adults; Isabela is still a dependent.",
+      "isabela_college": "Top priority. Targeting $150,000 budget. Currently have $62,000 in a 529.",
+      "estate_planning": "Need to update estate plan for blended family. Current will is outdated. Escalated to advisor."
+    },
+    "hobbies": {
+      "diana": ["Wine tasting", "Hiking", "Book club", "Yoga"],
+      "carlos": ["Photography", "Cooking", "Golf (once/week)", "Consulting work (counts as hobby for him)"],
+      "budget": 500,
+      "notes": "They enjoy experiences over things. Date nights are important to them."
+    }
+  },
+  "conversation_history": [
+    {
+      "session": 1,
+      "date": "2026-02-20",
+      "type": "onboarding",
+      "summary": "Diana led the session. Highly organized — came with a spreadsheet of their accounts. Carlos joined halfway through and added color about their travel dreams. Covered all major categories in one session (45 minutes). Diana asked pointed questions about Roth conversion strategies and ACA subsidy implications — agent provided educational overview and flagged for advisor deep-dive. Both engaged and enthusiastic about the platform.",
+      "categories_covered": ["personal_background", "financial_overview", "retirement_dreams", "travel", "healthcare", "housing", "legacy", "hobbies", "risk_tolerance", "communication_preferences"],
+      "flags": [
+        { "type": "escalation", "description": "Roth conversion ladder strategy — needs advisor analysis with tax implications and ACA subsidy impact" },
+        { "type": "escalation", "description": "Blended family estate planning — needs legal review and advisor guidance" }
+      ]
+    },
+    {
+      "session": 2,
+      "date": "2026-02-28",
+      "type": "chat",
+      "summary": "Diana came alone. Wanted to discuss the rental property decision — sell now or hold for 3-5 more years. Agent walked through the math educationally: current net income vs. capital gains implications vs. reinvestment potential. Diana appreciated the scenario framing. Also discussed Isabela's 529 — currently $62k, need $150k by 2028. Agent showed the gap and discussed contribution strategies. Diana asked for an email summary — noted for follow-up.",
+      "categories_covered": ["rental_property_analysis", "529_planning", "scenario_modeling"],
+      "flags": []
+    }
+  ],
+  "agent_notes": [
+    "Diana is the financial driver. When she asks a question, she's usually already 80% of the way to an answer — validate and add the remaining 20%.",
+    "Carlos is more lifestyle-focused. He brings energy and dreams; Diana brings spreadsheets and reality checks. Good balance.",
+    "They have a healthy dynamic but there's a subtle tension about spending now vs. saving. Don't take sides — present both scenarios with numbers.",
+    "Diana appreciates email follow-ups with key numbers after sessions. Build this into the workflow.",
+    "The Roth conversion + ACA subsidy interaction is their most complex financial question. Needs advisor involvement but agent can educate on the concepts.",
+    "Isabela's college is a non-negotiable priority. Any plan that compromises this will be rejected immediately.",
+    "The rental property is a decision point — they're open to analysis but not being pushed either way.",
+    "High-engagement users — they'll push the agent's capabilities. Good test case for complex financial education."
+  ]
+}

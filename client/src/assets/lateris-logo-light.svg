@@ -1,0 +1,9 @@
+<svg width="540" height="140" viewBox="0 0 540 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="540" height="140" fill="#F0F4F8"/>
+  <rect x="32" y="30"  width="56" height="14" rx="7" fill="#0ABFCB"/>
+  <rect x="32" y="51"  width="42" height="14" rx="7" fill="rgba(10,191,203,0.6)"/>
+  <rect x="32" y="72"  width="28" height="14" rx="7" fill="rgba(10,191,203,0.36)"/>
+  <rect x="32" y="93"  width="14" height="14" rx="7" fill="rgba(10,191,203,0.18)"/>
+  <text x="120" y="86" font-family="Syne" font-weight="800" font-size="42" letter-spacing="-1" fill="#0D1B2A">LaterisAI</text>
+  <text x="121" y="108" font-family="Space Mono" font-weight="700" font-size="10" letter-spacing="5" fill="#0ABFCB">ON-PREMISES AI</text>
+</svg>

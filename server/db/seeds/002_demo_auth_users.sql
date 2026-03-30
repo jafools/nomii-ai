@@ -1,0 +1,16 @@
+-- ============================================================
+-- NOMII AI — Seed Data: Demo Auth Users
+-- Sets passwords for existing demo users so they can log in.
+-- Run after 001_covenant_trust_demo.sql
+--
+-- All demo passwords: "demo123"
+-- bcrypt hash for "demo123" (10 rounds): $2b$10$rQZKkT5Y8zF1KJQ5L5Rz8OJ5J7qDY7M8nN3xW4yP2vU6tS0bC9eXa
+--
+-- NOTE: This seed uses a pre-computed hash. In production,
+-- users register through the API which hashes passwords properly.
+-- ============================================================
+
+-- The hash below is for "demo123" — generated with bcrypt.hash('demo123', 10)
+-- We'll use the setup script to generate proper hashes instead of hardcoding.
+-- For now, this seed just ensures the columns exist.
+-- The setup-demo-auth.js script will set actual passwords.

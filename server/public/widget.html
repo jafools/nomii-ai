@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nomii AI Chat</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1E3A5F;
+    --primary-light: #2a4f7c;
+    --bg: #f8f9fb;
+    --surface: #ffffff;
+    --border: #e4e7ed;
+    --text: #1a2332;
+    --text-muted: #6b7585;
+    --user-bubble: var(--primary);
+    --agent-bubble: #ffffff;
+    --shadow: 0 2px 8px rgba(0,0,0,.08);
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  html, body { height: 100%; overflow: hidden; font-family: var(--font); }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ── Header ── */
+  #header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--primary);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  #header-info { display: flex; align-items: center; gap: 10px; }
+
+  #agent-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  #agent-name  { font-size: 15px; font-weight: 600; line-height: 1.2; }
+  #agent-status{ font-size: 11px; opacity: .75; margin-top: 1px; display: flex; align-items: center; gap: 5px; }
+
+  #ai-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.22);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    line-height: 1.4;
+  }
+
+  #close-btn {
+    background: none; border: none; color: rgba(255,255,255,.7);
+    cursor: pointer; padding: 4px; border-radius: 6px;
+    line-height: 0; transition: color .15s, background .15s;
+  }
+  #close-btn:hover { color: #fff; background: rgba(255,255,255,.15); }
+
+  /* ── Messages ── */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); border-radius: 4px; }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 82%;
+    animation: fadeUp .2s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.agent{ align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+    box-shadow: var(--shadow);
+  }
+
+  .msg.user  .bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.agent .bubble { background: var(--agent-bubble); color: var(--text); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    padding: 0 4px;
+  }
+
+  /* Typing indicator */
+  #typing {
+    display: none;
+    align-self: flex-start;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-bottom-left-radius: 4px;
+    box-shadow: var(--shadow);
+  }
+  #typing.visible { display: flex; gap: 4px; align-items: center; }
+  #typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-muted);
+    animation: bounce .9s infinite;
+  }
+  #typing span:nth-child(2) { animation-delay: .15s; }
+  #typing span:nth-child(3) { animation-delay: .30s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%            { transform: translateY(-5px); }
+  }
+
+  /* ── Input bar ── */
+  #input-bar {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px 12px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  #input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  #input {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 13px;
+    font-size: 14px;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    line-height: 1.4;
+    max-height: 120px;
+    background: var(--bg);
+    transition: border-color .15s;
+  }
+  #input:focus { border-color: var(--primary); }
+  #input::placeholder { color: var(--text-muted); }
+
+  #send-btn {
+    width: 38px; height: 38px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, transform .1s;
+    line-height: 0;
+  }
+  #send-btn:hover:not(:disabled) { background: var(--primary-light); }
+  #send-btn:active:not(:disabled) { transform: scale(.93); }
+  #send-btn:disabled { opacity: .45; cursor: default; }
+
+  /* ── Human support / concern button ── */
+  #concern-btn {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color .15s;
+    font-family: var(--font);
+  }
+  #concern-btn:hover { color: var(--primary); }
+  #concern-btn svg { flex-shrink: 0; }
+
+  /* ── Human mode status banner ── */
+  #human-mode-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(16, 185, 129, 0.1);
+    border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+    font-size: 12px;
+    font-weight: 500;
+    color: #10b981;
+    flex-shrink: 0;
+  }
+  #human-mode-banner.visible { display: flex; }
+  #human-mode-banner .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #10b981;
+    animation: pulse-green 1.5s infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  /* ── Signed-in system banner (shown on anon→auth handoff) ── */
+  .signed-in-banner {
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 16px;
+    margin: 6px auto;
+    background: rgba(0,0,0,.04);
+    border-radius: 20px;
+    width: fit-content;
+    max-width: 80%;
+    user-select: none;
+  }
+
+  /* ── Session / day dividers ── */
+  .session-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0 6px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .session-divider::before,
+  .session-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .session-divider span {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: .75;
+  }
+
+  .day-separator {
+    align-self: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(0,0,0,.04);
+    border-radius: 999px;
+    padding: 3px 10px;
+    user-select: none;
+    flex-shrink: 0;
+    opacity: .8;
+  }
+
+  /* System handover notices — centered pill instead of agent bubble */
+  .msg.system {
+    align-self: center;
+    max-width: 90%;
+    align-items: center;
+  }
+  .msg.system .bubble {
+    background: rgba(0,0,0,.04);
+    color: var(--text-muted);
+    border: none;
+    box-shadow: none;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    text-align: center;
+  }
+  .msg.system .msg-time { display: none; }
+
+  /* ── CSAT rating overlay ── */
+  #csat-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(248,249,251,.97);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    z-index: 100;
+    animation: fadeUp .2s ease;
+  }
+  #csat-overlay.visible { display: flex; }
+  #csat-overlay h3 { font-size: 17px; font-weight: 700; color: var(--text); }
+  #csat-overlay p  { font-size: 13px; color: var(--text-muted); max-width: 220px; }
+
+  #csat-buttons { display: flex; gap: 16px; }
+  .csat-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    font-size: 26px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s, border-color .15s, background .15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .csat-btn:hover { transform: scale(1.1); }
+  .csat-btn.positive:hover { border-color: #22c55e; background: rgba(34,197,94,.06); }
+  .csat-btn.negative:hover { border-color: #ef4444; background: rgba(239,68,68,.06); }
+  .csat-btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+  #csat-skip {
+    background: none; border: none; font-size: 12px;
+    color: var(--text-muted); cursor: pointer; opacity: .65;
+    text-decoration: underline; font-family: var(--font);
+  }
+  #csat-skip:hover { opacity: 1; }
+
+  /* ── Privacy & branding bar ── */
+  #nomii-footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 8px 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+    opacity: .55;
+  }
+  #nomii-privacy-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 10px;
+  }
+  #nomii-privacy-link:hover { text-decoration: underline; opacity: 1; }
+
+  /* ── Loading / error states ── */
+  #loading-screen, #error-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+  #loading-screen { display: flex; }
+  #error-screen   { display: none; }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(0,0,0,.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #loading-screen p, #error-screen p {
+    font-size: 13px; color: var(--text-muted);
+  }
+  #error-screen h3 { font-size: 15px; color: var(--text); }
+
+  /* ── Shared intro screen styles (agent-name-screen + name-screen) ── */
+  .intro-screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+    gap: 20px;
+    background: var(--bg);
+  }
+  .intro-screen.visible { display: flex; }
+
+  .intro-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .intro-screen h2 {
+    font-size: 19px;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .intro-screen p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    max-width: 280px;
+  }
+
+  .intro-input-wrap {
+    width: 100%;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .intro-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 15px;
+    font-family: var(--font);
+    color: var(--text);
+    outline: none;
+    text-align: center;
+    background: #fff;
+    transition: border-color .15s;
+  }
+  .intro-input:focus { border-color: var(--primary); }
+  .intro-input::placeholder { color: var(--text-muted); }
+
+  .intro-submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background .15s, opacity .15s;
+  }
+  .intro-submit-btn:hover { background: var(--primary-light); }
+  .intro-submit-btn:disabled { opacity: .5; cursor: default; }
+
+  /* ── Main chat wrapper (hidden until session ready) ── */
+  #chat-wrapper {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+  #chat-wrapper.ready { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- Loading state -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p>Starting your session…</p>
+</div>
+
+<!-- Error state -->
+<div id="error-screen">
+  <h3>Couldn't connect</h3>
+  <p id="error-msg">Please try refreshing the page.</p>
+</div>
+
+<!-- Capacity screen (customer limit reached) -->
+<div id="capacity-screen" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;gap:16px;background:var(--bg);">
+  <div style="width:56px;height:56px;border-radius:50%;background:rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:center;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  </div>
+  <div>
+    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">We'll be right with you</h3>
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.6;max-width:260px;margin:0 auto;">
+      Our support team is currently at capacity. Please check back soon or reach out to us directly.
+    </p>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-top:4px;padding:8px 16px;border-radius:999px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.15);">
+    <div style="width:7px;height:7px;border-radius:50%;background:#C9A84C;animation:bounce .9s infinite;"></div>
+    <span style="font-size:12px;font-weight:500;color:#C9A84C;">Support is available</span>
+  </div>
+  <p style="font-size:11px;color:rgba(107,117,133,0.6);margin-top:4px;">Powered by <strong>NomiiAI</strong></p>
+</div>
+
+<!-- Agent naming screen (first-time logged-in users: "What would you like to name your assistant?") -->
+<div id="agent-name-screen" class="intro-screen">
+  <div class="intro-avatar" id="agent-name-avatar">K</div>
+  <h2 id="agent-name-screen-title">Before we begin…</h2>
+  <p id="agent-name-screen-desc">What would you like to name your assistant?</p>
+  <div class="intro-input-wrap">
+    <input id="agent-name-input" class="intro-input" type="text"
+           placeholder="e.g. Alex, Hope, Max…" maxlength="50" autocomplete="off" />
+    <button id="agent-name-submit-btn" class="intro-submit-btn" disabled>Set Name →</button>
+  </div>
+</div>
+
+<!-- Customer name screen (first-time logged-in users who have no name on file) -->
+<div id="name-screen" class="intro-screen">
+  <div class="intro-avatar" id="name-avatar">K</div>
+  <h2 id="name-screen-title">Before we get started…</h2>
+  <p id="name-screen-desc">I'm an AI assistant. What's your name? I'd love to make our conversations more personal.</p>
+  <div class="intro-input-wrap">
+    <input id="name-input" class="intro-input" type="text"
+           placeholder="Your first name" maxlength="100" autocomplete="given-name" />
+    <button id="name-submit-btn" class="intro-submit-btn" disabled>Let's Chat →</button>
+  </div>
+</div>
+
+<!-- Chat UI -->
+<div id="chat-wrapper">
+  <div id="header">
+    <div id="header-info">
+      <div id="agent-avatar">K</div>
+      <div>
+        <div id="agent-name">Nomii</div>
+        <div id="agent-status"><span id="ai-badge">AI</span> ● Online</div>
+      </div>
+    </div>
+    <button id="close-btn" aria-label="Close chat">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6"  y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Human mode indicator — shown when a support agent has taken over -->
+  <div id="human-mode-banner">
+    <span class="dot"></span>
+    <span>You're connected with a live support agent</span>
+  </div>
+
+  <div id="messages">
+    <!-- messages injected here -->
+    <div id="typing"><span></span><span></span><span></span></div>
+  </div>
+
+  <div id="input-bar">
+    <div id="input-row">
+      <textarea id="input" rows="1"
+        placeholder="Type a message…"
+        autocomplete="off" spellcheck="true"
+        maxlength="2000"></textarea>
+      <button id="send-btn" aria-label="Send" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <button id="concern-btn" title="Request support from a human team member">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      Request human support
+    </button>
+    <div id="nomii-footer-bar">
+      <a id="nomii-privacy-link" href="#" target="_blank" rel="noopener" style="display:none;">Privacy Notice</a>
+      <span></span>
+      <span>Powered by <strong style="letter-spacing:.3px;">Nomii</strong><strong style="color:var(--primary);letter-spacing:.3px;">AI</strong></span>
+    </div>
+  </div>
+
+  <!-- CSAT overlay — sits inside #chat-wrapper so it covers the whole widget -->
+  <div id="csat-overlay">
+    <div style="width:56px;height:56px;border-radius:50%;background:rgba(30,58,95,0.08);display:flex;align-items:center;justify-content:center;font-size:26px;">💬</div>
+    <div>
+      <h3>How did we do?</h3>
+      <p>Your feedback helps us improve.</p>
+    </div>
+    <div id="csat-buttons">
+      <button class="csat-btn positive" id="csat-up"   title="Helpful">👍</button>
+      <button class="csat-btn negative" id="csat-down" title="Not helpful">👎</button>
+    </div>
+    <button id="csat-skip">Skip &amp; close</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Read config from URL params ────────────────────────────────────────────
+  var params       = new URLSearchParams(window.location.search);
+  var WIDGET_KEY   = params.get('key')     || '';
+  var USER_EMAIL   = params.get('email')   || '';   // empty = anonymous visitor
+  var USER_NAME    = params.get('name')    || '';   // display_name from host page
+  var PRIMARY      = params.get('color')   || '#1E3A5F';
+  var API_BASE     = params.get('api')     || '';
+  var PRIVACY_URL  = params.get('privacy') || '';   // optional privacy notice URL
+
+  // Apply dynamic primary colour from URL param (may be overridden by server)
+  document.documentElement.style.setProperty('--primary', PRIMARY);
+  document.documentElement.style.setProperty('--primary-light', adjustColor(PRIMARY, 20));
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  var sessionToken     = null;
+  var conversationId   = null;
+  var agentName        = 'Nomii';
+  var tenantName       = '';
+  var customerName     = null;
+  var isAnonymous      = false;
+  var needsAgentName   = false;
+  var needsCustomerName= false;
+  var isSending        = false;
+  var sessionEnded     = false;  // guard against double end-session
+  var currentMode      = 'ai';   // 'ai' | 'human'
+  var pollInterval     = null;   // setInterval handle for polling
+  var lastPollTime     = null;   // ISO timestamp of last poll
+  var POLL_INTERVAL_AI    = 5000;   // 5s — mode-change detection when AI is active
+  var POLL_INTERVAL_HUMAN = 2500;   // 2.5s — fast reply delivery in human mode
+
+  var csatRated = false;  // prevent double-submission
+
+  // DOM refs
+  var csatOverlay         = document.getElementById('csat-overlay');
+  var csatUpBtn           = document.getElementById('csat-up');
+  var csatDownBtn         = document.getElementById('csat-down');
+  var csatSkipBtn         = document.getElementById('csat-skip');
+  var loadingScreen       = document.getElementById('loading-screen');
+  var errorScreen         = document.getElementById('error-screen');
+  var agentNameScreen     = document.getElementById('agent-name-screen');
+  var nameScreen          = document.getElementById('name-screen');
+  var chatWrapper         = document.getElementById('chat-wrapper');
+  var messagesEl          = document.getElementById('messages');
+  var inputEl             = document.getElementById('input');
+  var sendBtn             = document.getElementById('send-btn');
+  var typingEl            = document.getElementById('typing');
+  var agentNameEl         = document.getElementById('agent-name');
+  var agentAvatarEl       = document.getElementById('agent-avatar');
+  // Agent naming screen
+  var agentNameAvatar     = document.getElementById('agent-name-avatar');
+  var agentNameScreenTitle= document.getElementById('agent-name-screen-title');
+  var agentNameScreenDesc = document.getElementById('agent-name-screen-desc');
+  var agentNameInput      = document.getElementById('agent-name-input');
+  var agentNameSubmitBtn  = document.getElementById('agent-name-submit-btn');
+  // Customer name screen
+  var nameAvatarEl        = document.getElementById('name-avatar');
+  var nameScreenTitle     = document.getElementById('name-screen-title');
+  var nameScreenDesc      = document.getElementById('name-screen-desc');
+  var nameInput           = document.getElementById('name-input');
+  var nameSubmitBtn       = document.getElementById('name-submit-btn');
+  var concernBtn          = document.getElementById('concern-btn');
+  var privacyLink         = document.getElementById('nomii-privacy-link');
+  var humanBanner         = document.getElementById('human-mode-banner');
+
+  // Show privacy link if a URL was passed via embed param
+  if (PRIVACY_URL) {
+    privacyLink.href = PRIVACY_URL;
+    privacyLink.style.display = 'inline';
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  initSession();
+
+  async function initSession() {
+    if (!WIDGET_KEY) {
+      showError('Missing widget configuration — please contact support.');
+      return;
+    }
+
+    try {
+      var resp = await fetch(API_BASE + '/api/widget/session', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          widget_key:   WIDGET_KEY,
+          email:        USER_EMAIL || undefined,   // omit if empty (anonymous)
+          display_name: USER_NAME  || undefined,
+        }),
+      });
+
+      if (!resp.ok) {
+        var err = await resp.json().catch(function () { return {}; });
+        // Show a friendly capacity screen for customer limit errors
+        if (err.error === 'customer_limit_reached') {
+          loadingScreen.style.display = 'none';
+          document.getElementById('capacity-screen').style.display = 'flex';
+          return;
+        }
+        throw new Error(err.error || 'Session error ' + resp.status);
+      }
+
+      var data = await resp.json();
+      sessionToken      = data.token;
+      conversationId    = data.conversation_id;
+      agentName         = data.agent.name || 'Nomii';
+      tenantName        = (data.tenant && data.tenant.name) || '';
+      customerName      = data.customer.customer_name || null;
+      isAnonymous       = data.customer.is_anonymous  || false;
+      needsAgentName    = data.customer.needs_agent_name || false;
+      needsCustomerName = data.customer.needs_name       || false;
+
+      // Apply agent branding
+      var initials = agentName.charAt(0).toUpperCase();
+      agentNameEl.textContent   = agentName;
+      agentAvatarEl.textContent = initials;
+      agentNameAvatar.textContent = initials;
+      nameAvatarEl.textContent    = initials;
+
+      if (data.agent.primary_color) {
+        document.documentElement.style.setProperty('--primary', data.agent.primary_color);
+        document.documentElement.style.setProperty('--primary-light', adjustColor(data.agent.primary_color, 20));
+      }
+
+      // Tell the parent page to update the bubble label.
+      // If the user has personalised the agent name (different from the tenant default),
+      // use their chosen name — otherwise fall back to the tenant's chat_bubble_name.
+      var defaultAgentName = (data.agent && data.agent.default_name) || '';
+      var isPersonalised   = agentName && defaultAgentName && agentName !== defaultAgentName;
+      var bubbleLabel;
+      if (isPersonalised) {
+        bubbleLabel = 'Chat with ' + agentName;
+      } else {
+        bubbleLabel = (data.tenant && data.tenant.chat_bubble_name)
+          ? data.tenant.chat_bubble_name
+          : 'Chat with ' + agentName;
+      }
+      try {
+        window.parent.postMessage({
+          type:  'nomii:updateLabel',
+          label: bubbleLabel,
+          color: data.agent.primary_color || null,
+        }, '*');
+      } catch (_) {}
+
+      loadingScreen.style.display = 'none';
+
+      // ── Route to correct screen ───────────────────────────────────────────
+      if (isAnonymous) {
+        // Anonymous visitor — skip all intro screens, go straight to chat
+        showChat();
+        addMessage('agent', 'Hi! I\u2019m ' + agentName + ', an AI assistant'
+          + (tenantName ? ' for ' + tenantName : '') + '. How can I help you today?');
+
+      } else if (needsAgentName) {
+        // Logged-in user, first time — ask them to name the agent
+        var label = tenantName ? tenantName + ' Assistant' : 'Assistant';
+        agentNameScreenTitle.textContent = 'One quick thing\u2026';
+        agentNameScreenDesc.textContent  = 'What would you like to name your ' + label + '?';
+        agentNameScreen.classList.add('visible');
+        agentNameInput.focus();
+
+      } else if (needsCustomerName) {
+        // Logged-in, agent is named, but we don't know the customer's name yet
+        showNameScreen();
+
+      } else {
+        // Returning user — pre-render prior conversation history, then fetch greeting.
+        showChat();
+
+        // Inject conversation history from session response before showing greeting
+        var recentMessages = data.recent_messages || [];
+        if (recentMessages.length > 0) {
+          var lastMsg = recentMessages[recentMessages.length - 1];
+          addSessionDivider(lastMsg.created_at);
+
+          var lastDay = null;
+          recentMessages.forEach(function (m) {
+            var msgDay = new Date(m.created_at).toDateString();
+            if (msgDay !== lastDay) {
+              addDaySeparator(m.created_at);
+              lastDay = msgDay;
+            }
+            addHistoryMessage(m.role, m.content, m.created_at);
+          });
+          scrollToBottom();
+        }
+
+        showTyping(true);
+
+        var greetingSettled = false;
+        var fallbackTimer = setTimeout(function () {
+          if (!greetingSettled) {
+            greetingSettled = true;
+            showTyping(false);
+            addMessage('agent', buildReturnGreeting(customerName, agentName, tenantName));
+          }
+        }, 5000);
+
+        fetch(API_BASE + '/api/widget/greeting', {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': 'Bearer ' + sessionToken,
+          },
+          body: JSON.stringify({}),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (greetingData) {
+          clearTimeout(fallbackTimer);
+          if (greetingSettled) return;
+          greetingSettled = true;
+          showTyping(false);
+          var msg = (greetingData && greetingData.greeting)
+            ? greetingData.greeting
+            : buildReturnGreeting(customerName, agentName, tenantName);
+          addMessage('agent', msg);
+        })
+        .catch(function () {
+          clearTimeout(fallbackTimer);
+          if (greetingSettled) return;
+          greetingSettled = true;
+          showTyping(false);
+          addMessage('agent', buildReturnGreeting(customerName, agentName, tenantName));
+        });
+      }
+
+    } catch (e) {
+      console.error('[Nomii Widget]', e);
+      showError(e.message || 'Could not start session.');
+    }
+  }
+
+
+  // ── Agent naming screen handlers ──────────────────────────────────────────
+  agentNameInput.addEventListener('input', function () {
+    agentNameSubmitBtn.disabled = !agentNameInput.value.trim();
+  });
+
+  agentNameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && agentNameInput.value.trim()) {
+      e.preventDefault();
+      submitAgentName();
+    }
+  });
+
+  agentNameSubmitBtn.addEventListener('click', submitAgentName);
+
+  async function submitAgentName() {
+    var name = agentNameInput.value.trim();
+    if (!name || !sessionToken) return;
+
+    agentNameSubmitBtn.disabled = true;
+    agentNameSubmitBtn.textContent = 'Saving\u2026';
+
+    try {
+      var resp = await fetch(API_BASE + '/api/widget/set-agent-name', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body: JSON.stringify({ agent_name: name }),
+      });
+
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not save agent name');
+
+      // Update agent name everywhere
+      agentName = name;
+      agentNameEl.textContent      = name;
+      agentAvatarEl.textContent    = name.charAt(0).toUpperCase();
+      nameAvatarEl.textContent     = name.charAt(0).toUpperCase();
+
+      // Move to next screen
+      agentNameScreen.classList.remove('visible');
+
+      if (needsCustomerName) {
+        showNameScreen();
+      } else {
+        // We know their name already — go straight to chat
+        showChat();
+        addMessage('agent',
+          'Great choice! I\u2019m ' + agentName + ', an AI assistant'
+          + (tenantName ? ' for ' + tenantName : '') + '. '
+          + (customerName ? 'Hi ' + customerName + '! ' : '')
+          + 'What\u2019s on your mind?'
+        );
+      }
+
+    } catch (e) {
+      console.error('[Nomii Widget] set-agent-name error:', e);
+      agentNameSubmitBtn.disabled = false;
+      agentNameSubmitBtn.textContent = 'Set Name \u2192';
+      // Fail gracefully — skip the screen and move on
+      agentNameScreen.classList.remove('visible');
+      if (needsCustomerName) {
+        showNameScreen();
+      } else {
+        showChat();
+        addMessage('agent', 'Hi! I\u2019m ' + agentName + ', an AI assistant'
+          + (tenantName ? ' for ' + tenantName : '') + '. How can I help you today?');
+      }
+    }
+  }
+
+
+  // ── Customer name screen ──────────────────────────────────────────────────
+  function showNameScreen() {
+    nameScreenTitle.textContent = 'Before we get started\u2026';
+    nameScreenDesc.textContent  = 'What\u2019s your name? I\u2019d love to make our conversations more personal.';
+    nameScreen.classList.add('visible');
+    nameInput.focus();
+  }
+
+  nameInput.addEventListener('input', function () {
+    nameSubmitBtn.disabled = !nameInput.value.trim();
+  });
+
+  nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && nameInput.value.trim()) {
+      e.preventDefault();
+      submitCustomerName();
+    }
+  });
+
+  nameSubmitBtn.addEventListener('click', submitCustomerName);
+
+  async function submitCustomerName() {
+    var name = nameInput.value.trim();
+    if (!name || !sessionToken) return;
+
+    nameSubmitBtn.disabled = true;
+    nameSubmitBtn.textContent = 'Just a moment\u2026';
+
+    try {
+      var resp = await fetch(API_BASE + '/api/widget/set-name', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body: JSON.stringify({ name: name }),
+      });
+
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Could not save name');
+
+      customerName = data.customer_name || name;
+      nameScreen.classList.remove('visible');
+      showChat();
+
+      addMessage('agent',
+        'Hi ' + customerName + '! I\u2019m ' + agentName + ', an AI assistant'
+        + (tenantName ? ' for ' + tenantName : '') + '. It\u2019s great to meet you. '
+        + 'What\u2019s on your mind?'
+      );
+
+    } catch (e) {
+      console.error('[Nomii Widget] set-name error:', e);
+      nameSubmitBtn.disabled = false;
+      nameSubmitBtn.textContent = 'Let\u2019s Chat \u2192';
+      // Fail gracefully
+      nameScreen.classList.remove('visible');
+      showChat();
+      addMessage('agent', 'Hi! I\u2019m ' + agentName + ', an AI assistant'
+        + (tenantName ? ' for ' + tenantName : '') + '. How can I help you today?');
+    }
+  }
+
+
+  // ── Background poll — always-on mode detection ────────────────────────────
+  // Starts immediately after session init so the widget detects when a human
+  // agent takes over, even if the customer hasn't sent a new message.
+  function startBackgroundPoll() {
+    if (pollInterval) clearInterval(pollInterval);
+    lastPollTime = new Date().toISOString();
+    pollInterval = setInterval(pollForMessages, POLL_INTERVAL_AI);
+  }
+
+  // ── Chat helpers ──────────────────────────────────────────────────────────
+  function showChat() {
+    chatWrapper.classList.add('ready');
+    sendBtn.disabled = false;
+    inputEl.focus();
+    // Start background polling so we detect human takeovers immediately
+    startBackgroundPoll();
+  }
+
+  function buildReturnGreeting(name, agent, tenant) {
+    var aiTag = ', your AI assistant' + (tenant ? ' for ' + tenant : '');
+    if (name) {
+      return 'Welcome back, ' + name + '! I\u2019m ' + agent + aiTag + '. Great to see you again \u2014 what\u2019s on your mind?';
+    }
+    return 'Welcome back! I\u2019m ' + agent + aiTag + '. Great to see you again \u2014 what\u2019s on your mind?';
+  }
+
+
+  // ── History rendering helpers ──────────────────────────────────────────────
+
+  // Renders a prior message without fade animation, using its real timestamp
+  function addHistoryMessage(role, content, dateStr) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.style.animation = 'none';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = content;
+
+    var time = document.createElement('div');
+    time.className = 'msg-time';
+    time.textContent = formatTime(new Date(dateStr));
+
+    div.appendChild(bubble);
+    div.appendChild(time);
+    messagesEl.insertBefore(div, typingEl);
+  }
+
+  // Inserts a "Continuing from …" horizontal rule divider before prior messages
+  function addSessionDivider(lastMsgDateStr) {
+    var now  = new Date();
+    var then = new Date(lastMsgDateStr);
+    var diffMs    = now - then;
+    var diffMins  = diffMs / 60000;
+    var diffHours = diffMs / 3600000;
+
+    var label;
+    if (diffMins < 90) {
+      label = 'Continuing from earlier';
+    } else if (isSameDay(then, now)) {
+      label = 'Continuing from earlier today';
+    } else if (isYesterday(then, now)) {
+      label = 'Continuing from yesterday';
+    } else {
+      label = 'Continuing from ' + then.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    var div  = document.createElement('div');
+    div.className = 'session-divider';
+    var span = document.createElement('span');
+    span.textContent = label;
+    div.appendChild(span);
+    messagesEl.insertBefore(div, typingEl);
+  }
+
+  // Inserts a "Today" / "Yesterday" / date pill between messages on different days
+  function addDaySeparator(dateStr) {
+    var date = new Date(dateStr);
+    var now  = new Date();
+    var label;
+    if (isSameDay(date, now)) {
+      label = 'Today';
+    } else if (isYesterday(date, now)) {
+      label = 'Yesterday';
+    } else {
+      label = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    var div = document.createElement('div');
+    div.className = 'day-separator';
+    div.textContent = label;
+    messagesEl.insertBefore(div, typingEl);
+  }
+
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth()    === b.getMonth()    &&
+           a.getDate()     === b.getDate();
+  }
+
+  function isYesterday(a, b) {
+    var yesterday = new Date(b);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return isSameDay(a, yesterday);
+  }
+
+
+  // ── Send message ──────────────────────────────────────────────────────────
+  async function sendMessage() {
+    var text = inputEl.value.trim();
+    if (!text || isSending || !sessionToken) return;
+
+    isSending = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+    autoResize();
+
+    addMessage('user', text);
+    showTyping(true);
+
+    try {
+      var resp = await fetch(API_BASE + '/api/widget/chat', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body: JSON.stringify({ content: text }),
+      });
+
+      var data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data.error || 'Chat error ' + resp.status);
+      }
+
+      showTyping(false);
+
+      // Human mode — message saved, waiting for human reply via polling
+      if (data.waiting && data.mode === 'human') {
+        if (currentMode !== 'human') {
+          setHumanMode(true);
+        }
+        // Don't show a bot response; the human will reply
+        return;
+      }
+
+      addMessage('agent', data.content);
+
+    } catch (e) {
+      showTyping(false);
+      addMessage('agent', 'Sorry, I had trouble responding. Please try again in a moment.');
+      console.error('[Nomii Widget] chat error:', e);
+    } finally {
+      isSending = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  }
+
+
+  // ── Human mode switching + poll speed ────────────────────────────────────
+  function setHumanMode(enabled) {
+    var wasHuman = currentMode === 'human';
+    currentMode = enabled ? 'human' : 'ai';
+    humanBanner.classList.toggle('visible', enabled);
+
+    // Adjust poll interval speed without resetting lastPollTime
+    if (enabled && !wasHuman) {
+      // Speed up to 2.5s for fast human reply delivery
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollForMessages, POLL_INTERVAL_HUMAN);
+    } else if (!enabled && wasHuman) {
+      // Slow back down to 5s for mode-change detection
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollForMessages, POLL_INTERVAL_AI);
+    }
+  }
+
+  async function pollForMessages() {
+    if (!sessionToken || !lastPollTime) return;
+    try {
+      var resp = await fetch(
+        API_BASE + '/api/widget/poll?since=' + encodeURIComponent(lastPollTime),
+        { headers: { 'Authorization': 'Bearer ' + sessionToken } }
+      );
+      if (!resp.ok) return;
+
+      var data = await resp.json();
+
+      // Update mode tracking — detect takeover/handback
+      if (data.mode !== currentMode) {
+        setHumanMode(data.mode === 'human');
+        // If AI just took back over, show the AI header badge again
+        if (data.mode === 'ai') {
+          document.getElementById('ai-badge').style.display = 'inline-flex';
+        }
+      }
+
+      // Render new messages — but only in human mode.
+      // In AI mode the response is already rendered directly by sendMessage();
+      // re-rendering here would cause duplicates every 5 seconds.
+      // Always advance the poll cursor so we don't replay old messages if mode switches.
+      if (data.messages && data.messages.length > 0) {
+        if (currentMode === 'human') {
+          data.messages.forEach(function (msg) {
+            var isSystem = msg.content.startsWith('\uD83D\uDC4B') || // 👋 takeover
+                           msg.content.startsWith('\uD83E\uDD16');   // 🤖 handback
+            addMessage(isSystem ? 'system' : 'agent', msg.content);
+          });
+        }
+        // Always advance the cursor regardless of mode
+        lastPollTime = data.messages[data.messages.length - 1].created_at;
+      }
+
+    } catch (_) {
+      // Silently ignore poll errors — will retry next interval
+    }
+  }
+
+
+  // ── Anonymous → Authenticated handoff (session claim) ─────────────────────
+  //
+  // Called when the host page fires nomii:identify (user just logged in).
+  // Instead of reloading the iframe (which would lose the conversation), we:
+  //   1. Call /api/widget/session/claim with the current anon token + new email
+  //   2. Backend migrates the conversation to the real customer and issues a new JWT
+  //   3. We swap the token in-memory, append a "signed in" banner, resume polling
+  //
+  // If claim fails for any reason, we fall back to a full page reload so the
+  // widget re-initialises cleanly as the authenticated user.
+  //
+  async function claimSession(email, displayName) {
+    if (!isAnonymous || !sessionToken) return;
+
+    // Pause polling while we swap tokens (don't end the session — keep messages)
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+
+    try {
+      var resp = await fetch(API_BASE + '/api/widget/session/claim', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          widget_key:   WIDGET_KEY,
+          anon_token:   sessionToken,
+          email:        email,
+          display_name: displayName || undefined,
+        }),
+      });
+
+      if (!resp.ok) throw new Error('claim_failed');
+      var data = await resp.json();
+
+      // ── Swap session state ────────────────────────────────────────────────
+      sessionToken  = data.token;
+      isAnonymous   = false;
+
+      // ── Show a subtle "signed in" divider in the chat ─────────────────────
+      var firstName = (data.customer && data.customer.first_name) ? data.customer.first_name : '';
+      var banner    = document.createElement('div');
+      banner.className = 'signed-in-banner';
+      banner.textContent = firstName ? ('✓ Signed in as ' + firstName) : '✓ Signed in';
+      messagesEl.appendChild(banner);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      // ── Resume background polling with new token ──────────────────────────
+      startBackgroundPoll();
+
+    } catch (err) {
+      // Fallback: reload the iframe — will re-init as the authenticated user
+      console.warn('[Nomii] Session claim failed, reloading:', err.message);
+      window.location.reload();
+    }
+  }
+
+
+  // ── End session (memory update) ────────────────────────────────────────────
+  function endSession() {
+    if (sessionEnded || !sessionToken) return;
+    sessionEnded = true;
+
+    // Stop any active human-mode polling
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+
+    var url  = API_BASE + '/api/widget/end-session';
+    var body = JSON.stringify({ token: sessionToken });
+    var blob = new Blob([body], { type: 'application/json' });
+
+    // sendBeacon is fire-and-forget, works even as page unloads
+    // Token is in the JSON body since sendBeacon can't set Authorization headers
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, blob);
+    } else {
+      // Fallback: best-effort fetch with both body token AND Authorization header
+      fetch(url, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body:    body,
+        keepalive: true,
+      }).catch(function () {});
+    }
+  }
+
+  // ── CSAT helpers ───────────────────────────────────────────────────────────
+  function submitCsat(score) {
+    if (csatRated || !sessionToken) return;
+    csatRated = true;
+    // Fire-and-forget — never block the close flow
+    fetch(API_BASE + '/api/widget/csat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionToken },
+      body:    JSON.stringify({ score: score }),
+    }).catch(function () {});
+  }
+
+  function closeWidget() {
+    endSession();
+    window.parent.postMessage({ type: 'nomii:close' }, '*');
+  }
+
+  // ── Close button — show CSAT for non-anonymous users with messages ─────────
+  document.getElementById('close-btn').addEventListener('click', function () {
+    // Show CSAT only for authenticated users who have had a conversation
+    var hasMessages = document.querySelectorAll('.msg').length > 0;
+    if (!isAnonymous && hasMessages && !csatRated && sessionToken) {
+      csatOverlay.classList.add('visible');
+    } else {
+      closeWidget();
+    }
+  });
+
+  csatUpBtn.addEventListener('click', function () {
+    submitCsat(2);
+    closeWidget();
+  });
+
+  csatDownBtn.addEventListener('click', function () {
+    submitCsat(1);
+    closeWidget();
+  });
+
+  csatSkipBtn.addEventListener('click', function () {
+    closeWidget();
+  });
+
+  // Fire end-session when tab/window becomes hidden (covers tab close + navigation)
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      endSession();
+    }
+  });
+
+  // Also fire on pagehide (Safari backup)
+  window.addEventListener('pagehide', function () {
+    endSession();
+  });
+
+
+  // ── Raise a concern ────────────────────────────────────────────────────────
+  var concernFired = false;
+  concernBtn.addEventListener('click', async function () {
+    if (concernFired || !sessionToken) return;
+    concernFired = true;
+    concernBtn.disabled = true;
+    concernBtn.textContent = 'Flagging\u2026';
+
+    try {
+      await fetch(API_BASE + '/api/widget/flag', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + sessionToken,
+        },
+        body: JSON.stringify({ description: 'Customer raised a concern via widget' }),
+      });
+
+      addMessage('agent',
+        '\u{1F464} Got it \u2014 I\u2019ve notified the team and a real human will follow up with you shortly. '
+        + 'In the meantime, I\u2019m still here if you need anything.'
+      );
+      concernBtn.textContent = 'Human support requested \u2713';
+    } catch (e) {
+      console.error('[Nomii Widget] flag error:', e);
+      concernFired = false;
+      concernBtn.disabled = false;
+      concernBtn.innerHTML =
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Request human support';
+    }
+  });
+
+
+  // ── DOM helpers ────────────────────────────────────────────────────────────
+  function addMessage(role, content) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = content;
+
+    var time = document.createElement('div');
+    time.className = 'msg-time';
+    time.textContent = formatTime(new Date());
+
+    div.appendChild(bubble);
+    div.appendChild(time);
+
+    messagesEl.insertBefore(div, typingEl);
+    scrollToBottom();
+  }
+
+  function showTyping(visible) {
+    typingEl.classList.toggle('visible', visible);
+    if (visible) scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function showError(msg) {
+    loadingScreen.style.display = 'none';
+    agentNameScreen.classList.remove('visible');
+    nameScreen.classList.remove('visible');
+    errorScreen.style.display   = 'flex';
+    document.getElementById('error-msg').textContent = msg;
+  }
+
+  function formatTime(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+
+  // ── Auto-resize textarea ──────────────────────────────────────────────────
+  function autoResize() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  }
+
+  inputEl.addEventListener('input', autoResize);
+
+  inputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+
+
+  // ── Listen for toggle and auth changes from parent ────────────────────────
+  window.addEventListener('message', function (e) {
+    if (!e.data || !e.data.type) return;
+
+    // Focus management when widget opens
+    if (e.data.type === 'nomii:toggle' && e.data.open) {
+      if (chatWrapper.classList.contains('ready')) inputEl.focus();
+      else if (agentNameScreen.classList.contains('visible')) agentNameInput.focus();
+      else if (nameScreen.classList.contains('visible')) nameInput.focus();
+    }
+
+    // ── Anonymous → Authenticated handoff ────────────────────────────────────
+    // Fired by embed.js when it detects a login event on the host page.
+    // We claim the session in-place rather than reloading the iframe so the
+    // existing conversation is preserved.
+    if (e.data.type === 'nomii:identify' && e.data.email && isAnonymous) {
+      claimSession(e.data.email, e.data.name || '');
+    }
+
+    // ── SPA auth reset (logout or user switch) ────────────────────────────────
+    // The iframe will be reloaded by embed.js on logout, but we stop polling
+    // and fire end-session first so the memory update isn't skipped.
+    if (e.data.type === 'nomii:setUser') {
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      if (sessionToken && !sessionEnded) {
+        endSession();
+      }
+    }
+  });
+
+
+  // ── Colour utility ────────────────────────────────────────────────────────
+  function adjustColor(hex, amount) {
+    try {
+      var r = parseInt(hex.slice(1, 3), 16);
+      var g = parseInt(hex.slice(3, 5), 16);
+      var b = parseInt(hex.slice(5, 7), 16);
+      r = Math.min(255, r + amount);
+      g = Math.min(255, g + amount);
+      b = Math.min(255, b + amount);
+      return '#' + [r, g, b].map(function (v) {
+        return v.toString(16).padStart(2, '0');
+      }).join('');
+    } catch (_) { return hex; }
+  }
+
+})();
+</script>
+</body>
+</html>

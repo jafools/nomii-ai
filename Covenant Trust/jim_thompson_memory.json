@@ -1,0 +1,101 @@
+{
+  "personal_profile": {
+    "name": "James 'Jim' Thompson",
+    "age": 72,
+    "date_of_birth": "1953-11-02",
+    "location": "Beaverton, OR",
+    "family": {
+      "marital_status": "Widowed",
+      "late_spouse": { "name": "Dorothy Thompson", "passed": "2024-08-15", "notes": "Married 44 years. Dorothy handled most of the finances. Jim is still adjusting." },
+      "children": [
+        { "name": "Karen", "age": 45, "location": "Boise, ID", "relationship": "Calls weekly, visits quarterly. Jim's primary family support." }
+      ],
+      "grandchildren": ["Tyler (16)", "Becca (13)"]
+    },
+    "career": "Retired machinist — Boeing plant in Portland, 40 years. Union pension.",
+    "tech_comfort": "low",
+    "tech_details": "Has a smartphone but mostly uses it for calls. Daughter Karen set up his computer. Struggles with passwords and online banking. Prefers phone calls or in-person.",
+    "communication_preference": "Direct, plain language. Short sessions. Appreciates when you get to the point. Don't be overly cheerful — he reads it as fake."
+  },
+  "financial_snapshot": {
+    "last_updated": "2026-03-01",
+    "total_estimated_assets": 620000,
+    "monthly_income": 4100,
+    "monthly_expenses": 2800,
+    "accounts_summary": {
+      "pension": { "monthly": 2200, "source": "Boeing/IAM union pension", "details": "Single-life annuity (chose higher payout after Dorothy's passing)" },
+      "social_security": { "monthly": 1900, "started_age": 67 },
+      "savings": { "balance": 85000, "type": "Savings account", "institution": "US Bank", "details": "Dorothy's life insurance payout is in here" },
+      "ira": { "balance": 155000, "institution": "Fidelity", "details": "Mostly bonds — Jim has never actively managed this. Dorothy set it up." },
+      "real_estate": { "value": 340000, "type": "Primary residence", "mortgage": "Owned outright", "details": "3-bedroom house — more space than Jim needs now" },
+      "checking": { "balance": 12000, "institution": "US Bank" }
+    },
+    "debts": "None",
+    "surplus_notes": "Jim spends ~$2,800/month but brings in ~$4,100. He has a consistent surplus of ~$1,300/month that just sits in checking. Could be better utilized."
+  },
+  "risk_profile": {
+    "tolerance": "very conservative",
+    "biggest_fear": "Being scammed or making a mistake with money that Dorothy worked hard to save",
+    "biggest_goal": "Keep things simple and make sure Karen and the grandkids are taken care of",
+    "notes": "Jim doesn't trust 'the market' and is suspicious of anything that sounds too good. This is a feature, not a bug — lean into his caution as wisdom."
+  },
+  "life_plan": {
+    "travel": {
+      "dreams": "Visit Karen in Boise more often. Maybe take Tyler fishing in Montana.",
+      "budget_target": 3000,
+      "timeline": "No specific timeline — 'while I can still drive'",
+      "specifics": "Jim drives himself everywhere. Doesn't like flying."
+    },
+    "healthcare": {
+      "current_coverage": "Medicare + Supplemental Plan F (grandfathered)",
+      "concerns": ["Knee replacement might be needed in 1-2 years", "Prescription costs are manageable for now"],
+      "ltc_insurance": "None. Jim thinks he'll either be fine or Karen will help. Needs gentle education on LTC costs."
+    },
+    "housing": {
+      "current_plan": "Staying in the house. Period.",
+      "future_considerations": "Karen has gently suggested downsizing. Jim is resistant — too many memories with Dorothy. Revisit in 1-2 years.",
+      "home_maintenance_budget": 4000,
+      "notes": "House needs a new roof in the next 2-3 years (~$15,000). Jim is aware."
+    },
+    "legacy": {
+      "primary_goal": "Everything goes to Karen",
+      "grandchildren": "Wants to help with Tyler's college but doesn't know how to set it up",
+      "estate_planning": "Has a will from 2019 — needs updating since Dorothy's passing. Escalated to advisor."
+    },
+    "hobbies": {
+      "activities": ["Woodworking in garage", "Morning coffee at the same diner (Hal's)", "Watching Blazers games"],
+      "budget": 100,
+      "notes": "Jim's social life is thin. The diner crew and Karen's calls are his main social connections."
+    }
+  },
+  "conversation_history": [
+    {
+      "session": 1,
+      "date": "2026-02-18",
+      "type": "onboarding",
+      "summary": "Jim was reluctant at first — 'I don't need a computer telling me about my money.' Agent kept it simple, asked about his day, his work history. Jim opened up when talking about Boeing and his machinist career. Got through personal background, financial overview (high-level), and some housing discussion. Jim ended the session after 18 minutes — said he had to go to the diner. Good first session despite initial resistance.",
+      "categories_covered": ["personal_background", "financial_overview", "housing"],
+      "flags": []
+    },
+    {
+      "session": 2,
+      "date": "2026-02-25",
+      "type": "onboarding",
+      "summary": "Jim came back more open. 'Karen said I should give this another try.' Covered retirement goals — mostly wants simplicity and to take care of Karen. Got emotional briefly when talking about Dorothy handling the finances. Agent gave space, didn't push. Covered healthcare, legacy basics. Jim asked about how to help Tyler with college — flagged for advisor to discuss 529 or UTMA options.",
+      "categories_covered": ["retirement_dreams", "healthcare", "legacy", "risk_tolerance"],
+      "flags": [
+        { "type": "escalation", "description": "Jim wants to help with grandson Tyler's college — needs advisor guidance on 529 vs. UTMA" },
+        { "type": "high_emotion", "description": "Brief emotional moment discussing Dorothy's role in managing finances. Handled with space and patience." }
+      ]
+    }
+  ],
+  "agent_notes": [
+    "Jim warms up after the first 3-4 minutes. Don't try to be his friend immediately — earn his trust through competence and directness.",
+    "Mechanical metaphors work great: 'think of your pension as the engine — it runs steady every month without you touching it'",
+    "NEVER say 'portfolio optimization' or 'asset allocation' — Jim will check out. Say 'how your money is set up' or 'where your savings are sitting'",
+    "Dorothy handled finances for 44 years. Jim is learning from scratch at 72. Be patient without being patronizing.",
+    "Karen is a key stakeholder — Jim defers to her on big decisions. Consider suggesting a three-way session.",
+    "Short sessions: 15-20 minutes max. He gets restless and will end abruptly.",
+    "Jim has a surplus of ~$1,300/month sitting in checking. Good topic for future session — but frame as 'making your money work a little harder' not 'investment opportunity'"
+  ]
+}

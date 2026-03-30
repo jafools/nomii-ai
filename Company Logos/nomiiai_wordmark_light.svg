@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 70" width="280" height="70">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF" />
+      <stop offset="100%" style="stop-color:#00D4AA" />
+    </linearGradient>
+  </defs>
+  <text x="10" y="52" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="#111118" letter-spacing="-1">Nomii<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
+</svg>

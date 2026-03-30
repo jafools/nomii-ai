@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0a0a12"/>
+      <stop offset="100%" style="stop-color:#0f0f1c"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF"/>
+      <stop offset="100%" style="stop-color:#00D4AA"/>
+    </linearGradient>
+    <linearGradient id="gradH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6C63FF"/>
+      <stop offset="100%" style="stop-color:#00D4AA"/>
+    </linearGradient>
+    <linearGradient id="gradFade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.5"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bigglow">
+      <feGaussianBlur stdDeviation="14" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bg)"/>
+
+  <!-- Large ambient glow for premium feel -->
+  <ellipse cx="590" cy="250" rx="280" ry="240" fill="#6C63FF" opacity="0.06" filter="url(#bigglow)"/>
+  <ellipse cx="590" cy="250" rx="160" ry="140" fill="#00D4AA" opacity="0.04" filter="url(#bigglow)"/>
+
+  <!-- Grid lines (more visible for premium) -->
+  <g opacity="0.06" stroke="#6C63FF" stroke-width="1">
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="160" y1="0" x2="160" y2="500"/>
+    <line x1="320" y1="0" x2="320" y2="500"/>
+    <line x1="480" y1="0" x2="480" y2="500"/>
+    <line x1="640" y1="0" x2="640" y2="500"/>
+  </g>
+
+  <!-- Diagonal accent lines (premium differentiator) -->
+  <line x1="430" y1="0" x2="800" y2="280" stroke="url(#gradFade)" stroke-width="0.5" opacity="0.3"/>
+  <line x1="470" y1="0" x2="800" y2="230" stroke="url(#gradFade)" stroke-width="0.5" opacity="0.2"/>
+
+  <!-- Top accent bar (thicker for top tier) -->
+  <rect x="0" y="0" width="800" height="6" fill="url(#gradH)"/>
+
+  <!-- Logo mark (top left) -->
+  <g transform="translate(48, 36)" filter="url(#glow)">
+    <line x1="8" y1="6" x2="8" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="22" x2="28" y2="6" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="22" x2="28" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="28" y1="6" x2="38" y2="11" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
+    <line x1="28" y1="38" x2="38" y2="33" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
+    <circle cx="8" cy="6" r="3.5" fill="url(#grad)"/>
+    <circle cx="8" cy="22" r="4" fill="url(#grad)"/>
+    <circle cx="8" cy="38" r="3.5" fill="url(#grad)"/>
+    <circle cx="28" cy="6" r="3.5" fill="url(#grad)"/>
+    <circle cx="28" cy="38" r="3.5" fill="url(#grad)"/>
+    <circle cx="38" cy="11" r="2" fill="#00D4AA" opacity="0.8"/>
+    <circle cx="38" cy="33" r="2" fill="#6C63FF" opacity="0.8"/>
+  </g>
+  <text x="100" y="65" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Nomii<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
+
+  <!-- Plan label pill (gradient border, dark fill) -->
+  <rect x="48" y="104" width="148" height="30" rx="15" fill="url(#grad)"/>
+  <rect x="50" y="106" width="144" height="26" rx="13" fill="#0a0a12"/>
+  <text x="122" y="124" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="700" fill="url(#grad)" letter-spacing="1.5">PROFESSIONAL</text>
+
+  <!-- Main heading -->
+  <text x="48" y="200" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="#FFFFFF" letter-spacing="-2">Enterprise-grade</text>
+  <text x="48" y="255" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="url(#grad)" letter-spacing="-2">AI at scale.</text>
+
+  <!-- Price -->
+  <text x="48" y="320" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400" fill="#888899">Full platform access</text>
+  <text x="48" y="370" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="58" font-weight="700" fill="#FFFFFF" letter-spacing="-2">$399<tspan font-size="22" font-weight="400" fill="#888899">/mo</tspan></text>
+
+  <!-- Features list -->
+  <g transform="translate(48, 415)">
+    <circle cx="6" cy="6" r="4" fill="url(#grad)"/>
+    <text x="20" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">1,000 customers</text>
+    <circle cx="186" cy="6" r="4" fill="url(#grad)"/>
+    <text x="200" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">25,000 messages/mo</text>
+    <circle cx="406" cy="6" r="4" fill="url(#grad)"/>
+    <text x="420" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">Priority support</text>
+  </g>
+
+  <!-- Right side: large, complex network graph -->
+  <g transform="translate(440, 20)" opacity="0.8" filter="url(#glow)">
+    <!-- Outer connections -->
+    <line x1="180" y1="230" x2="280" y2="130" stroke="url(#gradFade)" stroke-width="1.5"/>
+    <line x1="180" y1="230" x2="290" y2="280" stroke="url(#gradFade)" stroke-width="1.5"/>
+    <line x1="180" y1="230" x2="100" y2="320" stroke="url(#gradFade)" stroke-width="1.5"/>
+    <line x1="180" y1="230" x2="120" y2="130" stroke="url(#gradFade)" stroke-width="1.5"/>
+    <line x1="180" y1="230" x2="180" y2="100" stroke="url(#gradFade)" stroke-width="1.5"/>
+    <!-- Secondary connections -->
+    <line x1="280" y1="130" x2="340" y2="80" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="280" y1="130" x2="340" y2="180" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="290" y1="280" x2="340" y2="180" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="290" y1="280" x2="240" y2="370" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="100" y1="320" x2="60" y2="400" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="120" y1="130" x2="60" y2="80" stroke="url(#gradFade)" stroke-width="1"/>
+    <line x1="180" y1="100" x2="240" y2="50" stroke="url(#gradFade)" stroke-width="1"/>
+    <!-- Tertiary -->
+    <line x1="340" y1="80" x2="300" y2="40" stroke="url(#gradFade)" stroke-width="0.8" opacity="0.5"/>
+    <line x1="60" y1="80" x2="30" y2="50" stroke="url(#gradFade)" stroke-width="0.8" opacity="0.5"/>
+    <!-- Main hub node -->
+    <circle cx="180" cy="230" r="24" fill="#6C63FF" opacity="0.15"/>
+    <circle cx="180" cy="230" r="16" fill="#6C63FF" opacity="0.2"/>
+    <circle cx="180" cy="230" r="10" fill="url(#grad)" filter="url(#glow)"/>
+    <!-- Level 2 nodes -->
+    <circle cx="280" cy="130" r="14" fill="#6C63FF" opacity="0.15"/>
+    <circle cx="280" cy="130" r="8" fill="url(#grad)" opacity="0.95"/>
+    <circle cx="290" cy="280" r="14" fill="#00D4AA" opacity="0.15"/>
+    <circle cx="290" cy="280" r="8" fill="url(#grad)" opacity="0.95"/>
+    <circle cx="100" cy="320" r="12" fill="#6C63FF" opacity="0.15"/>
+    <circle cx="100" cy="320" r="7" fill="url(#grad)" opacity="0.9"/>
+    <circle cx="120" cy="130" r="12" fill="#00D4AA" opacity="0.15"/>
+    <circle cx="120" cy="130" r="7" fill="url(#grad)" opacity="0.9"/>
+    <circle cx="180" cy="100" r="10" fill="#6C63FF" opacity="0.15"/>
+    <circle cx="180" cy="100" r="6" fill="url(#grad)" opacity="0.85"/>
+    <!-- Level 3 nodes -->
+    <circle cx="340" cy="80" r="8" fill="#00D4AA" opacity="0.2"/>
+    <circle cx="340" cy="80" r="5" fill="#00D4AA" opacity="0.8"/>
+    <circle cx="340" cy="180" r="8" fill="#6C63FF" opacity="0.2"/>
+    <circle cx="340" cy="180" r="5" fill="url(#grad)" opacity="0.8"/>
+    <circle cx="240" cy="370" r="8" fill="#6C63FF" opacity="0.2"/>
+    <circle cx="240" cy="370" r="5" fill="#6C63FF" opacity="0.7"/>
+    <circle cx="60" cy="400" r="7" fill="#00D4AA" opacity="0.2"/>
+    <circle cx="60" cy="400" r="4" fill="#00D4AA" opacity="0.7"/>
+    <circle cx="60" cy="80" r="7" fill="#6C63FF" opacity="0.2"/>
+    <circle cx="60" cy="80" r="4" fill="#6C63FF" opacity="0.7"/>
+    <circle cx="240" cy="50" r="7" fill="#00D4AA" opacity="0.2"/>
+    <circle cx="240" cy="50" r="4" fill="#00D4AA" opacity="0.7"/>
+    <!-- Tiny peripheral -->
+    <circle cx="300" cy="40" r="4" fill="#6C63FF" opacity="0.5"/>
+    <circle cx="30" cy="50" r="4" fill="#00D4AA" opacity="0.5"/>
+  </g>
+
+  <!-- Bottom accent bar -->
+  <rect x="0" y="494" width="800" height="6" fill="url(#gradH)"/>
+</svg>

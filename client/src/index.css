@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  ╔══════════════════════════════════════════════════════════════╗
+  ║  PONTEN SOLUTIONS — LOCKED DESIGN SYSTEM                   ║
+  ║  DO NOT MODIFY THESE TOKENS UNLESS EXPLICITLY REQUESTED     ║
+  ║                                                              ║
+  ║  Background:  #0A0F1E  → 225 52% 8%                        ║
+  ║  Surface:     #111827  → 220 36% 11%                       ║
+  ║  Accent:      #3B82F6  → 217 91% 60%                      ║
+  ║  Accent Hover:#60A5FA  → 217 92% 68%                      ║
+  ║  Text Primary:#F1F5F9  → 210 40% 96%                      ║
+  ║  Text Muted:  #94A3B8  → 215 16% 65%                      ║
+  ║  Font:        Inter, system-ui                              ║
+  ╚══════════════════════════════════════════════════════════════╝
+*/
+
+@layer base {
+  :root {
+    --background: 225 52% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 220 36% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 220 36% 11%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 96%;
+
+    --secondary: 220 30% 15%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 220 25% 18%;
+    --muted-foreground: 215 16% 65%;
+
+    --accent: 217 91% 60%;
+    --accent-hover: 217 92% 68%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 96%;
+
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 36% 11%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 210 40% 96%;
+    --sidebar-accent: 220 25% 18%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Custom tokens — LOCKED */
+    --gradient-hero: linear-gradient(135deg, hsl(225 52% 8%) 0%, hsl(220 36% 12%) 50%, hsl(220 40% 10%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(220 36% 13%) 0%, hsl(220 36% 9%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 92% 68%) 100%);
+    --shadow-glow: 0 0 40px -10px hsl(217 91% 60% / 0.25);
+    --shadow-card: 0 4px 24px -4px hsl(225 52% 4% / 0.5);
+    --shadow-nav: 0 4px 20px -4px hsl(225 52% 4% / 0.4);
+
+    /* LaterisAI product page tokens */
+    --lateris-navy: 205 55% 11%;
+    --lateris-teal: 185 85% 37%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-20 md:py-28 lg:py-32;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
+  }
+
+  .card-glass {
+    @apply rounded-xl border border-border/50 backdrop-blur-sm;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.35s cubic-bezier(0.25, 0.4, 0.25, 1),
+                box-shadow 0.35s cubic-bezier(0.25, 0.4, 0.25, 1),
+                border-color 0.35s ease;
+  }
+
+  .card-glass:hover {
+    transform: translateY(-4px) scale(1.008);
+    box-shadow: var(--shadow-glow), var(--shadow-card);
+    border-color: hsl(217 91% 60% / 0.2);
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .line-accent {
+    @apply w-12 h-1 rounded-full bg-primary mb-6;
+  }
+
+  .btn-glow {
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-glow:hover {
+    box-shadow: 0 0 24px -4px hsl(217 91% 60% / 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-glow:active {
+    transform: translateY(0);
+  }
+}
+
+/* Nomii AI page animations */
+@layer components {
+  @keyframes orb-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(30px, -20px) scale(1.05); }
+    50% { transform: translate(-20px, 15px) scale(0.95); }
+    75% { transform: translate(15px, 25px) scale(1.02); }
+  }
+
+  .animate-orb-drift {
+    animation: orb-drift 20s ease-in-out infinite;
+  }
+
+  .animate-orb-drift-slow {
+    animation: orb-drift 28s ease-in-out infinite reverse;
+  }
+
+  @keyframes code-glow {
+    0%, 100% { box-shadow: 0 0 12px -4px hsl(var(--primary) / 0.1), inset 0 0 12px -6px hsl(var(--primary) / 0.05); }
+    50% { box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.2), inset 0 0 20px -6px hsl(var(--primary) / 0.08); }
+  }
+
+  .animate-code-glow {
+    animation: code-glow 4s ease-in-out infinite;
+  }
+}
+
+/* LaterisAI product page styles */
+@layer components {
+  .lateris-hero {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--lateris-navy)) 0%,
+      hsl(var(--lateris-navy) / 0.85) 60%,
+      hsl(var(--lateris-teal) / 0.08) 100%
+    );
+  }
+
+  .lateris-section-accent {
+    @apply w-12 h-1 rounded-full mb-6;
+    background: linear-gradient(90deg, hsl(var(--lateris-teal)), hsl(var(--lateris-teal) / 0.4));
+  }
+
+  .lateris-card:hover {
+    border-color: hsl(var(--lateris-teal) / 0.25);
+    box-shadow: 0 0 36px -10px hsl(var(--lateris-teal) / 0.2), var(--shadow-card);
+  }
+}
