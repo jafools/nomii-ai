@@ -60,6 +60,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cmd /c npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized --auto-spawn",
+            "timeout": 30000
+          },
+          {
+            "type": "command",
             "command": "cmd /c node %CLAUDE_PROJECT_DIR%/.claude/helpers/hook-handler.cjs session-restore",
             "timeout": 15000
           },
