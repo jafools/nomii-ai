@@ -10,7 +10,9 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "db:migrate": "cd server && npm run db:migrate",
     "db:seed": "cd server && npm run db:seed",
-    "db:reset": "cd server && npm run db:reset"
+    "db:reset": "cd server && npm run db:reset",
+    "test": "node tests/api.test.js",
+    "test:watch": "node --watch tests/api.test.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
