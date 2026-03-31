@@ -645,6 +645,7 @@
   var needsCustomerName= false;
   var isSending        = false;
   var sessionEnded     = false;  // guard against double end-session
+  var widgetCurrentlyOpen = false; // true only while the widget container is visible
   var currentMode      = 'ai';   // 'ai' | 'human'
   var pollInterval     = null;   // setInterval handle for polling
   var lastPollTime     = null;   // ISO timestamp of last poll
@@ -1311,6 +1312,7 @@
   }
 
   function closeWidget() {
+    widgetCurrentlyOpen = false;
     endSession();
     window.parent.postMessage({ type: 'nomii:close' }, '*');
   }
@@ -1340,9 +1342,11 @@
     closeWidget();
   });
 
-  // Fire end-session when tab/window becomes hidden (covers tab close + navigation)
+  // Fire end-session only when the page becomes hidden while widget is open
+  // (covers tab-switching, minimise). Do NOT fire when widget container is
+  // merely hidden via CSS — that's just the user toggling the widget closed.
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'hidden') {
+    if (document.visibilityState === 'hidden' && widgetCurrentlyOpen) {
       endSession();
     }
   });
@@ -1450,11 +1454,14 @@
   window.addEventListener('message', function (e) {
     if (!e.data || !e.data.type) return;
 
-    // Focus management when widget opens
-    if (e.data.type === 'nomii:toggle' && e.data.open) {
-      if (chatWrapper.classList.contains('ready')) inputEl.focus();
-      else if (agentNameScreen.classList.contains('visible')) agentNameInput.focus();
-      else if (nameScreen.classList.contains('visible')) nameInput.focus();
+    // Track open/closed state and manage focus when widget opens
+    if (e.data.type === 'nomii:toggle') {
+      widgetCurrentlyOpen = e.data.open;
+      if (e.data.open) {
+        if (chatWrapper.classList.contains('ready')) inputEl.focus();
+        else if (agentNameScreen.classList.contains('visible')) agentNameInput.focus();
+        else if (nameScreen.classList.contains('visible')) nameInput.focus();
+      }
     }
 
     // ── Anonymous → Authenticated handoff ────────────────────────────────────

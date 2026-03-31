@@ -39,8 +39,8 @@ const db      = require('../db');
 const { parse: csvParse } = require('csv-parse/sync');
 const { requireActiveSubscription, getSubscription, isWithinCustomerLimit } = require('../middleware/subscription');
 const { encrypt, decrypt, getLast4 } = require('../services/apiKeyService');
-const { validateApiKey }             = require('../services/llmService');
-const { updateMemoryAfterSession }   = require('../engine/memoryUpdater');
+const { validateApiKey, resolveApiKey } = require('../services/llmService');
+const { updateMemoryAfterSession, generateSessionSummary, applySessionSummary, applyFactsToMemory } = require('../engine/memoryUpdater');
 const { writeAuditLog }              = require('../middleware/auditLog');
 const { anonymizeCustomer }          = require('../jobs/dataRetention');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
@@ -2863,8 +2863,12 @@ router.post('/conversations/:id/summarize', async (req, res, next) => {
   try {
     // Verify the conversation belongs to this tenant
     const { rows: convRows } = await db.query(
-      `SELECT co.id, co.customer_id FROM conversations co
+      `SELECT co.id, co.customer_id, c.memory_file, c.soul_file,
+              t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
+              t.managed_ai_enabled
+       FROM conversations co
        JOIN customers c ON co.customer_id = c.id
+       JOIN tenants t ON c.tenant_id = t.id
        WHERE co.id = $1 AND c.tenant_id = $2`,
       [req.params.id, req.portal.tenant_id]
     );
@@ -2872,13 +2876,54 @@ router.post('/conversations/:id/summarize', async (req, res, next) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Run fire-and-forget — respond immediately, update happens in background
-    setImmediate(() => {
-      updateMemoryAfterSession(req.params.id, convRows[0].customer_id)
-        .catch(err => console.error('[Portal] Manual summarize error:', err.message));
-    });
+    const conv = convRows[0];
 
+    // Respond immediately — update happens in background
     res.json({ success: true, message: 'Memory update queued — will complete in background.' });
+
+    // Fire-and-forget force summarize
+    setImmediate(async () => {
+      try {
+        const { rows: msgRows } = await db.query(
+          'SELECT role, content FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+          [req.params.id]
+        );
+        if (!msgRows.length) return;
+
+        const apiKey = resolveApiKey(conv);
+        const currentMemory = safeDecryptJson(conv.memory_file);
+        const updatedMemory = JSON.parse(JSON.stringify(currentMemory || {}));
+
+        // Force-generate a session summary regardless of message count or goodbye detection
+        const summary = await generateSessionSummary({
+          messages:      msgRows,
+          currentMemory: updatedMemory,
+          sessionType:   'regular',
+          apiKey,
+        });
+
+        if (summary) {
+          const sessionNum = (updatedMemory.conversation_history || []).length + 1;
+          const finalMemory = applySessionSummary(updatedMemory, summary, sessionNum);
+
+          // Persist the updated memory
+          await db.query(
+            'UPDATE customers SET memory_file = $1 WHERE id = $2',
+            [JSON.stringify(encryptJson(finalMemory)), conv.customer_id]
+          );
+
+          // Also update conversation summary for the dashboard
+          await db.query(
+            `UPDATE conversations SET summary = $1, topics_covered = $2 WHERE id = $3`,
+            [summary.summary, JSON.stringify(summary.topics || []), req.params.id]
+          ).catch(() => {});
+
+          console.log(`[Portal] Force summarize complete for conversation ${req.params.id}`);
+        }
+      } catch (err) {
+        console.error('[Portal] Force summarize error:', err.message);
+      }
+    });
   } catch (err) { next(err); }
 });
 

@@ -54,7 +54,7 @@ const SkeletonTable = () => (
 );
 
 const NomiiOverview = () => {
-  const { nomiiTenant } = useNomiiAuth();
+  const { nomiiTenant, nomiiUser } = useNomiiAuth();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -195,8 +195,8 @@ const NomiiOverview = () => {
       {/* Welcome */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
-          Welcome back{nomiiTenant?.name ? (
-            <span style={{ color: "#C9A84C" }}>{`, ${nomiiTenant.name}`}</span>
+          Welcome back{nomiiUser?.first_name ? (
+            <span style={{ color: "#C9A84C" }}>{`, ${nomiiUser.first_name}`}</span>
           ) : ""}
         </h2>
         <p className="text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>Here's what's happening with your AI agent.</p>

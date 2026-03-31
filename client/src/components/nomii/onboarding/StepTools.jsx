@@ -217,6 +217,18 @@ export default function StepTools({ nomiiTenant, advance, stepIndex, onSkip }) {
 
     setSaving(true); setError(null);
 
+    // Validate required config fields before calling the API
+    const missingConfig = enabledTypes.filter(type => {
+      const info = TOOL_ONBOARDING[type];
+      return info.config_key && !configs[type]?.[info.config_key]?.trim();
+    });
+    if (missingConfig.length > 0) {
+      const names = missingConfig.map(t => TOOL_ONBOARDING[t].heading).join(', ');
+      setError(`Please fill in the required data field for: ${names}`);
+      setSaving(false);
+      return;
+    }
+
     try {
       // Create each enabled tool in parallel
       await Promise.all(

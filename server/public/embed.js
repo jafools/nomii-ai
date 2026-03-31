@@ -46,6 +46,14 @@
     return;
   }
 
+  // ── Idempotency guard ─────────────────────────────────────────────────────────
+  // Prevent double-init if the embed script is injected more than once
+  // (common in React/SPA apps where the component mounts/remounts on navigation).
+  // The existing instance's MutationObserver + postMessage listener handles updates.
+  if (document.getElementById('nomii-launcher')) {
+    return;
+  }
+
   // Derive the API base from wherever embed.js was served from
   var scriptSrc    = scriptTag.src || '';
   var apiBase      = scriptSrc.replace(/\/embed\.js.*$/, '');

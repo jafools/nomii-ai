@@ -208,7 +208,7 @@ const NomiiOnboarding = () => {
         <div className="p-6 pb-2 relative z-10">
           <div className="flex items-center justify-between mb-1">
             <a href="https://pontensolutions.com">
-              <img src={nomiiLogo} alt="Nomii AI" className="h-10 brightness-0 invert" />
+              <img src={nomiiLogo} alt="Nomii AI" className="h-14 brightness-0 invert" />
             </a>
             {admin && <UserPill admin={admin} />}
           </div>
@@ -289,7 +289,7 @@ const NomiiOnboarding = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <a href="https://pontensolutions.com">
-                <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert" />
+                <img src={nomiiLogo} alt="Nomii AI" className="h-12 brightness-0 invert" />
               </a>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
                 Step {activeStep + 1} of {STEPS.length}
