@@ -13,11 +13,10 @@ const PLATFORMS = [
   { key: "other", label: "Other" },
 ];
 
-// IMPORTANT: Pass data-user-email only when the user IS logged in on your site.
 // When the user is not logged in → omit data-user-email → widget runs in Generic Brand AI mode.
 // When the user is logged in     → pass their email → widget runs in Personal AI mode (memory + name).
 const getSnippet = (widgetKey) =>
-  `<!-- Nomii AI Widget -->\n<!-- When user is NOT logged in: omit data-user-email for Generic Brand AI mode -->\n<!-- When user IS logged in: pass their email for Personal AI mode (memory + name) -->\n<script\n  src="https://api.pontensolutions.com/embed.js"\n  data-widget-key="${widgetKey}"\n  data-user-email=""        <!-- replace with logged-in user's email, or remove if not logged in -->\n  data-user-name=""         <!-- replace with logged-in user's display name, or remove if not logged in -->\n  async>\n</script>`;
+  `<!-- Nomii AI Widget -->\n<script\n  src="https://api.pontensolutions.com/embed.js"\n  data-widget-key="${widgetKey}"\n  async>\n</script>\n\n<!-- When a user is logged in on your site, add these attributes: -->\n<!-- data-user-email="user@example.com" -->\n<!-- data-user-name="Jane Doe" -->`;
 
 const getReactSnippet = (widgetKey) =>
   `// Nomii AI Widget — Personal AI mode when logged in, Generic Brand AI when not\nuseEffect(() => {\n  const script = document.createElement('script');\n  script.src = 'https://api.pontensolutions.com/embed.js';\n  script.setAttribute('data-widget-key', '${widgetKey}');\n  // Only pass email/name if the user is authenticated on your site:\n  if (user?.email) script.setAttribute('data-user-email', user.email);\n  if (user?.name)  script.setAttribute('data-user-name', user.name);\n  script.async = true;\n  document.body.appendChild(script);\n  return () => { document.body.removeChild(script); };\n}, [user?.email]); // re-run when auth state changes`;
@@ -188,7 +187,7 @@ const Step4InstallWidget = ({ nomiiTenant, setNomiiTenant, markComplete, advance
 
         {platform !== "wordpress" && platform !== "react" && (
           <p className="text-xs mt-3" style={{ color: "rgba(255,255,255,0.30)" }}>
-            Replace <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>LOGGED_IN_USER_EMAIL</code> and <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>LOGGED_IN_USER_NAME</code> with values from your site's login session.
+            When a user is signed in on your site, add <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>data-user-email</code> and <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>data-user-name</code> attributes with that user's details to activate Personal AI mode.
           </p>
         )}
       </div>

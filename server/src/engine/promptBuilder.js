@@ -470,14 +470,14 @@ The customer's name is **${customerName}**. Always address them by this name.
 This is their first conversation. Open warmly: "Hello ${customerName}, I'm [your name]! It's great to meet you. How can I help you today?" — then follow their lead.`;
   }
 
-  // Customer has been here before (either has session history OR has already named the agent).
-  // DO NOT introduce yourself as if meeting for the first time.
+  // Customer has just completed the naming flow (agentNicknameSet) but has no session history yet.
+  // The widget UI already greeted them as part of naming completion — do NOT greet again.
   if (!hasHistory) {
     return `## CUSTOMER IDENTITY
 
 The customer's name is **${customerName}**. Always address them by this name.
 
-This is a RETURNING customer. You have spoken with them before. Do NOT say "it's great to meet you" or introduce yourself as if this is your first meeting — you already know each other. Open naturally, e.g. "Hey ${customerName}! Good to hear from you — what's on your mind?" or similar. Follow their lead.`;
+IMPORTANT: The widget has already greeted this customer and introduced you just moments ago. Do NOT open with another greeting ("Hey!", "Good to hear from you", "Hi again", etc.) — that would feel robotic and repetitive. Simply respond naturally to what they actually said, as if you are mid-conversation. Follow their lead.`;
   }
 
   const lastSession   = history[history.length - 1];

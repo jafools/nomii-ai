@@ -343,6 +343,7 @@ router.post('/session', async (req, res, next) => {
         name:           agentNickname || tenant.agent_name || 'Nomii',
         default_name:   tenant.agent_name || 'Nomii',
         primary_color:  tenant.primary_color || '#1E3A5F',
+        bubble_color:   tenant.secondary_color || tenant.primary_color || '#1E3A5F',
       },
       tenant: {
         name: tenant.name,
@@ -583,6 +584,7 @@ router.post('/session/claim', async (req, res, next) => {
         name:          agentNickname || tenant.agent_name || 'Nomii',
         default_name:  tenant.agent_name || 'Nomii',
         primary_color: tenant.primary_color || '#1E3A5F',
+        bubble_color:  tenant.secondary_color || tenant.primary_color || '#1E3A5F',
       },
       tenant: {
         name:             tenant.name,

@@ -76,18 +76,20 @@ const Step1CompanyProfile = ({ nomiiTenant, setNomiiTenant, advance, stepIndex }
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>Primary Color</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>Chat Window Color</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.primary_color} onChange={set("primary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.05)" }} />
               <input type="text" value={form.primary_color} onChange={set("primary_color")} className={inp + " flex-1"} style={inpStyle} maxLength={7} />
             </div>
+            <p className="text-[11px] mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>Colors the chat header and your customers' message bubbles.</p>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>Secondary Color</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>Chat Bubble Color</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.secondary_color} onChange={set("secondary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "rgba(255,255,255,0.12)", backgroundColor: "rgba(255,255,255,0.05)" }} />
               <input type="text" value={form.secondary_color} onChange={set("secondary_color")} className={inp + " flex-1"} style={inpStyle} maxLength={7} />
             </div>
+            <p className="text-[11px] mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>The floating button on your website visitors will click to open the chat.</p>
           </div>
         </div>
 

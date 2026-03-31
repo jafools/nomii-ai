@@ -123,110 +123,11 @@ const NomiiCustomerDetail = () => {
         </div>
       </div>
 
-      {/* Soul Profile */}
-      <div className="rounded-2xl p-6" style={card}>
-        <h3 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
-          <Brain size={14} style={{ color: "#C9A84C" }} /> Soul Profile
-        </h3>
-        {soul && (soul.customer_name || soul.agent_nickname || soul.personal_profile) ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {soul.agent_nickname && (
-                <p className="text-white/50"><span className="text-white/25 font-medium">Agent Name: </span>{soul.agent_nickname}</p>
-              )}
-              {soul.customer_name && (
-                <p className="text-white/50"><span className="text-white/25 font-medium">Known As: </span>{soul.customer_name}</p>
-              )}
-            </div>
-            {soul.personal_profile && (
-              <div className="space-y-3">
-                {[
-                  { key: "interests", label: "Interests" },
-                  { key: "preferences", label: "Preferences" },
-                  { key: "personality_traits", label: "Personality" },
-                  { key: "life_details", label: "Life Details" },
-                ].map(({ key, label }) => {
-                  const items = soul.personal_profile[key];
-                  if (!items || !Array.isArray(items) || items.length === 0) return null;
-                  return (
-                    <div key={key}>
-                      <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-1.5">{label}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {items.map((item, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.15)" }}>
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-white/20 italic">No soul data yet — the agent is still getting to know this customer.</p>
-        )}
-      </div>
+      {/* Soul — everything the agent has learned about this customer */}
+      <SoulSection soul={soul} memory={memory} />
 
-      {/* Conversation Memory */}
-      <div className="rounded-2xl p-6" style={card}>
-        <h3 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
-          <BookOpen size={14} style={{ color: "#60A5FA" }} /> Conversation Memory
-        </h3>
-        {memory && (memory.conversation_history?.length > 0 || memory.agent_notes?.length > 0) ? (
-          <div className="space-y-5">
-            {memory.conversation_history?.length > 0 && (
-              <div className="space-y-3">
-                {memory.conversation_history.map((entry, i) => (
-                  <div key={i} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                      <p className="text-[13px] font-semibold text-white/60">
-                        Session #{entry.session || i + 1}
-                        {entry.date && <span className="text-white/25 font-normal"> — {new Date(entry.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
-                      </p>
-                      {entry.message_count != null && (
-                        <span className="text-[11px] text-white/25">{entry.message_count} messages</span>
-                      )}
-                    </div>
-                    {entry.summary && <p className="text-[13px] text-white/40 mb-2">{entry.summary}</p>}
-                    {entry.topics?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {entry.topics.map((t, j) => (
-                          <span key={j} className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(96,165,250,0.1)", color: "#60A5FA", border: "1px solid rgba(96,165,250,0.15)" }}>
-                            {t.replace(/_/g, " ")}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {memory.agent_notes?.length > 0 && (
-              <div>
-                <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Agent Notes</p>
-                <ul className="space-y-1.5">
-                  {memory.agent_notes.map((note, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13px] text-white/40">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.15)" }} />
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-white/20 italic">No memory yet — this customer hasn't had a completed conversation.</p>
-        )}
-      </div>
-
-      {/* What the Agent Knows — personal profile */}
-      <PersonalProfileSection memory={memory} />
-
-      {/* Goals & Plans */}
-      <GoalsSection memory={memory} />
+      {/* Memory — conversation history */}
+      <MemorySection memory={memory} />
 
       {/* Conversations */}
       <div className="rounded-2xl p-6" style={card}>
@@ -256,144 +157,214 @@ const NomiiCustomerDetail = () => {
   );
 };
 
-// ── Personal Profile Section ──────────────────────────────────────────────────
-// Surfaces memory_file.personal_profile — facts the agent has learned through conversation.
+// ── Soul Section ──────────────────────────────────────────────────────────────
+// Everything the agent has learned about this customer — who they are, how to
+// talk to them, their goals and concerns. Drives the agent's behavior.
 
-const PersonalProfileSection = ({ memory }) => {
-  if (!memory) return null;
-  const profile = memory.personal_profile || {};
-  const family  = profile.family || {};
+const SoulSection = ({ soul, memory }) => {
+  const profile     = memory?.personal_profile || {};
+  const family      = profile.family || {};
+  const soulProfile = soul?.personal_profile || {};
+  const plan        = memory?.life_plan || memory?.goals || {};
+  const goals       = plan.goals    || [];
+  const concerns    = plan.concerns || [];
+  const history     = memory?.conversation_history || [];
+  const lastSession = history[history.length - 1];
+  const actionItems = lastSession?.action_items || [];
+  const agentNotes  = memory?.agent_notes || [];
 
-  const fields = [
-    { label: "Name",            value: profile.name },
-    { label: "Age",             value: profile.age },
-    { label: "Location",        value: profile.location },
-    { label: "Career",          value: profile.career },
-    { label: "Tech Comfort",    value: profile.tech_comfort },
-    { label: "Communication",   value: profile.communication_preference },
-    { label: "Marital Status",  value: family.marital_status },
+  const bioFields = [
+    { label: "Age",           value: profile.age },
+    { label: "Location",      value: profile.location },
+    { label: "Career",        value: profile.career },
+    { label: "Tech Comfort",  value: profile.tech_comfort },
+    { label: "Communication", value: profile.communication_preference },
+    { label: "Marital Status",value: family.marital_status },
   ].filter(f => f.value);
 
   const hasFamily = family.spouse || family.children?.length > 0 || family.late_spouse;
-  const hasData   = fields.length > 0 || hasFamily;
+
+  const personalityKeys = ["interests", "preferences", "personality_traits", "life_details"];
+  const hasPersonality  = personalityKeys.some(k => soulProfile[k]?.length > 0);
+
+  const hasGoals   = goals.length > 0 || concerns.length > 0 || actionItems.length > 0;
+  const hasContent = bioFields.length > 0 || hasFamily || hasPersonality || hasGoals || agentNotes.length > 0;
 
   return (
-    <div className="rounded-2xl p-6" style={card}>
-      <h3 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
-        <User size={14} style={{ color: "#A78BFA" }} /> What the Agent Knows
-        <span className="text-[11px] font-normal text-white/20 ml-1">— learned through conversation</span>
-      </h3>
-      {hasData ? (
-        <div className="space-y-4">
-          {fields.length > 0 && (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-              {fields.map(({ label, value }) => (
-                <div key={label}>
-                  <span className="text-[11px] text-white/25 font-medium uppercase tracking-wide">{label}</span>
-                  <p className="text-[13px] text-white/55 mt-0.5">{String(value)}</p>
+    <div className="rounded-2xl p-6 space-y-5" style={card}>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+          <Brain size={14} style={{ color: "#C9A84C" }} /> Soul
+        </h3>
+        <span className="text-[11px] text-white/20">What the agent has learned about this customer</span>
+      </div>
+
+      {!hasContent ? (
+        <p className="text-sm text-white/20 italic">No soul data yet — the agent is still getting to know this customer.</p>
+      ) : (
+        <>
+          {/* Biographical facts */}
+          {(bioFields.length > 0 || hasFamily) && (
+            <div>
+              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">About This Person</p>
+              {bioFields.length > 0 && (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-3">
+                  {bioFields.map(({ label, value }) => (
+                    <div key={label}>
+                      <span className="text-[11px] text-white/25 font-medium uppercase tracking-wide">{label}</span>
+                      <p className="text-[13px] text-white/55 mt-0.5">{String(value)}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {hasFamily && (
+                <div className="space-y-1">
+                  {family.spouse && (
+                    <p className="text-[13px] text-white/45">Spouse: {family.spouse.name}{family.spouse.age ? ` (${family.spouse.age})` : ""}{family.spouse.health_notes ? ` — ${family.spouse.health_notes}` : ""}</p>
+                  )}
+                  {family.late_spouse && (
+                    <p className="text-[13px] text-white/45">Late spouse: {family.late_spouse.name}{family.late_spouse.passed ? ` (passed ${family.late_spouse.passed})` : ""}</p>
+                  )}
+                  {family.children?.map((child, i) => (
+                    <p key={i} className="text-[13px] text-white/45">{child.name}{child.age ? ` (${child.age})` : ""}{child.location ? ` — ${child.location}` : ""}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          {hasFamily && (
+
+          {/* Personality & style — how the agent should engage */}
+          {hasPersonality && (
             <div>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Family</p>
-              <div className="space-y-1">
-                {family.spouse && (
-                  <p className="text-[13px] text-white/45">
-                    Spouse: {family.spouse.name}{family.spouse.age ? ` (${family.spouse.age})` : ""}
-                    {family.spouse.health_notes ? ` — ${family.spouse.health_notes}` : ""}
-                  </p>
-                )}
-                {family.late_spouse && (
-                  <p className="text-[13px] text-white/45">
-                    Late spouse: {family.late_spouse.name}
-                    {family.late_spouse.passed ? ` (passed ${family.late_spouse.passed})` : ""}
-                  </p>
-                )}
-                {family.children?.map((child, i) => (
-                  <p key={i} className="text-[13px] text-white/45">
-                    {child.name}{child.age ? ` (${child.age})` : ""}{child.location ? ` — ${child.location}` : ""}
-                  </p>
-                ))}
+              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Personality & Style</p>
+              <div className="space-y-2">
+                {[
+                  { key: "interests",         label: "Interests" },
+                  { key: "preferences",       label: "Preferences" },
+                  { key: "personality_traits",label: "Personality" },
+                  { key: "life_details",      label: "Life Details" },
+                ].map(({ key, label }) => {
+                  const items = soulProfile[key];
+                  if (!items || !Array.isArray(items) || items.length === 0) return null;
+                  return (
+                    <div key={key}>
+                      <p className="text-[10px] text-white/20 uppercase tracking-wider mb-1">{label}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {items.map((item, i) => (
+                          <span key={i} className="px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.15)" }}>
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
-        </div>
-      ) : (
-        <p className="text-sm text-white/20 italic">No personal facts learned yet — will populate as the customer shares information in conversation.</p>
+
+          {/* Goals & concerns */}
+          {hasGoals && (
+            <div>
+              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Goals & Concerns</p>
+              <div className="space-y-2">
+                {goals.length > 0 && (
+                  <ul className="space-y-1">
+                    {goals.map((g, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#FB923C", opacity: 0.6 }} />{g}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {concerns.length > 0 && (
+                  <ul className="space-y-1">
+                    {concerns.map((c, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#F87171", opacity: 0.6 }} />{c}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {actionItems.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-white/20 uppercase tracking-wider mb-1">Open Action Items</p>
+                    <ul className="space-y-1">
+                      {actionItems.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#60A5FA", opacity: 0.6 }} />{item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Agent notes */}
+          {agentNotes.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Agent Notes</p>
+              <ul className="space-y-1">
+                {agentNotes.map((note, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-white/40">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.15)" }} />{note}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 };
 
 
-// ── Goals Section ─────────────────────────────────────────────────────────────
-// Surfaces memory_file.life_plan / goals — what this customer cares about.
+// ── Memory Section ────────────────────────────────────────────────────────────
+// Past conversation summaries — what was discussed, giving the agent continuity.
 
-const GoalsSection = ({ memory }) => {
-  if (!memory) return null;
-  const plan     = memory.life_plan || memory.goals || {};
-  const concerns = plan.concerns || [];
-  const goals    = plan.goals    || [];
-
-  // Also grab action items from most recent session
-  const history    = memory.conversation_history || [];
-  const lastSession = history[history.length - 1];
-  const actionItems = lastSession?.action_items || [];
-
-  const hasData = goals.length > 0 || concerns.length > 0 || actionItems.length > 0 || Object.keys(plan).some(k => k !== "goals" && k !== "concerns");
-
-  if (!hasData) return null;
+const MemorySection = ({ memory }) => {
+  const history = memory?.conversation_history || [];
 
   return (
     <div className="rounded-2xl p-6" style={card}>
-      <h3 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
-        <Target size={14} style={{ color: "#FB923C" }} /> Goals & Priorities
-      </h3>
-      <div className="space-y-4">
-        {goals.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Goals</p>
-            <ul className="space-y-1.5">
-              {goals.map((g, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#FB923C", opacity: 0.6 }} />
-                  {g}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {concerns.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Concerns</p>
-            <ul className="space-y-1.5">
-              {concerns.map((c, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#F87171", opacity: 0.6 }} />
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {actionItems.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-1">
-              Open Action Items <span className="font-normal text-white/20">(from last session)</span>
-            </p>
-            <ul className="space-y-1.5">
-              {actionItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#60A5FA", opacity: 0.6 }} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+          <BookOpen size={14} style={{ color: "#60A5FA" }} /> Memory
+        </h3>
+        <span className="text-[11px] text-white/20">Past conversation history</span>
       </div>
+      {history.length > 0 ? (
+        <div className="space-y-3">
+          {history.map((entry, i) => (
+            <div key={i} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <p className="text-[13px] font-semibold text-white/60">
+                  Session #{entry.session || i + 1}
+                  {entry.date && <span className="text-white/25 font-normal"> — {new Date(entry.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
+                </p>
+                {entry.message_count != null && (
+                  <span className="text-[11px] text-white/25">{entry.message_count} messages</span>
+                )}
+              </div>
+              {entry.summary && <p className="text-[13px] text-white/40 mb-2">{entry.summary}</p>}
+              {entry.topics?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {entry.topics.map((t, j) => (
+                    <span key={j} className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(96,165,250,0.1)", color: "#60A5FA", border: "1px solid rgba(96,165,250,0.15)" }}>
+                      {t.replace(/_/g, " ")}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-white/20 italic">No memory yet — will populate after the first completed conversation.</p>
+      )}
     </div>
   );
 };

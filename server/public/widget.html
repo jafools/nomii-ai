@@ -759,9 +759,9 @@
       }
       try {
         window.parent.postMessage({
-          type:  'nomii:updateLabel',
-          label: bubbleLabel,
-          color: data.agent.primary_color || null,
+          type:         'nomii:updateLabel',
+          label:        bubbleLabel,
+          color:        data.agent.bubble_color || data.agent.primary_color || null,
         }, '*');
       } catch (_) {}
 
