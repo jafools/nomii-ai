@@ -99,8 +99,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 
     const raw = response.content[0]?.text?.trim() || '';
 
-    // Strip any markdown code fences if present
-    const jsonText = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    // Strip any markdown code fences if present (handles spaces, CRLF, trailing text)
+    const jsonText = raw.replace(/^```[\w\s]*\r?\n/, '').replace(/\r?\n```[\s\S]*$/, '').trim();
     const generated = JSON.parse(jsonText);
 
     return {

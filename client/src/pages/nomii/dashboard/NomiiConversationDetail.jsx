@@ -145,7 +145,10 @@ const NomiiConversationDetail = () => {
   const handleDownloadTranscript = async () => {
     setDownloading(true);
     try {
-      await downloadTranscript(id, name);
+      const displayName = convo?.first_name
+        ? `${convo.first_name || ""} ${convo.last_name || ""}`.trim()
+        : convo?.email || "Unknown";
+      await downloadTranscript(id, displayName);
     } catch (err) {
       console.error("Transcript download failed:", err);
     } finally {

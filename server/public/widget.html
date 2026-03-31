@@ -806,6 +806,8 @@
             addHistoryMessage(m.role, m.content, m.created_at);
           });
           scrollToBottom();
+          // Advance poll cursor past already-rendered history so we don't re-show them
+          lastPollTime = lastMsg.created_at;
         }
 
         showTyping(true);
@@ -994,9 +996,9 @@
   // ── Background poll — always-on mode detection ────────────────────────────
   // Starts immediately after session init so the widget detects when a human
   // agent takes over, even if the customer hasn't sent a new message.
-  function startBackgroundPoll() {
+  function startBackgroundPoll(sinceTime) {
     if (pollInterval) clearInterval(pollInterval);
-    lastPollTime = new Date().toISOString();
+    lastPollTime = sinceTime || new Date().toISOString();
     pollInterval = setInterval(pollForMessages, POLL_INTERVAL_AI);
   }
 

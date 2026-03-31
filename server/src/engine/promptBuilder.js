@@ -18,8 +18,8 @@
 
 function buildSystemPrompt({ tenant, customer, customerData, products, currentDate, handbackNote }) {
   const date = currentDate || new Date().toISOString().split('T')[0];
-  const soul = customer.soul_file;
-  const memory = customer.memory_file;
+  const soul = customer.soul_file || {};
+  const memory = customer.memory_file || {};
   const verticalConfig = tenant.vertical_config || {};
 
   const productsBlock = buildProductsBlock(products, tenant);

@@ -173,6 +173,10 @@
   // ── Listen for messages from the widget iframe ────────────────────────────────
   window.addEventListener('message', function (e) {
     if (!e.data || !e.data.type) return;
+    // Only accept messages from our iframe or from the host page itself
+    var fromIframe = (iframe && e.source === iframe.contentWindow);
+    var fromSelf   = (e.origin === window.location.origin);
+    if (!fromIframe && !fromSelf) return;
 
     // Allow the widget to close the panel (e.g. a close button inside)
     if (e.data.type === 'nomii:close') {

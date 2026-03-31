@@ -1032,7 +1032,7 @@ router.get('/customers/:id/export', async (req, res, next) => {
     // Conversation metadata (no message content — that's separately accessible)
     const { rows: convRows } = await db.query(
       `SELECT id, session_type, status, summary, topics_covered,
-              started_at, ended_at, messages_purged_at,
+              started_at, ended_at,
               (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = conversations.id) AS message_count
        FROM conversations
        WHERE customer_id = $1
@@ -1054,12 +1054,6 @@ router.get('/customers/:id/export', async (req, res, next) => {
        WHERE customer_id = $1
        ORDER BY created_at DESC
        LIMIT 200`,
-      [req.params.id]
-    );
-
-    // Mark last export time
-    await db.query(
-      `UPDATE customers SET last_export_at = NOW() WHERE id = $1`,
       [req.params.id]
     );
 
@@ -2829,8 +2823,10 @@ router.delete('/customers/:id/data/:category', requirePortalAuth, async (req, re
     if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
 
     const { rowCount } = await db.query(
-      `DELETE FROM customer_data WHERE customer_id = $1 AND category = $2`,
-      [id, category]
+      `DELETE FROM customer_data
+       WHERE customer_id = $1 AND category = $2
+         AND customer_id IN (SELECT id FROM customers WHERE tenant_id = $3 AND deleted_at IS NULL)`,
+      [id, category, req.portal.tenant_id]
     );
 
     res.json({ success: true, deleted: rowCount, category });
@@ -2849,8 +2845,10 @@ router.delete('/customers/:id/data/:category/:label', requirePortalAuth, async (
     if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
 
     const { rowCount } = await db.query(
-      `DELETE FROM customer_data WHERE customer_id = $1 AND category = $2 AND label = $3`,
-      [id, category, label]
+      `DELETE FROM customer_data
+       WHERE customer_id = $1 AND category = $2 AND label = $3
+         AND customer_id IN (SELECT id FROM customers WHERE tenant_id = $4 AND deleted_at IS NULL)`,
+      [id, category, label, req.portal.tenant_id]
     );
 
     res.json({ success: true, deleted: rowCount });

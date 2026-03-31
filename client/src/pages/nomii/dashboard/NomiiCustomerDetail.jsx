@@ -755,6 +755,7 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
       navigate("/nomii/dashboard/customers");
     } catch (err) {
       toast({ title: "Deletion failed", description: err.message, variant: "destructive" });
+    } finally {
       setDeleting(false);
     }
   };
