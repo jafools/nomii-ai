@@ -1,0 +1,89 @@
+// @ts-check
+const { test, expect } = require('@playwright/test');
+const { TEST_EMAIL, TEST_PASSWORD, SEL_LOGIN } = require('./helpers/constants');
+const { loginViaUI, loginViaAPI, logout } = require('./helpers/auth');
+
+test.describe('Login & Logout', () => {
+  test.beforeEach(async ({ page }) => {
+    // Ensure clean state — no token
+    await page.goto('/nomii/login');
+    await page.evaluate(() => localStorage.removeItem('nomii_portal_token'));
+  });
+
+  test('login page loads with form fields', async ({ page }) => {
+    await page.goto('/nomii/login');
+    await expect(page.locator('h1')).toContainText('Sign in to Nomii AI');
+    await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible();
+    await expect(page.locator(SEL_LOGIN.passwordInput)).toBeVisible();
+    await expect(page.locator(SEL_LOGIN.submitBtn)).toBeVisible();
+    await expect(page.locator(SEL_LOGIN.signupLink)).toBeVisible();
+  });
+
+  test('shows error on empty form submit', async ({ page }) => {
+    await page.goto('/nomii/login');
+    // Clear the required attribute so the browser doesn't block submission
+    await page.evaluate(() => {
+      document.querySelectorAll('input[required]').forEach((el) => {
+        el.removeAttribute('required');
+      });
+    });
+    await page.click(SEL_LOGIN.submitBtn);
+    // The form handler shows "Please fill in all fields."
+    await expect(page.getByText('Please fill in all fields')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('shows error on wrong password', async ({ page }) => {
+    await page.goto('/nomii/login');
+    await page.fill(SEL_LOGIN.emailInput, TEST_EMAIL);
+    await page.fill(SEL_LOGIN.passwordInput, 'wrong_password_xyz');
+    await page.click(SEL_LOGIN.submitBtn);
+    // Wait for the error message to appear
+    await expect(page.locator(SEL_LOGIN.errorMsg)).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('successful login navigates to dashboard', async ({ page }) => {
+    await loginViaUI(page);
+    // Should be on dashboard or onboarding
+    expect(page.url()).toMatch(/\/(dashboard|onboarding)/);
+  });
+
+  test('dashboard redirects to login when token cleared', async ({ page }) => {
+    // Login first
+    await loginViaAPI(page);
+    await page.goto('/nomii/dashboard');
+    await page.waitForURL(/\/dashboard/, { timeout: 10_000 });
+
+    // Logout — clear token
+    await logout(page);
+    await page.goto('/nomii/dashboard');
+    // Should redirect to login
+    await page.waitForURL(/\/login/, { timeout: 10_000 });
+    await expect(page.locator('h1')).toContainText('Sign in');
+  });
+
+  test('forgot password flow shows success message', async ({ page }) => {
+    await page.goto('/nomii/login');
+    await page.click(SEL_LOGIN.forgotLink);
+    // Should show "Reset your password" heading
+    await expect(page.getByText('Reset your password')).toBeVisible();
+
+    await page.fill('#forgot-email', TEST_EMAIL);
+    await page.click('button[type="submit"]');
+    // Should show success message (always shows success to prevent enumeration)
+    await expect(page.getByText('password reset link has been sent')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('signup link navigates to registration page', async ({ page }) => {
+    await page.goto('/nomii/login');
+    await page.click(SEL_LOGIN.signupLink);
+    await page.waitForURL(/\/signup/);
+    expect(page.url()).toContain('/nomii/signup');
+  });
+
+  test('already-authenticated user is redirected from login to dashboard', async ({ page }) => {
+    await loginViaAPI(page);
+    await page.goto('/nomii/login');
+    // useEffect in NomiiLogin checks isLoggedIn() and redirects
+    await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 10_000 });
+  });
+});

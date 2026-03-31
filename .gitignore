@@ -30,6 +30,12 @@ pgdata/
 *.tmp
 *.bak
 
+# Playwright
+test-results/
+tests/e2e/report/
+playwright-report/
+blob-report/
+
 # Ruflo / Claude Flow runtime data (keep config, exclude runtime)
 .claude-flow/data/
 .claude-flow/logs/

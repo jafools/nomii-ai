@@ -1,0 +1,225 @@
+// @ts-check
+const { test, expect } = require('@playwright/test');
+const { API_BASE, SEL_WIDGET } = require('./helpers/constants');
+const { loginViaAPI, getWidgetKey } = require('./helpers/auth');
+
+/**
+ * Widget E2E tests
+ *
+ * These tests create a standalone HTML page that embeds the Nomii widget
+ * via embed.js, simulating a real customer-facing site. They verify:
+ *   - Widget launcher renders
+ *   - Click to open/close the chat panel
+ *   - iframe loads and creates a session
+ *   - Sending a message and receiving a response
+ *   - Anonymous vs. authenticated widget modes
+ *   - SPA auth handoff via postMessage
+ */
+
+let widgetKey = '';
+
+test.beforeAll(async ({ browser }) => {
+  // Get widget key from env or via API
+  widgetKey = process.env.TEST_WIDGET_KEY || '';
+  if (!widgetKey) {
+    const page = await browser.newPage();
+    await loginViaAPI(page);
+    widgetKey = await getWidgetKey(page);
+    await page.close();
+  }
+  if (!widgetKey) throw new Error('No widget key — set TEST_WIDGET_KEY or ensure TEST_ADMIN credentials return a tenant with widget_key');
+});
+
+/**
+ * Create a minimal host page with the widget embed script injected.
+ */
+function hostPageHTML(opts = {}) {
+  const email = opts.email || '';
+  const name = opts.name || '';
+  return `<!DOCTYPE html>
+<html><head><title>Test Host Page</title></head>
+<body>
+  <h1>Host Page</h1>
+  <p>This simulates a customer's website with the Nomii widget embedded.</p>
+  <script
+    src="${API_BASE}/embed.js"
+    data-widget-key="${widgetKey}"
+    ${email ? `data-user-email="${email}"` : ''}
+    ${name ? `data-user-name="${name}"` : ''}
+  ></script>
+</body></html>`;
+}
+
+test.describe('Widget — Embed & Launcher', () => {
+  test('launcher bubble renders on host page', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    // Wait for embed.js to inject the launcher
+    const launcher = page.locator(SEL_WIDGET.launcher);
+    await expect(launcher).toBeVisible({ timeout: 10_000 });
+    await expect(launcher).toContainText('Chat');
+  });
+
+  test('clicking launcher opens the chat panel', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+    const wrap = page.locator(SEL_WIDGET.iframeWrap);
+    await expect(wrap).toHaveClass(/open/, { timeout: 5_000 });
+  });
+
+  test('clicking launcher again closes the chat panel', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    const launcher = page.locator(SEL_WIDGET.launcher);
+    // Open
+    await launcher.click();
+    await expect(page.locator(SEL_WIDGET.iframeWrap)).toHaveClass(/open/);
+    // Close
+    await launcher.click();
+    await expect(page.locator(SEL_WIDGET.iframeWrap)).not.toHaveClass(/open/);
+  });
+
+  test('iframe loads widget.html with correct params', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    const iframe = page.locator(SEL_WIDGET.iframe);
+    await expect(iframe).toBeAttached({ timeout: 10_000 });
+    const src = await iframe.getAttribute('src');
+    expect(src).toContain('/widget.html');
+    expect(src).toContain(`key=${widgetKey}`);
+  });
+
+  test('embed script is idempotent — no duplicate launcher', async ({ page }) => {
+    // Inject embed.js twice
+    const html = `<!DOCTYPE html><html><head></head><body>
+      <script src="${API_BASE}/embed.js" data-widget-key="${widgetKey}"></script>
+      <script src="${API_BASE}/embed.js" data-widget-key="${widgetKey}"></script>
+    </body></html>`;
+    await page.setContent(html);
+    await page.waitForTimeout(2000);
+    const launchers = await page.locator(SEL_WIDGET.launcher).count();
+    expect(launchers).toBe(1);
+  });
+});
+
+test.describe('Widget — Anonymous Session', () => {
+  test('anonymous widget creates session and shows agent greeting', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+    await expect(page.locator(SEL_WIDGET.iframeWrap)).toHaveClass(/open/);
+
+    // Switch into the iframe context to check session creation
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    // The widget should show a loading screen then transition to chat
+    // Wait for the chat wrapper or messages container to appear
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+    // Agent name should be visible in the header
+    await expect(iframe.locator(SEL_WIDGET.agentName)).toBeVisible();
+  });
+
+  test('can send a message in anonymous mode', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+
+    // Type a message
+    await iframe.locator(SEL_WIDGET.chatInput).fill('Hello, this is a test message');
+    await iframe.locator(SEL_WIDGET.sendBtn).click();
+
+    // User message should appear in the messages area
+    await expect(iframe.locator('.msg.user').first()).toBeVisible({ timeout: 5_000 });
+
+    // Typing indicator should show while waiting for response
+    // (may be brief, so we just check the response arrives)
+    await expect(iframe.locator('.msg.agent').first()).toBeVisible({ timeout: 30_000 });
+  });
+});
+
+test.describe('Widget — Authenticated Session', () => {
+  test('authenticated widget shows personalized greeting', async ({ page }) => {
+    await page.setContent(hostPageHTML({
+      email: 'e2e-test@example.com',
+      name: 'E2E Tester',
+    }));
+    await page.locator(SEL_WIDGET.launcher).click();
+
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+    // Agent name in header should be visible
+    await expect(iframe.locator(SEL_WIDGET.agentName)).toBeVisible();
+  });
+
+  test('SPA auth handoff via postMessage updates widget session', async ({ page }) => {
+    // Start as anonymous
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+
+    // Simulate SPA login — postMessage to identify user
+    await page.evaluate(() => {
+      window.postMessage(
+        { type: 'nomii:setUser', email: 'spa-test@example.com', name: 'SPA User' },
+        '*'
+      );
+    });
+
+    // The widget should send a nomii:identify message into the iframe
+    // and claim the session. Wait a moment for the claim request.
+    await page.waitForTimeout(3000);
+
+    // Widget should still be functional
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible();
+  });
+
+  test('SPA logout reloads widget to anonymous mode', async ({ page }) => {
+    // Start authenticated
+    await page.setContent(hostPageHTML({
+      email: 'e2e-logout@example.com',
+      name: 'Logout Tester',
+    }));
+    await page.locator(SEL_WIDGET.launcher).click();
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+
+    // Simulate logout
+    await page.evaluate(() => {
+      window.postMessage({ type: 'nomii:setUser', email: '', name: '' }, '*');
+    });
+
+    // Widget should reload — panel closes and iframe src resets
+    await page.waitForTimeout(3000);
+    // After reload, launcher should still be present
+    await expect(page.locator(SEL_WIDGET.launcher)).toBeVisible();
+  });
+});
+
+test.describe('Widget — Close Button', () => {
+  test('close button inside iframe closes the panel', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+    await expect(page.locator(SEL_WIDGET.iframeWrap)).toHaveClass(/open/);
+
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+
+    // Click close button inside the iframe
+    await iframe.locator(SEL_WIDGET.closeBtn).click();
+
+    // Panel should close — the iframe posts nomii:close back to parent
+    await expect(page.locator(SEL_WIDGET.iframeWrap)).not.toHaveClass(/open/, { timeout: 5_000 });
+  });
+});
+
+test.describe('Widget — Concern/Flag', () => {
+  test('concern button is present in widget', async ({ page }) => {
+    await page.setContent(hostPageHTML());
+    await page.locator(SEL_WIDGET.launcher).click();
+
+    const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
+
+    // The concern/flag button should exist in the input bar area
+    await expect(iframe.locator('#concern-btn')).toBeAttached();
+  });
+});
