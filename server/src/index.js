@@ -85,18 +85,14 @@ const registerLimiter = makeRateLimiter({
   message: { error: 'Too many registration attempts. Try again later.' },
 });
 
-// Tenant + portal login: 3 per 15 min per IP (brute-force protection)
-// Localhost is skipped so automated test suites aren't blocked by their own login calls.
+// Tenant + portal login: 3 per 15 min per IP in production (brute-force protection)
+// Non-production uses a high limit so automated test suites aren't blocked.
 const loginLimiter = makeRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max:      3,
+  max:      process.env.NODE_ENV === 'production' ? 3 : 500,
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-  skip: (req) => {
-    const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
-    return loopback.includes(req.ip) || process.env.NODE_ENV === 'test';
-  },
 });
 
 // Global safety net: 150 req/min per IP (catches all other endpoints)

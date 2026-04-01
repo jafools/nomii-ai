@@ -208,7 +208,7 @@ const NomiiLogin = () => {
                 )}
 
                 {error && !unverified && (
-                  <div className="rounded-lg px-4 py-3 text-sm font-medium" style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
+                  <div data-testid="login-error" className="rounded-lg px-4 py-3 text-sm font-medium" style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
                     {error}
                   </div>
                 )}

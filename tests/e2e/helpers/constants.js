@@ -24,7 +24,7 @@ module.exports = {
     emailInput: '#email',
     passwordInput: '#password',
     submitBtn: 'button[type="submit"]',
-    errorMsg: '[style*="rgba(239,68,68"]',
+    errorMsg: '[data-testid="login-error"]',
     forgotLink: 'button:has-text("Forgot password?")',
     signupLink: 'a[href="/nomii/signup"]',
   },
