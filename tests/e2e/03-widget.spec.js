@@ -152,7 +152,7 @@ async function completeIntroScreens(iframe) {
 
   if (await agentNameScreen.isVisible().catch(() => false)) {
     await iframe.locator('#agent-name-input').fill('Aria');
-    await iframe.locator('#agent-name-submit-btn').waitFor({ state: 'enabled', timeout: 3_000 });
+    await expect(iframe.locator('#agent-name-submit-btn')).toBeEnabled({ timeout: 3_000 });
     await iframe.locator('#agent-name-submit-btn').click();
   }
 
@@ -160,7 +160,7 @@ async function completeIntroScreens(iframe) {
   const nameScreen = iframe.locator('#name-screen.visible');
   if (await nameScreen.isVisible().catch(() => false)) {
     await iframe.locator('#name-input').fill('E2E Tester');
-    await iframe.locator('#name-submit-btn').waitFor({ state: 'enabled', timeout: 3_000 });
+    await expect(iframe.locator('#name-submit-btn')).toBeEnabled({ timeout: 3_000 });
     await iframe.locator('#name-submit-btn').click();
   }
 }
