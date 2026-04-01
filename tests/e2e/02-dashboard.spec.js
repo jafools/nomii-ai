@@ -77,9 +77,15 @@ test.describe('Dashboard Navigation', () => {
   });
 
   test('invalid dashboard route stays within dashboard shell', async ({ page }) => {
-    await page.goto('/nomii/dashboard/nonexistent-page');
-    // Should still be authenticated — not redirected to login
-    await page.waitForTimeout(2000);
+    // Use client-side navigation (no full page reload) so NomiiAuthProvider
+    // stays mounted and doesn't re-fire getMe() — which can fail transiently
+    // when the cold request hits api.pontensolutions.com mid-test.
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/nomii/dashboard/nonexistent-page');
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    });
+    // React Router inner catch-all redirects back to /nomii/dashboard
+    await page.waitForTimeout(1000);
     expect(page.url()).not.toContain('/login');
   });
 });
