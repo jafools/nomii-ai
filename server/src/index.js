@@ -58,9 +58,10 @@ function makeRateLimiter(opts) {
 
 // Widget session creation: 6 new sessions per 5 min per IP
 // Prevents widget key scraping and anonymous session flooding
+// Override via WIDGET_SESSION_RATE_LIMIT_MAX env var for test environments
 const widgetSessionLimiter = makeRateLimiter({
   windowMs: 5 * 60 * 1000,
-  max:      6,
+  max:      parseInt(process.env.WIDGET_SESSION_RATE_LIMIT_MAX || '6', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many session requests. Please wait a moment.' },

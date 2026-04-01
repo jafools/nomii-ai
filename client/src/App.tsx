@@ -85,6 +85,7 @@ const App = () => (
             <Route path="plans" element={<NomiiPlans />} />
             <Route path="settings" element={<NomiiSettings />} />
             <Route path="profile" element={<NomiiProfile />} />
+            <Route path="*" element={<Navigate to="/nomii/dashboard" replace />} />
           </Route>
 
           {/* Catch-all → login */}
