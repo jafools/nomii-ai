@@ -86,12 +86,14 @@ const registerLimiter = makeRateLimiter({
 });
 
 // Tenant + portal login: 3 per 15 min per IP (brute-force protection)
+// Localhost is skipped so automated test suites aren't blocked by their own login calls.
 const loginLimiter = makeRateLimiter({
   windowMs: 15 * 60 * 1000,
   max:      3,
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1',
 });
 
 // Global safety net: 150 req/min per IP (catches all other endpoints)
