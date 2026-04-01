@@ -85,11 +85,12 @@ const registerLimiter = makeRateLimiter({
   message: { error: 'Too many registration attempts. Try again later.' },
 });
 
-// Tenant + portal login: 3 per 15 min per IP in production (brute-force protection)
-// Non-production uses a high limit so automated test suites aren't blocked.
+// Tenant + portal login: 3 per 15 min per IP (brute-force protection).
+// Override via LOGIN_RATE_LIMIT_MAX env var — useful for test environments
+// where many auth calls happen in quick succession (e.g. set to 200 in .env).
 const loginLimiter = makeRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max:      process.env.NODE_ENV === 'production' ? 3 : 500,
+  max:      parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '3', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },

@@ -40,6 +40,7 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       NODE_ENV: production
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-3}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_SECURE: ${SMTP_SECURE:-true}

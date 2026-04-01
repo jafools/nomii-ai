@@ -4,8 +4,21 @@ const { SEL_DASHBOARD } = require('./helpers/constants');
 const { loginViaAPI } = require('./helpers/auth');
 
 test.describe('Dashboard Navigation', () => {
+  let authToken = null;
+
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    const body = await loginViaAPI(page);
+    authToken = body.token;
+    await page.close();
+  });
+
   test.beforeEach(async ({ page }) => {
-    await loginViaAPI(page);
+    // Inject the shared token rather than re-logging in for every test
+    await page.goto('/nomii/login');
+    await page.evaluate((token) => {
+      localStorage.setItem('nomii_portal_token', token);
+    }, authToken);
     await page.goto('/nomii/dashboard');
     await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
   });
