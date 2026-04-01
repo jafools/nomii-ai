@@ -86,7 +86,7 @@ async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKe
     messages,
   });
 
-  return response.content[0].text;
+  return response.content[0]?.text ?? '';
 }
 
 /**

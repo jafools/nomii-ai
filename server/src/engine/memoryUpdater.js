@@ -27,8 +27,9 @@
  * Keyword-based fallback for fact extraction when no API key is available.
  */
 
-const { callClaude } = require('../services/llmService');
+const { callClaude, resolveApiKey } = require('../services/llmService');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
+const db = require('../db');
 
 const HAIKU = 'claude-haiku-4-5-20251001';
 
@@ -593,9 +594,7 @@ async function updateMemoryAfterSession(conversationId, customerId) {
     );
     if (!msgRows.length) return null;
 
-    const { resolveApiKey } = require('../services/llmService');
     const apiKey = resolveApiKey(conv);
-    const db_module = require('../db');
 
     const lastCustomer = msgRows.filter(m => m.role === 'customer').pop();
     const lastAgent    = msgRows.filter(m => m.role === 'agent').pop();
@@ -611,7 +610,7 @@ async function updateMemoryAfterSession(conversationId, customerId) {
       messageCount:    msgRows.length,
       sessionType:     'regular',
       apiKey,
-      db:              db_module,
+      db,
     });
 
     return { ok: true };
@@ -621,8 +620,6 @@ async function updateMemoryAfterSession(conversationId, customerId) {
   }
 }
 
-
-const db = require('../db');
 
 module.exports = {
   updateMemoryAfterExchange,

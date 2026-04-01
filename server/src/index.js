@@ -123,9 +123,6 @@ app.use((req, res, next) => {
   portalCors(req, res, next);
 });
 
-// Legacy blanket CORS — kept only for routes not yet covered by portalCors
-app.use(cors());
-
 // Stripe webhook needs raw body BEFORE json parsing
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), require('./routes/stripe-webhook'));
 

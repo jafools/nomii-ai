@@ -34,15 +34,12 @@ export async function apiRequest(method, path, body) {
 }
 
 // Auth endpoints
-export const register = async (email, password, firstName, lastName, companyName, vertical, tosAccepted, newsletterOptIn = false) => {
-  const data = await apiRequest("POST", "/api/onboard/register", {
+export const register = (email, password, firstName, lastName, companyName, vertical, tosAccepted, newsletterOptIn = false) =>
+  apiRequest("POST", "/api/onboard/register", {
     email, password, first_name: firstName, last_name: lastName,
     company_name: companyName, vertical, tos_accepted: tosAccepted,
     newsletter_opt_in: newsletterOptIn,
   });
-  if (data.token) setToken(data.token);
-  return data;
-};
 
 export const verifyEmail = async (token) => {
   const data = await apiRequest("GET", `/api/onboard/verify/${token}`);
@@ -247,12 +244,27 @@ export const testSlack        = ()     => apiRequest("POST", "/api/portal/connec
 export const testTeams        = ()     => apiRequest("POST", "/api/portal/connectors/teams/test");
 
 // Invite acceptance (unauthenticated)
-export const getInviteInfo = (token) => {
-  return fetch(`${BASE_URL}/api/onboard/invite/${token}`).then(r => r.json());
+export const getInviteInfo = async (token) => {
+  const res = await fetch(`${BASE_URL}/api/onboard/invite/${token}`);
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data.error || "Invalid invite link");
+    err.status = res.status;
+    throw err;
+  }
+  return data;
 };
-export const acceptInvite = (token, password, first_name, last_name) =>
-  fetch(`${BASE_URL}/api/onboard/accept-invite`, {
+export const acceptInvite = async (token, password, first_name, last_name) => {
+  const res = await fetch(`${BASE_URL}/api/onboard/accept-invite`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, password, first_name, last_name }),
-  }).then(r => r.json());
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data.error || "Failed to accept invite");
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+};

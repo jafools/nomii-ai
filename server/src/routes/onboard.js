@@ -629,7 +629,6 @@ router.post('/accept-invite', async (req, res, next) => {
       return res.status(410).json({ error: 'This invite link has expired. Please ask to be re-invited.' });
     }
 
-    const bcrypt = require('bcrypt');
     const hash = await bcrypt.hash(password, 12);
 
     await db.query(
