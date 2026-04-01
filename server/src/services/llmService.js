@@ -80,7 +80,7 @@ async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKe
   const client = getClient(key);
 
   const response = await client.messages.create({
-    model: model || 'claude-sonnet-4-20250514',
+    model: model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
     max_tokens: maxTokens,
     system: systemPrompt,
     messages,
@@ -134,7 +134,7 @@ async function callClaudeWithTools(
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const response = await client.messages.create({
-      model:      model || 'claude-sonnet-4-20250514',
+      model:      model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
       max_tokens: maxTokens,
       system:     systemPrompt,
       messages:   currentMessages,
@@ -214,7 +214,7 @@ async function validateApiKey(apiKey, provider = 'anthropic') {
   try {
     const client = new Anthropic({ apiKey });
     await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 10,
       messages: [{ role: 'user', content: 'Say "ok"' }],
     });

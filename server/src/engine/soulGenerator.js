@@ -92,7 +92,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
   try {
     const client = new Anthropic({ apiKey: resolvedKey });
     const response = await client.messages.create({
-      model:      'claude-haiku-4-5-20251001',
+      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 800,
       messages:   [{ role: 'user', content: prompt }],
     });

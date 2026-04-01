@@ -318,6 +318,16 @@ router.post('/session', async (req, res, next) => {
           last_name:   customer.last_name,
         });
       }
+
+      if (isNewConversation) {
+        fireNotifications(tenant.id, 'conversation.started', {
+          conversation_id: conversationId,
+          customer_id:     customer.id,
+          email:           customer.email,
+          first_name:      customer.first_name,
+          last_name:       customer.last_name,
+        });
+      }
     }
 
     // 5. Determine session flags
@@ -791,6 +801,12 @@ router.post('/flag', requireWidgetAuth, async (req, res, next) => {
     fireWebhooks(tenant_id, 'concern.raised', {
       customer_id,
       conversation_id,
+      description,
+    });
+
+    fireNotifications(tenant_id, 'conversation.escalated', {
+      conversation_id,
+      customer_id,
       description,
     });
 
@@ -1309,7 +1325,7 @@ ${contextLine}`;
     const raw = await callClaude(
       systemPrompt,
       [{ role: 'user', content: userContent }],
-      'claude-haiku-4-5-20251001',
+      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
       100,
       apiKey
     );

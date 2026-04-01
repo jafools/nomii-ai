@@ -31,7 +31,7 @@ const { callClaude, resolveApiKey } = require('../services/llmService');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const db = require('../db');
 
-const HAIKU = 'claude-haiku-4-5-20251001';
+const HAIKU = process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001';
 
 // ─── Session end detection ─────────────────────────────────────────────────────
 

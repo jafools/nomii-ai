@@ -131,7 +131,7 @@ async function generateTenantConfig(businessDescription, apiKey) {
   const client = new Anthropic({ apiKey });
 
   const response = await client.messages.create({
-    model:      'claude-sonnet-4-20250514',
+    model:      process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
     max_tokens: 3000,
     system:     CONFIGURATOR_SYSTEM_PROMPT,
     messages: [

@@ -438,7 +438,7 @@ Extract up to 20 items. If no products or services are identifiable, respond wit
     const userPrompt = `Extract products and services from this company's ${sourceLabel} as a JSON array:\n\n${sourceText}`;
 
     const message = await client.messages.create({
-      model:      'claude-haiku-4-5-20251001',
+      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
       system:     systemPrompt,
       messages:   [{ role: 'user', content: userPrompt }],
@@ -561,7 +561,7 @@ Columns: ${JSON.stringify(headers)}
 Sample data (first few rows): ${JSON.stringify(sample_rows?.slice(0, 3) || [])}`;
 
     const message = await client.messages.create({
-      model:      'claude-haiku-4-5-20251001',
+      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system:     systemPrompt,
       messages:   [{ role: 'user', content: userPrompt }],
