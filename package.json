@@ -13,11 +13,13 @@
     "db:reset": "cd server && npm run db:reset",
     "test": "NODE_ENV=test node tests/api.test.js",
     "test:watch": "NODE_ENV=test node --watch tests/api.test.js",
+    "test:all": "NODE_ENV=test node tests/api.test.js && npx playwright test",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
     "test:e2e:debug": "npx playwright test --debug",
-    "test:e2e:report": "npx playwright show-report tests/e2e/report"
+    "test:e2e:report": "npx playwright show-report tests/e2e/report",
+    "test:e2e:grep": "npx playwright test --grep"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
