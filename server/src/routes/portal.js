@@ -1205,6 +1205,107 @@ router.get('/dashboard', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/portal/analytics?period=7d|30d|90d  — time-series chart data
+router.get('/analytics', async (req, res, next) => {
+  try {
+    const tid = req.portal.tenant_id;
+    const VALID_PERIODS = { '7d': 7, '30d': 30, '90d': 90 };
+    const days = VALID_PERIODS[req.query.period] || 30;
+
+    const [dailyMessages, dailyConversations, topCustomers, periodConvs, periodMsgs] =
+      await Promise.all([
+        // Daily message volume
+        db.query(
+          `SELECT DATE(m.created_at) AS day, COUNT(*)::int AS count
+           FROM messages m
+           JOIN conversations c ON m.conversation_id = c.id
+           JOIN customers cu ON c.customer_id = cu.id
+           WHERE cu.tenant_id = $1
+             AND cu.deleted_at IS NULL
+             AND m.created_at >= NOW() - INTERVAL '${days} days'
+           GROUP BY DATE(m.created_at)
+           ORDER BY day`,
+          [tid]
+        ),
+        // Daily conversation stats (total started + escalated)
+        db.query(
+          `SELECT DATE(c.created_at) AS day,
+                  COUNT(*)::int AS total,
+                  COUNT(*) FILTER (WHERE c.status = 'escalated')::int AS escalated
+           FROM conversations c
+           JOIN customers cu ON c.customer_id = cu.id
+           WHERE cu.tenant_id = $1
+             AND cu.deleted_at IS NULL
+             AND c.created_at >= NOW() - INTERVAL '${days} days'
+           GROUP BY DATE(c.created_at)
+           ORDER BY day`,
+          [tid]
+        ),
+        // Top 5 customers by message count in period (excluding anonymous)
+        db.query(
+          `SELECT
+             cu.id,
+             COALESCE(
+               cu.soul_file->>'customer_name',
+               NULLIF(TRIM(cu.first_name || ' ' || cu.last_name), ''),
+               cu.email
+             ) AS name,
+             COUNT(m.id)::int AS message_count,
+             COUNT(DISTINCT c.id)::int AS conversation_count
+           FROM messages m
+           JOIN conversations c ON m.conversation_id = c.id
+           JOIN customers cu ON c.customer_id = cu.id
+           WHERE cu.tenant_id = $1
+             AND cu.deleted_at IS NULL
+             AND cu.email NOT LIKE 'anon\\_%@visitor.nomii'
+             AND m.created_at >= NOW() - INTERVAL '${days} days'
+           GROUP BY cu.id, name
+           ORDER BY message_count DESC
+           LIMIT 5`,
+          [tid]
+        ),
+        // Period conversation summary
+        db.query(
+          `SELECT
+             COUNT(*)::int AS total_conversations,
+             COUNT(*) FILTER (WHERE c.status = 'escalated')::int AS escalated,
+             COUNT(*) FILTER (WHERE c.status = 'ended')::int AS resolved
+           FROM conversations c
+           JOIN customers cu ON c.customer_id = cu.id
+           WHERE cu.tenant_id = $1
+             AND cu.deleted_at IS NULL
+             AND c.created_at >= NOW() - INTERVAL '${days} days'`,
+          [tid]
+        ),
+        // Period message total
+        db.query(
+          `SELECT COUNT(*)::int AS total_messages
+           FROM messages m
+           JOIN conversations c ON m.conversation_id = c.id
+           JOIN customers cu ON c.customer_id = cu.id
+           WHERE cu.tenant_id = $1
+             AND cu.deleted_at IS NULL
+             AND m.created_at >= NOW() - INTERVAL '${days} days'`,
+          [tid]
+        ),
+      ]);
+
+    const conv = periodConvs.rows[0] || {};
+    res.json({
+      period_days:          days,
+      daily_messages:       dailyMessages.rows,
+      daily_conversations:  dailyConversations.rows,
+      top_customers:        topCustomers.rows,
+      summary: {
+        total_conversations: conv.total_conversations || 0,
+        escalated:           conv.escalated || 0,
+        resolved:            conv.resolved || 0,
+        total_messages:      periodMsgs.rows[0]?.total_messages || 0,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 // GET /api/portal/conversations
 router.get('/conversations', async (req, res, next) => {
   try {

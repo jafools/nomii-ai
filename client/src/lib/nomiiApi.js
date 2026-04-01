@@ -115,6 +115,7 @@ export const downloadTranscript = async (conversationId, customerName) => {
 };
 export const getConcerns = () => apiRequest("GET", "/api/portal/concerns");
 export const getVisitors = () => apiRequest("GET", "/api/portal/visitors");
+export const getAnalytics = (period = "30d") => apiRequest("GET", `/api/portal/analytics?period=${period}`);
 
 export const aiSuggestProducts = (urlOrDescription) => {
   const isUrl = /^https?:\/\//i.test(urlOrDescription) || urlOrDescription.includes(".");

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboard, getVisitors, getSubscription } from "@/lib/nomiiApi";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
+import NomiiAnalyticsCharts from "./NomiiAnalyticsCharts";
 import { MessageSquare, Users, AlertTriangle, RefreshCw, TrendingUp, ArrowUpRight, Mail, UserX, ChevronDown, ChevronUp, UserMinus } from "lucide-react";
 
 const relativeTime = (dateStr) => {
@@ -267,8 +268,11 @@ const NomiiOverview = () => {
         })}
       </div>
 
+      {/* Analytics charts */}
+      <NomiiAnalyticsCharts />
+
       {/* Recent Conversations */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={cardStyle}>
+      <div className="rounded-2xl overflow-hidden mt-8 mb-6" style={cardStyle}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
           <h2 className="text-sm font-semibold text-white/70">Recent Conversations</h2>
           {conversations.length > 0 && (
