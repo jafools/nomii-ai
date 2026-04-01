@@ -134,6 +134,37 @@ test.describe('Widget — Anonymous Session', () => {
   });
 });
 
+/**
+ * Helper: new authenticated users see an agent-name or customer-name intro screen
+ * before the chat wrapper. Fill and submit whichever screen appears, then wait
+ * for #chat-wrapper to become visible.
+ */
+async function completeIntroScreens(iframe) {
+  // Agent name screen (first-ever login for this customer)
+  const agentNameScreen = iframe.locator('#agent-name-screen.visible');
+  const chatWrapper = iframe.locator('#chat-wrapper');
+
+  // Wait briefly for either the intro screen or the chat wrapper to appear
+  await Promise.race([
+    agentNameScreen.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {}),
+    chatWrapper.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {}),
+  ]);
+
+  if (await agentNameScreen.isVisible().catch(() => false)) {
+    await iframe.locator('#agent-name-input').fill('Aria');
+    await iframe.locator('#agent-name-submit-btn').waitFor({ state: 'enabled', timeout: 3_000 });
+    await iframe.locator('#agent-name-submit-btn').click();
+  }
+
+  // Customer name screen (agent already named but no customer name on file)
+  const nameScreen = iframe.locator('#name-screen.visible');
+  if (await nameScreen.isVisible().catch(() => false)) {
+    await iframe.locator('#name-input').fill('E2E Tester');
+    await iframe.locator('#name-submit-btn').waitFor({ state: 'enabled', timeout: 3_000 });
+    await iframe.locator('#name-submit-btn').click();
+  }
+}
+
 test.describe('Widget — Authenticated Session', () => {
   test('authenticated widget shows personalized greeting', async ({ page }) => {
     await page.setContent(hostPageHTML({
@@ -143,6 +174,8 @@ test.describe('Widget — Authenticated Session', () => {
     await page.locator(SEL_WIDGET.launcher).click();
 
     const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    // New customers may see agent-name / customer-name intro screens first
+    await completeIntroScreens(iframe);
     await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
     // Agent name in header should be visible
     await expect(iframe.locator(SEL_WIDGET.agentName)).toBeVisible();
@@ -180,6 +213,8 @@ test.describe('Widget — Authenticated Session', () => {
     }));
     await page.locator(SEL_WIDGET.launcher).click();
     const iframe = page.frameLocator(SEL_WIDGET.iframe);
+    // New customers may see intro screens before reaching chat
+    await completeIntroScreens(iframe);
     await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
 
     // Simulate logout
