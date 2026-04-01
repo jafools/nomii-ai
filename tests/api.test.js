@@ -109,10 +109,7 @@ async function del(path, token) {
 
 async function checkServerRunning() {
   try {
-    await fetch(`${BASE_URL}/api/onboard/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
+    await fetch(`${BASE_URL}/api/health`, {
       signal: AbortSignal.timeout(3000),
     });
     return true;

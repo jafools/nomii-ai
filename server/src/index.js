@@ -93,7 +93,10 @@ const loginLimiter = makeRateLimiter({
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-  skip: (req) => req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1',
+  skip: (req) => {
+    const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+    return loopback.includes(req.ip) || process.env.NODE_ENV === 'test';
+  },
 });
 
 // Global safety net: 150 req/min per IP (catches all other endpoints)
