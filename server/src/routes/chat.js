@@ -183,16 +183,23 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
       // Notify advisor via email — fire-and-forget (don't block response)
       if (advisorEmail) {
         const customerName = [conv.first_name, conv.last_name].filter(Boolean).join(' ') || 'A customer';
-        sendFlagNotificationEmail({
-          to:             advisorEmail,
-          advisorName:    advisorName,
-          customerName:   customerName,
-          flagType:       flag.type,
-          severity:       flag.severity,
-          description:    flag.description,
-          conversationId: conversation_id,
-          tenantName:     conv.tenant_name,
-        }).catch(err => console.error('[Chat] Flag notification email failed:', err.message));
+        // Load tenant email template settings for branding
+        db.query('SELECT email_from_name, email_reply_to, email_footer FROM tenants WHERE id = $1', [conv.tenant_id])
+          .then(({ rows: tRows }) => {
+            const te = tRows[0] || {};
+            sendFlagNotificationEmail({
+              to:             advisorEmail,
+              advisorName:    advisorName,
+              customerName:   customerName,
+              flagType:       flag.type,
+              severity:       flag.severity,
+              description:    flag.description,
+              conversationId: conversation_id,
+              tenantName:     conv.tenant_name,
+              tenantEmail:    { email_from_name: te.email_from_name, email_reply_to: te.email_reply_to, email_footer: te.email_footer },
+            }).catch(err => console.error('[Chat] Flag notification email failed:', err.message));
+          })
+          .catch(err => console.error('[Chat] Failed to load tenant email settings:', err.message));
       }
     }
 

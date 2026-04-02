@@ -244,6 +244,10 @@ export const updateConnectors = (data) => apiRequest("PUT",  "/api/portal/connec
 export const testSlack        = ()     => apiRequest("POST", "/api/portal/connectors/slack/test");
 export const testTeams        = ()     => apiRequest("POST", "/api/portal/connectors/teams/test");
 
+// Email templates
+export const getEmailTemplates    = ()     => apiRequest("GET", "/api/portal/email-templates");
+export const updateEmailTemplates = (data) => apiRequest("PUT", "/api/portal/email-templates", data);
+
 // Invite acceptance (unauthenticated)
 export const getInviteInfo = async (token) => {
   const res = await fetch(`${BASE_URL}/api/onboard/invite/${token}`);

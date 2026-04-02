@@ -255,6 +255,54 @@ router.put('/company', async (req, res, next) => {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
+// EMAIL TEMPLATES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /api/portal/email-templates  — current email customization for this tenant
+router.get('/email-templates', async (req, res, next) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT email_from_name, email_reply_to, email_footer FROM tenants WHERE id = $1`,
+      [req.portal.tenant_id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Tenant not found' });
+    res.json({
+      email_from_name: rows[0].email_from_name || '',
+      email_reply_to:  rows[0].email_reply_to  || '',
+      email_footer:    rows[0].email_footer     || '',
+    });
+  } catch (err) { next(err); }
+});
+
+// PUT /api/portal/email-templates  — update email customization
+router.put('/email-templates', async (req, res, next) => {
+  try {
+    const { email_from_name, email_reply_to, email_footer } = req.body;
+
+    // Validate reply-to looks like an email (if provided)
+    const cleanReplyTo = (email_reply_to || '').trim().slice(0, 255);
+    if (cleanReplyTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanReplyTo)) {
+      return res.status(400).json({ error: 'Invalid reply-to email address' });
+    }
+
+    const cleanFromName = (email_from_name || '').trim().slice(0, 100) || null;
+    const cleanFooter   = (email_footer || '').trim().slice(0, 500) || null;
+
+    await db.query(
+      `UPDATE tenants SET
+         email_from_name = $1,
+         email_reply_to  = $2,
+         email_footer    = $3
+       WHERE id = $4`,
+      [cleanFromName, cleanReplyTo || null, cleanFooter, req.portal.tenant_id]
+    );
+
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PRODUCTS / SERVICES
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1595,12 +1643,17 @@ router.post('/conversations/:id/reply', async (req, res, next) => {
     }
 
     const { rows } = await db.query(
-      `SELECT c.id, c.customer_id FROM conversations c
+      `SELECT c.id, c.customer_id, c.mode FROM conversations c
        JOIN customers cu ON c.customer_id = cu.id
        WHERE c.id = $1 AND cu.tenant_id = $2`,
       [id, tenant_id]
     );
     if (rows.length === 0) return res.status(404).json({ error: 'Conversation not found' });
+
+    // Only allow replies when the conversation is in human mode
+    if (rows[0].mode !== 'human') {
+      return res.status(409).json({ error: 'Conversation is not in human mode. Take over first.' });
+    }
 
     const { rows: msgRows } = await db.query(
       `INSERT INTO messages (conversation_id, role, content)
@@ -1609,11 +1662,11 @@ router.post('/conversations/:id/reply', async (req, res, next) => {
       [id, content.trim()]
     );
 
-    // Update customer last interaction timestamp
-    await db.query(
-      'UPDATE customers SET last_interaction_at = NOW() WHERE id = $1',
-      [rows[0].customer_id]
-    );
+    // Update customer last interaction + mark conversation unread so widget poll picks it up
+    await Promise.all([
+      db.query('UPDATE customers SET last_interaction_at = NOW() WHERE id = $1', [rows[0].customer_id]),
+      db.query('UPDATE conversations SET unread = TRUE WHERE id = $1', [id]),
+    ]);
 
     res.json({ ok: true, message: msgRows[0] });
   } catch (err) { next(err); }

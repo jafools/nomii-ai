@@ -649,8 +649,8 @@
   var currentMode      = 'ai';   // 'ai' | 'human'
   var pollInterval     = null;   // setInterval handle for polling
   var lastPollTime     = null;   // ISO timestamp of last poll
-  var POLL_INTERVAL_AI    = 5000;   // 5s — mode-change detection when AI is active
-  var POLL_INTERVAL_HUMAN = 2500;   // 2.5s — fast reply delivery in human mode
+  var POLL_INTERVAL_AI    = 3000;   // 3s — mode-change detection when AI is active
+  var POLL_INTERVAL_HUMAN = 1500;   // 1.5s — fast reply delivery in human mode
 
   var csatRated = false;  // prevent double-submission
 

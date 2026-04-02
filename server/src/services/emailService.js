@@ -29,6 +29,28 @@ function createTransporter() {
 
 const FROM = process.env.SMTP_FROM || 'Nomii AI <hello@pontensolutions.com>';
 const APP_URL = (process.env.APP_URL || 'https://app.pontensolutions.com').replace(/\/$/, '');
+const SMTP_USER = process.env.SMTP_USER;
+
+// Build tenant-customized From / Reply-To / footer for outgoing emails
+function tenantFrom(tenantEmail) {
+  if (!tenantEmail || !tenantEmail.email_from_name) return FROM;
+  // Keep the actual sending address the same (SMTP requirement) but change display name
+  const smtpAddr = SMTP_USER || 'hello@pontensolutions.com';
+  return `${tenantEmail.email_from_name} <${smtpAddr}>`;
+}
+function tenantReplyTo(tenantEmail) {
+  return (tenantEmail && tenantEmail.email_reply_to) || undefined;
+}
+function tenantFooterHtml(tenantEmail) {
+  if (!tenantEmail || !tenantEmail.email_footer) return 'Nomii AI &middot; pontensolutions.com';
+  // Escape HTML entities for safety
+  const safe = tenantEmail.email_footer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return safe;
+}
+function tenantFooterText(tenantEmail) {
+  if (!tenantEmail || !tenantEmail.email_footer) return 'Nomii AI · pontensolutions.com';
+  return tenantEmail.email_footer;
+}
 
 
 // ── Send verification email ────────────────────────────────────────────────
@@ -284,7 +306,7 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
 
 // ── Send concern raised notification email ─────────────────────────────────
 
-async function sendConcernEmail({ to, firstName, customerName, customerEmail, description, conversationId }) {
+async function sendConcernEmail({ to, firstName, customerName, customerEmail, description, conversationId, tenantEmail }) {
   const concernUrl = `${APP_URL}/nomii/dashboard/concerns`;
   const name = firstName || 'there';
 
@@ -335,14 +357,14 @@ async function sendConcernEmail({ to, firstName, customerName, customerEmail, de
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:20px 40px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; pontensolutions.com
+        ${tenantFooterHtml(tenantEmail)}
       </p>
     </div>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\nA customer has raised a concern and needs human support.\n\nCustomer: ${customerName}\nEmail: ${customerEmail}\nMessage: ${description}\n\nView it in your dashboard: ${concernUrl}\n\nNomii AI`;
+  const text = `Hi ${name},\n\nA customer has raised a concern and needs human support.\n\nCustomer: ${customerName}\nEmail: ${customerEmail}\nMessage: ${description}\n\nView it in your dashboard: ${concernUrl}\n\n${tenantFooterText(tenantEmail)}`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] SMTP not configured — concern email would be sent to ${to}`);
@@ -351,7 +373,8 @@ async function sendConcernEmail({ to, firstName, customerName, customerEmail, de
 
   const transporter = createTransporter();
   await transporter.sendMail({
-    from:    FROM,
+    from:    tenantFrom(tenantEmail),
+    replyTo: tenantReplyTo(tenantEmail),
     to,
     subject: `⚠ Concern raised by ${customerName || 'a customer'} — action needed`,
     text,
@@ -449,7 +472,7 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
 
 async function sendFlagNotificationEmail({
   to, advisorName, customerName, flagType, severity, description,
-  conversationId, tenantName, dashboardUrl: customDashboardUrl,
+  conversationId, tenantName, dashboardUrl: customDashboardUrl, tenantEmail,
 }) {
   const name        = advisorName || 'Advisor';
   const cust        = customerName || 'A customer';
@@ -519,14 +542,14 @@ async function sendFlagNotificationEmail({
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:16px 32px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; pontensolutions.com
+        ${tenantFooterHtml(tenantEmail)}
       </p>
     </div>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\nYour AI agent raised a ${sevLabel} flag for customer ${cust}.\n\nType: ${type}\nDetails: ${description}\n\nReview the conversation: ${dashUrl}\n\nNomii AI`;
+  const text = `Hi ${name},\n\nYour AI agent raised a ${sevLabel} flag for customer ${cust}.\n\nType: ${type}\nDetails: ${description}\n\nReview the conversation: ${dashUrl}\n\n${tenantFooterText(tenantEmail)}`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] Flag notification (SMTP not configured) — ${sevLabel} flag for ${cust} → ${to}`);
@@ -535,7 +558,8 @@ async function sendFlagNotificationEmail({
 
   const transporter = createTransporter();
   await transporter.sendMail({
-    from:    FROM,
+    from:    tenantFrom(tenantEmail),
+    replyTo: tenantReplyTo(tenantEmail),
     to,
     subject: `[${sevLabel}] Flag raised for ${cust} — ${tenantName || 'Nomii AI'}`,
     text,
@@ -639,7 +663,7 @@ async function sendDocumentEmail({
 
 // ── Send human-mode reply notification (customer replied while agent has taken over) ──
 
-async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEmail, messageSnippet, conversationId }) {
+async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEmail, messageSnippet, conversationId, tenantEmail }) {
   const name    = agentName   || 'Agent';
   const cust    = customerName || 'A customer';
   const dashUrl = `${APP_URL}/nomii/dashboard/conversations/${conversationId}`;
@@ -669,13 +693,13 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
     </div>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:16px 32px;text-align:center;">
-      <p style="color:#a0aec0;font-size:12px;margin:0;">Nomii AI · pontensolutions.com</p>
+      <p style="color:#a0aec0;font-size:12px;margin:0;">${tenantFooterHtml(tenantEmail)}</p>
     </div>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\n${cust} replied in the conversation you've taken over.\n\n${messageSnippet ? `"${messageSnippet.slice(0, 200)}"\n\n` : ''}Reply now: ${dashUrl}\n\nNomii AI`;
+  const text = `Hi ${name},\n\n${cust} replied in the conversation you've taken over.\n\n${messageSnippet ? `"${messageSnippet.slice(0, 200)}"\n\n` : ''}Reply now: ${dashUrl}\n\n${tenantFooterText(tenantEmail)}`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] Human mode reply (SMTP not configured) — ${cust} replied → would notify ${to}`);
@@ -684,7 +708,8 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
 
   const transporter = createTransporter();
   await transporter.sendMail({
-    from:    FROM,
+    from:    tenantFrom(tenantEmail),
+    replyTo: tenantReplyTo(tenantEmail),
     to,
     subject: `💬 ${cust} is waiting for your reply — Nomii AI`,
     text,

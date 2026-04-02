@@ -769,9 +769,11 @@ router.post('/flag', requireWidgetAuth, async (req, res, next) => {
     try {
       const { rows: notifyRows } = await db.query(
         `SELECT a.email, a.first_name,
-                c.first_name AS cust_first, c.last_name AS cust_last, c.email AS cust_email
+                c.first_name AS cust_first, c.last_name AS cust_last, c.email AS cust_email,
+                t.email_from_name, t.email_reply_to, t.email_footer
          FROM tenant_admins a
          JOIN customers c ON c.id = $1
+         JOIN tenants t ON t.id = $2
          WHERE a.tenant_id = $2
          LIMIT 1`,
         [customer_id, tenant_id]
@@ -785,6 +787,7 @@ router.post('/flag', requireWidgetAuth, async (req, res, next) => {
           customerEmail:  r.cust_email,
           description,
           conversationId: conversation_id,
+          tenantEmail:    { email_from_name: r.email_from_name, email_reply_to: r.email_reply_to, email_footer: r.email_footer },
         }).catch(err => console.error('[Widget] Concern email failed:', err.message));
       }
     } catch (emailErr) {
@@ -942,21 +945,24 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
       // Notify the assigned human agent (or all tenant admins) by email — fire-and-forget
       setImmediate(async () => {
         try {
-          // Look up customer + assigned agent info
+          // Look up customer + assigned agent info + tenant email template settings
           const { rows: notifyRows } = await db.query(
             `SELECT
                cu.first_name AS cust_first, cu.last_name AS cust_last, cu.email AS cust_email,
                co.human_agent_id,
-               a.email AS agent_email, a.first_name AS agent_first, a.last_name AS agent_last
+               a.email AS agent_email, a.first_name AS agent_first, a.last_name AS agent_last,
+               t.email_from_name, t.email_reply_to, t.email_footer
              FROM conversations co
              JOIN customers cu ON co.customer_id = cu.id
+             JOIN tenants t ON t.id = $1
              LEFT JOIN tenant_admins a ON a.id = co.human_agent_id
-             WHERE co.id = $1`,
-            [conversation_id]
+             WHERE co.id = $2`,
+            [tenant_id, conversation_id]
           );
           if (notifyRows.length === 0) return;
           const row = notifyRows[0];
           const customerName = [row.cust_first, row.cust_last].filter(Boolean).join(' ') || 'Customer';
+          const tenantEmail = { email_from_name: row.email_from_name, email_reply_to: row.email_reply_to, email_footer: row.email_footer };
 
           if (row.agent_email) {
             // Notify the specific agent who took over
@@ -967,6 +973,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
               customerEmail: row.cust_email,
               messageSnippet: sanitized,
               conversationId: conversation_id,
+              tenantEmail,
             });
           } else {
             // No specific agent assigned — notify all tenant admins
@@ -982,6 +989,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
                 customerEmail: row.cust_email,
                 messageSnippet: sanitized,
                 conversationId: conversation_id,
+                tenantEmail,
               });
             }
           }

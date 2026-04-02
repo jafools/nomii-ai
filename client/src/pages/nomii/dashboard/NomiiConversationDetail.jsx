@@ -80,22 +80,24 @@ const NomiiConversationDetail = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Auto-poll when conversation is active ──────────────────────────────────
+  // ── Auto-poll when conversation is active or escalated ──────────────────────
+  const isLive = convo?.status === "active" || convo?.status === "escalated";
   useEffect(() => {
-    // Poll every 3s when the conversation is active (regardless of mode)
-    if (convo?.status !== "active") {
+    if (!isLive) {
       if (pollRef.current) clearInterval(pollRef.current);
       return;
     }
 
+    // Poll faster (2s) during human mode for snappy advisor ↔ customer chat
+    const interval = mode === "human" ? 2000 : 3000;
     pollRef.current = setInterval(() => {
       fetchData(true); // silent refresh — don't show loading spinner
-    }, 3000);
+    }, interval);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [convo?.status, fetchData]);
+  }, [isLive, mode, fetchData]);
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 

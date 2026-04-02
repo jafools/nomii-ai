@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
-import { getMe, updateCompany, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams } from "@/lib/nomiiApi";
+import { getMe, updateCompany, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams, getEmailTemplates, updateEmailTemplates } from "@/lib/nomiiApi";
 import { toast } from "@/hooks/use-toast";
-import { Copy, Check, Plus, Trash2, Pencil, X, ChevronUp, Key, AlertTriangle, RefreshCw, Eye, EyeOff, Brain, Sparkles, Shield, MessageSquare, Webhook, ToggleLeft, ToggleRight, Send, ChevronDown, Tag, Plug2, Zap } from "lucide-react";
+import { Copy, Check, Plus, Trash2, Pencil, X, ChevronUp, Key, AlertTriangle, RefreshCw, Eye, EyeOff, Brain, Sparkles, Shield, MessageSquare, Webhook, ToggleLeft, ToggleRight, Send, ChevronDown, Tag, Plug2, Zap, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const INDUSTRIES = [
@@ -1549,6 +1549,102 @@ const ConnectorsSection = () => {
   );
 };
 
+/* ---------- Email Templates ---------- */
+const EmailTemplatesSection = () => {
+  const [form, setForm] = useState({ email_from_name: "", email_reply_to: "", email_footer: "" });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    getEmailTemplates()
+      .then((data) => setForm({
+        email_from_name: data.email_from_name || "",
+        email_reply_to:  data.email_reply_to  || "",
+        email_footer:    data.email_footer     || "",
+      }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSaved(false); };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateEmailTemplates(form);
+      setSaved(true);
+      toast({ title: "Email settings saved" });
+    } catch (err) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl p-6 animate-pulse space-y-4" style={card}>
+        <div className="h-4 w-40 rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="grid grid-cols-2 gap-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSave} className="rounded-2xl p-6 space-y-5" style={card}>
+      <div className="flex items-center gap-2">
+        <Mail size={16} style={{ color: "#C9A84C" }} />
+        <div>
+          <h3 className="text-[14px] font-semibold text-white/80">Email Templates</h3>
+          <p className="text-[11px] text-white/30 mt-0.5">Customize the sender name, reply-to address, and footer on emails sent to your team and customers.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[12px] font-medium text-white/30 mb-1.5">From Name</label>
+          <input type="text" value={form.email_from_name} onChange={set("email_from_name")} maxLength={100}
+            placeholder="e.g. Covenant Trust Support" className={inputClass} style={inputStyle} />
+          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+            Appears as the sender name. Defaults to "Nomii AI" if blank.
+          </p>
+        </div>
+        <div>
+          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Reply-To Address</label>
+          <input type="email" value={form.email_reply_to} onChange={set("email_reply_to")} maxLength={255}
+            placeholder="e.g. support@yourcompany.com" className={inputClass} style={inputStyle} />
+          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+            When recipients hit "Reply", their email goes to this address.
+          </p>
+        </div>
+      </div>
+      <div>
+        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Email Footer</label>
+        <textarea rows={2} value={form.email_footer} onChange={set("email_footer")} maxLength={500}
+          placeholder="e.g. Covenant Trust · 123 Main St, Suite 400 · New York, NY 10001"
+          className={inputClass} style={inputStyle} />
+        <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+          Added at the bottom of all emails. Useful for compliance or branding.
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <button type="submit" disabled={saving}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+          {saving ? "Saving…" : "Save email settings"}
+        </button>
+        {saved && (
+          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#4ADE80" }}>
+            <Check size={14} /> Saved
+          </span>
+        )}
+      </div>
+    </form>
+  );
+};
+
 /* ---------- Main ---------- */
 const NomiiSettings = () => (
   <div className="space-y-6">
@@ -1559,6 +1655,7 @@ const NomiiSettings = () => (
     <CompanyProfile />
     <AgentSoulSection />
     <WidgetSection />
+    <EmailTemplatesSection />
     <WebhooksSection />
     <DataApiSection />
     <ProductsSection />
