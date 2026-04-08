@@ -12,7 +12,8 @@
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\ajace\\\\Documents\\\\Work\\\\Nomii AI && npx claude-flow daemon start\")",
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\ajace\\\\Documents\\\\Work\\\\Nomii AI && npx claude-flow swarm init\")",
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\ajace\\\\Documents\\\\Work\\\\Nomii AI && npx claude-flow --version\")",
-      "Bash(find '/c/Users/ajace/Documents/Work/Nomii AI/server' -name embed.js -o -name widget.html -o -name embed*)"
+      "Bash(find '/c/Users/ajace/Documents/Work/Nomii AI/server' -name embed.js -o -name widget.html -o -name embed*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }
