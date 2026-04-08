@@ -1,159 +1,284 @@
-# Nomii AI — Proxmox Deployment Guide
+# Nomii AI — Deployment & Migration Guide
+*Last updated: 2026-04-08*
 
-## Overview
+---
 
-This guide deploys Nomii AI on a Proxmox VM using Docker Compose. The setup includes three containers: PostgreSQL database, Node.js backend API, and React frontend served via nginx.
+## Current Production State
 
-## Prerequisites
+| Item | Value |
+|------|-------|
+| Server | Proxmox VM at `81.224.218.93` |
+| API | `https://api.pontensolutions.com` (Cloudflare Tunnel) |
+| Portal | `https://nomii.pontensolutions.com` (Lovable frontend) |
+| DB | PostgreSQL 16, DB name `knomi_ai`, user `knomi` |
+| Containers | `knomi-db`, `knomi-backend`, `knomi-frontend`, `knomi-cloudflared` |
+| Tunnel ID | `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4` |
 
-- Proxmox VE with ability to create VMs or LXC containers
-- Basic familiarity with SSH and command line
+---
 
-## Step 1: Create a VM on Proxmox
+## Migrating to Hetzner CX22
 
-Create an Ubuntu 22.04 (or 24.04) VM with the following specs:
+> **Why Hetzner:** €4/mo, datacenter uptime SLA, static IP, identical Docker Compose setup.
+> Zero code changes required — this is purely an infrastructure move.
 
-| Resource | Minimum | Recommended |
-|----------|---------|-------------|
-| CPU | 2 cores | 4 cores |
-| RAM | 2 GB | 4 GB |
-| Disk | 20 GB | 40 GB |
-| Network | Bridge (vmbr0) | Bridge (vmbr0) |
+### Phase 1 — Provision Hetzner Server
 
-Alternatively, use an LXC container (lighter weight) with the same specs.
+1. Create account at [hetzner.com/cloud](https://hetzner.com/cloud)
+2. New Project → **Add Server**
+   - Location: `Ashburn, VA` (US) or `Nuremberg` (EU) — pick closest to your users
+   - Image: **Ubuntu 24.04**
+   - Type: **CX22** (2 vCPU, 4 GB RAM, 40 GB SSD)
+   - SSH key: paste your public key (`~/.ssh/id_rsa.pub` on your Windows machine via WSL or Git Bash)
+   - Name: `nomii-prod`
+3. Note the server's public IPv4 (e.g. `65.21.xxx.xxx`)
 
-After creation, note the VM's IP address.
-
-## Step 2: Install Docker on the VM
-
-SSH into your VM and run:
+### Phase 2 — Install Docker on Hetzner
 
 ```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
+ssh root@<hetzner-ip>
 
-# Install Docker
+apt update && apt upgrade -y
 curl -fsSL https://get.docker.com | sh
+apt install docker-compose-plugin -y
 
-# Add your user to docker group
-sudo usermod -aG docker $USER
-
-# Install Docker Compose plugin
-sudo apt install docker-compose-plugin -y
-
-# Log out and back in for group changes
-exit
-```
-
-SSH back in and verify:
-
-```bash
+# Verify
 docker --version
 docker compose version
 ```
 
-## Step 3: Deploy Nomii AI
+### Phase 3 — Clone Repo + Configure Env
 
 ```bash
-# Clone or copy the project to the VM
-# Option A: If using git
-git clone <your-repo-url> nomii-ai
-cd nomii-ai
+cd ~
+git clone https://github.com/jafools/nomii-ai.git knomi-ai
+cd knomi-ai
 
-# Option B: SCP from your local machine
-# scp -r "Nomii AI/" user@<vm-ip>:~/nomii-ai
+# Copy env from Proxmox (run this on Proxmox, scp to Hetzner)
+# On Proxmox:
+scp ~/Knomi/knomi-ai/.env root@<hetzner-ip>:~/knomi-ai/.env
 
-# Create environment file
-cp .env.example .env
-# Edit .env to set a strong DB_PASSWORD for production
+# Or manually create on Hetzner and paste all values from Proxmox .env
 nano .env
 ```
 
-## Step 4: Build and Start
-
-```bash
-# Build all containers
-docker compose build
-
-# Start everything (detached)
-docker compose up -d
-
-# Check all services are running
-docker compose ps
+**Critical env vars to verify are set:**
+```
+ANTHROPIC_API_KEY=          # use the NEW rotated key
+CLAUDE_API_KEY=             # same as above
+JWT_SECRET=
+WIDGET_JWT_SECRET=
+API_KEY_ENCRYPTION_SECRET=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_STARTER=
+STRIPE_PRICE_GROWTH=
+STRIPE_PRICE_PROFESSIONAL=
+STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans
+SMTP_HOST=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+MASTER_EMAIL=ajaces@gmail.com
+LLM_HAIKU_MODEL=claude-haiku-4-5-20251001
+LLM_SONNET_MODEL=claude-sonnet-4-20250514
+CLOUDFLARE_TUNNEL_TOKEN=    # same token as Proxmox
+PORTAL_URL=https://nomii.pontensolutions.com
+LOGIN_RATE_LIMIT_MAX=3
+WIDGET_SESSION_RATE_LIMIT_MAX=6
 ```
 
-You should see three containers running: nomii-db, nomii-backend, nomii-frontend.
-
-## Step 5: Initialize the Database
+### Phase 4 — Backup DB from Proxmox
 
 ```bash
-# Run the setup script
-chmod +x scripts/setup-db.sh
-./scripts/setup-db.sh
+# On Proxmox — dump the full database
+cd ~/Knomi/knomi-ai
+docker compose exec -T db pg_dump -U knomi knomi_ai > /tmp/nomii_backup.sql
+
+# Verify dump looks sane (should be several MB, not empty)
+wc -l /tmp/nomii_backup.sql
+head -5 /tmp/nomii_backup.sql
+
+# Copy to Hetzner
+scp /tmp/nomii_backup.sql root@<hetzner-ip>:/tmp/nomii_backup.sql
 ```
 
-This runs the schema migrations and seeds the database with the Covenant Trust demo data (3 customer personas, advisors, financial accounts, and sample flags).
-
-## Step 6: Verify
-
-Open a browser and navigate to:
-
-- **App**: `http://<vm-ip>`
-- **API Health**: `http://<vm-ip>:3001/api/health`
-
-You should see the Nomii AI home page with the Covenant Trust demo.
-
-## Common Operations
+### Phase 5 — Start Services on Hetzner (DB only first)
 
 ```bash
-# View logs
-docker compose logs -f              # All services
-docker compose logs -f backend      # Backend only
+# On Hetzner — start ONLY the database container first
+cd ~/knomi-ai
+docker compose up -d db
 
-# Restart a service
-docker compose restart backend
+# Wait ~10 seconds for Postgres to initialize, then restore the dump
+sleep 10
+docker compose exec -T db psql -U knomi -d knomi_ai < /tmp/nomii_backup.sql
 
-# Reset database (drops all data and re-seeds)
-docker compose exec backend node db/reset.js
+# Verify row counts match Proxmox
+docker compose exec db psql -U knomi -d knomi_ai -c "
+  SELECT
+    (SELECT COUNT(*) FROM tenants) AS tenants,
+    (SELECT COUNT(*) FROM customers) AS customers,
+    (SELECT COUNT(*) FROM conversations) AS conversations,
+    (SELECT COUNT(*) FROM messages) AS messages;
+"
+```
 
-# Stop everything
+Cross-check these numbers against Proxmox:
+```bash
+# Run same query on Proxmox to compare
+docker compose exec db psql -U knomi -d knomi_ai -c "
+  SELECT
+    (SELECT COUNT(*) FROM tenants) AS tenants,
+    (SELECT COUNT(*) FROM customers) AS customers,
+    (SELECT COUNT(*) FROM conversations) AS conversations,
+    (SELECT COUNT(*) FROM messages) AS messages;
+"
+```
+
+### Phase 6 — Start Backend + Frontend on Hetzner (no tunnel yet)
+
+```bash
+# On Hetzner — start backend and frontend, skip cloudflared for now
+docker compose up -d --build backend frontend
+
+# Tail logs to confirm clean startup (no errors)
+docker compose logs -f backend
+# Look for: "Server running on port 3001" — Ctrl+C when confirmed
+
+# Quick health check direct to IP (bypasses Cloudflare)
+curl http://<hetzner-ip>:3001/api/health
+# Expected: {"status":"ok",...}
+```
+
+### Phase 7 — Cutover (Switch Tunnel to Hetzner)
+
+This is the moment of switchover. It takes ~30 seconds. Plan for a brief interruption.
+
+```bash
+# Step 1: Stop cloudflared on Proxmox
+# On Proxmox:
+docker compose stop cloudflared
+
+# Step 2: Start cloudflared on Hetzner
+# On Hetzner:
+docker compose up -d cloudflared
+
+# Step 3: Verify tunnel is routing to Hetzner
+curl https://api.pontensolutions.com/api/health
+# Should return {"status":"ok"} within 10-15 seconds
+
+# Step 4: Test the live widget
+# Open hub.hopeforthisnation.com and send a message
+# Check dashboard at nomii.pontensolutions.com
+```
+
+### Phase 8 — Verify Everything
+
+Run through this checklist after cutover:
+
+- [ ] `https://api.pontensolutions.com/api/health` returns `{"status":"ok"}`
+- [ ] Login to `https://nomii.pontensolutions.com` works
+- [ ] Conversations list loads
+- [ ] Widget at `hub.hopeforthisnation.com` opens and accepts a message
+- [ ] AI responds in the widget
+- [ ] Trigger a flag → check dashboard shows it
+- [ ] Check email is received for the flag notification
+- [ ] Analytics page loads with data
+
+### Phase 9 — Set Up Automated DB Backups
+
+```bash
+# On Hetzner — create daily backup script
+cat > /root/backup-db.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR=/root/db-backups
+mkdir -p $BACKUP_DIR
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+docker compose -f /root/knomi-ai/docker-compose.yml exec -T db \
+  pg_dump -U knomi knomi_ai > $BACKUP_DIR/nomii_$TIMESTAMP.sql
+# Keep last 14 days only
+find $BACKUP_DIR -name "*.sql" -mtime +14 -delete
+echo "Backup complete: nomii_$TIMESTAMP.sql"
+EOF
+
+chmod +x /root/backup-db.sh
+
+# Schedule daily at 2am
+(crontab -l 2>/dev/null; echo "0 2 * * * /root/backup-db.sh >> /var/log/nomii-backup.log 2>&1") | crontab -
+
+# Test it runs
+/root/backup-db.sh
+ls /root/db-backups/
+```
+
+### Phase 10 — Decommission Proxmox
+
+Only do this after running on Hetzner for at least **48 hours** without issues.
+
+```bash
+# On Proxmox — final backup before shutdown
+docker compose exec -T db pg_dump -U knomi knomi_ai > ~/nomii_final_backup_$(date +%Y%m%d).sql
+
+# Stop all containers
 docker compose down
 
-# Stop and remove volumes (deletes database data)
-docker compose down -v
-
-# Rebuild after code changes
-docker compose build
-docker compose up -d
+# Keep the Proxmox VM around for 2 weeks as a fallback
+# Then delete it once you're confident
 ```
 
-## Connecting Claude API
+---
 
-When you have your Claude API key:
+## Rollback Plan
+
+If anything goes wrong during cutover:
 
 ```bash
-# Edit .env
-nano .env
-# Set:
-#   LLM_PROVIDER=claude
-#   CLAUDE_API_KEY=sk-ant-...
+# On Proxmox — restart cloudflared to take traffic back
+docker compose up -d cloudflared
 
-# Install Anthropic SDK in the backend container
-docker compose exec backend npm install @anthropic-ai/sdk
-
-# Restart backend
-docker compose restart backend
+# On Hetzner — stop cloudflared so it stops competing
+docker compose stop cloudflared
 ```
 
-Then uncomment the Claude integration in `server/src/routes/chat.js`.
+Traffic will return to Proxmox within ~15 seconds. No data loss since the DB on Hetzner wasn't yet taking live writes during verification.
 
-## Production Hardening (Future)
+---
 
-When moving beyond PoC:
+## Routine Operations (post-migration)
 
-- Add HTTPS with Let's Encrypt (Traefik or certbot)
-- Set strong DB_PASSWORD in .env
-- Add rate limiting to the API
-- Set up database backups (pg_dump cron job)
-- Add monitoring (health check endpoint is already at /api/health)
-- Consider Proxmox firewall rules to restrict access
+```bash
+# Deploy a code update
+cd ~/knomi-ai && git pull && docker compose up --build -d
+
+# Apply a new DB migration
+docker compose exec -T db psql -U knomi -d knomi_ai < server/db/migrations/XXX_name.sql
+
+# View logs
+docker compose logs -f backend
+docker compose logs -f --tail=100 backend
+
+# Check container health
+docker compose ps
+
+# Manual DB backup
+/root/backup-db.sh
+```
+
+---
+
+## Emergency: Restore DB from Backup
+
+```bash
+# Stop backend so no new writes come in
+docker compose stop backend
+
+# Drop and recreate DB
+docker compose exec db psql -U knomi -c "DROP DATABASE knomi_ai;"
+docker compose exec db psql -U knomi -c "CREATE DATABASE knomi_ai;"
+
+# Restore from backup file
+docker compose exec -T db psql -U knomi -d knomi_ai < /root/db-backups/nomii_YYYYMMDD_HHMMSS.sql
+
+# Restart backend
+docker compose start backend
+```
