@@ -10,8 +10,8 @@
 | Server | Proxmox VM at `81.224.218.93` |
 | API | `https://api.pontensolutions.com` (Cloudflare Tunnel) |
 | Portal | `https://nomii.pontensolutions.com` (Lovable frontend) |
-| DB | PostgreSQL 16, DB name `knomi_ai`, user `knomi` |
-| Containers | `knomi-db`, `knomi-backend`, `knomi-frontend`, `knomi-cloudflared` |
+| DB | PostgreSQL 16, DB name `nomii_ai`, user `knomi` |
+| Containers | `nomii-db`, `nomii-backend`, `knomi-frontend`, `knomi-cloudflared` |
 | Tunnel ID | `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4` |
 
 ---
@@ -50,8 +50,8 @@ docker compose version
 
 ```bash
 cd ~
-git clone https://github.com/jafools/nomii-ai.git knomi-ai
-cd knomi-ai
+git clone https://github.com/jafools/nomii-ai.git nomii-ai
+cd nomii-ai
 
 # Copy env from Proxmox (run this on Proxmox, scp to Hetzner)
 # On Proxmox:
@@ -91,8 +91,9 @@ WIDGET_SESSION_RATE_LIMIT_MAX=6
 
 ```bash
 # On Proxmox — dump the full database
+# --no-owner strips OWNER clauses so the dump restores cleanly under the new 'nomii' user on Hetzner
 cd ~/Knomi/knomi-ai
-docker compose exec -T db pg_dump -U knomi knomi_ai > /tmp/nomii_backup.sql
+docker compose exec -T db pg_dump -U knomi --no-owner --no-privileges knomi_ai > /tmp/nomii_backup.sql
 
 # Verify dump looks sane (should be several MB, not empty)
 wc -l /tmp/nomii_backup.sql
@@ -111,10 +112,10 @@ docker compose up -d db
 
 # Wait ~10 seconds for Postgres to initialize, then restore the dump
 sleep 10
-docker compose exec -T db psql -U knomi -d knomi_ai < /tmp/nomii_backup.sql
+docker compose exec -T db psql -U nomii -d nomii_ai < /tmp/nomii_backup.sql
 
 # Verify row counts match Proxmox
-docker compose exec db psql -U knomi -d knomi_ai -c "
+docker compose exec db psql -U nomii -d nomii_ai -c "
   SELECT
     (SELECT COUNT(*) FROM tenants) AS tenants,
     (SELECT COUNT(*) FROM customers) AS customers,
@@ -126,7 +127,7 @@ docker compose exec db psql -U knomi -d knomi_ai -c "
 Cross-check these numbers against Proxmox:
 ```bash
 # Run same query on Proxmox to compare
-docker compose exec db psql -U knomi -d knomi_ai -c "
+docker compose exec db psql -U nomii -d nomii_ai -c "
   SELECT
     (SELECT COUNT(*) FROM tenants) AS tenants,
     (SELECT COUNT(*) FROM customers) AS customers,
@@ -195,7 +196,7 @@ BACKUP_DIR=/root/db-backups
 mkdir -p $BACKUP_DIR
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 docker compose -f /root/knomi-ai/docker-compose.yml exec -T db \
-  pg_dump -U knomi knomi_ai > $BACKUP_DIR/nomii_$TIMESTAMP.sql
+  pg_dump -U nomii nomii_ai > $BACKUP_DIR/nomii_$TIMESTAMP.sql
 # Keep last 14 days only
 find $BACKUP_DIR -name "*.sql" -mtime +14 -delete
 echo "Backup complete: nomii_$TIMESTAMP.sql"
@@ -217,7 +218,7 @@ Only do this after running on Hetzner for at least **48 hours** without issues.
 
 ```bash
 # On Proxmox — final backup before shutdown
-docker compose exec -T db pg_dump -U knomi knomi_ai > ~/nomii_final_backup_$(date +%Y%m%d).sql
+docker compose exec -T db pg_dump -U knomi --no-owner --no-privileges knomi_ai > ~/nomii_final_backup_$(date +%Y%m%d).sql
 
 # Stop all containers
 docker compose down
@@ -251,7 +252,7 @@ Traffic will return to Proxmox within ~15 seconds. No data loss since the DB on 
 cd ~/knomi-ai && git pull && docker compose up --build -d
 
 # Apply a new DB migration
-docker compose exec -T db psql -U knomi -d knomi_ai < server/db/migrations/XXX_name.sql
+docker compose exec -T db psql -U nomii -d nomii_ai < server/db/migrations/XXX_name.sql
 
 # View logs
 docker compose logs -f backend
@@ -273,11 +274,11 @@ docker compose ps
 docker compose stop backend
 
 # Drop and recreate DB
-docker compose exec db psql -U knomi -c "DROP DATABASE knomi_ai;"
-docker compose exec db psql -U knomi -c "CREATE DATABASE knomi_ai;"
+docker compose exec db psql -U nomii -c "DROP DATABASE nomii_ai;"
+docker compose exec db psql -U nomii -c "CREATE DATABASE nomii_ai;"
 
 # Restore from backup file
-docker compose exec -T db psql -U knomi -d knomi_ai < /root/db-backups/nomii_YYYYMMDD_HHMMSS.sql
+docker compose exec -T db psql -U nomii -d nomii_ai < /root/db-backups/nomii_YYYYMMDD_HHMMSS.sql
 
 # Restart backend
 docker compose start backend

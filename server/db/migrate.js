@@ -10,7 +10,7 @@ const { Pool } = require('pg');
 
 async function migrate() {
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/knomi_ai',
+    connectionString: process.env.DATABASE_URL || 'postgresql://nomii:nomii_dev_2026@localhost:5432/nomii_ai',
   });
 
   try {

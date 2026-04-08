@@ -35,7 +35,7 @@ const { execSync } = require('child_process');
 let tenantId;
 try {
   tenantId = execSync(
-    `docker exec knomi-db psql -U knomi -d knomi_ai -t -c "SELECT tenant_id FROM tenant_admins WHERE email = '${EMAIL}' LIMIT 1;"`,
+    `docker exec nomii-db psql --U nomii -d nomii_ai -t -c "SELECT tenant_id FROM tenant_admins WHERE email = '${EMAIL}' LIMIT 1;"`,
     { encoding: 'utf8' }
   ).trim();
 } catch (e) {
@@ -121,7 +121,7 @@ const req = lib.request(options, (res) => {
       console.log('\n📋  Checking database...\n');
       try {
         const result = execSync(
-          `docker exec knomi-db psql -U knomi -d knomi_ai -c "SELECT plan, status, max_customers, max_messages_month, max_agents FROM subscriptions WHERE tenant_id = '${tenantId}';"`,
+          `docker exec nomii-db psql --U nomii -d nomii_ai -c "SELECT plan, status, max_customers, max_messages_month, max_agents FROM subscriptions WHERE tenant_id = '${tenantId}';"`,
           { encoding: 'utf8' }
         );
         console.log(result);

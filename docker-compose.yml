@@ -4,18 +4,18 @@ services:
   # ============================================
   db:
     image: postgres:16-alpine
-    container_name: knomi-db
+    container_name: nomii-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: knomi_ai
-      POSTGRES_USER: knomi
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-knomi_dev_2026}
+      POSTGRES_DB: nomii_ai
+      POSTGRES_USER: nomii
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nomii_dev_2026}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U knomi -d knomi_ai"]
+      test: ["CMD-SHELL", "pg_isready -U nomii -d nomii_ai"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,10 +27,10 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: knomi-backend
+    container_name: nomii-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://knomi:${DB_PASSWORD:-knomi_dev_2026}@db:5432/knomi_ai
+      DATABASE_URL: postgresql://nomii:${DB_PASSWORD:-nomii_dev_2026}@db:5432/nomii_ai
       PORT: 3001
       JWT_SECRET: ${JWT_SECRET:-nomii-dev-secret-change-in-production}
       WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET:-}
@@ -57,6 +57,10 @@ services:
       STRIPE_PRICE_GROWTH: ${STRIPE_PRICE_GROWTH:-}
       STRIPE_PRICE_PROFESSIONAL: ${STRIPE_PRICE_PROFESSIONAL:-}
       STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-https://nomii.pontensolutions.com/nomii/dashboard/plans}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_HAIKU_MODEL: ${LLM_HAIKU_MODEL:-claude-haiku-4-5-20251001}
+      LLM_SONNET_MODEL: ${LLM_SONNET_MODEL:-claude-sonnet-4-20250514}
+      PORTAL_URL: ${PORTAL_URL:-https://nomii.pontensolutions.com}
     ports:
       - "3001:3001"
     depends_on:
@@ -70,7 +74,7 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: knomi-frontend
+    container_name: nomii-frontend
     restart: unless-stopped
     ports:
       - "80:80"
@@ -79,13 +83,13 @@ services:
 
   # ============================================
   # Cloudflare Tunnel — exposes backend + frontend
-  # publicly via api.nomii.pontensolutions.com
+  # publicly via api.pontensolutions.com
   # No port forwarding required.
   # Requires CLOUDFLARE_TUNNEL_TOKEN in .env
   # ============================================
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: knomi-cloudflared
+    container_name: nomii-cloudflared
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:

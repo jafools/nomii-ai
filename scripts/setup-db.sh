@@ -13,7 +13,7 @@ echo ""
 
 # Wait for database to be ready
 echo "Waiting for PostgreSQL..."
-until docker compose exec db pg_isready -U knomi -d knomi_ai > /dev/null 2>&1; do
+until docker compose exec db pg_isready -U nomii -d nomii_ai > /dev/null 2>&1; do
   sleep 1
 done
 echo "✓ PostgreSQL is ready"
