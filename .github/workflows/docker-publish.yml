@@ -37,6 +37,9 @@ jobs:
       contents: read
       packages: write
 
+    outputs:
+      owner: ${{ github.repository_owner }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,3 +89,41 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ── Make packages public ────────────────────────────────────
+  # GHCR packages default to private on first push.
+  # This job flips both to public via the GitHub REST API.
+  #
+  # Requires a repo secret named PACKAGES_PAT containing a
+  # classic PAT with the  write:packages  scope.
+  # (Settings → Secrets → Actions → New repository secret)
+  make-public:
+    name: Make Packages Public
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    permissions:
+      packages: write
+
+    steps:
+      - name: Set packages to public
+        env:
+          # Falls back to GITHUB_TOKEN; add PACKAGES_PAT for reliability
+          TOKEN: ${{ secrets.PACKAGES_PAT || secrets.GITHUB_TOKEN }}
+          OWNER: ${{ needs.build-and-push.outputs.owner }}
+        run: |
+          for pkg in nomii-backend nomii-frontend; do
+            echo "Setting ${pkg} → public"
+            http_code=$(curl -s -o /tmp/gh_resp.json -w "%{http_code}" \
+              -X PATCH \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/user/packages/container/${pkg}" \
+              -d '{"visibility":"public"}')
+            echo "  HTTP ${http_code}"
+            cat /tmp/gh_resp.json
+            if [ "${http_code}" != "200" ]; then
+              echo "::warning::Could not set ${pkg} to public (HTTP ${http_code}). Add a PACKAGES_PAT secret (write:packages scope) or change visibility manually at https://github.com/settings/packages"
+            fi
+          done
