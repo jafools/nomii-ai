@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getConversation, takeoverConversation, handbackConversation, replyToConversation, downloadTranscript, getLabels, addConversationLabel, removeConversationLabel } from "@/lib/nomiiApi";
+import { getConversation, takeoverConversation, handbackConversation, replyToConversation, downloadTranscript, getLabels, addConversationLabel, removeConversationLabel, scoreConversation } from "@/lib/nomiiApi";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
-import { ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, UserCheck, Bot, Send, Download, Tag, Plus, X, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, UserCheck, Bot, Send, Download, Tag, Plus, X, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 
 const statusStyle = {
   active:    { bg: "rgba(34,197,94,0.12)",    color: "#4ADE80",  label: "Active" },
@@ -37,6 +37,8 @@ const NomiiConversationDetail = () => {
   const [replyText, setReplyText]       = useState("");
   const [sending, setSending]           = useState(false);
   const [downloading, setDownloading]   = useState(false);
+  const [score, setScore]               = useState(null);
+  const [scoring, setScoring]           = useState(false);
 
   // Label state
   const [convLabels, setConvLabels]   = useState([]);   // labels on this conversation
@@ -63,6 +65,7 @@ const NomiiConversationDetail = () => {
       setMessages(msgs);
       setMode(c.mode || "ai");
       setConvLabels(c.labels || []);
+      if (c.conversation_score) setScore(c.conversation_score);
       if (msgs.length > 0) {
         lastMessageTs.current = msgs[msgs.length - 1].created_at;
       }
@@ -155,6 +158,19 @@ const NomiiConversationDetail = () => {
       console.error("Transcript download failed:", err);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleScore = async (star) => {
+    if (scoring) return;
+    setScoring(true);
+    try {
+      await scoreConversation(id, star);
+      setScore(star);
+    } catch (err) {
+      console.error("Score failed:", err);
+    } finally {
+      setScoring(false);
     }
   };
 
@@ -412,6 +428,40 @@ const NomiiConversationDetail = () => {
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Advisor score (only shown for ended conversations) ── */}
+      {st === "ended" && (
+        <div className="rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[11px] font-semibold shrink-0" style={{ color: "rgba(255,255,255,0.28)" }}>
+            Rate AI
+          </p>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                onClick={() => handleScore(star)}
+                disabled={scoring}
+                className="transition-transform hover:scale-110 disabled:opacity-50 focus:outline-none"
+                title={["", "Poor", "Fair", "Good", "Great", "Excellent"][star]}
+              >
+                <Star
+                  className="h-5 w-5"
+                  style={{
+                    color: star <= (score || 0) ? "#C9A84C" : "rgba(255,255,255,0.15)",
+                    fill:  star <= (score || 0) ? "#C9A84C" : "transparent",
+                    transition: "color 0.15s, fill 0.15s",
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+          {score && (
+            <span className="text-[12px]" style={{ color: "#C9A84C" }}>
+              {["", "Poor", "Fair", "Good", "Great", "Excellent"][score]}
+            </span>
+          )}
         </div>
       )}
 

@@ -1312,12 +1312,14 @@ router.get('/analytics', async (req, res, next) => {
            LIMIT 5`,
           [tid]
         ),
-        // Period conversation summary
+        // Period conversation summary (includes avg advisor score)
         db.query(
           `SELECT
              COUNT(*)::int AS total_conversations,
              COUNT(*) FILTER (WHERE c.status = 'escalated')::int AS escalated,
-             COUNT(*) FILTER (WHERE c.status = 'ended')::int AS resolved
+             COUNT(*) FILTER (WHERE c.status = 'ended')::int AS resolved,
+             ROUND(AVG(c.conversation_score) FILTER (WHERE c.conversation_score IS NOT NULL), 1)::float AS avg_score,
+             COUNT(*) FILTER (WHERE c.conversation_score IS NOT NULL)::int AS scored_count
            FROM conversations c
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
@@ -1349,6 +1351,8 @@ router.get('/analytics', async (req, res, next) => {
         escalated:           conv.escalated || 0,
         resolved:            conv.resolved || 0,
         total_messages:      periodMsgs.rows[0]?.total_messages || 0,
+        avg_score:           conv.avg_score ?? null,
+        scored_count:        conv.scored_count || 0,
       },
     });
   } catch (err) { next(err); }
@@ -1435,12 +1439,33 @@ router.get('/conversations', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /api/portal/conversations/:id/score  — advisor rates AI performance 1–5
+router.post('/conversations/:id/score', async (req, res, next) => {
+  try {
+    const score = parseInt(req.body.score, 10);
+    if (!score || score < 1 || score > 5) {
+      return res.status(400).json({ error: 'score must be an integer between 1 and 5' });
+    }
+    const { rowCount } = await db.query(
+      `UPDATE conversations c
+       SET conversation_score = $1
+       FROM customers cu
+       WHERE c.id = $2
+         AND c.customer_id = cu.id
+         AND cu.tenant_id = $3`,
+      [score, req.params.id, req.portal.tenant_id]
+    );
+    if (rowCount === 0) return res.status(404).json({ error: 'Conversation not found' });
+    res.json({ conversation_score: score });
+  } catch (err) { next(err); }
+});
+
 // GET /api/portal/conversations/:id  — full thread + mark as read
 router.get('/conversations/:id', async (req, res, next) => {
   try {
     const { rows: convRows } = await db.query(
       `SELECT c.id, c.status, c.mode, c.human_agent_id, c.created_at, c.unread,
-              c.csat_score, c.csat_comment, c.csat_submitted_at,
+              c.csat_score, c.csat_comment, c.csat_submitted_at, c.conversation_score,
               cu.id AS customer_id, cu.first_name, cu.last_name, cu.email,
               COALESCE(
                 (SELECT json_agg(json_build_object('id', l.id, 'name', l.name, 'color', l.color) ORDER BY l.name)

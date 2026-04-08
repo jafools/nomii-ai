@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { getAnalytics } from "@/lib/nomiiApi";
-import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { MessageSquare, TrendingUp, AlertTriangle, CheckCircle, Star } from "lucide-react";
 
 const cardStyle = {
   background: "rgba(255,255,255,0.03)",
@@ -77,8 +77,8 @@ const SkeletonAnalytics = () => (
       <div className="h-4 w-32 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
       <div className="h-7 w-28 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
     </div>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {[...Array(4)].map((_, i) => (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {[...Array(5)].map((_, i) => (
         <div key={i} className="rounded-xl h-16 animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
       ))}
     </div>
@@ -122,6 +122,8 @@ const NomiiAnalyticsCharts = () => {
   const totalMessages    = sum.total_messages || 0;
   const escalationRate   = total > 0 ? Math.round((escalated / total) * 100) : null;
   const resolutionRate   = total > 0 ? Math.round((resolved / total) * 100) : null;
+  const avgScore         = sum.avg_score ?? null;
+  const scoredCount      = sum.scored_count || 0;
 
   // Tick interval: show fewer labels on denser charts
   const tickInterval = days === 7 ? 0 : days === 30 ? 4 : 12;
@@ -160,6 +162,16 @@ const NomiiAnalyticsCharts = () => {
            : resolutionRate >= 40   ? "#F59E0B"
            : "#F87171",
     },
+    {
+      label: "Avg AI Score",
+      value: avgScore === null ? "—" : `${avgScore} / 5`,
+      icon: Star,
+      color: avgScore === null  ? "rgba(255,255,255,0.2)"
+           : avgScore >= 4     ? "#4ADE80"
+           : avgScore >= 3     ? "#F59E0B"
+           : "#F87171",
+      sub: scoredCount > 0 ? `${scoredCount} rated` : null,
+    },
   ];
 
   const topCustomers = data?.top_customers || [];
@@ -197,7 +209,7 @@ const NomiiAnalyticsCharts = () => {
       </div>
 
       {/* Period KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -218,6 +230,11 @@ const NomiiAnalyticsCharts = () => {
                 <p className="text-lg font-bold tabular-nums leading-none" style={{ color: "rgba(255,255,255,0.88)" }}>
                   {kpi.value}
                 </p>
+                {kpi.sub && (
+                  <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.2)" }}>
+                    {kpi.sub}
+                  </p>
+                )}
               </div>
             </div>
           );

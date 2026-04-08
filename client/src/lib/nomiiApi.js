@@ -151,6 +151,8 @@ export const handbackConversation = (id, note) =>
   apiRequest("POST", `/api/portal/conversations/${id}/handback`, note ? { note } : {});
 export const replyToConversation = (id, content) =>
   apiRequest("POST", `/api/portal/conversations/${id}/reply`, { content });
+export const scoreConversation = (id, score) =>
+  apiRequest("POST", `/api/portal/conversations/${id}/score`, { score });
 
 // Badge counts (unread indicators)
 export const getBadgeCounts = () => apiRequest("GET", "/api/portal/badge-counts");
