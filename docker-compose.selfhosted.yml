@@ -1,0 +1,112 @@
+# ============================================================
+# Nomii AI — Self-Hosted
+#
+# This is the only file you need to run Nomii AI on your
+# own server. It pulls pre-built images from GitHub's
+# container registry — no source code required.
+#
+# Quick start:
+#   curl -sSL https://raw.githubusercontent.com/jafools/knomi-ai/main/scripts/install.sh | bash
+#
+# Manual start (after creating your .env):
+#   docker compose -f docker-compose.selfhosted.yml up -d
+# ============================================================
+
+services:
+
+  # ── Database ──────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: nomii-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: knomi_ai
+      POSTGRES_USER: knomi
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U knomi -d knomi_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend API ───────────────────────────────────────────
+  # Migrations run automatically on every start.
+  backend:
+    image: ghcr.io/jafools/nomii-backend:latest
+    container_name: nomii-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://knomi:${DB_PASSWORD}@db:5432/knomi_ai
+      PORT: 3001
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET}
+      API_KEY_ENCRYPTION_SECRET: ${API_KEY_ENCRYPTION_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      APP_URL: ${APP_URL}
+      PORTAL_URL: ${APP_URL}
+      LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_API_KEY: ${ANTHROPIC_API_KEY}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      MASTER_EMAIL: ${MASTER_EMAIL:-}
+      API_KEY_ENCRYPTION_SECRET: ${API_KEY_ENCRYPTION_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_STARTER: ${STRIPE_PRICE_STARTER:-}
+      STRIPE_PRICE_GROWTH: ${STRIPE_PRICE_GROWTH:-}
+      STRIPE_PRICE_PROFESSIONAL: ${STRIPE_PRICE_PROFESSIONAL:-}
+      STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-}
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-3}
+      WIDGET_SESSION_RATE_LIMIT_MAX: ${WIDGET_SESSION_RATE_LIMIT_MAX:-6}
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Frontend ──────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/jafools/nomii-frontend:latest
+    container_name: nomii-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # ── Cloudflare Tunnel (optional) ─────────────────────────
+  # The easiest way to get a public HTTPS URL without opening
+  # firewall ports or managing SSL certificates.
+  #
+  # To use: set CLOUDFLARE_TUNNEL_TOKEN in your .env
+  # To skip: leave CLOUDFLARE_TUNNEL_TOKEN blank — this
+  #          service will simply exit harmlessly on startup.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: nomii-cloudflared
+    restart: unless-stopped
+    command: >
+      sh -c "
+        if [ -z \"$$CLOUDFLARE_TUNNEL_TOKEN\" ]; then
+          echo 'No CLOUDFLARE_TUNNEL_TOKEN set — skipping tunnel.';
+          exit 0;
+        fi;
+        cloudflared tunnel --no-autoupdate run --token $$CLOUDFLARE_TUNNEL_TOKEN
+      "
+    environment:
+      CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  pgdata:
+    driver: local
