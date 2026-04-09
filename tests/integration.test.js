@@ -282,8 +282,12 @@ async function runMigrationsOnTestDb() {
   const migrationsDir = path.resolve(__dirname, '..', 'server', 'db', 'migrations');
   if (!fs.existsSync(migrationsDir)) return;
 
-  const files = fs.readdirSync(migrationsDir).sort().filter(f => f.endsWith('.sql'));
   const pool = getPool();
+
+  // Enable pgcrypto so gen_random_bytes() works in migrations
+  await pool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto').catch(() => {});
+
+  const files = fs.readdirSync(migrationsDir).sort().filter(f => f.endsWith('.sql'));
 
   for (const file of files) {
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
