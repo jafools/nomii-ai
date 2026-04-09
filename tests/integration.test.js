@@ -228,20 +228,54 @@ function getPool() {
 }
 
 async function ensureTestDbExists() {
-  // Connect to the postgres system DB (always exists) to CREATE DATABASE
-  const sysUrl = new URL(TEST_DB);
-  sysUrl.pathname = '/postgres';
-  const pool = new Pool({ connectionString: sysUrl.toString() });
+  // Step 1: Try connecting directly to the test DB
+  const testPool = new Pool({ connectionString: TEST_DB });
   try {
-    await pool.query(`CREATE DATABASE "${PG.database}"`);
-    console.log(`Created test database: ${PG.database}`);
+    await testPool.query('SELECT 1');
+    // Connected fine — test DB already exists
+    await testPool.end();
+    return true;
   } catch (err) {
-    if (!err.message.includes('already exists')) {
-      console.warn(`Could not create test DB: ${err.message}`);
+    await testPool.end().catch(() => {});
+    if (!err.message.includes('does not exist')) {
+      // Auth error or other problem — can't proceed
+      console.error(`\n  Cannot connect to test DB: ${err.message}`);
+      console.error(`  URL: ${TEST_DB}\n`);
+      return false;
     }
-  } finally {
-    await pool.end();
   }
+
+  // Step 2: DB doesn't exist — try to create it.
+  // Try connecting to postgres, then the base DB, then template1
+  const candidates = ['postgres', rawDbUrl.split('/').pop(), 'template1'];
+  for (const dbName of candidates) {
+    const tryUrl = new URL(TEST_DB);
+    tryUrl.pathname = `/${dbName}`;
+    const pool = new Pool({ connectionString: tryUrl.toString() });
+    try {
+      await pool.query(`CREATE DATABASE "${PG.database}"`);
+      console.log(`Created test database: ${PG.database}`);
+      await pool.end();
+      return true;
+    } catch (err) {
+      await pool.end().catch(() => {});
+      if (err.message.includes('already exists')) return true;
+      // Try next candidate
+    }
+  }
+
+  // Step 3: All creation attempts failed — tell the user how to fix it
+  console.error('\n══════════════════════════════════════════════════════');
+  console.error(`  Test database "${PG.database}" does not exist and`);
+  console.error('  could not be created automatically.');
+  console.error('');
+  console.error('  Create it manually:');
+  console.error(`    sudo -u postgres createdb ${PG.database}`);
+  console.error(`    sudo -u postgres psql -c "GRANT ALL ON DATABASE ${PG.database} TO ${PG.user}"`);
+  console.error('');
+  console.error('  Then re-run:  node tests/integration.test.js');
+  console.error('══════════════════════════════════════════════════════\n');
+  return false;
 }
 
 async function runMigrationsOnTestDb() {
@@ -256,10 +290,9 @@ async function runMigrationsOnTestDb() {
     try {
       await pool.query(sql);
     } catch (err) {
-      // Ignore "already exists" errors from idempotent migrations
+      // Ignore "already exists" / "duplicate" from idempotent migrations
       if (!err.message.includes('already exists') && !err.message.includes('duplicate')) {
-        // Non-fatal — log and continue (migration may be partially applied)
-        // console.warn(`  [migration] ${file}: ${err.message.split('\n')[0]}`);
+        // Silently skip — migration may be partially applied
       }
     }
   }
@@ -289,8 +322,10 @@ async function waitMs(ms) {
 
 async function runTests() {
   // ── Ensure test DB exists and is migrated ─────────────────────────────────
-  await ensureTestDbExists();
-  await runMigrationsOnTestDb();
+  const dbReady = await ensureTestDbExists();
+  if (dbReady) {
+    await runMigrationsOnTestDb();
+  }
 
   // ══════════════════════════════════════════════════════════════════════════════
   // UNIT TESTS — Subscription Middleware Logic
@@ -431,6 +466,11 @@ async function runTests() {
   // ══════════════════════════════════════════════════════════════════════════════
   // INTEGRATION TESTS — Server Mode Behavior
   // ══════════════════════════════════════════════════════════════════════════════
+
+  if (!dbReady) {
+    console.log('\n  Skipping integration tests — test DB not available.');
+    console.log('  Unit tests above still ran. Fix the DB issue and re-run.\n');
+  } else {
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('Integration Tests — SaaS Mode Server');
@@ -744,6 +784,8 @@ async function runTests() {
     console.error('License master tests error:', err.message);
     if (licenseProc) await stopServer(licenseProc);
   }
+
+  } // end if (dbReady)
 
   // ══════════════════════════════════════════════════════════════════════════════
   // Summary
