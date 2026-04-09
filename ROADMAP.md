@@ -23,7 +23,7 @@ These are not features — they're unfinished deployment steps that block live d
 
 ## 🔴 Next Session — Activate Self-Hosted on VPS + E2E Test
 
-The complete on-prem single-tenant system is ✅ **built (2026-04-09, afternoon)**. One deployment step + validation:
+✅ **Complete on-prem single-tenant system is built (2026-04-09, afternoon).** One deployment step + validation:
 
 | Task | Notes | Time |
 |------|-------|------|
