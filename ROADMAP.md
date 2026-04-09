@@ -1,5 +1,5 @@
 # Nomii AI — Product Roadmap
-*Last updated: 2026-03-27*
+*Last updated: 2026-04-09*
 
 > Organised by time horizon and priority, not by session. For session-by-session build history see `SESSION_HANDOFF.md`. For current feature inventory see `FEATURES.md`.
 
@@ -16,6 +16,26 @@ These are not features — they're unfinished deployment steps that block live d
 | **Verify pending migrations 015b–019 applied** | Check `\dt` in psql — `custom_tools`, `customer_data` (generic schema), `agent_soul_template` column must all exist |
 | **Stripe Portal return URL env var** | Set `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans` in server `.env` |
 | **Trademark filing** | Attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged. Required before public commercial launch. |
+| **GHCR packages public** | First workflow run will create packages; `make-public` job auto-runs. If it fails, add `PACKAGES_PAT` secret (classic PAT, `write:packages` scope) in repo Settings → Secrets |
+| **Self-hosted parity audit** | End-to-end test of `scripts/install.sh` on a fresh VM; verify migrations, env vars, Stripe, email, auth all work identically to cloud | 
+
+---
+
+## 🔴 Next Session — Self-Hosted License Enforcement (Option A)
+
+Self-hosted deployments currently have no payment enforcement — operators use their own Stripe keys and Nomii receives nothing. Full design and implementation needed:
+
+### License Key System (Option A)
+
+| Component | What to build |
+|-----------|--------------|
+| **License validation endpoint** | Small API route (or Cloudflare Worker) at `api.pontensolutions.com/api/license/validate` — accepts `{ license_key, instance_id }`, returns `{ valid, plan, expires_at }` |
+| **License DB table** | `licenses` table: `key`, `plan`, `issued_to_email`, `issued_at`, `expires_at`, `instance_id`, `last_ping_at` |
+| **Startup check in backend** | `server/src/services/licenseService.js` — on boot, if `NOMII_LICENSE_KEY` env var is set, validate against the endpoint. If missing or invalid in production, log warning and exit (or degrade to read-only). Skip check if `NODE_ENV=development`. |
+| **Periodic heartbeat** | Every 24h, re-validate the license. Mark instance inactive in DB if it goes silent. |
+| **License issuance flow** | After purchase (Stripe checkout or manual), issue a license key and email it to the operator. Simple admin route for manual issuance initially. |
+| **`docker-compose.selfhosted.yml` update** | Add `NOMII_LICENSE_KEY` env var placeholder with comment explaining where to get one. |
+| **`scripts/install.sh` update** | Add prompt for license key during setup wizard. |
 
 ---
 
@@ -198,7 +218,7 @@ Required alongside SOC 2 for any tenant in financial services or healthcare. Nom
 Direct integrations with Orion, Envestnet, Redtail, Wealthbox — the dominant financial CRMs. Data fetched at query time via Live Connector. Enterprise tier unlock.
 
 ### On-Premise Deployment
-Run the entire Nomii stack inside a firm's own infrastructure. Architecture is already container-native (Docker Compose), just needs packaging, installer script, and update mechanism. Enterprise tier only.
+✅ **Shipped 2026-04-09** — `docker-compose.selfhosted.yml` + `scripts/install.sh` + GHCR publish workflow. License enforcement (Option A) is the outstanding piece — tracked in Next Session above.
 
 ### Mobile Advisor App
 React Native app for advisors: push notifications for flags + human replies, quick reply from phone, conversation list with triage indicators. Requires the existing REST API to be the source of truth (it is).
