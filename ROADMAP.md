@@ -21,21 +21,19 @@ These are not features — they're unfinished deployment steps that block live d
 
 ---
 
-## 🔴 Next Session — Self-Hosted License Enforcement (Option A)
+## 🔴 Next Session — Activate Self-Hosted on VPS + E2E Test
 
-Self-hosted deployments currently have no payment enforcement — operators use their own Stripe keys and Nomii receives nothing. Full design and implementation needed:
+✅ **Complete on-prem single-tenant system is built (2026-04-09, afternoon).** One deployment step + validation:
 
-### License Key System (Option A)
+| Task | Notes | Time |
+|------|-------|------|
+| **Apply migration 029** on VPS | `docker exec -i knomi-db psql -U knomi -d knomi_ai < server/db/migrations/029_licenses.sql` | 2 min |
+| **Set `NOMII_LICENSE_MASTER=true`** in VPS `.env` | Activates the `/api/license/validate` endpoint so self-hosted instances can call it | 1 min |
+| **Redeploy VPS** | `cd ~/Knomi/knomi-ai && git pull && docker compose up --build -d` | 5 min |
+| **End-to-end test** | Run `scripts/install.sh` on a local Ubuntu VM, verify trial mode works, test license upgrade path | 30 min |
+| **Build pontensolutions.com `/nomii/license`** (optional for v1) | Simple page with Stripe payment links per plan; can use manual key issuance via admin API initially | 30 min |
 
-| Component | What to build |
-|-----------|--------------|
-| **License validation endpoint** | Small API route (or Cloudflare Worker) at `api.pontensolutions.com/api/license/validate` — accepts `{ license_key, instance_id }`, returns `{ valid, plan, expires_at }` |
-| **License DB table** | `licenses` table: `key`, `plan`, `issued_to_email`, `issued_at`, `expires_at`, `instance_id`, `last_ping_at` |
-| **Startup check in backend** | `server/src/services/licenseService.js` — on boot, if `NOMII_LICENSE_KEY` env var is set, validate against the endpoint. If missing or invalid in production, log warning and exit (or degrade to read-only). Skip check if `NODE_ENV=development`. |
-| **Periodic heartbeat** | Every 24h, re-validate the license. Mark instance inactive in DB if it goes silent. |
-| **License issuance flow** | After purchase (Stripe checkout or manual), issue a license key and email it to the operator. Simple admin route for manual issuance initially. |
-| **`docker-compose.selfhosted.yml` update** | Add `NOMII_LICENSE_KEY` env var placeholder with comment explaining where to get one. |
-| **`scripts/install.sh` update** | Add prompt for license key during setup wizard. |
+**Why now:** On-prem deployments are trial-ready (no key required to start). Operators have a clear upgrade path. This unblocks the self-hosted product launch.
 
 ---
 
