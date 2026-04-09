@@ -21,17 +21,19 @@ These are not features — they're unfinished deployment steps that block live d
 
 ---
 
-## 🔴 Next Session — Activate License Enforcement on VPS
+## 🔴 Next Session — Activate Self-Hosted on VPS + E2E Test
 
-The license key system is ✅ **built (2026-04-09)**. One deployment step remains before it's live:
+The complete on-prem single-tenant system is ✅ **built (2026-04-09, afternoon)**. One deployment step + validation:
 
-| Task | Command / Notes |
-|------|----------------|
-| **Apply migration 029** on VPS | `docker exec -i knomi-db psql -U knomi -d knomi_ai < server/db/migrations/029_licenses.sql` |
-| **Set `NOMII_LICENSE_MASTER=true`** in VPS `.env` | Activates the `/api/license/validate` endpoint so self-hosted instances can call it |
-| **Redeploy VPS** | `cd ~/Knomi/knomi-ai && git pull && docker compose up --build -d` |
-| **Issue first test license** | `POST /api/platform/licenses` (see SESSION_HANDOFF.md for curl example) |
-| **End-to-end test** | Run `scripts/install.sh` on a local VM, enter the test key, verify startup succeeds and heartbeat appears in logs |
+| Task | Notes | Time |
+|------|-------|------|
+| **Apply migration 029** on VPS | `docker exec -i knomi-db psql -U knomi -d knomi_ai < server/db/migrations/029_licenses.sql` | 2 min |
+| **Set `NOMII_LICENSE_MASTER=true`** in VPS `.env` | Activates the `/api/license/validate` endpoint so self-hosted instances can call it | 1 min |
+| **Redeploy VPS** | `cd ~/Knomi/knomi-ai && git pull && docker compose up --build -d` | 5 min |
+| **End-to-end test** | Run `scripts/install.sh` on a local Ubuntu VM, verify trial mode works, test license upgrade path | 30 min |
+| **Build pontensolutions.com `/nomii/license`** (optional for v1) | Simple page with Stripe payment links per plan; can use manual key issuance via admin API initially | 30 min |
+
+**Why now:** On-prem deployments are trial-ready (no key required to start). Operators have a clear upgrade path. This unblocks the self-hosted product launch.
 
 ---
 
