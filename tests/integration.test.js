@@ -18,20 +18,81 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
-const { execSync } = require('child_process');
+const fs = require('fs');
 
-const TEST_DB = 'postgresql://nomii:nomii_dev_2026@localhost:5432/nomii_test';
+// ── Resolve test DB URL ───────────────────────────────────────────────────────
+// Priority:
+//   1. TEST_DATABASE_URL env var (explicit override)
+//   2. DATABASE_URL env var (already set in shell)
+//   3. DATABASE_URL parsed from server/.env
+//   4. Hardcoded dev default
+//
+// In all cases, the database name is replaced with <name>_test so we never
+// touch a production database.
 
+function parseEnvFile(filePath) {
+  const vars = {};
+  if (!fs.existsSync(filePath)) return vars;
+  for (const line of fs.readFileSync(filePath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+    vars[key] = val;
+  }
+  return vars;
+}
+
+function makeTestDbUrl(baseUrl) {
+  // Replace the database name at the end of the URL with <name>_test
+  // e.g. postgresql://user:pass@host:5432/nomii_ai  →  .../nomii_ai_test
+  try {
+    const u = new URL(baseUrl);
+    const dbName = u.pathname.replace(/^\//, '');
+    u.pathname = `/${dbName}_test`;
+    return u.toString();
+  } catch {
+    return baseUrl; // give up, return as-is
+  }
+}
+
+const serverEnv = parseEnvFile(path.resolve(__dirname, '..', 'server', '.env'));
+
+const rawDbUrl =
+  process.env.TEST_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  serverEnv.DATABASE_URL ||
+  'postgresql://nomii:nomii_dev_2026@localhost:5432/nomii_ai';
+
+const TEST_DB = makeTestDbUrl(rawDbUrl);
+
+// Derive individual psql connection fields from the test URL (for cleanup)
+const _testUrl = new URL(TEST_DB);
+const PG = {
+  host:     _testUrl.hostname || 'localhost',
+  port:     _testUrl.port     || '5432',
+  user:     _testUrl.username || 'nomii',
+  password: _testUrl.password || '',
+  database: _testUrl.pathname.replace(/^\//, ''),
+};
+
+// Use the same JWT/encryption secrets as the real server when available
 const BASE_ENV = {
   ...process.env,
+  ...serverEnv,
   DATABASE_URL: TEST_DB,
   NODE_ENV: 'development',
-  JWT_SECRET: 'test-jwt-secret-at-least-32-characters-long-1234',
-  WIDGET_JWT_SECRET: 'test-widget-secret-at-least-32-chars-1234',
-  API_KEY_ENCRYPTION_SECRET: 'test-encryption-key-32-chars-long-12345',
-  LOGIN_RATE_LIMIT_MAX: '200',
+  // Ensure safe fallbacks — keep server .env values when they exist
+  JWT_SECRET:                serverEnv.JWT_SECRET                || 'test-jwt-secret-at-least-32-characters-long-1234',
+  WIDGET_JWT_SECRET:         serverEnv.WIDGET_JWT_SECRET         || 'test-widget-secret-at-least-32-chars-1234',
+  API_KEY_ENCRYPTION_SECRET: serverEnv.API_KEY_ENCRYPTION_SECRET || 'test-encryption-key-32-chars-long-12345',
+  LOGIN_RATE_LIMIT_MAX:      '200',
   WIDGET_SESSION_RATE_LIMIT_MAX: '200',
 };
+
+console.log(`Test DB: ${PG.host}:${PG.port}/${PG.database} (user: ${PG.user})`);
 
 // ── Test runner ───────────────────────────────────────────────────────────────
 
@@ -157,24 +218,66 @@ function stopServer(proc) {
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
-async function cleanupDb() {
-  const sql = `
-    DELETE FROM notifications;
-    DELETE FROM licenses;
-    DELETE FROM subscriptions;
-    DELETE FROM tenant_admins;
-    DELETE FROM platform_admins;
-    DELETE FROM tenants;
-  `;
+// Require pg from the server's node_modules (it ships with the server)
+const { Pool } = require(path.resolve(__dirname, '..', 'server', 'node_modules', 'pg'));
+
+let _pool = null;
+function getPool() {
+  if (!_pool) _pool = new Pool({ connectionString: TEST_DB });
+  return _pool;
+}
+
+async function ensureTestDbExists() {
+  // Connect to the postgres system DB (always exists) to CREATE DATABASE
+  const sysUrl = new URL(TEST_DB);
+  sysUrl.pathname = '/postgres';
+  const pool = new Pool({ connectionString: sysUrl.toString() });
   try {
-    execSync(
-      `PGPASSWORD=nomii_dev_2026 psql -h localhost -U nomii -d nomii_test -c "${sql.replace(/\n/g, ' ')}"`,
-      {
-        stdio: 'pipe',
-      }
-    );
+    await pool.query(`CREATE DATABASE "${PG.database}"`);
+    console.log(`Created test database: ${PG.database}`);
   } catch (err) {
-    // ignore cleanup errors
+    if (!err.message.includes('already exists')) {
+      console.warn(`Could not create test DB: ${err.message}`);
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
+async function runMigrationsOnTestDb() {
+  const migrationsDir = path.resolve(__dirname, '..', 'server', 'db', 'migrations');
+  if (!fs.existsSync(migrationsDir)) return;
+
+  const files = fs.readdirSync(migrationsDir).sort().filter(f => f.endsWith('.sql'));
+  const pool = getPool();
+
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    try {
+      await pool.query(sql);
+    } catch (err) {
+      // Ignore "already exists" errors from idempotent migrations
+      if (!err.message.includes('already exists') && !err.message.includes('duplicate')) {
+        // Non-fatal — log and continue (migration may be partially applied)
+        // console.warn(`  [migration] ${file}: ${err.message.split('\n')[0]}`);
+      }
+    }
+  }
+}
+
+async function cleanupDb() {
+  const pool = getPool();
+  try {
+    await pool.query(`
+      DELETE FROM notifications;
+      DELETE FROM licenses;
+      DELETE FROM subscriptions;
+      DELETE FROM tenant_admins;
+      DELETE FROM platform_admins;
+      DELETE FROM tenants;
+    `);
+  } catch (err) {
+    // ignore cleanup errors (table might not exist yet)
   }
 }
 
@@ -185,6 +288,10 @@ async function waitMs(ms) {
 // ── Main test runner ──────────────────────────────────────────────────────────
 
 async function runTests() {
+  // ── Ensure test DB exists and is migrated ─────────────────────────────────
+  await ensureTestDbExists();
+  await runMigrationsOnTestDb();
+
   // ══════════════════════════════════════════════════════════════════════════════
   // UNIT TESTS — Subscription Middleware Logic
   // ══════════════════════════════════════════════════════════════════════════════
@@ -641,6 +748,9 @@ async function runTests() {
   // ══════════════════════════════════════════════════════════════════════════════
   // Summary
   // ══════════════════════════════════════════════════════════════════════════════
+
+  // Close pool
+  if (_pool) await _pool.end().catch(() => {});
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   const total = passed + failed;
