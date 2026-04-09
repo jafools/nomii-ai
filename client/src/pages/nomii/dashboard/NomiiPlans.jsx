@@ -86,6 +86,7 @@ const NomiiPlans = () => {
   const { nomiiUser, nomiiTenant, subscription } = useNomiiAuth();
   const [busy, setBusy] = useState(false);
   const [usage, setUsage] = useState(null);
+  const [isSelfHosted, setIsSelfHosted] = useState(false);
 
   const currentPlan = subscription?.plan || "free";
   const isMaster    = currentPlan === "master";
@@ -93,6 +94,7 @@ const NomiiPlans = () => {
   const isActive    = ["active"].includes(subscription?.status) && !["free", "trial"].includes(currentPlan);
   const planColor   = PLAN_COLORS[currentPlan] || "#6B7280";
   const planLabel   = PLAN_LABELS[currentPlan] || currentPlan;
+  const isTrialPlan = ["free", "trial"].includes(currentPlan);
 
   const fetchUsage = useCallback(async () => {
     try {
@@ -101,14 +103,23 @@ const NomiiPlans = () => {
     } catch {}
   }, []);
 
-  // Inject Stripe pricing table script once
+  // Detect deployment mode — determines whether to show Stripe or license panel
   useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => { if (d.deployment === "selfhosted") setIsSelfHosted(true); })
+      .catch(() => {});
+  }, []);
+
+  // Inject Stripe pricing table script once (SaaS only)
+  useEffect(() => {
+    if (isSelfHosted) return;
     if (document.querySelector('script[src*="pricing-table"]')) return;
     const script = document.createElement("script");
     script.src   = "https://js.stripe.com/v3/pricing-table.js";
     script.async = true;
     document.head.appendChild(script);
-  }, []);
+  }, [isSelfHosted]);
 
   useEffect(() => { fetchUsage(); }, [fetchUsage]);
 
@@ -123,6 +134,142 @@ const NomiiPlans = () => {
       setBusy(false);
     }
   };
+
+  // ── Self-hosted: show license status instead of Stripe ──────────────────
+  if (isSelfHosted) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>License & Usage</h2>
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
+              style={{ background: `${planColor}22`, color: planColor, border: `1px solid ${planColor}44` }}
+            >
+              {planLabel}
+            </span>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+              Self-hosted deployment
+            </p>
+          </div>
+        </div>
+
+        {/* Trial banner */}
+        {isTrialPlan && (
+          <div className="rounded-xl px-5 py-4 flex items-start gap-3"
+            style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)" }}>
+            <Zap className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#8B5CF6" }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "#8B5CF6" }}>Free trial active</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(139,92,246,0.80)" }}>
+                Trial is limited to 20 messages/mo and 1 customer.
+                Purchase a license to unlock your full plan.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Limit reached banner */}
+        {usage && (usage.customer_limit_reached || usage.message_limit_reached) && (
+          <div className="rounded-xl px-5 py-4 flex items-start gap-3"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#EF4444" }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "#EF4444" }}>Plan limit reached</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(239,68,68,0.70)" }}>
+                Purchase a license and add your key below to restore service immediately.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Usage meters */}
+        {usage && (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+              Current Usage
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <UsageMeter
+                icon={Users}
+                label="Customers"
+                used={usage.customers_count}
+                limit={usage.customers_limit}
+                pct={usage.customers_pct}
+                nearLimit={usage.near_customer_limit}
+                limitReached={usage.customer_limit_reached}
+              />
+              <UsageMeter
+                icon={MessageSquare}
+                label="Messages this month"
+                used={usage.messages_used}
+                limit={usage.messages_limit}
+                pct={usage.messages_pct}
+                nearLimit={usage.near_message_limit}
+                limitReached={usage.message_limit_reached}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Upgrade instructions */}
+        <div className="rounded-2xl p-6 space-y-4"
+          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-3">
+            <Crown size={20} style={{ color: "#C9A84C" }} />
+            <p className="font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
+              {isTrialPlan ? "Upgrade from trial" : "Change your license"}
+            </p>
+          </div>
+          <ol className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+            <li className="flex items-start gap-2">
+              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>1.</span>
+              <span>
+                Purchase a license at{" "}
+                <a
+                  href="https://pontensolutions.com/nomii/license"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                  style={{ color: "#C9A84C" }}
+                >
+                  pontensolutions.com/nomii/license
+                </a>
+                {" "}— you'll receive a key by email.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>2.</span>
+              <span>
+                Open your <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>.env</code> file
+                and set <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY=your-key</code>.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>3.</span>
+              <span>
+                Restart the backend:{" "}
+                <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  docker compose -f docker-compose.selfhosted.yml restart backend
+                </code>
+              </span>
+            </li>
+          </ol>
+          <a
+            href="https://pontensolutions.com/nomii/license"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#C9A84C" }}
+          >
+            <Zap size={14} />
+            Get a license
+            <ExternalLink size={12} />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (isMaster || isEnterprise) {
     return (

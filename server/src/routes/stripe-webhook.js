@@ -14,18 +14,10 @@
 
 const router = require('express').Router();
 const db     = require('../db');
+const { PLAN_LIMITS } = require('../config/plans');
 
 const STRIPE_SECRET_KEY      = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET  = process.env.STRIPE_WEBHOOK_SECRET;
-
-// Plan limits lookup
-const PLAN_LIMITS = {
-  starter:      { max_customers: 50,   max_messages_month: 1000,  managed_ai: false, max_agents: 10  },
-  growth:       { max_customers: 250,  max_messages_month: 5000,  managed_ai: true,  max_agents: 25  },
-  professional: { max_customers: 1000, max_messages_month: 25000, managed_ai: true,  max_agents: 100 },
-  enterprise:   { max_customers: 99999, max_messages_month: 999999, managed_ai: true, max_agents: 999 },
-  master:       { max_customers: 99999, max_messages_month: 999999, managed_ai: true, max_agents: 999 },
-};
 
 // Reverse price ID → plan name lookup (for Stripe pricing table which doesn't pass metadata.plan)
 function getPlanFromPriceId(priceId) {

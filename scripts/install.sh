@@ -158,12 +158,43 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   read -r ANTHROPIC_API_KEY
   [ -z "$ANTHROPIC_API_KEY" ] && warn "No API key entered — AI features will be disabled until you add one to .env"
 
+  # ── Company name ─────────────────────────────
+  echo ""
+  echo -e "   ${W}Your company name${NC}"
+  echo -e "   ${D}Used as the tenant name in your Nomii dashboard.${NC}"
+  ask "Company name:"
+  read -r TENANT_NAME
+  TENANT_NAME="${TENANT_NAME:-My Company}"
+
   # ── Admin email ───────────────────────────────
   echo ""
   echo -e "   ${W}Admin email${NC}"
-  echo -e "   ${D}Your email address. This account gets unlimited free access.${NC}"
+  echo -e "   ${D}Your email address. This will be your login to the Nomii dashboard.${NC}"
   ask "Your email address:"
   read -r MASTER_EMAIL
+
+  # ── Admin password ────────────────────────────
+  echo ""
+  echo -e "   ${W}Admin password${NC}"
+  echo -e "   ${D}Choose a strong password for your Nomii dashboard login.${NC}"
+  while true; do
+    ask "Password (min 8 characters):"
+    read -rs ADMIN_PASSWORD
+    echo ""
+    if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
+      warn "Password must be at least 8 characters. Try again."
+    else
+      ask "Confirm password:"
+      read -rs ADMIN_PASSWORD_CONFIRM
+      echo ""
+      if [ "$ADMIN_PASSWORD" != "$ADMIN_PASSWORD_CONFIRM" ]; then
+        warn "Passwords do not match. Try again."
+      else
+        ok "Password set"
+        break
+      fi
+    fi
+  done
 
   # ── SMTP ──────────────────────────────────────
   echo ""
@@ -189,14 +220,17 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
 
   # ── License key ──────────────────────────────
   echo ""
-  echo -e "   ${W}Nomii AI license key${NC}"
-  echo -e "   ${D}A license key is required to run Nomii AI in production."
-  echo -e "   Get yours at: https://pontensolutions.com/nomii/license"
-  echo -e "   After purchase you will receive the key by email."
-  echo -e "   If you are evaluating locally (NODE_ENV=development) you can skip this.${NC}"
-  ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [skip for dev]:"
+  echo -e "   ${W}Nomii AI license key — optional${NC}"
+  echo -e "   ${D}Leave blank to start with the free trial (20 messages/mo, 1 customer)."
+  echo -e "   If you already have a paid license key, enter it here."
+  echo -e "   You can add or upgrade a key at any time by editing .env and restarting.${NC}"
+  ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
   read -r NOMII_LICENSE_KEY
-  [ -z "$NOMII_LICENSE_KEY" ] && warn "No license key entered — the backend will not start in production mode without one."
+  if [ -z "$NOMII_LICENSE_KEY" ]; then
+    ok "Starting with free trial — 20 messages/mo, 1 customer"
+  else
+    ok "License key noted — will be validated on first start"
+  fi
 
   # ── Cloudflare Tunnel ─────────────────────────
   echo ""
@@ -243,6 +277,10 @@ ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
 # ── Admin account ─────────────────────────────
 MASTER_EMAIL=${MASTER_EMAIL}
+# ADMIN_PASSWORD is used once on first boot to create your account.
+# You may remove this line after your first successful login.
+ADMIN_PASSWORD=${ADMIN_PASSWORD}
+TENANT_NAME=${TENANT_NAME}
 
 # ── Email / SMTP ──────────────────────────────
 SMTP_HOST=${SMTP_HOST}
@@ -256,7 +294,8 @@ SMTP_FROM=${SMTP_FROM}
 CLOUDFLARE_TUNNEL_TOKEN=${CF_TOKEN}
 
 # ── Nomii License ─────────────────────────────
-# Required in production. Get a key at: https://pontensolutions.com/nomii/license
+# Leave blank for free trial (20 messages/mo, 1 customer).
+# Upgrade at: https://pontensolutions.com/nomii/license
 NOMII_LICENSE_KEY=${NOMII_LICENSE_KEY}
 
 # ── Stripe billing (optional) ─────────────────

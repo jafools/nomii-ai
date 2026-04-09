@@ -68,13 +68,22 @@ services:
       STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-}
       LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-3}
       WIDGET_SESSION_RATE_LIMIT_MAX: ${WIDGET_SESSION_RATE_LIMIT_MAX:-6}
-      # ── Nomii License (required in production) ────────────
-      # Get your license key at: https://pontensolutions.com/nomii/license
-      # After purchase you will receive a key by email. Add it here.
-      # Without a valid key the backend will refuse to start.
+      # ── Deployment mode ───────────────────────────────────
+      # Always 'selfhosted' for this compose file.
+      # Enables single-tenant mode, disables SaaS registration,
+      # and switches the dashboard to license-based billing.
+      NOMII_DEPLOYMENT: selfhosted
+      # ── First-boot tenant provisioning ───────────────────
+      # Used once on startup to create your admin account.
+      # Set by install.sh. Can be removed from .env after first boot.
+      TENANT_NAME: ${TENANT_NAME:-My Company}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # ── Nomii License ─────────────────────────────────────
+      # Leave blank to start the free trial (20 messages/mo, 1 customer).
+      # Purchase a paid license at: https://pontensolutions.com/nomii/license
+      # After purchase, paste your key here and restart the backend.
       NOMII_LICENSE_KEY: ${NOMII_LICENSE_KEY:-}
-      # Optional: set a stable ID for this server so the admin panel
-      # can track it across restarts. Leave blank to auto-generate.
+      # Optional: stable identifier for this instance across restarts.
       NOMII_INSTANCE_ID: ${NOMII_INSTANCE_ID:-}
     ports:
       - "3001:3001"

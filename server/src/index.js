@@ -173,9 +173,12 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', require('./routes/auth'));
 
 // Routes — Platform Admin (separate auth layer, no tenant scope)
-app.use('/api/platform/auth',     require('./routes/platform/auth'));
-app.use('/api/platform/tenants',  require('./routes/platform/tenants'));
-app.use('/api/platform/licenses', require('./routes/platform/licenses'));
+// Disabled on self-hosted deployments — operators use the tenant dashboard, not platform admin.
+if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
+  app.use('/api/platform/auth',     require('./routes/platform/auth'));
+  app.use('/api/platform/tenants',  require('./routes/platform/tenants'));
+  app.use('/api/platform/licenses', require('./routes/platform/licenses'));
+}
 
 // Routes — License validation (called by self-hosted instances; only active when NOMII_LICENSE_MASTER=true)
 app.use('/api/license', require('./routes/license'));
@@ -194,6 +197,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'nomii-ai', timestamp: new Date().toISOString() });
 });
 
+// Deployment config — consumed by the frontend to toggle SaaS vs self-hosted UI
+app.get('/api/config', (req, res) => {
+  const selfHosted = process.env.NOMII_DEPLOYMENT === 'selfhosted';
+  res.json({
+    deployment:   selfHosted ? 'selfhosted' : 'saas',
+    features: {
+      registration:      !selfHosted,  // hide sign-up page on self-hosted
+      managedAI:         !selfHosted,  // BYOK only on self-hosted
+      stripeBilling:     !selfHosted,  // use license key billing instead
+      licenseManagement:  selfHosted,  // show license status + upgrade prompt
+    },
+  });
+});
+
 // Error handler — never expose internal details in production
 app.use((err, req, res, next) => {
   const status = err.status || 500;
@@ -207,14 +224,28 @@ app.use((err, req, res, next) => {
 });
 
 // ── Async startup ─────────────────────────────────────────────────────────────
-// Runs license validation (self-hosted only) before the server accepts traffic.
+// Order: seed tenant (self-hosted) → license check → listen
 (async () => {
+  // 1. Self-hosted: auto-provision tenant + admin on first boot
+  if (process.env.NOMII_DEPLOYMENT === 'selfhosted') {
+    try {
+      const { seedSelfHostedTenant } = require('./jobs/seedSelfHostedTenant');
+      await seedSelfHostedTenant();
+    } catch (err) {
+      console.error('[Startup] Tenant seed failed:', err.message);
+      // Non-fatal if tenant already exists; fatal only if DB is unreachable
+      if (err.code === 'ECONNREFUSED' || err.code === '57P03') {
+        console.error('[Startup] Database unreachable — cannot start.');
+        process.exit(1);
+      }
+    }
+  }
+
+  // 2. License check (self-hosted only; no-op for SaaS VPS)
   try {
     const { checkLicenseOnStartup } = require('./services/licenseService');
     await checkLicenseOnStartup();
   } catch (err) {
-    // checkLicenseOnStartup calls process.exit internally; this catch is a
-    // safety net for unexpected import errors.
     console.error('[Startup] License check error:', err.message);
     process.exit(1);
   }

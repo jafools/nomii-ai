@@ -55,6 +55,16 @@ function issueToken({ tenant_id, admin_id, email, role }) {
 // Sends a verification email. Does NOT issue a JWT until email is confirmed.
 //
 router.post('/register', async (req, res, next) => {
+  // Self-hosted deployments are single-tenant. The tenant is auto-seeded on
+  // first boot. Allowing additional tenant registrations would be confusing
+  // and could bypass license enforcement.
+  if (process.env.NOMII_DEPLOYMENT === 'selfhosted') {
+    return res.status(403).json({
+      error: 'registration_disabled',
+      message: 'This is a single-tenant self-hosted installation. Use the admin account created during setup.',
+    });
+  }
+
   try {
     const {
       email,

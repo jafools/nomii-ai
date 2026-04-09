@@ -1,31 +1,28 @@
 /**
  * NOMII AI — Self-Hosted License Service
  *
- * Validates the NOMII_LICENSE_KEY env var against the Nomii cloud API.
- * Only active in production when NOMII_LICENSE_KEY is set.
- *
  * Behaviour matrix:
- *   NODE_ENV != 'production'          → skip all checks (dev/test free pass)
- *   production + no key               → warn + exit(1)
- *   production + key, valid           → start normally; schedule 24h heartbeat
- *   production + key, invalid/expired → warn + exit(1)
- *   heartbeat fails (network error)   → log warning only, do NOT crash running instance
+ *
+ *   NODE_ENV != 'production'                → skip (dev free pass)
+ *   NOMII_DEPLOYMENT != 'selfhosted'        → skip (SaaS VPS — not our concern)
+ *   selfhosted + no NOMII_LICENSE_KEY       → trial mode (local limits, no cloud call)
+ *   selfhosted + key present, valid         → apply plan limits; schedule 24h heartbeat
+ *   selfhosted + key present, invalid       → log error + exit(1)
+ *   heartbeat fails (transient network)     → warn only, do NOT crash running instance
  */
 
 const https  = require('https');
 const http   = require('http');
 const crypto = require('crypto');
+const { PLAN_LIMITS, isSelfHosted } = require('../config/plans');
 
-// The URL of the validation endpoint on the Nomii cloud instance.
-// Self-hosted operators hit this on startup and every 24 hours.
 const VALIDATE_URL = process.env.NOMII_LICENSE_VALIDATE_URL
   || 'https://api.pontensolutions.com/api/license/validate';
 
-const HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
-// Stable identifier for this server process (persists within one run).
-// Operators can override via NOMII_INSTANCE_ID to get a consistent ID
-// across restarts — useful for the admin panel to track instances.
+// Stable identifier for this server process.
+// Override with NOMII_INSTANCE_ID for consistency across restarts.
 const INSTANCE_ID = process.env.NOMII_INSTANCE_ID
   || crypto.createHash('sha256')
        .update(
@@ -38,7 +35,7 @@ const INSTANCE_ID = process.env.NOMII_INSTANCE_ID
 
 let _heartbeatTimer = null;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// ── HTTP helper ────────────────────────────────────────────────────────────────
 
 function post(url, body) {
   return new Promise((resolve, reject) => {
@@ -61,87 +58,60 @@ function post(url, body) {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
-        try {
-          resolve({ status: res.statusCode, body: JSON.parse(data) });
-        } catch {
-          resolve({ status: res.statusCode, body: {} });
-        }
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { resolve({ status: res.statusCode, body: {} }); }
       });
     });
 
     req.on('error',   reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('License validation request timed out')); });
+    req.on('timeout', () => { req.destroy(); reject(new Error('License validation timed out')); });
     req.write(payload);
     req.end();
   });
 }
 
-// ── Core validation ────────────────────────────────────────────────────────────
+// ── Cloud validation call ─────────────────────────────────────────────────────
 
-/**
- * Calls the Nomii validation endpoint once.
- * Resolves with the response body on HTTP 200; rejects otherwise.
- */
 async function callValidate(licenseKey) {
   const { status, body } = await post(VALIDATE_URL, {
     license_key: licenseKey,
     instance_id: INSTANCE_ID,
   });
 
-  if (status === 200 && body.valid) {
-    return body; // { valid, plan, expires_at }
-  }
+  if (status === 200 && body.valid) return body; // { valid, plan, expires_at }
 
   const reason = (body && body.error) || `HTTP ${status}`;
   throw new Error(`License invalid: ${reason}`);
 }
 
-// ── Startup check ──────────────────────────────────────────────────────────────
+// ── Apply plan limits to the local DB ─────────────────────────────────────────
+// Upserts the subscription row for the single self-hosted tenant so the
+// existing subscription middleware enforces the correct limits.
 
-/**
- * Must be called early in server startup (before app.listen).
- * In non-production environments this is a no-op.
- * In production, a missing or invalid key causes process.exit(1).
- */
-async function checkLicenseOnStartup() {
-  if (process.env.NODE_ENV !== 'production') {
-    return; // development / test — no check
-  }
-
-  const licenseKey = process.env.NOMII_LICENSE_KEY;
-
-  if (!licenseKey) {
-    console.error('[License] NOMII_LICENSE_KEY is not set.');
-    console.error('[License] Self-hosted deployments require a valid license key.');
-    console.error('[License] Purchase one at https://pontensolutions.com/nomii/license');
-    console.error('[License] Refusing to start.');
-    process.exit(1);
-  }
-
-  console.log(`[License] Validating license key (instance ${INSTANCE_ID})…`);
-
+async function applyPlanLimits(plan) {
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
   try {
-    const result = await callValidate(licenseKey);
-    const expiry = result.expires_at
-      ? `expires ${new Date(result.expires_at).toDateString()}`
-      : 'no expiry';
-    console.log(`[License] ✓ Valid — plan: ${result.plan}, ${expiry}`);
-    scheduleHeartbeat(licenseKey);
+    const db = require('../db');
+    await db.query(
+      `UPDATE subscriptions
+       SET plan                  = $1,
+           max_messages_month    = $2,
+           max_customers         = $3,
+           managed_ai_enabled    = $4,
+           max_agents            = $5,
+           status                = 'active',
+           updated_at            = NOW()
+       WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at LIMIT 1)`,
+      [plan, limits.max_messages_month, limits.max_customers, limits.managed_ai, limits.max_agents]
+    );
+    console.log(`[License] Plan limits applied: ${plan} (${limits.max_messages_month} msg/mo, ${limits.max_customers} customers)`);
   } catch (err) {
-    console.error(`[License] Validation failed: ${err.message}`);
-    console.error('[License] Check your NOMII_LICENSE_KEY and ensure this server can reach the internet.');
-    console.error('[License] Refusing to start.');
-    process.exit(1);
+    console.warn('[License] Could not upsert subscription limits:', err.message);
   }
 }
 
-// ── Periodic heartbeat ─────────────────────────────────────────────────────────
+// ── Heartbeat ─────────────────────────────────────────────────────────────────
 
-/**
- * Schedules a 24-hour re-validation loop.
- * On failure: logs a warning but does NOT kill the running process.
- * (A transient network blip should not take down a live deployment.)
- */
 function scheduleHeartbeat(licenseKey) {
   if (_heartbeatTimer) clearInterval(_heartbeatTimer);
 
@@ -149,15 +119,53 @@ function scheduleHeartbeat(licenseKey) {
     try {
       const result = await callValidate(licenseKey);
       console.log(`[License] Heartbeat OK — plan: ${result.plan}`);
+      await applyPlanLimits(result.plan);
     } catch (err) {
       console.warn(`[License] Heartbeat failed: ${err.message}`);
-      console.warn('[License] License could not be re-validated. The server will continue running.');
-      console.warn('[License] If this persists, check your key and network connectivity.');
+      console.warn('[License] Server continues running. Check key and connectivity.');
     }
   }, HEARTBEAT_INTERVAL_MS);
 
-  // Don't keep the process alive just for the heartbeat
   if (_heartbeatTimer.unref) _heartbeatTimer.unref();
+}
+
+// ── Startup check ─────────────────────────────────────────────────────────────
+
+async function checkLicenseOnStartup() {
+  // Not production → skip entirely
+  if (process.env.NODE_ENV !== 'production') return;
+
+  // SaaS VPS → skip (license enforcement is for self-hosted only)
+  if (!isSelfHosted()) return;
+
+  const licenseKey = process.env.NOMII_LICENSE_KEY;
+
+  if (!licenseKey) {
+    // ── Trial mode ───────────────────────────────────────────────────────────
+    // No key required to start the trial. Limits are enforced via the
+    // subscription row seeded by seedSelfHostedTenant (20 msg, 1 customer).
+    console.log('[License] No license key — running in self-hosted trial mode.');
+    console.log('[License]   Limits: 20 messages/mo, 1 customer.');
+    console.log('[License]   Upgrade: https://pontensolutions.com/nomii/license');
+    return;
+  }
+
+  // ── Paid mode ────────────────────────────────────────────────────────────
+  console.log(`[License] Validating license key (instance ${INSTANCE_ID})…`);
+  try {
+    const result = await callValidate(licenseKey);
+    const expiry = result.expires_at
+      ? `expires ${new Date(result.expires_at).toDateString()}`
+      : 'no expiry';
+    console.log(`[License] ✓ Valid — plan: ${result.plan}, ${expiry}`);
+    await applyPlanLimits(result.plan);
+    scheduleHeartbeat(licenseKey);
+  } catch (err) {
+    console.error(`[License] Validation failed: ${err.message}`);
+    console.error('[License] Check NOMII_LICENSE_KEY and internet connectivity.');
+    console.error('[License] Refusing to start.');
+    process.exit(1);
+  }
 }
 
 module.exports = { checkLicenseOnStartup, INSTANCE_ID };

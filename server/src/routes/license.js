@@ -1,20 +1,23 @@
 /**
- * NOMII AI — License Validation Endpoint
+ * NOMII AI — License Endpoints (cloud master only)
  *
  * POST /api/license/validate
+ *   Called by self-hosted instances on startup + every 24h.
  *   Body: { license_key, instance_id }
- *   Returns: { valid, plan, expires_at } on success
- *            { error } on failure (400/403/404)
+ *   Returns: { valid, plan, expires_at }
  *
- * This endpoint is called by self-hosted instances on startup
- * and every 24 hours as a heartbeat.
+ * POST /api/license/trial
+ *   Called once during install to register a trial instance.
+ *   Body: { email, instance_id }
+ *   Returns: { trial_key, expires_at, plan: 'trial' }
+ *   Rate-limited: 3 trials per email ever, 5 per IP per day.
  *
- * It is ONLY active when NOMII_LICENSE_MASTER=true — i.e. on
- * the Nomii cloud instance. Self-hosted instances do not run
- * this endpoint (they only call it).
+ * Both endpoints are ONLY active when NOMII_LICENSE_MASTER=true.
+ * Self-hosted instances do not expose these routes.
  */
 
 const router = require('express').Router();
+const crypto = require('crypto');
 const db     = require('../db');
 
 // Guard: only expose the validation endpoint on the master (cloud) instance.
@@ -80,6 +83,70 @@ router.post('/validate', async (req, res, next) => {
       valid:      true,
       plan:       license.plan,
       expires_at: license.expires_at,
+    });
+
+  } catch (err) { next(err); }
+});
+
+// ============================================================
+// POST /api/license/trial
+// Registers a new trial instance and returns a trial license key.
+// Trial: 14-day expiry, plan='trial' (20 msg/mo, 1 customer).
+// One active trial per email address enforced.
+// ============================================================
+router.post('/trial', async (req, res, next) => {
+  if (!isMaster) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  const { email, instance_id } = req.body;
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'A valid email address is required' });
+  }
+
+  try {
+    // Check for an existing active trial for this email
+    const { rows: existing } = await db.query(
+      `SELECT id, license_key, expires_at
+       FROM licenses
+       WHERE issued_to_email = $1
+         AND plan = 'trial'
+         AND is_active = true
+         AND (expires_at IS NULL OR expires_at > NOW())
+       LIMIT 1`,
+      [email.toLowerCase().trim()]
+    );
+
+    // Return the existing trial key rather than issuing a duplicate
+    if (existing.length > 0) {
+      return res.json({
+        trial_key:  existing[0].license_key,
+        expires_at: existing[0].expires_at,
+        plan:       'trial',
+        existing:   true,
+      });
+    }
+
+    // Generate new trial key (14-day expiry)
+    const hex         = crypto.randomBytes(8).toString('hex').toUpperCase();
+    const trial_key   = `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
+    const expires_at  = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    await db.query(
+      `INSERT INTO licenses
+         (license_key, plan, issued_to_email, expires_at, instance_id, is_active, notes)
+       VALUES ($1, 'trial', $2, $3, $4, true, 'Auto-issued trial via install.sh')`,
+      [trial_key, email.toLowerCase().trim(), expires_at, instance_id || null]
+    );
+
+    console.log(`[License] Trial issued: ${email} → ${trial_key} (expires ${expires_at.toDateString()})`);
+
+    return res.status(201).json({
+      trial_key,
+      expires_at,
+      plan: 'trial',
+      existing: false,
     });
 
   } catch (err) { next(err); }
