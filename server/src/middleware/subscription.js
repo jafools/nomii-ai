@@ -237,6 +237,8 @@ module.exports = {
   incrementMessageCount,
   getSubscription,
   isSubscriptionValid,
+  getBlockReason,
+  isWithinMessageLimit,
   isWithinCustomerLimit,
   sendLimitNotificationIfNeeded,
 };
