@@ -7,7 +7,6 @@ services:
     container_name: nomii-db
     restart: unless-stopped
     environment:
-<<<<<<< HEAD
       POSTGRES_DB: nomii_ai
       POSTGRES_USER: nomii
       POSTGRES_PASSWORD: ${DB_PASSWORD:-nomii_dev_2026}
