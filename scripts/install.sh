@@ -15,7 +15,7 @@ set -e
 R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m'
 B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
 
-GITHUB_REPO="jafools/knomi-ai"
+GITHUB_REPO="jafools/nomii-ai"
 COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${COMPOSE_FILE}"
 INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"
