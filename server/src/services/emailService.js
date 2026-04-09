@@ -720,6 +720,55 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
 }
 
 
+// ============================================================
+// sendLicenseKeyEmail — deliver a self-hosted license key
+// ============================================================
+async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt }) {
+  const transporter = createTransporter();
+  if (!transporter) {
+    console.warn('[Email] SMTP not configured — skipping license key email');
+    return;
+  }
+
+  const expiryLine = expiresAt
+    ? `<p style="margin:0 0 12px">Your license is valid until <strong>${new Date(expiresAt).toDateString()}</strong>. Renew before it expires to avoid interruption.</p>`
+    : `<p style="margin:0 0 12px">Your license has <strong>no expiry date</strong> — it will remain active until cancelled.</p>`;
+
+  const html = `
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;background:#f5f5f5;margin:0;padding:32px">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #e5e7eb">
+  <img src="https://pontensolutions.com/nomii/nomii-logo.png" alt="Nomii AI" style="height:36px;margin-bottom:24px" />
+  <h2 style="margin:0 0 16px;color:#111827">Your Nomii AI License Key</h2>
+  <p style="margin:0 0 12px;color:#374151">Hi ${firstName},</p>
+  <p style="margin:0 0 12px;color:#374151">Thanks for your Nomii AI self-hosted license. Here is your key:</p>
+  <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:16px;margin:16px 0;text-align:center">
+    <code style="font-size:18px;letter-spacing:2px;color:#111827;font-weight:700">${licenseKey}</code>
+  </div>
+  <p style="margin:0 0 8px;color:#374151"><strong>Plan:</strong> ${plan.charAt(0).toUpperCase() + plan.slice(1)}</p>
+  ${expiryLine}
+  <p style="margin:16px 0 8px;color:#374151"><strong>How to activate:</strong></p>
+  <ol style="margin:0 0 16px;padding-left:20px;color:#374151">
+    <li style="margin-bottom:6px">Open the <code>.env</code> file in your Nomii installation directory.</li>
+    <li style="margin-bottom:6px">Add this line: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
+    <li style="margin-bottom:6px">Restart: <code>docker compose -f docker-compose.selfhosted.yml up -d</code></li>
+  </ol>
+  <p style="margin:0;color:#6b7280;font-size:13px">Keep this key private. Do not share it or commit it to version control. If you lose it, contact <a href="mailto:support@pontensolutions.com">support@pontensolutions.com</a>.</p>
+  ${tenantFooterHtml()}
+</div>
+</body></html>`;
+
+  const text = `Your Nomii AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nTo activate, add this to your .env file:\n  NOMII_LICENSE_KEY=${licenseKey}\n\nThen restart: docker compose -f docker-compose.selfhosted.yml up -d\n\nKeep this key private.\n`;
+
+  await transporter.sendMail({
+    from:    process.env.SMTP_FROM || 'Nomii AI <noreply@pontensolutions.com>',
+    to,
+    subject: 'Your Nomii AI License Key',
+    html,
+    text,
+  });
+}
+
 module.exports = {
   sendVerificationEmail,
   sendWelcomeEmail,
@@ -730,4 +779,5 @@ module.exports = {
   sendFlagNotificationEmail,
   sendDocumentEmail,
   sendHumanModeReplyEmail,
+  sendLicenseKeyEmail,
 };

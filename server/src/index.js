@@ -173,8 +173,12 @@ app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', require('./routes/auth'));
 
 // Routes — Platform Admin (separate auth layer, no tenant scope)
-app.use('/api/platform/auth',    require('./routes/platform/auth'));
-app.use('/api/platform/tenants', require('./routes/platform/tenants'));
+app.use('/api/platform/auth',     require('./routes/platform/auth'));
+app.use('/api/platform/tenants',  require('./routes/platform/tenants'));
+app.use('/api/platform/licenses', require('./routes/platform/licenses'));
+
+// Routes — License validation (called by self-hosted instances; only active when NOMII_LICENSE_MASTER=true)
+app.use('/api/license', require('./routes/license'));
 
 // Routes — Protected (auth middleware applied per-route)
 app.use('/api/tenants', require('./routes/customTools'));   // custom tool builder (CRUD)
@@ -202,15 +206,29 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: safe });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🧠 Nomii AI server running on http://localhost:${PORT}`);
-  console.log(`   LLM Provider: ${process.env.LLM_PROVIDER || 'mock'}\n`);
-
-  // ── Start data retention cron job ──────────────────────────────────────────
-  // Gracefully degrades if the job module fails (won't crash server startup).
+// ── Async startup ─────────────────────────────────────────────────────────────
+// Runs license validation (self-hosted only) before the server accepts traffic.
+(async () => {
   try {
-    require('./jobs/dataRetention').start();
+    const { checkLicenseOnStartup } = require('./services/licenseService');
+    await checkLicenseOnStartup();
   } catch (err) {
-    console.error('[Startup] Data retention job failed to start:', err.message);
+    // checkLicenseOnStartup calls process.exit internally; this catch is a
+    // safety net for unexpected import errors.
+    console.error('[Startup] License check error:', err.message);
+    process.exit(1);
   }
-});
+
+  app.listen(PORT, () => {
+    console.log(`\n🧠 Nomii AI server running on http://localhost:${PORT}`);
+    console.log(`   LLM Provider: ${process.env.LLM_PROVIDER || 'mock'}\n`);
+
+    // ── Start data retention cron job ────────────────────────────────────────
+    // Gracefully degrades if the job module fails (won't crash server startup).
+    try {
+      require('./jobs/dataRetention').start();
+    } catch (err) {
+      console.error('[Startup] Data retention job failed to start:', err.message);
+    }
+  });
+})();

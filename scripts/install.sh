@@ -187,6 +187,17 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
     SMTP_FROM="${SMTP_FROM:-noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)}"
   fi
 
+  # ── License key ──────────────────────────────
+  echo ""
+  echo -e "   ${W}Nomii AI license key${NC}"
+  echo -e "   ${D}A license key is required to run Nomii AI in production."
+  echo -e "   Get yours at: https://pontensolutions.com/nomii/license"
+  echo -e "   After purchase you will receive the key by email."
+  echo -e "   If you are evaluating locally (NODE_ENV=development) you can skip this.${NC}"
+  ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [skip for dev]:"
+  read -r NOMII_LICENSE_KEY
+  [ -z "$NOMII_LICENSE_KEY" ] && warn "No license key entered — the backend will not start in production mode without one."
+
   # ── Cloudflare Tunnel ─────────────────────────
   echo ""
   echo -e "   ${W}Cloudflare Tunnel — optional${NC}"
@@ -243,6 +254,10 @@ SMTP_FROM=${SMTP_FROM}
 
 # ── Cloudflare Tunnel (optional) ──────────────
 CLOUDFLARE_TUNNEL_TOKEN=${CF_TOKEN}
+
+# ── Nomii License ─────────────────────────────
+# Required in production. Get a key at: https://pontensolutions.com/nomii/license
+NOMII_LICENSE_KEY=${NOMII_LICENSE_KEY}
 
 # ── Stripe billing (optional) ─────────────────
 STRIPE_SECRET_KEY=
