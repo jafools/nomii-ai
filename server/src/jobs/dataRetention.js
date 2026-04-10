@@ -43,6 +43,12 @@ async function runRetentionCycle() {
   console.log(`[DataRetention] Starting retention cycle at ${startedAt.toISOString()}`);
 
   try {
+    await resetSelfHostedUsage();
+  } catch (err) {
+    console.error('[DataRetention] Self-hosted usage reset error:', err.message);
+  }
+
+  try {
     await purgeMessageBodies();
   } catch (err) {
     console.error('[DataRetention] Message body purge error:', err.message);
@@ -290,6 +296,34 @@ async function anonymizeCustomer(customerId, tenantId, requestedBy) {
   });
 
   console.log(`[DataRetention] Anonymized customer ${customerId}`);
+}
+
+// ── 4. SELF-HOSTED MONTHLY USAGE RESET ───────────────────────────────────────
+//
+// SaaS tenants get their counter reset by the Stripe invoice.paid webhook.
+// Self-hosted tenants have no Stripe subscription firing that event, so we
+// reset them here whenever current_period_end has passed.
+//
+async function resetSelfHostedUsage() {
+  const { isSelfHosted } = require('../config/plans');
+
+  // Only run this check on self-hosted instances (single-tenant).
+  // On the SaaS VPS this table has many tenants and Stripe handles resets.
+  if (!isSelfHosted()) return;
+
+  const { rowCount } = await db.query(
+    `UPDATE subscriptions
+        SET messages_used_this_month = 0,
+            usage_reset_at           = NOW(),
+            current_period_start     = current_period_end,
+            current_period_end       = current_period_end + INTERVAL '1 month'
+      WHERE current_period_end <= NOW()
+        AND status = 'active'`
+  );
+
+  if (rowCount > 0) {
+    console.log(`[DataRetention] Self-hosted: reset monthly usage for ${rowCount} subscription(s)`);
+  }
 }
 
 // ── Module exports ────────────────────────────────────────────────────────────
