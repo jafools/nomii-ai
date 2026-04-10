@@ -1,50 +1,49 @@
 # Nomii AI — Product Roadmap
-*Last updated: 2026-04-09*
+*Last updated: 2026-04-10*
 
 > Organised by time horizon and priority, not by session. For session-by-session build history see `SESSION_HANDOFF.md`. For current feature inventory see `FEATURES.md`.
 
 ---
 
-## 🔴 Immediate (Pending ops / one-liners)
+## 🔴 Immediate — Next Session Starts Here
 
-These are not features — they're unfinished deployment steps that block live demos or have lingering gaps.
+### On-Prem Test Deployment (Priority 1)
+
+Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the full self-hosted flow end-to-end.
+
+| Step | Command / Notes |
+|------|----------------|
+| **Fresh VM** | Ubuntu 22.04 LTS, 2 vCPU, 4GB RAM minimum |
+| **Run installer** | `curl -sSL https://raw.githubusercontent.com/jafools/knomi-ai/main/scripts/install.sh \| bash` |
+| **Verify trial mode** | Login with seeded admin, send 20 messages, confirm limit is enforced |
+| **Verify license upgrade** | Issue a trial key via VPS platform admin → paste in `.env` → restart → confirm plan upgrades |
+| **Check email** | SMTP config via installer; verify verification email + welcome email arrive |
+
+### VPS Deployment (Priority 2)
+
+| Step | Command / Notes |
+|------|----------------|
+| **Confirm server process manager** | `ps aux \| grep "node.*index"` — determine if PM2, systemd, screen, or manual |
+| **Run all migrations** | `DATABASE_URL=postgresql://knomi:knomi_prod_2026@localhost:5432/knomi_ai node server/db/migrate.js` |
+| **Set `NOMII_LICENSE_MASTER=true`** | Add to server `.env` — activates `/api/license/validate` for self-hosted instances to call |
+| **Restart server** | Depends on process manager — to be confirmed |
+| **Smoke test** | `curl https://api.pontensolutions.com/api/health` → `{"status":"ok"}` |
+
+### Remaining Pending Ops
 
 | Task | Command / Notes |
 |------|----------------|
-| **Apply migration 022** (notifications table) | `docker exec -i knomi-db psql -U knomi -d knomi_ai < server/db/migrations/022_notifications.sql` |
-| **Enable `send_document` for Covenant Trust** | `UPDATE tenants SET enabled_tools = enabled_tools \|\| '["send_document"]'::jsonb WHERE slug = 'covenant-trust';` |
-| **Verify pending migrations 015b–019 applied** | Check `\dt` in psql — `custom_tools`, `customer_data` (generic schema), `agent_soul_template` column must all exist |
-| **Stripe Portal return URL env var** | Set `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans` in server `.env` |
+| **Enable `send_document` for Covenant Trust** | `docker exec knomi-db psql -U knomi -d knomi_ai -c "UPDATE tenants SET enabled_tools = enabled_tools \|\| '[\"send_document\"]' WHERE slug = 'covenant-trust';"` |
+| **Stripe Portal return URL** | Add `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans` to server `.env` |
 | **Trademark filing** | Attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged. Required before public commercial launch. |
-| **GHCR packages public** | First workflow run will create packages; `make-public` job auto-runs. If it fails, add `PACKAGES_PAT` secret (classic PAT, `write:packages` scope) in repo Settings → Secrets |
-| **Self-hosted parity audit** | End-to-end test of `scripts/install.sh` on a fresh VM; verify migrations, env vars, Stripe, email, auth all work identically to cloud | 
 
 ---
 
-## 🔴 Next Session — Activate Self-Hosted on VPS + E2E Test
+## 🟡 Sprint 1 — Demo-Ready Features (Next 1–2 sessions)
 
-✅ **Complete on-prem single-tenant system is built (2026-04-09, afternoon).** One deployment step + validation:
-
-| Task | Notes | Time |
-|------|-------|------|
-| **Apply migration 029** on VPS | `docker exec -i knomi-db psql -U knomi -d knomi_ai < server/db/migrations/029_licenses.sql` | 2 min |
-| **Set `NOMII_LICENSE_MASTER=true`** in VPS `.env` | Activates the `/api/license/validate` endpoint so self-hosted instances can call it | 1 min |
-| **Redeploy VPS** | `cd ~/Knomi/knomi-ai && git pull && docker compose up --build -d` | 5 min |
-| **End-to-end test** | Run `scripts/install.sh` on a local Ubuntu VM, verify trial mode works, test license upgrade path | 30 min |
-| **Build pontensolutions.com `/nomii/license`** (optional for v1) | Simple page with Stripe payment links per plan; can use manual key issuance via admin API initially | 30 min |
-
-**Why now:** On-prem deployments are trial-ready (no key required to start). Operators have a clear upgrade path. This unblocks the self-hosted product launch.
-
----
-
-## 🟡 Sprint 1 — Demo-Ready & Growth (Next 1–2 sessions)
-
-Features that close obvious product gaps or directly help acquire the first paying customers.
+Features that close obvious product gaps and directly help acquire the first paying customers.
 
 ### Analytics Dashboard
-The current dashboard shows four static numbers. No trends, no charts, no insight into what's actually working.
-
-- Message volume chart (daily/weekly/monthly) — line or bar
 - Escalation rate over time — is the AI getting better?
 - Tool invocation breakdown — which tools are being called, how often
 - Top customer engagement (most active customers, conversation lengths)
