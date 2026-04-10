@@ -13,8 +13,15 @@
  */
 
 const router = require('express').Router();
+const crypto = require('crypto');
 const db     = require('../db');
 const { PLAN_LIMITS } = require('../config/plans');
+const { sendLicenseKeyEmail } = require('../services/emailService');
+
+function generateLicenseKey() {
+  const hex = crypto.randomBytes(8).toString('hex').toUpperCase();
+  return `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
+}
 
 const STRIPE_SECRET_KEY      = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET  = process.env.STRIPE_WEBHOOK_SECRET;
@@ -58,8 +65,44 @@ router.post('/', async (req, res) => {
   try {
     switch (type) {
 
-      // ── Checkout completed → activate subscription ──────────────────────────
+      // ── Checkout completed → activate subscription OR issue license key ───────
       case 'checkout.session.completed': {
+
+        // ── Self-hosted purchase: issue a license key and email it ─────────────
+        // On your Stripe payment link / product, set:
+        //   metadata.product_type = 'selfhosted'
+        //   metadata.plan         = 'starter' | 'growth' | 'professional'  (optional, defaults starter)
+        if (object.metadata?.product_type === 'selfhosted') {
+          const plan          = object.metadata?.plan || 'starter';
+          const email         = object.customer_details?.email || object.metadata?.email;
+          const name          = object.customer_details?.name  || null;
+          const license_key   = generateLicenseKey();
+
+          if (email) {
+            await db.query(
+              `INSERT INTO licenses
+                 (license_key, plan, issued_to_email, issued_to_name, notes)
+               VALUES ($1, $2, $3, $4, $5)`,
+              [license_key, plan, email.toLowerCase().trim(), name,
+               `Auto-issued via Stripe checkout ${object.id}`]
+            );
+
+            sendLicenseKeyEmail({
+              to:         email,
+              firstName:  name || email.split('@')[0],
+              licenseKey: license_key,
+              plan,
+              expiresAt:  null,
+            }).catch(err => console.warn('[Stripe] License email failed:', err.message));
+
+            console.log(`[Stripe] Self-hosted license issued: ${email} → ${license_key} (${plan})`);
+          } else {
+            console.warn('[Stripe] Self-hosted checkout missing customer email:', object.id);
+          }
+          break;
+        }
+
+        // ── SaaS subscription: activate the tenant's subscription ─────────────
         // Support both custom checkout (metadata.tenant_id) and pricing table (client_reference_id)
         const tenantId = object.metadata?.tenant_id || object.client_reference_id;
 
