@@ -28,7 +28,7 @@ services:
     container_name: nomii-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://nomii:${DB_PASSWORD:-nomii_dev_2026}@db:5432/nomii_ai
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nomii:${DB_PASSWORD:-nomii_dev_2026}@db:5432/nomii_ai}
       PORT: 3001
       JWT_SECRET: ${JWT_SECRET:-nomii-dev-secret-change-in-production}
       WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET:-}
