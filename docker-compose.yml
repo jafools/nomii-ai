@@ -3,7 +3,7 @@ services:
   # PostgreSQL Database
   # ============================================
   db:
-    image: postgres:16-alpine
+    image: postgres:16.9-alpine
     container_name: nomii-db
     restart: unless-stopped
     environment:
@@ -34,7 +34,7 @@ services:
       WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-https://app.pontensolutions.com}
       FRONTEND_URL_PROD: ${FRONTEND_URL_PROD:-}
-      JWT_EXPIRY: ${JWT_EXPIRY:-7d}
+      JWT_EXPIRY: ${JWT_EXPIRY:-24h}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
       NODE_ENV: production
@@ -89,7 +89,7 @@ services:
   # Requires CLOUDFLARE_TUNNEL_TOKEN in .env
   # ============================================
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2025.4.0
     container_name: nomii-cloudflared
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}

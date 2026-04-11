@@ -16,7 +16,7 @@ services:
 
   # ── Database ──────────────────────────────────────────────
   db:
-    image: postgres:16-alpine
+    image: postgres:16.9-alpine
     container_name: nomii-db
     restart: unless-stopped
     environment:
@@ -109,7 +109,7 @@ services:
   # To skip: leave CLOUDFLARE_TUNNEL_TOKEN blank — this
   #          service will simply exit harmlessly on startup.
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2025.4.0
     container_name: nomii-cloudflared
     restart: unless-stopped
     command: >

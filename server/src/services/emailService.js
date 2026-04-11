@@ -15,16 +15,31 @@
 
 const nodemailer = require('nodemailer');
 
+// Singleton transporter — reuses SMTP connections instead of opening a
+// new TCP/TLS handshake per email. Lazily created on first use.
+let _transporter = null;
+
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host:   process.env.SMTP_HOST   || 'send.one.com',
+      port:   parseInt(process.env.SMTP_PORT || '465'),
+      secure: process.env.SMTP_SECURE !== 'false', // true by default (SSL)
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      pool: true,           // enable connection pooling
+      maxConnections: 3,    // max simultaneous connections
+      maxMessages: 50,      // messages per connection before reconnecting
+    });
+  }
+  return _transporter;
+}
+
+// Keep old name for minimal diff in callers
 function createTransporter() {
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST   || 'send.one.com',
-    port:   parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE !== 'false', // true by default (SSL)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  return getTransporter();
 }
 
 const FROM = process.env.SMTP_FROM || 'Nomii AI <hello@pontensolutions.com>';

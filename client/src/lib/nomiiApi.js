@@ -9,17 +9,29 @@ export const setToken = (token) => localStorage.setItem("nomii_portal_token", to
 export const clearToken = () => localStorage.removeItem("nomii_portal_token");
 export const isLoggedIn = () => !!getToken();
 
-// API request helper
+// API request helper with 30-second timeout
 export async function apiRequest(method, path, body) {
   const headers = { "Content-Type": "application/json" };
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+    throw err;
+  }
+  clearTimeout(timeout);
 
   if (res.status === 401) {
     clearToken();

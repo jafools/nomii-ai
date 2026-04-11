@@ -67,11 +67,11 @@ const widgetSessionLimiter = makeRateLimiter({
   message: { error: 'Too many session requests. Please wait a moment.' },
 });
 
-// Widget chat: 20 messages per minute per IP
+// Widget chat: configurable messages per minute per IP (default 10)
 // Primary cost-protection guard — each message calls the LLM
 const widgetChatLimiter = makeRateLimiter({
   windowMs: 60 * 1000,
-  max:      20,
+  max:      parseInt(process.env.WIDGET_CHAT_RATE_LIMIT_MAX || '10', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Message rate limit reached. Please slow down.' },

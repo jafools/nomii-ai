@@ -328,6 +328,8 @@ async function resetSelfHostedUsage() {
 
 // ── Module exports ────────────────────────────────────────────────────────────
 
+let _timer = null;
+
 function start() {
   console.log('[DataRetention] Cron job starting — will run every 24 hours');
 
@@ -337,11 +339,23 @@ function start() {
   );
 
   // Then every 24 hours
-  setInterval(() => {
+  _timer = setInterval(() => {
     runRetentionCycle().catch(err =>
       console.error('[DataRetention] Scheduled cycle failed:', err.message)
     );
   }, INTERVAL_MS);
 }
 
-module.exports = { start, anonymizeCustomer, runRetentionCycle };
+function stop() {
+  if (_timer) {
+    clearInterval(_timer);
+    _timer = null;
+    console.log('[DataRetention] Cron job stopped');
+  }
+}
+
+// Graceful shutdown — clear interval so process can exit cleanly
+process.on('SIGTERM', stop);
+process.on('SIGINT', stop);
+
+module.exports = { start, stop, anonymizeCustomer, runRetentionCycle };
