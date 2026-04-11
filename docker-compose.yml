@@ -59,6 +59,7 @@ services:
       LLM_HAIKU_MODEL: ${LLM_HAIKU_MODEL:-claude-haiku-4-5-20251001}
       LLM_SONNET_MODEL: ${LLM_SONNET_MODEL:-claude-sonnet-4-20250514}
       PORTAL_URL: ${PORTAL_URL:-https://nomii.pontensolutions.com}
+      NOMII_LICENSE_MASTER: ${NOMII_LICENSE_MASTER:-true}
     ports:
       - "3001:3001"
     depends_on:
