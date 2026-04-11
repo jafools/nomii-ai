@@ -116,32 +116,29 @@ const NomiiOnboarding = () => {
             : {};
 
         const done = new Set();
-        const keyMap = { company: 0, products: 1, customers: 2, widget: 3 };
+        // Map both legacy short keys and current STEPS keys to step indices
+        const keyMap = {
+          company: 0, company_profile: 0,
+          products: 1,
+          customers: 2,
+          api_key: 3,
+          tools: 4,
+          widget: 5, install_widget: 5,
+        };
         Object.entries(keyMap).forEach(([apiKey, idx]) => {
           if (steps[apiKey] === true) done.add(idx);
-        });
-        // Backward compat with STEPS keys
-        STEPS.forEach((s, i) => {
-          if (steps[s.key] === true) done.add(i);
         });
         setCompletedSteps(done);
 
         // Only redirect to dashboard if widget step is explicitly true
-        if (steps.widget === true) {
+        if (steps.widget === true || steps.install_widget === true) {
           navigate("/nomii/dashboard", { replace: true });
           return;
         }
 
         // Resume at first incomplete step
-        if (steps.customers === true) {
-          setActiveStep(3);
-        } else if (steps.products === true) {
-          setActiveStep(2);
-        } else if (steps.company === true) {
-          setActiveStep(1);
-        } else {
-          setActiveStep(0);
-        }
+        const resumeStep = STEPS.findIndex((_, i) => !done.has(i));
+        setActiveStep(resumeStep >= 0 ? resumeStep : 0);
       })
       .catch(() => {
         // If getMe() fails for any reason, fall back to Step 1 — never crash
@@ -160,7 +157,7 @@ const NomiiOnboarding = () => {
   };
 
   const onWidgetVerified = () => {
-    markComplete(3);
+    markComplete(5);
     setWizardComplete(true);
   };
 

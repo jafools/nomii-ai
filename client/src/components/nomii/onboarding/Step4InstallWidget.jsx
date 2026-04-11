@@ -13,13 +13,19 @@ const PLATFORMS = [
   { key: "other", label: "Other" },
 ];
 
+// Derive the API base URL from the current page for self-hosted compatibility.
+// SaaS uses VITE_API_BASE_URL; self-hosted uses same-origin (nginx proxy).
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")
+  : window.location.origin;
+
 // When the user is not logged in → omit data-user-email → widget runs in Generic Brand AI mode.
 // When the user is logged in     → pass their email → widget runs in Personal AI mode (memory + name).
 const getSnippet = (widgetKey) =>
-  `<!-- Nomii AI Widget -->\n<script\n  src="https://api.pontensolutions.com/embed.js"\n  data-widget-key="${widgetKey}"\n  async>\n</script>\n\n<!-- When a user is logged in on your site, add these attributes: -->\n<!-- data-user-email="user@example.com" -->\n<!-- data-user-name="Jane Doe" -->`;
+  `<!-- Nomii AI Widget -->\n<script\n  src="${API_ORIGIN}/embed.js"\n  data-widget-key="${widgetKey}"\n  async>\n</script>\n\n<!-- When a user is logged in on your site, add these attributes: -->\n<!-- data-user-email="user@example.com" -->\n<!-- data-user-name="Jane Doe" -->`;
 
 const getReactSnippet = (widgetKey) =>
-  `// Nomii AI Widget — Personal AI mode when logged in, Generic Brand AI when not\nuseEffect(() => {\n  const script = document.createElement('script');\n  script.src = 'https://api.pontensolutions.com/embed.js';\n  script.setAttribute('data-widget-key', '${widgetKey}');\n  // Only pass email/name if the user is authenticated on your site:\n  if (user?.email) script.setAttribute('data-user-email', user.email);\n  if (user?.name)  script.setAttribute('data-user-name', user.name);\n  script.async = true;\n  document.body.appendChild(script);\n  return () => { document.body.removeChild(script); };\n}, [user?.email]); // re-run when auth state changes`;
+  `// Nomii AI Widget — Personal AI mode when logged in, Generic Brand AI when not\nuseEffect(() => {\n  const script = document.createElement('script');\n  script.src = '${API_ORIGIN}/embed.js';\n  script.setAttribute('data-widget-key', '${widgetKey}');\n  // Only pass email/name if the user is authenticated on your site:\n  if (user?.email) script.setAttribute('data-user-email', user.email);\n  if (user?.name)  script.setAttribute('data-user-name', user.name);\n  script.async = true;\n  document.body.appendChild(script);\n  return () => { document.body.removeChild(script); };\n}, [user?.email]); // re-run when auth state changes`;
 
 const platformInstructions = {
   wordpress: (key) => ({
@@ -159,7 +165,7 @@ const Step4InstallWidget = ({ nomiiTenant, setNomiiTenant, markComplete, advance
         {info.showDownload && (
           <>
             <a
-              href="https://api.pontensolutions.com/downloads/nomii-wordpress-plugin.zip"
+              href={`${API_ORIGIN}/downloads/nomii-wordpress-plugin.zip`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mb-4 transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20"
               style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
               download
