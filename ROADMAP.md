@@ -1,5 +1,5 @@
 # Nomii AI — Product Roadmap
-*Last updated: 2026-04-10*
+*Last updated: 2026-04-11*
 
 > Organised by time horizon and priority, not by session. For session-by-session build history see `SESSION_HANDOFF.md`. For current feature inventory see `FEATURES.md`.
 
@@ -9,7 +9,7 @@
 
 ### On-Prem Test Deployment (Priority 1)
 
-Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the full self-hosted flow end-to-end.
+Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the full self-hosted flow end-to-end. All deployment-blocking bugs were fixed on 2026-04-11 (stale URLs, hardcoded configs, embed snippets).
 
 | Step | Command / Notes |
 |------|----------------|
@@ -19,23 +19,24 @@ Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the 
 | **Verify license upgrade** | Issue a trial key via VPS platform admin → paste in `.env` → restart → confirm plan upgrades |
 | **Check email** | SMTP config via installer; verify verification email + welcome email arrive |
 
-### VPS Deployment (Priority 2)
+### VPS Deployment — ✅ Completed 2026-04-11
 
-| Step | Command / Notes |
-|------|----------------|
-| **Confirm server process manager** | `ps aux \| grep "node.*index"` — determine if PM2, systemd, screen, or manual |
-| **Run all migrations** | `DATABASE_URL=postgresql://knomi:knomi_prod_2026@localhost:5432/knomi_ai node server/db/migrate.js` |
-| **Set `NOMII_LICENSE_MASTER=true`** | Add to server `.env` — activates `/api/license/validate` for self-hosted instances to call |
-| **Restart server** | Depends on process manager — to be confirmed |
-| **Smoke test** | `curl https://api.pontensolutions.com/api/health` → `{"status":"ok"}` |
+| Step | Status |
+|------|--------|
+| **Confirm server process manager** | ✅ Docker Compose (not PM2/systemd) |
+| **Run all migrations** | ✅ All 29 applied via `docker exec -i nomii-db psql` |
+| **Set `NOMII_LICENSE_MASTER=true`** | ✅ Added to `docker-compose.yml` |
+| **Rebuild & restart** | ✅ `docker compose up -d --build backend frontend` |
+| **Smoke test** | ✅ `{"status":"ok"}` |
 
 ### Remaining Pending Ops
 
-| Task | Command / Notes |
-|------|----------------|
-| **Enable `send_document` for Covenant Trust** | `docker exec knomi-db psql -U knomi -d knomi_ai -c "UPDATE tenants SET enabled_tools = enabled_tools \|\| '[\"send_document\"]' WHERE slug = 'covenant-trust';"` |
-| **Stripe Portal return URL** | Add `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans` to server `.env` |
-| **Trademark filing** | Attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged. Required before public commercial launch. |
+| Task | Status |
+|------|--------|
+| **Enable `send_document` for Covenant Trust** | ✅ Done 2026-04-11 |
+| **Stripe Portal return URL** | ✅ Set in `docker-compose.yml` (derived from `APP_URL`) |
+| **Trademark filing** | ❌ Pending — attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged |
+| **Widget embed on Hope For This Nation** | ❌ Pending — move script to root `index.html`, add postMessage auth hooks (Lovable prompt provided) |
 
 ---
 

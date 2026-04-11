@@ -187,6 +187,39 @@ npx @claude-flow/cli@latest doctor --fix
 - CLI tools handle coordination via Bash: swarm init, memory, hooks, routing
 - NEVER use CLI tools as a substitute for Task tool agents
 
+## Nomii AI — Project Context
+
+### Architecture
+
+- **Server:** Node.js + Express, PostgreSQL (`knomi_ai` DB, user `knomi`)
+- **Client:** React (Vite), served via nginx, API calls via `client/src/lib/nomiiApi.js`
+- **Widget:** Embeddable chat widget (`server/public/widget.html` + `embed.js`)
+- **Deployment:** Docker Compose on Proxmox VPS (`pontenprox`)
+- **Three modes:** SaaS, Self-Hosted (`NOMII_DEPLOYMENT=selfhosted`), License Master (`NOMII_LICENSE_MASTER=true`)
+
+### VPS Infrastructure
+
+| Component | Detail |
+|-----------|--------|
+| DB container | `nomii-db` (postgres:16.9-alpine), port NOT exposed to host |
+| Backend | `nomii-backend` (built from source), port 3001 |
+| Frontend | `nomii-frontend` (nginx), port 80 |
+| Tunnel | `nomii-cloudflared` via Cloudflare |
+| DB credentials | `knomi:knomi_prod_2026 / knomi_ai` |
+| Migrations | Run via `docker exec -i nomii-db psql -U knomi -d knomi_ai < file.sql` |
+| Rebuild | `cd ~/Knomi/knomi-ai && docker compose up -d --build backend frontend` |
+
+### Key env vars for self-hosted
+
+- `VITE_API_BASE_URL` — build arg for client; defaults to `""` (same-origin) for self-hosted
+- `APP_URL` — used by email service, portal, license service to derive domain/URLs
+- `NOMII_DEPLOYMENT=selfhosted` — enables single-tenant mode
+- `NOMII_LICENSE_MASTER=true` — enables license validation endpoints on SaaS VPS
+
+### Brand note
+
+Product renamed from Knomi AI → Nomii AI on 2026-03-18. DB name `knomi_ai` and user `knomi` kept to avoid breaking production.
+
 ## Support
 
 - Documentation: https://github.com/ruvnet/claude-flow
