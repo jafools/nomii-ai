@@ -6,7 +6,7 @@
 # Optional: add to cron for automatic backups.
 #
 # Cron example (daily at 2am):
-#   0 2 * * * /path/to/knomi-ai/scripts/backup.sh >> /var/log/nomii-backup.log 2>&1
+#   0 2 * * * /path/to/nomii-ai/scripts/backup.sh >> /var/log/nomii-backup.log 2>&1
 # ============================================================
 
 GREEN='\033[0;32m'
@@ -14,9 +14,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-CONTAINER="knomi-db"
-DB_USER="knomi"
-DB_NAME="knomi_ai"
+CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
+DB_USER="${NOMII_DB_USER:-knomi}"
+DB_NAME="${NOMII_DB_NAME:-knomi_ai}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

@@ -2165,7 +2165,7 @@ router.post('/team/invite', async (req, res, next) => {
     );
 
     // Send invite email
-    const inviteUrl = `${process.env.APP_URL || 'https://pontensolutions.com'}/nomii/accept-invite?token=${inviteToken}`;
+    const inviteUrl = `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/nomii/accept-invite?token=${inviteToken}`;
     try {
       const { sendAgentInviteEmail } = require('../services/emailService');
       const { rows: tenantRows } = await db.query('SELECT name FROM tenants WHERE id = $1', [req.portal.tenant_id]);
@@ -2347,7 +2347,7 @@ const STRIPE_PRICE_MAP  = {
   growth:       process.env.STRIPE_PRICE_GROWTH        || null,
   professional: process.env.STRIPE_PRICE_PROFESSIONAL  || null,
 };
-const STRIPE_PORTAL_RETURN_URL = process.env.STRIPE_PORTAL_RETURN_URL || 'https://pontensolutions.com/nomii/dashboard';
+const STRIPE_PORTAL_RETURN_URL = process.env.STRIPE_PORTAL_RETURN_URL || `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/nomii/dashboard`;
 
 // Helper: get Stripe instance (lazy init)
 let _stripe = null;

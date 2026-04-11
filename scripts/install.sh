@@ -3,7 +3,7 @@
 # Nomii AI — Self-Hosted Installer
 #
 # Run this on a fresh Linux server:
-#   curl -sSL https://raw.githubusercontent.com/jafools/knomi-ai/main/scripts/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh | bash
 #
 # Or if you've cloned the repo:
 #   bash scripts/install.sh

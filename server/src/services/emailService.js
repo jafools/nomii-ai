@@ -30,25 +30,29 @@ function createTransporter() {
 const FROM = process.env.SMTP_FROM || 'Nomii AI <hello@pontensolutions.com>';
 const APP_URL = (process.env.APP_URL || 'https://app.pontensolutions.com').replace(/\/$/, '');
 const SMTP_USER = process.env.SMTP_USER;
+// Derive the public domain from APP_URL for use in email footers
+const APP_DOMAIN = APP_URL.replace(/^https?:\/\//, '').split('/')[0];
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || `support@${APP_DOMAIN}`;
+const CONTACT_URL = process.env.CONTACT_URL || `${APP_URL}/contact`;
 
 // Build tenant-customized From / Reply-To / footer for outgoing emails
 function tenantFrom(tenantEmail) {
   if (!tenantEmail || !tenantEmail.email_from_name) return FROM;
   // Keep the actual sending address the same (SMTP requirement) but change display name
-  const smtpAddr = SMTP_USER || 'hello@pontensolutions.com';
+  const smtpAddr = SMTP_USER || FROM.match(/<(.+)>/)?.[1] || `noreply@${APP_DOMAIN}`;
   return `${tenantEmail.email_from_name} <${smtpAddr}>`;
 }
 function tenantReplyTo(tenantEmail) {
   return (tenantEmail && tenantEmail.email_reply_to) || undefined;
 }
 function tenantFooterHtml(tenantEmail) {
-  if (!tenantEmail || !tenantEmail.email_footer) return 'Nomii AI &middot; pontensolutions.com';
+  if (!tenantEmail || !tenantEmail.email_footer) return `Nomii AI &middot; ${APP_DOMAIN}`;
   // Escape HTML entities for safety
   const safe = tenantEmail.email_footer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return safe;
 }
 function tenantFooterText(tenantEmail) {
-  if (!tenantEmail || !tenantEmail.email_footer) return 'Nomii AI · pontensolutions.com';
+  if (!tenantEmail || !tenantEmail.email_footer) return `Nomii AI · ${APP_DOMAIN}`;
   return tenantEmail.email_footer;
 }
 
@@ -83,7 +87,7 @@ async function sendVerificationEmail({ to, token, firstName }) {
     </p>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI · pontensolutions.com
+      Nomii AI · ${APP_DOMAIN}
     </p>
   </div>
 </body>
@@ -138,7 +142,7 @@ async function sendWelcomeEmail({ to, firstName, companyName }) {
     </div>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI · pontensolutions.com
+      Nomii AI · ${APP_DOMAIN}
     </p>
   </div>
 </body>
@@ -192,7 +196,7 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
     </p>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI &middot; pontensolutions.com
+      Nomii AI &middot; ${APP_DOMAIN}
     </p>
   </div>
 </body>
@@ -223,7 +227,7 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
 
 async function sendTrialLimitEmail({ to, firstName, tenantName }) {
   const pricingUrl = `${APP_URL}/nomii/dashboard/plans`;
-  const contactUrl = 'https://pontensolutions.com/contact';
+  const contactUrl = CONTACT_URL;
   const name = firstName || 'there';
   const company = tenantName || 'your account';
 
@@ -277,7 +281,7 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:20px 40px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; pontensolutions.com
+        Nomii AI &middot; ${APP_DOMAIN}
       </p>
     </div>
   </div>
@@ -440,7 +444,7 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:20px 40px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; pontensolutions.com
+        Nomii AI &middot; ${APP_DOMAIN}
       </p>
     </div>
   </div>
@@ -642,7 +646,7 @@ async function sendDocumentEmail({
 
     <!-- Footer -->
     <div style="background:#f8f9fb;padding:18px 36px;text-align:center;border-top:1px solid #eef0f4;">
-      <p style="margin:0;font-size:12px;color:#9ba8b8;">Sent by ${sender} via <strong style="color:#6b7585;">Nomii AI</strong> · pontensolutions.com</p>
+      <p style="margin:0;font-size:12px;color:#9ba8b8;">Sent by ${sender} via <strong style="color:#6b7585;">Nomii AI</strong> · ${APP_DOMAIN}</p>
     </div>
   </div>
 </body>
@@ -738,7 +742,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
 <!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="font-family:sans-serif;background:#f5f5f5;margin:0;padding:32px">
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #e5e7eb">
-  <img src="https://pontensolutions.com/nomii/nomii-logo.png" alt="Nomii AI" style="height:36px;margin-bottom:24px" />
+  <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;margin-bottom:24px;">Nomii AI</div>
   <h2 style="margin:0 0 16px;color:#111827">Your Nomii AI License Key</h2>
   <p style="margin:0 0 12px;color:#374151">Hi ${firstName},</p>
   <p style="margin:0 0 12px;color:#374151">Thanks for your Nomii AI self-hosted license. Here is your key:</p>
@@ -753,7 +757,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
     <li style="margin-bottom:6px">Add this line: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
     <li style="margin-bottom:6px">Restart: <code>docker compose -f docker-compose.selfhosted.yml up -d</code></li>
   </ol>
-  <p style="margin:0;color:#6b7280;font-size:13px">Keep this key private. Do not share it or commit it to version control. If you lose it, contact <a href="mailto:support@pontensolutions.com">support@pontensolutions.com</a>.</p>
+  <p style="margin:0;color:#6b7280;font-size:13px">Keep this key private. Do not share it or commit it to version control. If you lose it, contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.</p>
   ${tenantFooterHtml()}
 </div>
 </body></html>`;
@@ -761,7 +765,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
   const text = `Your Nomii AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nTo activate, add this to your .env file:\n  NOMII_LICENSE_KEY=${licenseKey}\n\nThen restart: docker compose -f docker-compose.selfhosted.yml up -d\n\nKeep this key private.\n`;
 
   await transporter.sendMail({
-    from:    process.env.SMTP_FROM || 'Nomii AI <noreply@pontensolutions.com>',
+    from:    FROM,
     to,
     subject: 'Your Nomii AI License Key',
     html,

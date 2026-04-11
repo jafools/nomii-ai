@@ -7,9 +7,9 @@
 
 set -e
 
-CONTAINER="knomi-db"
-DB_USER="knomi"
-DB_NAME="knomi_ai"
+CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
+DB_USER="${NOMII_DB_USER:-knomi}"
+DB_NAME="${NOMII_DB_NAME:-knomi_ai}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/../server/db/migrations" && pwd)"
 
 # Colour helpers

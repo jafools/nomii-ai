@@ -9,6 +9,12 @@ const path = require('path');
 const { Pool } = require('pg');
 
 async function migrate() {
+  if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    console.error('ERROR: DATABASE_URL environment variable is required in production.');
+    console.error('Set it in your .env or docker-compose file.');
+    process.exit(1);
+  }
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://nomii:nomii_dev_2026@localhost:5432/nomii_ai',
   });

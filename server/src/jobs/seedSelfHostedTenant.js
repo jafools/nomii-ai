@@ -73,7 +73,8 @@ async function seedSelfHostedTenant() {
   );
 
   console.log(`[Self-Hosted] ✓ Tenant seeded. Login: ${email}`);
-  console.log('[Self-Hosted]   Trial: 20 messages/mo, 1 customer. Upgrade at https://pontensolutions.com/nomii/license');
+  const appUrl = (process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '');
+  console.log(`[Self-Hosted]   Trial: 20 messages/mo, 1 customer. Upgrade at ${appUrl}/nomii/license`);
 }
 
 module.exports = { seedSelfHostedTenant };
