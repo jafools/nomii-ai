@@ -1,4 +1,7 @@
-const BASE_URL = "https://api.pontensolutions.com";
+// Default to same-origin (empty string) for self-hosted deployments where
+// nginx proxies /api/ to the backend. SaaS builds set VITE_API_BASE_URL
+// at build time to point at the separate API subdomain.
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 // Auth helpers
 export const getToken = () => localStorage.getItem("nomii_portal_token");

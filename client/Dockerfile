@@ -3,6 +3,9 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Accept optional build args for Vite environment variables
+ARG VITE_API_BASE_URL=""
+
 COPY package.json ./
 RUN npm install
 

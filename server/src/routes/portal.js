@@ -1270,7 +1270,7 @@ router.get('/analytics', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
-             AND m.created_at >= NOW() - INTERVAL '${days} days'
+             AND m.created_at >= NOW() - make_interval(days => ${Number(days)})
            GROUP BY DATE(m.created_at)
            ORDER BY day`,
           [tid]
@@ -1284,7 +1284,7 @@ router.get('/analytics', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
-             AND c.created_at >= NOW() - INTERVAL '${days} days'
+             AND c.created_at >= NOW() - make_interval(days => ${Number(days)})
            GROUP BY DATE(c.created_at)
            ORDER BY day`,
           [tid]
@@ -1306,7 +1306,7 @@ router.get('/analytics', async (req, res, next) => {
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
              AND cu.email NOT LIKE 'anon\\_%@visitor.nomii'
-             AND m.created_at >= NOW() - INTERVAL '${days} days'
+             AND m.created_at >= NOW() - make_interval(days => ${Number(days)})
            GROUP BY cu.id, name
            ORDER BY message_count DESC
            LIMIT 5`,
@@ -1324,7 +1324,7 @@ router.get('/analytics', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
-             AND c.created_at >= NOW() - INTERVAL '${days} days'`,
+             AND c.created_at >= NOW() - make_interval(days => ${Number(days)})`,
           [tid]
         ),
         // Period message total
@@ -1335,7 +1335,7 @@ router.get('/analytics', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
-             AND m.created_at >= NOW() - INTERVAL '${days} days'`,
+             AND m.created_at >= NOW() - make_interval(days => ${Number(days)})`,
           [tid]
         ),
       ]);

@@ -1252,7 +1252,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
 // Returns null for new users, anonymous sessions, or when no API key is available.
 // The widget falls back to a static greeting string on null or error.
 //
-router.post('/greeting', requireWidgetAuth, async (req, res) => {
+router.post('/greeting', requireWidgetAuth, async (req, res, next) => {
   try {
     const { tenant_id, customer_id, is_anonymous } = req.widgetSession;
 
@@ -1353,7 +1353,7 @@ ${contextLine}`;
 // Called silently by embed.js on first load. Sets widget_verified_at on the
 // tenant so onboarding Step 4 flips to ✅ automatically.
 //
-router.post('/verify', async (req, res) => {
+router.post('/verify', async (req, res, next) => {
   try {
     const { widget_key } = req.body;
     if (widget_key) {
@@ -1375,7 +1375,7 @@ router.post('/verify', async (req, res) => {
 
 // POST /api/widget/csat  — submit a CSAT rating when the customer closes the widget
 // Body: { score: 1|2, comment?: string }  (1 = thumbs down, 2 = thumbs up)
-router.post('/csat', requireWidgetAuth, async (req, res) => {
+router.post('/csat', requireWidgetAuth, async (req, res, next) => {
   try {
     const { score, comment } = req.body;
     if (score !== 1 && score !== 2) {

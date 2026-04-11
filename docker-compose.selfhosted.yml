@@ -86,7 +86,7 @@ services:
       # Optional: stable identifier for this instance across restarts.
       NOMII_INSTANCE_ID: ${NOMII_INSTANCE_ID:-}
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     depends_on:
       db:
         condition: service_healthy

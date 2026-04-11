@@ -199,7 +199,7 @@
       if (span) span.textContent = e.data.label;
       launcher.setAttribute('aria-label', 'Open ' + e.data.label);
       // Apply tenant's brand color to the launcher bubble
-      if (e.data.color) {
+      if (e.data.color && /^#[0-9A-Fa-f]{6}$/.test(e.data.color)) {
         launcher.style.background = e.data.color;
       }
     }

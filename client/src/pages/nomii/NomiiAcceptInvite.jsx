@@ -53,15 +53,20 @@ const NomiiAcceptInvite = () => {
     }
     setSubmitting(true);
     setSubmitError(null);
-    const data = await acceptInvite(token, password, firstName, lastName);
-    setSubmitting(false);
-    if (data.error) {
-      setSubmitError(data.error);
-      return;
-    }
-    if (data.token) {
-      setToken(data.token);
-      navigate("/nomii/dashboard", { replace: true });
+    try {
+      const data = await acceptInvite(token, password, firstName, lastName);
+      if (data.error) {
+        setSubmitError(data.error);
+        return;
+      }
+      if (data.token) {
+        setToken(data.token);
+        navigate("/nomii/dashboard", { replace: true });
+      }
+    } catch (err) {
+      setSubmitError(err.message || "Failed to accept invitation. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 

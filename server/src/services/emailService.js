@@ -594,22 +594,25 @@ async function sendDocumentEmail({
   const org        = tenantName   || 'Nomii AI';
   const today      = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  // Escape HTML to prevent XSS in email content
+  const esc = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
   const sectionsHtml = (sections || []).map(s => `
     <div style="margin-bottom:24px;">
-      <h3 style="margin:0 0 8px;font-size:15px;font-weight:600;color:#1E3A5F;">${s.heading}</h3>
-      <p style="margin:0;font-size:14px;color:#3d4f66;line-height:1.7;">${(s.content || '').replace(/\n/g, '<br>')}</p>
+      <h3 style="margin:0 0 8px;font-size:15px;font-weight:600;color:#1E3A5F;">${esc(s.heading)}</h3>
+      <p style="margin:0;font-size:14px;color:#3d4f66;line-height:1.7;">${esc(s.content).replace(/\n/g, '<br>')}</p>
     </div>`).join('');
 
   const nextStepsHtml = nextSteps && nextSteps.length > 0 ? `
     <div style="background:#f0f6ff;border-left:4px solid #1E3A5F;border-radius:6px;padding:16px 20px;margin-top:24px;">
       <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1E3A5F;text-transform:uppercase;letter-spacing:.5px;">Next Steps</p>
       <ul style="margin:0;padding-left:18px;">
-        ${nextSteps.map(s => `<li style="font-size:14px;color:#3d4f66;line-height:1.7;margin-bottom:4px;">${s}</li>`).join('')}
+        ${nextSteps.map(s => `<li style="font-size:14px;color:#3d4f66;line-height:1.7;margin-bottom:4px;">${esc(s)}</li>`).join('')}
       </ul>
     </div>` : '';
 
   const disclaimerHtml = disclaimer
-    ? `<p style="font-size:11px;color:#9ba8b8;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #eef0f4;">${disclaimer}</p>`
+    ? `<p style="font-size:11px;color:#9ba8b8;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #eef0f4;">${esc(disclaimer)}</p>`
     : `<p style="font-size:11px;color:#9ba8b8;line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid #eef0f4;">This document is for informational and educational purposes only. It does not constitute professional, legal, or financial advice. Please consult a qualified professional before making decisions based on this information.</p>`;
 
   const html = `

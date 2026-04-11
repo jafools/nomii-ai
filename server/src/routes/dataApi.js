@@ -169,19 +169,26 @@ router.post('/customers', requireDataApiKey, async (req, res, next) => {
 
 router.get('/customers', requireDataApiKey, async (req, res, next) => {
   try {
-    const limit  = Math.min(parseInt(req.query.limit)  || 50, 200);
-    const offset = parseInt(req.query.offset) || 0;
-    const search = req.query.search ? `%${req.query.search}%` : null;
+    const limit  = Math.min(parseInt(req.query.limit, 10)  || 50, 200);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    const search = req.query.search ? `%${req.query.search.slice(0, 200)}%` : null;
+
+    const params = [req.tenantId, limit, offset];
+    let searchClause = '';
+    if (search) {
+      params.push(search);
+      searchClause = `AND (name ILIKE $4 OR email ILIKE $4 OR external_id ILIKE $4)`;
+    }
 
     const { rows } = await db.query(
       `SELECT id, external_id, name, email, phone, created_at
        FROM customers
        WHERE tenant_id = $1
          AND deleted_at IS NULL
-         ${search ? 'AND (name ILIKE $3 OR email ILIKE $3 OR external_id ILIKE $3)' : ''}
+         ${searchClause}
        ORDER BY name
-       LIMIT $2 OFFSET ${offset}`,
-      search ? [req.tenantId, limit, search] : [req.tenantId, limit]
+       LIMIT $2 OFFSET $3`,
+      params
     );
 
     res.json({ customers: rows, limit, offset });

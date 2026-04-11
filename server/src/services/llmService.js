@@ -24,11 +24,12 @@ function getClient(apiKey) {
     throw new Error('No API key available');
   }
 
-  // Use first 8 + last 4 chars as cache key (avoids storing full key in memory map keys)
-  const cacheKey = apiKey.slice(0, 8) + '...' + apiKey.slice(-4);
+  // Use SHA-256 hash of key as cache key to avoid collisions
+  const crypto = require('crypto');
+  const cacheKey = crypto.createHash('sha256').update(apiKey).digest('hex').slice(0, 16);
   if (_clientCache.has(cacheKey)) return _clientCache.get(cacheKey);
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, timeout: 60000, maxRetries: 1 });
   _clientCache.set(cacheKey, client);
   return client;
 }

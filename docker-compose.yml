@@ -72,6 +72,8 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.pontensolutions.com}
     container_name: nomii-frontend
     restart: unless-stopped
     ports:

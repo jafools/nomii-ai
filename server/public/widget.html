@@ -1454,6 +1454,9 @@
   window.addEventListener('message', function (e) {
     if (!e.data || !e.data.type) return;
 
+    // Only accept messages from the parent window (the embedding page)
+    if (e.source !== window.parent) return;
+
     // Track open/closed state and manage focus when widget opens
     if (e.data.type === 'nomii:toggle') {
       widgetCurrentlyOpen = e.data.open;
