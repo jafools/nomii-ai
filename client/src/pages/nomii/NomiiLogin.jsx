@@ -24,6 +24,7 @@ const NomiiLogin = () => {
   const [loading, setLoading] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotState, setForgotState] = useState("idle"); // idle | sending | sent
+  const [isSelfHosted, setIsSelfHosted] = useState(false);
   const navigate = useNavigate();
 
   // If the user already has a valid token, skip the login page entirely
@@ -32,6 +33,14 @@ const NomiiLogin = () => {
       navigate("/nomii/dashboard", { replace: true });
     }
   }, [navigate]);
+
+  // Detect self-hosted mode — hides sign-up link (registration is disabled on self-hosted)
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => { if (d.deployment === "selfhosted") setIsSelfHosted(true); })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,9 +57,10 @@ const NomiiLogin = () => {
         return;
       }
       setToken(data.token);
-      // If onboarding isn't complete yet, send them there first
+      // Only go to dashboard when the full onboarding wizard is done (widget step complete).
+      // Any earlier step completion sends back to the wizard to finish setup.
       const steps = data.tenant?.onboarding_steps;
-      const onboardingDone = steps && typeof steps === "object" && Object.keys(steps).length > 0;
+      const onboardingDone = steps?.install_widget === true || steps?.widget === true;
       navigate(onboardingDone ? "/nomii/dashboard" : "/nomii/onboarding", { replace: true });
     } catch (err) {
       if (err.code === "email_unverified") {
@@ -223,12 +233,14 @@ const NomiiLogin = () => {
                 </button>
               </form>
 
-              <p className="text-center text-sm mt-8" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Don't have an account?{" "}
-                <Link to="/nomii/signup" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
-                  Get started →
-                </Link>
-              </p>
+              {!isSelfHosted && (
+                <p className="text-center text-sm mt-8" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  Don't have an account?{" "}
+                  <Link to="/nomii/signup" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
+                    Get started →
+                  </Link>
+                </p>
+              )}
             </div>
           )}
       </div>
