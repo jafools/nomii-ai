@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register as apiRegister, setToken, resendVerification } from "@/lib/nomiiApi";
 import nomiiLogo from "@/assets/nomiiai-full-dark.svg";
@@ -136,6 +136,17 @@ const NomiiSignup = () => {
   const [pendingEmail, setPendingEmail] = useState(null);
   const [confirmTouched, setConfirmTouched] = useState(false);
   const navigate = useNavigate();
+
+  // Self-hosted installs are single-tenant and registration is disabled server-side.
+  // Redirect to the login page so operators don't fill out a form that will 403.
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.deployment === "selfhosted") navigate("/nomii/login", { replace: true });
+      })
+      .catch(() => {});
+  }, [navigate]);
 
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));

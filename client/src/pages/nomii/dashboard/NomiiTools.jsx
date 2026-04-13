@@ -636,7 +636,6 @@ function TestModal({ tool, onClose }) {
                     type="text"
                     value={customerSearch}
                     onChange={e => { setCSearch(e.target.value); setShowDrop(true); }}
-                    onFocus={() => setShowDrop(true)}
                     placeholder="Search by name or email…"
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
                     style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.85)" }}
