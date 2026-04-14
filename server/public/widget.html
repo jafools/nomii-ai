@@ -1172,8 +1172,11 @@
     }
   }
 
+  var pollInFlight = false; // prevent concurrent poll calls
+
   async function pollForMessages() {
-    if (!sessionToken || !lastPollTime) return;
+    if (!sessionToken || !lastPollTime || pollInFlight) return;
+    pollInFlight = true;
     try {
       var resp = await fetch(
         API_BASE + '/api/widget/poll?since=' + encodeURIComponent(lastPollTime),
@@ -1195,7 +1198,10 @@
       // Render new messages — but only in human mode.
       // In AI mode the response is already rendered directly by sendMessage();
       // re-rendering here would cause duplicates every 5 seconds.
-      // Always advance the poll cursor so we don't replay old messages if mode switches.
+      // Always advance the cursor regardless of mode.
+      // +1ms: PostgreSQL stores microseconds but JS Date only has milliseconds.
+      // Without +1ms, the same message satisfies `created_at > cursor` on every
+      // poll because the DB microseconds (e.g. .123456) are > the JS cursor (.123).
       if (data.messages && data.messages.length > 0) {
         if (currentMode === 'human') {
           data.messages.forEach(function (msg) {
@@ -1204,12 +1210,15 @@
             addMessage(isSystem ? 'system' : 'agent', msg.content);
           });
         }
-        // Always advance the cursor regardless of mode
-        lastPollTime = data.messages[data.messages.length - 1].created_at;
+        // Advance cursor 1ms past the last message to handle micro vs millisecond precision
+        var lastTs = data.messages[data.messages.length - 1].created_at;
+        lastPollTime = new Date(new Date(lastTs).getTime() + 1).toISOString();
       }
 
     } catch (_) {
       // Silently ignore poll errors — will retry next interval
+    } finally {
+      pollInFlight = false;
     }
   }
 
