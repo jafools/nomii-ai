@@ -36,6 +36,12 @@ tests/e2e/report/
 playwright-report/
 blob-report/
 
+# Sensitive data files (never commit)
+Stripe_data.txt
+CLAUDE_CODE_SETUP.md
+SESSION_HANDOFF.md
+SPRINT_HANDOFF.md
+
 # Ruflo / Claude Flow runtime data (keep config, exclude runtime)
 .claude-flow/data/
 .claude-flow/logs/
