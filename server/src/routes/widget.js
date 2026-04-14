@@ -1084,11 +1084,12 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
     };
 
     const systemPrompt = buildSystemPrompt({
-      tenant:       tenantCtx,
-      customer:     customerCtx,
-      customerData: customerData,
-      products:     products,
-      handbackNote: handbackNote,
+      tenant:        tenantCtx,
+      customer:      customerCtx,
+      customerData:  customerData,
+      products:      products,
+      handbackNote:  handbackNote,
+      widgetGreeted: existingMessages.length === 0,
     });
 
     // If there was a handback note, consume it now (single-use — clear after this turn)

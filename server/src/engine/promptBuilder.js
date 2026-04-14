@@ -16,7 +16,7 @@
 // MAIN PROMPT BUILDER
 // ============================================================
 
-function buildSystemPrompt({ tenant, customer, customerData, products, currentDate, handbackNote }) {
+function buildSystemPrompt({ tenant, customer, customerData, products, currentDate, handbackNote, widgetGreeted }) {
   const date = currentDate || new Date().toISOString().split('T')[0];
   const soul = customer.soul_file || {};
   const memory = customer.memory_file || {};
@@ -44,7 +44,7 @@ ${buildLifePlanBlock(memory)}
 
 ${buildAgentNotesBlock(memory)}
 
-${buildSessionRulesBlock(customer, tenant, date)}`;
+${buildSessionRulesBlock(customer, tenant, date, widgetGreeted)}`;
 }
 
 
@@ -520,7 +520,7 @@ After your opening, follow the conversation naturally. Never ask for their name 
 }
 
 
-function buildSessionRulesBlock(customer, tenant, date) {
+function buildSessionRulesBlock(customer, tenant, date, widgetGreeted) {
   const isOnboarding = customer.onboarding_status !== 'complete';
   const completedCategories = customer.onboarding_categories_completed || [];
 
@@ -550,10 +550,16 @@ APPROACH: Cover these naturally through conversation. Do NOT present them as a c
 
   const advisorLabel = (tenant.vertical_config || {}).advisor_label || 'advisor';
 
+  // When the widget already showed an opening greeting, tell the AI not to repeat it.
+  const noGreetNote = widgetGreeted
+    ? `\nCRITICAL: The widget has already displayed an opening greeting to this visitor. Do NOT start your response with a greeting ("Hi", "Hello", "Hey", etc.) or a self-introduction. Go straight to answering what they asked.\n`
+    : '';
+
   return `## SESSION RULES
 
 Today's date: ${date}
 Session type: ${isOnboarding ? 'Onboarding (in progress)' : 'Regular conversation'}
+${noGreetNote}
 
 ${onboardingInstructions}
 
