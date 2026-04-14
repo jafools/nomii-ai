@@ -5,7 +5,7 @@
 
 ---
 
-## Last updated: 2026-04-14 (session 3 of the day)
+## Last updated: 2026-04-14 (session 4 of the day)
 
 ## VPS / Deployment
 
@@ -99,13 +99,26 @@ Wrote `src/pages/nomii/SelfHostedNomii.tsx` for the `ponten-solutions` repo — 
 
 ---
 
+## What was completed (session 2026-04-14, session 4)
+
+- **Annual Stripe prices configured** — All 6 price IDs now set in VPS `.env`:
+  - `STRIPE_SELFHOSTED_PRICE_STARTER_MONTHLY=price_1TKfAjBlxts7IvMos78onw0X`
+  - `STRIPE_SELFHOSTED_PRICE_GROWTH_MONTHLY=price_1TKfAlBlxts7IvMoEzKQSpTe`
+  - `STRIPE_SELFHOSTED_PRICE_PROFESSIONAL_MONTHLY=price_1TKfAnBlxts7IvMooJKLldT7`
+  - `STRIPE_SELFHOSTED_PRICE_STARTER_ANNUAL=price_1TMCtuBlxts7IvMoLwpXJafP`
+  - `STRIPE_SELFHOSTED_PRICE_GROWTH_ANNUAL=price_1TMCuJBlxts7IvMoftLzEgS8`
+  - `STRIPE_SELFHOSTED_PRICE_PROFESSIONAL_ANNUAL=price_1TMCukBlxts7IvMoSIeCQtOs`
+  - Backend restarted. Annual toggle on `pontensolutions.com/nomii/license` now routes to correct Stripe prices.
+
+---
+
 ## Next session TODO (priority order)
 
-1. **Apply self-hosted landing page on pontensolutions.com** — TSX written this session. User needs to apply in `~/ponten-solutions` on Proxmox (nano the file, edit App.tsx, commit, push). Also remove/scope the Cloudflare redirect rule that catches `pontensolutions.com/nomii/*` → `nomii.pontensolutions.com`.
+1. **Apply self-hosted landing page on pontensolutions.com** — TSX written last session. User needs to apply in `~/ponten-solutions` on Proxmox (nano the file, edit App.tsx, commit, push). Also remove/scope the Cloudflare redirect rule that catches `pontensolutions.com/nomii/*` → `nomii.pontensolutions.com`.
 
 2. **End-to-end test the setup wizard** — create a throwaway deploy in `/tmp/nomii-test` with a port-80→8080 override and minimal `.env` (no MASTER_EMAIL/ADMIN_PASSWORD/ANTHROPIC_API_KEY). Verify wizard appears, 3 steps complete, auto-login works, widget message sends via BYOK key. Teardown with `docker compose down -v`.
 
-3. **Verify annual Stripe prices** — `BuyNomiiLicense.tsx` displays `$490 / $1,490 / $3,490` per year. Confirm `STRIPE_SELFHOSTED_PRICE_*_ANNUAL` in Stripe match. Check SaaS VPS `.env` has all 6 price IDs: `cd ~/Knomi/knomi-ai && grep STRIPE_SELFHOSTED_PRICE .env`.
+3. **Smoke test annual billing** — go to `pontensolutions.com/nomii/license`, toggle to Annual, pick a plan, enter email, confirm Stripe Checkout shows annual price. Do not complete purchase, just verify redirect.
 
 4. **Widget "Sorry, I had trouble responding" error** — instrumentation deployed, waiting for live repro. When it happens:
    ```bash
