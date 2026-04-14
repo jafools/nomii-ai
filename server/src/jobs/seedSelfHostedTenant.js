@@ -64,12 +64,15 @@ async function seedSelfHostedTenant() {
   );
 
   // ── Create trial subscription ──────────────────────────────────────────────
+  // managed_ai_enabled=true so the server's ANTHROPIC_API_KEY env var is used
+  // for LLM calls — the operator already provided their key in .env during install.
   const limits = PLAN_LIMITS.trial;
+  const hasServerKey = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY);
   await db.query(
     `INSERT INTO subscriptions
        (tenant_id, plan, status, max_customers, max_messages_month, managed_ai_enabled, max_agents)
-     VALUES ($1, 'trial', 'active', $2, $3, false, $4)`,
-    [tenantId, limits.max_customers, limits.max_messages_month, limits.max_agents]
+     VALUES ($1, 'trial', 'active', $2, $3, $4, $5)`,
+    [tenantId, limits.max_customers, limits.max_messages_month, hasServerKey, limits.max_agents]
   );
 
   console.log(`[Self-Hosted] ✓ Tenant seeded. Login: ${email}`);

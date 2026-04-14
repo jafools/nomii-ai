@@ -19,7 +19,9 @@ const StepApiKey = ({ onComplete, tenant }) => {
   const [result, setResult] = useState(null); // { ok, error }
   const [useManaged, setUseManaged] = useState(false);
 
-  const alreadyValidated = tenant?.llm_api_key_validated;
+  // Treat managed_ai_enabled as configured — self-hosted installs use the server's
+  // ANTHROPIC_API_KEY env var rather than a per-tenant key.
+  const alreadyValidated = tenant?.llm_api_key_validated || tenant?.managed_ai_enabled;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,8 +57,10 @@ const StepApiKey = ({ onComplete, tenant }) => {
             API Key Configured
           </h2>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
-            Your API key ending in <span className="font-mono" style={{ color: "#C9A84C" }}>
-              ...{tenant.llm_api_key_last4}</span> is active and validated.
+            {tenant?.llm_api_key_last4
+              ? <>Your API key ending in <span className="font-mono" style={{ color: "#C9A84C" }}>...{tenant.llm_api_key_last4}</span> is active and validated.</>
+              : <>Your AI provider is configured at the server level — no additional setup needed.</>
+            }
           </p>
         </div>
         <button onClick={handleSkip}
