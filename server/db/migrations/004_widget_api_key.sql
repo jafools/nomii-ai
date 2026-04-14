@@ -4,6 +4,9 @@
 -- authenticate embed widget sessions without exposing passwords.
 -- ============================================================
 
+-- pgcrypto is required for gen_random_bytes() used below
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS widget_api_key VARCHAR(64) UNIQUE;
 
 -- Generate a default key for any existing tenants
