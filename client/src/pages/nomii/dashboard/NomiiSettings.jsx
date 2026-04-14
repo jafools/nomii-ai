@@ -1,4 +1,22 @@
 import { useState, useEffect } from "react";
+
+// navigator.clipboard is only available on HTTPS/localhost.
+// Fall back to execCommand for plain-HTTP self-hosted installs.
+const copyToClipboard = (text) => {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text).catch(() => _fallbackCopy(text));
+  }
+  _fallbackCopy(text);
+};
+const _fallbackCopy = (text) => {
+  const el = document.createElement("textarea");
+  el.value = text;
+  el.style.cssText = "position:fixed;opacity:0";
+  document.body.appendChild(el);
+  el.focus(); el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
+};
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import { getMe, updateCompany, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams, getEmailTemplates, updateEmailTemplates } from "@/lib/nomiiApi";
 import { toast } from "@/hooks/use-toast";
@@ -140,10 +158,13 @@ const WidgetSection = () => {
   const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   const widgetKey = nomiiTenant?.widget_key || "";
-  const snippet = `<script\n  src="https://api.pontensolutions.com/embed.js"\n  data-widget-key="${widgetKey}"\n  data-user-email="LOGGED_IN_USER_EMAIL"\n  data-user-name="LOGGED_IN_USER_NAME"\n  async>\n</script>`;
+  const apiOrigin = import.meta.env.VITE_API_BASE_URL
+    ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")
+    : window.location.origin;
+  const snippet = `<script\n  src="${apiOrigin}/embed.js"\n  data-widget-key="${widgetKey}"\n  data-user-email="LOGGED_IN_USER_EMAIL"\n  data-user-name="LOGGED_IN_USER_NAME"\n  async>\n</script>`;
 
   const copy = (text, setter) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     setter(true);
     setTimeout(() => setter(false), 2000);
   };
@@ -567,7 +588,7 @@ const DataApiSection = () => {
   };
 
   const copy = (text, setter) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     setter(true);
     setTimeout(() => setter(false), 2000);
   };
@@ -843,7 +864,7 @@ const WebhooksSection = () => {
   };
 
   const copySecret = () => {
-    navigator.clipboard.writeText(newSecret);
+    copyToClipboard(newSecret);
     setCopiedSecret(true);
     setTimeout(() => setCopiedSecret(false), 2000);
   };

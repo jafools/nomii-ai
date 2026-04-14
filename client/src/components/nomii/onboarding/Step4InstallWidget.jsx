@@ -71,14 +71,33 @@ const Step4InstallWidget = ({ nomiiTenant, setNomiiTenant, markComplete, advance
     return () => clearInterval(intervalRef.current);
   }, [verified]);
 
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard?.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    }
+    fallbackCopy(text);
+  };
+
+  const fallbackCopy = (text) => {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+  };
+
   const copyKey = () => {
-    navigator.clipboard.writeText(widgetKey);
+    copyToClipboard(widgetKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const copySnippet = (text) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     toast({ title: "Copied to clipboard!" });
   };
 
