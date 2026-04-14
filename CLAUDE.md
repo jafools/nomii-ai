@@ -1,5 +1,9 @@
 # Claude Code Configuration - RuFlo V3
 
+## Session Continuity (Read First)
+
+At the start of every session, read `docs/SESSION_NOTES.md` — it contains the latest deployment details, what was completed last session, and the current bug/TODO list. Update it at the end of each session before committing.
+
 ## Git Branch Rules (Always Enforced)
 
 - ALWAYS work on `main` branch — never create or switch to other branches unless explicitly told to
