@@ -35,13 +35,13 @@ SET
   enabled_tools = '["lookup_client_data", "analyze_client_data", "generate_report", "request_specialist"]'::jsonb,
   tool_configs  = '{
     "lookup_client_data": {
-      "description": "Retrieves this client'\''s financial accounts and records — retirement accounts, investments, income sources, and any other structured data on file. Use this when the client asks about their accounts, balances, or financial situation."
+      "description": "Retrieves this client''s financial accounts and records — retirement accounts, investments, income sources, and any other structured data on file. Use this when the client asks about their accounts, balances, or financial situation."
     },
     "analyze_client_data": {
-      "description": "Analyzes this client'\''s financial accounts to compute totals, identify data gaps, and surface key figures (total retirement assets, monthly income, etc.). Use this before providing any account-level guidance."
+      "description": "Analyzes this client''s financial accounts to compute totals, identify data gaps, and surface key figures (total retirement assets, monthly income, etc.). Use this before providing any account-level guidance."
     },
     "generate_report": {
-      "description": "Generates a structured summary report of the client'\''s financial picture, goals, or account analysis. Use when the client asks for a summary, wants something in writing, or when the advisor would benefit from a formatted overview."
+      "description": "Generates a structured summary report of the client''s financial picture, goals, or account analysis. Use when the client asks for a summary, wants something in writing, or when the advisor would benefit from a formatted overview."
     },
     "request_specialist": {
       "description": "Notifies a human financial advisor that this client needs personal attention. Use when the client asks a specific investment or tax question beyond educational scope, requests a meeting, or when a flag has been raised."
