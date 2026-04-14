@@ -77,13 +77,13 @@ if ! docker compose version &>/dev/null; then
 fi
 ok "Docker Compose $(docker compose version --short)"
 
-# Docker daemon running?
-if ! docker info &>/dev/null 2>&1; then
+# Docker daemon running? Use sudo to avoid false negative when user isn't in docker group yet.
+if ! sudo docker info &>/dev/null 2>&1; then
   echo ""
   echo -e "   ${D}Starting Docker daemon...${NC}"
   sudo systemctl start docker 2>/dev/null || true
   sleep 3
-  if ! docker info &>/dev/null 2>&1; then
+  if ! sudo docker info &>/dev/null 2>&1; then
     fail "Docker is installed but not running. Try: sudo systemctl start docker"
   fi
 fi
