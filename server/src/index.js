@@ -183,6 +183,9 @@ if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
 // Routes — License validation (called by self-hosted instances; only active when NOMII_LICENSE_MASTER=true)
 app.use('/api/license', require('./routes/license'));
 
+// Routes — Public license checkout (creates Stripe Checkout Session for self-hosted license purchases)
+app.use('/api/public/license/checkout', require('./routes/license-checkout'));
+
 // Routes — Protected (auth middleware applied per-route)
 app.use('/api/tenants', require('./routes/customTools'));   // custom tool builder (CRUD)
 app.use('/api/tenants', require('./routes/tenants'));
