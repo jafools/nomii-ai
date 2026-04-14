@@ -22,6 +22,7 @@ on:
       - main
     tags:
       - 'v*'
+  workflow_dispatch:  # allow manual trigger from GitHub Actions UI
 
 env:
   REGISTRY: ghcr.io
