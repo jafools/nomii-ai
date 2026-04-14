@@ -48,3 +48,4 @@ SPRINT_HANDOFF.md
 .claude-flow/sessions/
 .claude-flow/*.db
 .claude-flow/*.sqlite
+ruvector.db
