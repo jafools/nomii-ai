@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getConversations, getConversation, getLabels, bulkConversations } from "@/lib/nomiiApi";
+import { getConversations, getConversation, getLabels, bulkConversations, takeoverConversation } from "@/lib/nomiiApi";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import {
   MessageSquare, AlertTriangle, RefreshCw, ExternalLink, ArrowUpRight,
   Users, Search, X, Circle, ThumbsUp, ThumbsDown, Square, CheckSquare,
-  CheckCheck, Tag, ChevronDown,
+  CheckCheck, Tag, ChevronDown, UserCheck,
 } from "lucide-react";
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -320,10 +320,11 @@ const ConversationList = ({
 
 /* ── Right panel: thread view ────────────────────────────────────────────── */
 const ThreadView = ({ conversationId, nomiiTenant }) => {
-  const [convo, setConvo]   = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState("");
-  const scrollRef           = useRef(null);
+  const [convo, setConvo]       = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [takingOver, setTakingOver] = useState(false);
+  const scrollRef               = useRef(null);
 
   const fetchThread = useCallback(async () => {
     if (!conversationId) return;
@@ -335,6 +336,18 @@ const ThreadView = ({ conversationId, nomiiTenant }) => {
       setError(err.message || "Failed to load conversation.");
     } finally { setLoading(false); }
   }, [conversationId]);
+
+  const handleTakeover = async () => {
+    setTakingOver(true);
+    try {
+      await takeoverConversation(conversationId);
+      await fetchThread();
+    } catch (err) {
+      console.error("Takeover failed:", err);
+    } finally {
+      setTakingOver(false);
+    }
+  };
 
   useEffect(() => { fetchThread(); }, [fetchThread]);
   useEffect(() => {
@@ -389,6 +402,8 @@ const ThreadView = ({ conversationId, nomiiTenant }) => {
   const st       = (convo?.status || "active").toLowerCase();
   const badge    = statusStyle[st] || statusStyle.active;
   const messages = convo?.messages || [];
+  const isActive = st === "active" || st === "escalated";
+  const isHuman  = (convo?.mode || "ai") === "human";
 
   return (
     <div className="flex flex-col h-full">
@@ -417,6 +432,17 @@ const ThreadView = ({ conversationId, nomiiTenant }) => {
         <div className="flex items-center gap-2">
           <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
             style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
+          {isActive && !isHuman && (
+            <button
+              onClick={handleTakeover}
+              disabled={takingOver}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#fff" }}
+            >
+              <UserCheck className="h-3 w-3" />
+              {takingOver ? "Taking over…" : "Take Over"}
+            </button>
+          )}
           {conversationId && (
             <Link to={`/nomii/dashboard/conversations/${conversationId}`}
               title="Open full conversation"
