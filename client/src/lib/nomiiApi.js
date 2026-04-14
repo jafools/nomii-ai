@@ -48,6 +48,15 @@ export async function apiRequest(method, path, body) {
   return data;
 }
 
+// Setup endpoints (self-hosted first-run wizard)
+export const getSetupStatus = () =>
+  fetch(`${BASE_URL}/api/setup/status`)
+    .then(r => r.ok ? r.json() : { required: false })
+    .catch(() => ({ required: false }));
+
+export const completeSetup = (data) =>
+  apiRequest("POST", "/api/setup/complete", data);
+
 // Auth endpoints
 export const register = (email, password, firstName, lastName, companyName, vertical, tosAccepted, newsletterOptIn = false) =>
   apiRequest("POST", "/api/onboard/register", {

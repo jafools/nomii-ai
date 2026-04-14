@@ -180,6 +180,9 @@ if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
   app.use('/api/platform/licenses', require('./routes/platform/licenses'));
 }
 
+// Routes — First-run setup wizard (self-hosted only; inert once tenant exists)
+app.use('/api/setup', require('./routes/setup'));
+
 // Routes — License validation (called by self-hosted instances; only active when NOMII_LICENSE_MASTER=true)
 app.use('/api/license', require('./routes/license'));
 

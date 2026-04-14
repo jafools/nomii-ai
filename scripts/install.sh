@@ -12,7 +12,6 @@
 set -e
 
 # ── Ensure interactive input works even when piped (curl | bash) ─────────────
-# Reopen stdin from the terminal so read/password prompts work correctly.
 if [ ! -t 0 ]; then
   exec < /dev/tty
 fi
@@ -25,7 +24,7 @@ GITHUB_REPO="jafools/nomii-ai"
 COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${COMPOSE_FILE}"
 INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"
-TOTAL_STEPS=6
+TOTAL_STEPS=5
 
 step() { echo -e "\n${W}── Step $1 of $TOTAL_STEPS  $2${NC}"; }
 ok()   { echo -e "   ${G}✓${NC} $1"; }
@@ -38,24 +37,22 @@ clear
 echo ""
 echo -e "${W}╔═══════════════════════════════════════════╗${NC}"
 echo -e "${W}║          Nomii AI — Self-Hosted           ║${NC}"
-echo -e "${W}║             Setup Wizard v1.0             ║${NC}"
+echo -e "${W}║             Setup Wizard v2.0             ║${NC}"
 echo -e "${W}╚═══════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${D}This wizard will install Nomii AI on your server."
-echo -e "It takes about 5–10 minutes on a fresh machine.${NC}"
+echo -e "${D}This script installs Nomii AI on your server."
+echo -e "Once it finishes, open your browser to complete the setup.${NC}"
 echo ""
 
 # ════════════════════════════════════════════════
 step 1 "Check requirements"
 # ════════════════════════════════════════════════
 
-# OS check
 if [[ "$OSTYPE" != "linux-gnu"* ]]; then
   warn "This script is designed for Linux. You're running: $OSTYPE"
   warn "Continuing anyway — some steps may need manual adjustment."
 fi
 
-# Docker check — offer to install if missing
 if ! command -v docker &>/dev/null; then
   echo ""
   warn "Docker is not installed."
@@ -77,13 +74,11 @@ else
   ok "Docker $(docker --version | grep -oP '\d+\.\d+\.\d+' | head -1)"
 fi
 
-# Docker Compose v2 check
 if ! docker compose version &>/dev/null; then
   fail "Docker Compose v2 not found. Update Docker Desktop or install the plugin:\n   https://docs.docker.com/compose/install/"
 fi
 ok "Docker Compose $(docker compose version --short)"
 
-# Docker daemon running? Use sudo to avoid false negative when user isn't in docker group yet.
 if ! sudo docker info &>/dev/null 2>&1; then
   echo ""
   echo -e "   ${D}Starting Docker daemon...${NC}"
@@ -111,7 +106,6 @@ mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 ok "Using: $INSTALL_DIR"
 
-# Download compose file if not already present
 if [ ! -f "$COMPOSE_FILE" ]; then
   echo ""
   echo -e "   ${D}Downloading Nomii AI configuration...${NC}"
@@ -156,56 +150,10 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   read -r PUBLIC_URL
   PUBLIC_URL="${PUBLIC_URL:-http://localhost}"
 
-  # ── Anthropic API Key ─────────────────────────
-  echo ""
-  echo -e "   ${W}Anthropic API key${NC}"
-  echo -e "   ${D}This powers the AI. Get one free at console.anthropic.com${NC}"
-  ask "Anthropic API key (sk-ant-...):"
-  read -r ANTHROPIC_API_KEY
-  [ -z "$ANTHROPIC_API_KEY" ] && warn "No API key entered — AI features will be disabled until you add one to .env"
-
-  # ── Company name ─────────────────────────────
-  echo ""
-  echo -e "   ${W}Your company name${NC}"
-  echo -e "   ${D}Used as the tenant name in your Nomii dashboard.${NC}"
-  ask "Company name:"
-  read -r TENANT_NAME
-  TENANT_NAME="${TENANT_NAME:-My Company}"
-
-  # ── Admin email ───────────────────────────────
-  echo ""
-  echo -e "   ${W}Admin email${NC}"
-  echo -e "   ${D}Your email address. This will be your login to the Nomii dashboard.${NC}"
-  ask "Your email address:"
-  read -r MASTER_EMAIL
-
-  # ── Admin password ────────────────────────────
-  echo ""
-  echo -e "   ${W}Admin password${NC}"
-  echo -e "   ${D}Choose a strong password for your Nomii dashboard login.${NC}"
-  while true; do
-    ask "Password (min 8 characters):"
-    read -rs ADMIN_PASSWORD
-    echo ""
-    if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
-      warn "Password must be at least 8 characters. Try again."
-    else
-      ask "Confirm password:"
-      read -rs ADMIN_PASSWORD_CONFIRM
-      echo ""
-      if [ "$ADMIN_PASSWORD" != "$ADMIN_PASSWORD_CONFIRM" ]; then
-        warn "Passwords do not match. Try again."
-      else
-        ok "Password set"
-        break
-      fi
-    fi
-  done
-
   # ── SMTP ──────────────────────────────────────
   echo ""
   echo -e "   ${W}Email (SMTP) — optional but recommended${NC}"
-  echo -e "   ${D}Used for advisor notifications, invite emails, and document delivery."
+  echo -e "   ${D}Used for advisor notifications and invite emails."
   echo -e "   Skip for now by pressing Enter — you can add it later in .env${NC}"
   ask "SMTP host [skip]:"
   read -r SMTP_HOST
@@ -224,6 +172,16 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
     SMTP_FROM="${SMTP_FROM:-noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)}"
   fi
 
+  # ── Cloudflare Tunnel ─────────────────────────
+  echo ""
+  echo -e "   ${W}Cloudflare Tunnel — optional${NC}"
+  echo -e "   ${D}Gives your Nomii installation a public HTTPS address without"
+  echo -e "   opening firewall ports or managing SSL certificates."
+  echo -e "   Create a free tunnel at: dash.cloudflare.com > Zero Trust > Networks > Tunnels"
+  echo -e "   Leave blank to skip — you can add it later in .env${NC}"
+  ask "Cloudflare Tunnel token [skip]:"
+  read -r CF_TOKEN
+
   # ── License key ──────────────────────────────
   echo ""
   echo -e "   ${W}Nomii AI license key — optional${NC}"
@@ -237,16 +195,6 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   else
     ok "License key noted — will be validated on first start"
   fi
-
-  # ── Cloudflare Tunnel ─────────────────────────
-  echo ""
-  echo -e "   ${W}Cloudflare Tunnel — optional${NC}"
-  echo -e "   ${D}Gives your Nomii installation a public HTTPS address without"
-  echo -e "   opening firewall ports or managing SSL certificates."
-  echo -e "   Create a free tunnel at: dash.cloudflare.com > Zero Trust > Networks > Tunnels"
-  echo -e "   Leave blank to skip — you can add it later in .env${NC}"
-  ask "Cloudflare Tunnel token [skip]:"
-  read -r CF_TOKEN
 
   # ── Generate secrets ──────────────────────────
   echo ""
@@ -273,20 +221,9 @@ JWT_SECRET=${JWT_SECRET}
 WIDGET_JWT_SECRET=${WIDGET_JWT_SECRET}
 API_KEY_ENCRYPTION_SECRET=${API_KEY_ENCRYPTION_SECRET}
 
-# ── App URLs ──────────────────────────────────
+# ── App URL ───────────────────────────────────
 APP_URL=${PUBLIC_URL}
 FRONTEND_URL=${PUBLIC_URL}
-
-# ── AI Provider ───────────────────────────────
-LLM_PROVIDER=claude
-ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-
-# ── Admin account ─────────────────────────────
-MASTER_EMAIL=${MASTER_EMAIL}
-# ADMIN_PASSWORD is used once on first boot to create your account.
-# You may remove this line after your first successful login.
-ADMIN_PASSWORD=${ADMIN_PASSWORD}
-TENANT_NAME=${TENANT_NAME}
 
 # ── Email / SMTP ──────────────────────────────
 SMTP_HOST=${SMTP_HOST}
@@ -303,14 +240,6 @@ CLOUDFLARE_TUNNEL_TOKEN=${CF_TOKEN}
 # Leave blank for free trial (20 messages/mo, 1 customer).
 # Upgrade at: https://pontensolutions.com/nomii/license
 NOMII_LICENSE_KEY=${NOMII_LICENSE_KEY}
-
-# ── Stripe billing (optional) ─────────────────
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_STARTER=
-STRIPE_PRICE_GROWTH=
-STRIPE_PRICE_PROFESSIONAL=
-STRIPE_PORTAL_RETURN_URL=${PUBLIC_URL}/dashboard/plans
 ENV
 
   ok "Configuration saved to .env"
@@ -360,25 +289,19 @@ else
 fi
 
 # ════════════════════════════════════════════════
-step 6 "All done!"
-# ════════════════════════════════════════════════
-
-source .env 2>/dev/null || true
-
 echo ""
 echo -e "${W}╔═══════════════════════════════════════════╗${NC}"
-echo -e "${W}║         Nomii AI is now running!          ║${NC}"
+echo -e "${W}║       Nomii AI is almost ready!           ║${NC}"
 echo -e "${W}╚═══════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "   ${W}Open your browser and go to:${NC}"
+echo -e "   ${W}One last step — open your browser and go to:${NC}"
+
+source .env 2>/dev/null || true
 echo -e "   ${B}${APP_URL:-http://localhost}${NC}"
 echo ""
-echo -e "   ${W}Log in with your admin account:${NC}"
-echo -e "   ${G}${MASTER_EMAIL:-your admin email}${NC}"
-echo -e "   ${D}Your account was created automatically — use the password you set above.${NC}"
-echo ""
-echo -e "   ${Y}Security tip:${NC} Once logged in, remove ADMIN_PASSWORD from ${INSTALL_DIR}/.env"
-echo -e "   ${D}(It was only needed for first-boot setup — it is not used after that)${NC}"
+echo -e "   ${D}A setup wizard will guide you through creating your"
+echo -e "   admin account and connecting your Anthropic API key."
+echo -e "   It takes about 60 seconds.${NC}"
 echo ""
 echo -e "   ${D}────────────────────────────────────────${NC}"
 echo -e "   ${W}Useful commands:${NC}"

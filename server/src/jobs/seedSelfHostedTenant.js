@@ -27,12 +27,10 @@ async function seedSelfHostedTenant() {
   const companyName = (process.env.TENANT_NAME  || 'My Company').trim();
   const rawPassword = process.env.ADMIN_PASSWORD || '';
 
-  if (!email) {
-    console.warn('[Self-Hosted] MASTER_EMAIL not set — skipping tenant seed. Set it in .env and restart.');
-    return;
-  }
-  if (!rawPassword) {
-    console.warn('[Self-Hosted] ADMIN_PASSWORD not set — skipping tenant seed. Set it in .env and restart.');
+  // If no credentials are set, the first-run web wizard (POST /api/setup/complete)
+  // will handle tenant provisioning instead. Skip silently.
+  if (!email || !rawPassword) {
+    console.log('[Self-Hosted] No MASTER_EMAIL/ADMIN_PASSWORD set — first-run setup wizard will handle provisioning.');
     return;
   }
 

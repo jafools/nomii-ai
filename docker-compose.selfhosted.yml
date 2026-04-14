@@ -48,8 +48,10 @@ services:
       APP_URL: ${APP_URL}
       PORTAL_URL: ${APP_URL}
       LLM_PROVIDER: ${LLM_PROVIDER:-claude}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      CLAUDE_API_KEY: ${ANTHROPIC_API_KEY}
+      # ANTHROPIC_API_KEY is collected via the first-run setup wizard and
+      # stored encrypted in the database. No need to set it here.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_API_KEY: ${ANTHROPIC_API_KEY:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_SECURE: ${SMTP_SECURE:-true}
@@ -73,11 +75,6 @@ services:
       # Enables single-tenant mode, disables SaaS registration,
       # and switches the dashboard to license-based billing.
       NOMII_DEPLOYMENT: selfhosted
-      # ── First-boot tenant provisioning ───────────────────
-      # Used once on startup to create your admin account.
-      # Set by install.sh. Can be removed from .env after first boot.
-      TENANT_NAME: ${TENANT_NAME:-My Company}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       # ── Nomii License ─────────────────────────────────────
       # Leave blank to start the free trial (20 messages/mo, 1 customer).
       # Purchase a paid license at: https://pontensolutions.com/nomii/license

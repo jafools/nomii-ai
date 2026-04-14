@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 import NomiiLogin from "./pages/nomii/NomiiLogin";
@@ -26,8 +26,23 @@ import NomiiTools from "./pages/nomii/dashboard/NomiiTools";
 import NomiiAcceptInvite from "./pages/nomii/NomiiAcceptInvite";
 import NomiiProtectedRoute from "./components/nomii/NomiiProtectedRoute";
 import { NomiiAuthProvider } from "./contexts/NomiiAuthContext";
+import NomiiSetup from "./pages/nomii/NomiiSetup";
 
 const queryClient = new QueryClient();
+
+// On first visit, check whether first-run setup is needed (self-hosted only).
+// If the backend returns { required: true }, redirect to the setup wizard.
+// Non-selfhosted deployments return 404 for this endpoint, which we ignore.
+const SetupRedirect = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    fetch("/api/setup/status")
+      .then(r => r.ok ? r.json() : { required: false })
+      .then(({ required }) => navigate(required ? "/nomii/setup" : "/nomii/login", { replace: true }))
+      .catch(() => navigate("/nomii/login", { replace: true }));
+  }, [navigate]);
+  return null;
+};
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -43,10 +58,13 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
-          {/* Root + shortcut URLs → login/signup */}
-          <Route path="/" element={<Navigate to="/nomii/login" replace />} />
+          {/* Root → check setup status first, then redirect appropriately */}
+          <Route path="/" element={<SetupRedirect />} />
           <Route path="/login" element={<Navigate to="/nomii/login" replace />} />
           <Route path="/signup" element={<Navigate to="/nomii/signup" replace />} />
+
+          {/* First-run setup wizard (self-hosted only) */}
+          <Route path="/nomii/setup" element={<NomiiSetup />} />
 
           {/* Public auth routes */}
           <Route path="/nomii/login" element={<NomiiLogin />} />
