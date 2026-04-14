@@ -11,6 +11,12 @@
 
 set -e
 
+# ── Ensure interactive input works even when piped (curl | bash) ─────────────
+# Reopen stdin from the terminal so read/password prompts work correctly.
+if [ ! -t 0 ]; then
+  exec < /dev/tty
+fi
+
 # ── Colours ─────────────────────────────────────────────────
 R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m'
 B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
