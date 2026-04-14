@@ -49,3 +49,6 @@ SPRINT_HANDOFF.md
 .claude-flow/*.db
 .claude-flow/*.sqlite
 ruvector.db
+
+# User-local Claude Code settings (never commit)
+.claude/settings.local.json

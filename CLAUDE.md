@@ -224,6 +224,20 @@ npx @claude-flow/cli@latest doctor --fix
 
 Product renamed from Knomi AI → Nomii AI on 2026-03-18. DB name `knomi_ai` and user `knomi` kept to avoid breaking production.
 
+## Second Brain (Obsidian Vault)
+
+Vault path: `C:\Users\ajace\Documents\Work\Obsidian\jafools' Vault`
+
+At the start of each session, read the vault's `index.md` and `Memory.md` to check for relevant context before beginning work.
+
+After completing any significant work in this project, automatically save a brief note to the vault:
+- **Decisions made** → write to `projects/nomii/` in the vault
+- **New patterns or concepts learned** → write to `wiki/concepts/` in the vault
+- **Bugs fixed with non-obvious solutions** → write to `projects/nomii/` in the vault
+- **Always update** `index.md` and append to `log.md` in the vault when writing
+
+Use `[[wikilinks]]` and YAML frontmatter on all vault pages. Keep notes concise.
+
 ## Support
 
 - Documentation: https://github.com/ruvnet/claude-flow
