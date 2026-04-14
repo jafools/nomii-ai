@@ -871,7 +871,9 @@ router.get('/poll', requireWidgetAuth, async (req, res, next) => {
     const { rows: messages } = await db.query(
       `SELECT id, role, content, created_at
        FROM messages
-       WHERE conversation_id = $1 AND created_at > $2 AND role = 'agent'
+       WHERE conversation_id = $1
+         AND date_trunc('milliseconds', created_at) > $2::timestamptz
+         AND role = 'agent'
        ORDER BY created_at ASC`,
       [conversation_id, since]
     );
