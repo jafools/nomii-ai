@@ -92,17 +92,22 @@ async function applyPlanLimits(plan) {
   const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
   try {
     const db = require('../db');
+    // Self-hosted is always BYOK — the tenant's API key is stored encrypted
+    // on the tenant row. The "managed AI" concept only applies to SaaS where
+    // the platform provides the key. Forcing false here prevents growth+ plans
+    // from breaking LLM calls on self-hosted (resolveApiKey would otherwise
+    // try process.env.ANTHROPIC_API_KEY and fail).
     await db.query(
       `UPDATE subscriptions
        SET plan                  = $1,
            max_messages_month    = $2,
            max_customers         = $3,
-           managed_ai_enabled    = $4,
-           max_agents            = $5,
+           managed_ai_enabled    = false,
+           max_agents            = $4,
            status                = 'active',
            updated_at            = NOW()
        WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at LIMIT 1)`,
-      [plan, limits.max_messages_month, limits.max_customers, limits.managed_ai, limits.max_agents]
+      [plan, limits.max_messages_month, limits.max_customers, limits.max_agents]
     );
     console.log(`[License] Plan limits applied: ${plan} (${limits.max_messages_month} msg/mo, ${limits.max_customers} customers)`);
   } catch (err) {
