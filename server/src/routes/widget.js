@@ -1142,60 +1142,78 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
 
     let agentResponse;
 
-    if (toolDefs.length > 0 && (tenantForLLM.managed_ai_enabled || tenantForLLM.llm_api_key_encrypted)) {
-      // ── Tool-enabled path ──────────────────────────────────────────────────
-      // Build the tool executor bound to this request's context so handlers
-      // can access db, customerId, conversationId, etc.
-      const resolvedKey = resolveApiKey(tenantForLLM);
+    // LLM call is the most likely intermittent failure point (network, provider
+    // rate limits, timeouts). Wrap separately so the log line identifies the path
+    // and carries tenant/conversation/model context without leaking keys.
+    const llmPath = toolDefs.length > 0 && (tenantForLLM.managed_ai_enabled || tenantForLLM.llm_api_key_encrypted)
+      ? 'tools'
+      : 'standard';
+    try {
+      if (llmPath === 'tools') {
+        // ── Tool-enabled path ──────────────────────────────────────────────────
+        // Build the tool executor bound to this request's context so handlers
+        // can access db, customerId, conversationId, etc.
+        const resolvedKey = resolveApiKey(tenantForLLM);
 
-      const toolContext = {
-        db,
-        tenantId:       tenant_id,
-        customerId:     customer_id,
-        conversationId: conversation_id,
-        customer: {
-          first_name: conv.first_name,
-          last_name:  conv.last_name,
-          email:      conv.email,
-        },
-        tenant: {
-          name:           conv.tenant_name,
-          vertical_config: conv.vertical_config,
-        },
-      };
+        const toolContext = {
+          db,
+          tenantId:       tenant_id,
+          customerId:     customer_id,
+          conversationId: conversation_id,
+          customer: {
+            first_name: conv.first_name,
+            last_name:  conv.last_name,
+            email:      conv.email,
+          },
+          tenant: {
+            name:           conv.tenant_name,
+            vertical_config: conv.vertical_config,
+          },
+        };
 
-      // Universal executor (handles lookup_client_data, analyze_client_data, etc.)
-      const universalExecutor = (toolName, params) =>
-        executeTool(toolName, params, toolContext);
+        // Universal executor (handles lookup_client_data, analyze_client_data, etc.)
+        const universalExecutor = (toolName, params) =>
+          executeTool(toolName, params, toolContext);
 
-      // Custom executor (handles tenant-defined tools from custom_tools table)
-      const customExecutor = buildCustomExecutor(customToolRows, toolContext);
+        // Custom executor (handles tenant-defined tools from custom_tools table)
+        const customExecutor = buildCustomExecutor(customToolRows, toolContext);
 
-      // Combined: custom tools take priority, fall through to universal
-      const toolExecutor = buildCombinedExecutor(customExecutor, universalExecutor);
+        // Combined: custom tools take priority, fall through to universal
+        const toolExecutor = buildCombinedExecutor(customExecutor, universalExecutor);
 
-      const raw = await callClaudeWithTools(
-        systemPrompt,
-        llmMessages,
-        toolDefs,
-        toolExecutor,
-        conv.llm_model,
-        2048,
-        resolvedKey
+        const raw = await callClaudeWithTools(
+          systemPrompt,
+          llmMessages,
+          toolDefs,
+          toolExecutor,
+          conv.llm_model,
+          2048,
+          resolvedKey
+        );
+        agentResponse = sanitiseResponse(raw);
+
+      } else {
+        // ── Standard path (no tools, or mock) ─────────────────────────────────
+        agentResponse = await getAgentResponse({
+          systemPrompt,
+          messages:        llmMessages,
+          model:           conv.llm_model,
+          customerName:    `${conv.first_name} ${conv.last_name}`,
+          agentName:       agentDisplayName,
+          lastUserMessage: sanitized,
+          tenant:          tenantForLLM,
+        });
+      }
+    } catch (llmErr) {
+      // Tag the failure so grepping backend logs for `[Widget][chat][llm]` lands
+      // on the exact cause of the user-facing "Sorry, I had trouble responding".
+      console.error(
+        `[Widget][chat][llm] path=${llmPath} provider=${conv.llm_provider || 'unknown'} ` +
+        `model=${conv.llm_model || 'default'} tenant=${tenant_id} conv=${conversation_id} ` +
+        `msgs=${existingMessages.length + 1} — ${llmErr.message}`
       );
-      agentResponse = sanitiseResponse(raw);
-
-    } else {
-      // ── Standard path (no tools, or mock) ─────────────────────────────────
-      agentResponse = await getAgentResponse({
-        systemPrompt,
-        messages:        llmMessages,
-        model:           conv.llm_model,
-        customerName:    `${conv.first_name} ${conv.last_name}`,
-        agentName:       agentDisplayName,
-        lastUserMessage: sanitized,
-        tenant:          tenantForLLM,
-      });
+      if (llmErr.stack) console.error(llmErr.stack);
+      throw llmErr;
     }
 
     // 8b. Increment message counter

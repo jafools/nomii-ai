@@ -214,7 +214,14 @@ app.get('/api/config', (req, res) => {
 // Error handler — never expose internal details in production
 app.use((err, req, res, next) => {
   const status = err.status || 500;
-  console.error('[ERROR]', status, err.message);
+  // For 5xx, log full context (method, url, stack) so we can diagnose intermittent
+  // failures. 4xx errors are expected/intentional, so a single-line log is enough.
+  if (status >= 500) {
+    console.error(`[ERROR] ${status} ${req.method} ${req.originalUrl} — ${err.message}`);
+    if (err.stack) console.error(err.stack);
+  } else {
+    console.error(`[ERROR] ${status} ${req.method} ${req.originalUrl} — ${err.message}`);
+  }
   // Only surface the original message for expected, intentional errors (4xx).
   // For unexpected server errors, send a generic message to avoid leaking internals.
   const safe = status < 500

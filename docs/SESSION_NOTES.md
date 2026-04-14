@@ -30,14 +30,18 @@
 - **Take Over button** — added to `ThreadView` split-pane in `NomiiConversations.jsx` (commit `20896ef`)
 - **Git history scrub** — `Stripe_data.txt`, `CLAUDE_CODE_SETUP.md`, `SESSION_HANDOFF.md`, `SPRINT_HANDOFF.md` removed from all commits and added to `.gitignore`; force-pushed to main
 - **Stripe key rotation** — user rotated Stripe live key via Stripe dashboard and updated it on VPS
+- **Widget error instrumentation** — diagnostic logging for the intermittent "Sorry, I had trouble responding" error:
+  - Global error handler in `server/src/index.js` now logs `method`, `originalUrl`, and full stack for 5xx errors
+  - `/api/widget/chat` wraps the LLM call (both tool and standard paths) in its own try/catch that logs a tagged `[Widget][chat][llm]` line with provider, model, tenant, conversation, and message count
+  - No behaviour change — on next repro, grep backend logs for `[Widget][chat][llm]` to get the exact cause
 
 ---
 
 ## Known bugs / next session TODO
 
-- **Widget "Sorry, I had trouble responding" error** — intermittent, cause unknown. Check backend logs:
+- **Widget "Sorry, I had trouble responding" error** — instrumentation deployed. Next step: wait for a live repro, then grep:
   ```bash
-  sudo docker compose -f docker-compose.selfhosted.yml logs backend --tail=100
+  sudo docker compose -f docker-compose.selfhosted.yml logs backend --tail=200 | grep -E '\[Widget\]\[chat\]|\[ERROR\] 5'
   ```
 - **Additional bugs reported by user** — unspecified, user ended session. Ask user to describe them.
 
