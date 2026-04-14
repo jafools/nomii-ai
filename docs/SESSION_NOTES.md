@@ -5,7 +5,7 @@
 
 ---
 
-## Last updated: 2026-04-14 (session 2 of the day)
+## Last updated: 2026-04-14 (session 3 of the day)
 
 ## VPS / Deployment
 
@@ -62,22 +62,57 @@ Full end-to-end flow: **self-hosted customer → pricing page → Stripe → lic
 
 ---
 
+## What was completed (session 2026-04-14, session 3)
+
+### First-run browser setup wizard for self-hosted (commits `bbbb356`, `ccdbec9`)
+Replaces the terminal/env-var provisioning approach with a polished 3-step web wizard.
+Self-hosted users now: `docker compose up -d` → open browser → wizard → dashboard.
+
+**Backend:**
+- `server/src/routes/setup.js` (new) — `GET /api/setup/status` returns `{ required: true }` when no tenant exists; `POST /api/setup/complete` creates tenant + admin, stores Anthropic API key encrypted (AES-256 via existing apiKeyService), returns portal JWT for auto-login. Gated by `NOMII_DEPLOYMENT=selfhosted` and idempotent (409 if tenant exists).
+- `server/src/index.js` — mounted setup routes at `/api/setup`
+- `server/src/jobs/seedSelfHostedTenant.js` — skips silently if `MASTER_EMAIL`/`ADMIN_PASSWORD` not set (wizard handles it)
+- `server/src/services/licenseService.js` — `applyPlanLimits` now forces `managed_ai_enabled=false` on self-hosted. Prevented a bug where growth+ license upgrades would break LLM calls (heartbeat was setting `managed_ai_enabled=true` but self-hosted has no platform key).
+
+**Frontend:**
+- `client/src/pages/nomii/NomiiSetup.jsx` (new) — 3-step wizard matching dark theme (company name → admin account → Anthropic key)
+- `client/src/App.tsx` — added `/nomii/setup` route + `SetupRedirect` component that checks setup status on root visit
+- `client/src/lib/nomiiApi.js` — added `getSetupStatus()` and `completeSetup()`
+
+**Deployment:**
+- `docker-compose.selfhosted.yml` — removed `TENANT_NAME`, `ADMIN_PASSWORD`; marked `ANTHROPIC_API_KEY` as optional
+- `scripts/install.sh` — simplified to 5 steps. Prompts only for install dir, public URL, optional SMTP, optional Cloudflare token, optional license key. Final message directs user to browser wizard.
+
+### Self-hosted landing page for pontensolutions.com
+Wrote `src/pages/nomii/SelfHostedNomii.tsx` for the `ponten-solutions` repo — provided full TSX + Proxmox commands to the user. Route: `/nomii/self-hosted`. Uses dark theme, has hero with one-line install command (copy button), benefits, 4-step "how it works", requirements, trial CTA linking to `/nomii/license`.
+
+**User action needed on Proxmox:**
+1. Apply the TSX file + App.tsx route in `~/ponten-solutions`
+2. Remove/scope the Cloudflare redirect rule catching `pontensolutions.com/nomii/*` → `nomii.pontensolutions.com` so the new route renders
+
+### Verified during review
+- nginx.conf correctly proxies `/api/setup/*` to backend
+- Widget chat uses `req.subscription.managed_ai_enabled` (not the broken tenant join at widget.js:1284)
+- `NomiiProtectedRoute` works with just localStorage token set by the wizard
+- Setup endpoint idempotent + gated to self-hosted
+- Found + flagged pre-existing bug at `server/src/routes/widget.js:1284` — selects `t.managed_ai_enabled` from tenants but column only exists on subscriptions. Out of scope for this session.
+
+---
+
 ## Next session TODO (priority order)
 
-1. **On-prem setup guide page** — build a `/nomii/self-hosted` (or similar) page on `pontensolutions.com` with a step-by-step setup guide for self-hosted customers. Need to scope:
-   - Docker Compose template they can download
-   - Required env vars documented
-   - License activation steps
-   - Ask user what their current self-hosted onboarding looks like before building
+1. **Apply self-hosted landing page on pontensolutions.com** — TSX written this session. User needs to apply in `~/ponten-solutions` on Proxmox (nano the file, edit App.tsx, commit, push). Also remove/scope the Cloudflare redirect rule that catches `pontensolutions.com/nomii/*` → `nomii.pontensolutions.com`.
 
-2. **Verify annual Stripe prices** — `BuyNomiiLicense.tsx` displays `$490 / $1,490 / $3,490` per year. Confirm these match the actual annual prices in Stripe under `STRIPE_SELFHOSTED_PRICE_*_ANNUAL` price IDs.
+2. **End-to-end test the setup wizard** — create a throwaway deploy in `/tmp/nomii-test` with a port-80→8080 override and minimal `.env` (no MASTER_EMAIL/ADMIN_PASSWORD/ANTHROPIC_API_KEY). Verify wizard appears, 3 steps complete, auto-login works, widget message sends via BYOK key. Teardown with `docker compose down -v`.
 
-3. **Widget "Sorry, I had trouble responding" error** — instrumentation deployed, waiting for live repro. When it happens:
+3. **Verify annual Stripe prices** — `BuyNomiiLicense.tsx` displays `$490 / $1,490 / $3,490` per year. Confirm `STRIPE_SELFHOSTED_PRICE_*_ANNUAL` in Stripe match. Check SaaS VPS `.env` has all 6 price IDs: `cd ~/Knomi/knomi-ai && grep STRIPE_SELFHOSTED_PRICE .env`.
+
+4. **Widget "Sorry, I had trouble responding" error** — instrumentation deployed, waiting for live repro. When it happens:
    ```bash
    cd ~/Knomi/knomi-ai && docker compose logs backend --tail=200 | grep -E '\[Widget\]\[chat\]|\[ERROR\] 5'
    ```
 
-4. **Other bugs** — user mentioned additional bugs at end of a previous session but never described them. Ask at start of next session.
+5. **Pre-existing bug at widget.js:1284** — selects `t.managed_ai_enabled` from tenants but the column lives on subscriptions. Returns undefined in that code path. Worth fixing when time permits.
 
 ---
 
@@ -86,7 +121,10 @@ Full end-to-end flow: **self-hosted customer → pricing page → Stripe → lic
 | File | Repo | Purpose |
 |------|------|---------|
 | `server/src/routes/widget.js` | nomii-ai | Widget API — session, message, poll endpoints |
+| `server/src/routes/setup.js` | nomii-ai | First-run setup endpoints (`/api/setup/status`, `/api/setup/complete`) |
 | `server/src/routes/license-checkout.js` | nomii-ai | Public checkout endpoint — creates Stripe Session for self-hosted license |
+| `client/src/pages/nomii/NomiiSetup.jsx` | nomii-ai | 3-step browser setup wizard (self-hosted first-run) |
+| `src/pages/nomii/SelfHostedNomii.tsx` | ponten-solutions | Self-hosted landing page at `/nomii/self-hosted` (pending apply) |
 | `server/src/middleware/security.js` | nomii-ai | Security headers + CORS allowed origins |
 | `server/src/engine/promptBuilder.js` | nomii-ai | Builds AI system prompt; `widgetGreeted` param added |
 | `server/public/widget.html` | nomii-ai | Embeddable chat widget (vanilla JS) |
