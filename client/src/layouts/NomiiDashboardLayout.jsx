@@ -31,9 +31,10 @@ import {
 
 // ── Notification helpers ───────────────────────────────────────────────────
 const NOTIF_ICON = {
-  flag:        { Icon: Flag,          color: "#EF4444" },
-  human_reply: { Icon: MessageCircle, color: "#C9A84C" },
-  escalation:  { Icon: TrendingUp,    color: "#F97316" },
+  flag:          { Icon: Flag,          color: "#EF4444" },
+  human_reply:   { Icon: MessageCircle, color: "#C9A84C" },
+  escalation:    { Icon: TrendingUp,    color: "#F97316" },
+  limit_reached: { Icon: Zap,           color: "#EF4444" },
 };
 
 function timeAgo(dateStr) {

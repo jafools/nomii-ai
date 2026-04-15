@@ -223,6 +223,19 @@ async function sendLimitNotificationIfNeeded(tenantId) {
     sendTrialLimitEmail({ to: email, firstName: first_name, tenantName: tenant_name })
       .catch(err => console.error('[Subscription] Failed to send trial limit email:', err.message));
 
+    // Also create an in-app notification so owners are warned even when SMTP
+    // isn't configured (the default after install.sh). The bell icon in the
+    // dashboard sidebar will pick this up via /api/portal/notifications.
+    db.query(
+      `INSERT INTO notifications (tenant_id, type, title, body)
+       VALUES ($1, 'limit_reached', $2, $3)`,
+      [
+        tenantId,
+        'Trial limit reached',
+        'Your trial allowance has been exhausted. Upgrade your plan to restore service.',
+      ]
+    ).catch(err => console.error('[Subscription] Failed to create in-app notification:', err.message));
+
     console.log(`[Subscription] Trial limit notification sent for tenant ${tenantId}`);
   } catch (err) {
     // Never let notification errors break the main flow
