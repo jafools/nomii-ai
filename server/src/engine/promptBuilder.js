@@ -8,15 +8,76 @@
  * Works across any vertical: retirement, healthcare, insurance, etc.
  * The tenant's vertical_config drives domain-specific terminology and framing.
  *
- * Usage:
- *   const prompt = buildSystemPrompt({ tenant, customer, customerData });
+ * Input shapes
+ * ------------
+ *
+ * @typedef {Object} PromptTenant
+ * @property {string}  [name]
+ * @property {string}  [agent_name]
+ * @property {string}  [website_url]
+ * @property {Object}  [vertical_config]     Domain terminology + framing rules.
+ * @property {Object}  [compliance_config]   Legacy disclaimer/restricted-topic config.
+ * @property {Object}  [onboarding_config]
+ *
+ * @typedef {Object} PromptCustomer
+ * @property {Object}  [soul_file]           Agent persona / identity (decrypted).
+ * @property {Object}  [memory_file]         Long-term memory blob (decrypted).
+ * @property {string}  [onboarding_status]
+ * @property {string[]} [onboarding_categories_completed]
+ *
+ * @typedef {Object} PromptDataRecord
+ * @property {string}  [category]
+ * @property {string}  [data_category]       Legacy alias of category.
+ * @property {string}  [label]
+ * @property {string}  [value]
+ * @property {string}  [secondary_value]
+ * @property {string}  [value_type]
+ * @property {Object}  [metadata]
+ *
+ * @typedef {Object} PromptProduct
+ * @property {string}  name
+ * @property {string}  [description]
+ * @property {string}  [category]
+ * @property {string}  [price_info]
+ * @property {string}  [notes]
+ *
+ * @typedef {Object} BuildPromptInput
+ * @property {PromptTenant}         tenant
+ * @property {PromptCustomer}       customer
+ * @property {PromptDataRecord[]}   [customerData]
+ * @property {PromptProduct[]}      [products]
+ * @property {string}               [currentDate]    YYYY-MM-DD; defaults to today.
+ * @property {string|null}          [handbackNote]   Optional advisor handoff note.
+ * @property {boolean}              [widgetGreeted]  True when the widget already
+ *                                                   greeted — suppress re-greet.
  */
 
 // ============================================================
 // MAIN PROMPT BUILDER
 // ============================================================
 
+/**
+ * Assemble the full system prompt for one chat turn.
+ *
+ * All keys in `input` are shallow — only `tenant` and `customer` are
+ * required. Accepts additional undocumented fields without error so the
+ * caller (widget.js / chat.js) can pass extras without breaking.
+ *
+ * @param   {BuildPromptInput} input
+ * @returns {string} The system prompt ready to hand to Claude.
+ * @throws  {TypeError} When `tenant` or `customer` is missing.
+ */
 function buildSystemPrompt({ tenant, customer, customerData, products, currentDate, handbackNote, widgetGreeted }) {
+  // Fail fast: missing tenant/customer was previously a TypeError deep inside
+  // buildIdentityBlock (`Cannot read properties of undefined (reading 'base_identity')`).
+  // Catch it at the boundary with a clear message instead.
+  if (!tenant || typeof tenant !== 'object') {
+    throw new TypeError('buildSystemPrompt: `tenant` is required');
+  }
+  if (!customer || typeof customer !== 'object') {
+    throw new TypeError('buildSystemPrompt: `customer` is required');
+  }
+
   const date = currentDate || new Date().toISOString().split('T')[0];
   const soul = customer.soul_file || {};
   const memory = customer.memory_file || {};
