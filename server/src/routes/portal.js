@@ -38,6 +38,7 @@ const jwt     = require('jsonwebtoken');
 const db      = require('../db');
 const { parse: csvParse } = require('csv-parse/sync');
 const { requireActiveSubscription, getSubscription, isWithinCustomerLimit } = require('../middleware/subscription');
+const { UNRESTRICTED_PLANS, VALID_ADMIN_PLANS, DEPLOYMENT_MODES, isSelfHosted } = require('../config/plans');
 const { encrypt, decrypt, getLast4 } = require('../services/apiKeyService');
 const { validateApiKey, resolveApiKey } = require('../services/llmService');
 const { updateMemoryAfterSession, generateSessionSummary, applySessionSummary, applyFactsToMemory } = require('../engine/memoryUpdater');
@@ -152,7 +153,7 @@ router.get('/me', async (req, res, next) => {
       } : null,
       // Lets the dashboard branch its billing UI: SaaS shows Stripe pricing
       // table; self-hosted shows "Buy a license" + Activate-Key form.
-      deployment_mode: process.env.NOMII_DEPLOYMENT === 'selfhosted' ? 'selfhosted' : 'saas',
+      deployment_mode: isSelfHosted() ? DEPLOYMENT_MODES.SELFHOSTED : DEPLOYMENT_MODES.SAAS,
     });
   } catch (err) { next(err); }
 });
@@ -672,7 +673,7 @@ router.post('/customers/upload', async (req, res, next) => {
     const soulTemplate = tenantSoulRows[0]?.agent_soul_template || null;
     let currentCount = parseInt(countRows[0].count);
     const maxCustomers = sub ? sub.max_customers : null;
-    const isUnrestricted = sub && ['master', 'enterprise'].includes(sub.plan);
+    const isUnrestricted = sub && UNRESTRICTED_PLANS.includes(sub.plan);
 
     // Build a resolver: given a row, extract a named field using the mapping
     // Falls back to common name variants if no mapping provided
@@ -2028,7 +2029,7 @@ router.get('/visitors', async (req, res, next) => {
 // precedence — operators who provisioned via install.sh aren't affected.
 
 function requireSelfHostedDeployment(req, res, next) {
-  if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
+  if (!isSelfHosted()) {
     return res.status(404).json({ error: 'Not available on this deployment' });
   }
   next();
@@ -2109,7 +2110,7 @@ router.get('/subscription', async (req, res, next) => {
 
     const customersCount = parseInt(rows[0].count);
     const messagesUsed   = sub.messages_used_this_month || 0;
-    const isUnrestricted = ['master', 'enterprise'].includes(sub.plan);
+    const isUnrestricted = UNRESTRICTED_PLANS.includes(sub.plan);
 
     // Percentage helpers (null when plan has no cap)
     const customerPct = (!isUnrestricted && sub.max_customers)
@@ -2575,11 +2576,10 @@ router.post('/admin/set-plan', async (req, res, next) => {
       return res.status(403).json({ error: 'Forbidden: master account only' });
     }
 
-    const VALID_PLANS = ['free', 'trial', 'starter', 'growth', 'professional', 'enterprise', 'master'];
     const { plan, max_customers, max_messages_month, managed_ai_enabled } = req.body;
 
-    if (!plan || !VALID_PLANS.includes(plan)) {
-      return res.status(400).json({ error: `plan must be one of: ${VALID_PLANS.join(', ')}` });
+    if (!plan || !VALID_ADMIN_PLANS.includes(plan)) {
+      return res.status(400).json({ error: `plan must be one of: ${VALID_ADMIN_PLANS.join(', ')}` });
     }
 
     // Plan defaults (can be overridden by body params)

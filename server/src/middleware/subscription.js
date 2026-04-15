@@ -11,12 +11,11 @@
 
 const db = require('../db');
 const { sendTrialLimitEmail } = require('../services/emailService');
-
-// Plans that bypass all checks
-const UNRESTRICTED_PLANS = ['master', 'enterprise'];
-
-// Plans that show trial-limit UX (small limits, upgrade prompts)
-const TRIAL_PLANS = ['trial', 'free'];
+const {
+  UNRESTRICTED_PLANS,
+  TRIAL_PLANS,
+  NOTIFICATION_TYPES,
+} = require('../config/plans');
 
 /**
  * Load subscription for a tenant. Returns null if none exists.
@@ -228,9 +227,10 @@ async function sendLimitNotificationIfNeeded(tenantId) {
     // dashboard sidebar will pick this up via /api/portal/notifications.
     db.query(
       `INSERT INTO notifications (tenant_id, type, title, body)
-       VALUES ($1, 'limit_reached', $2, $3)`,
+       VALUES ($1, $2, $3, $4)`,
       [
         tenantId,
+        NOTIFICATION_TYPES.LIMIT_REACHED,
         'Trial limit reached',
         'Your trial allowance has been exhausted. Upgrade your plan to restore service.',
       ]
