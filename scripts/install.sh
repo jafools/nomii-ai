@@ -36,8 +36,12 @@ R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m'
 B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
 
 GITHUB_REPO="jafools/nomii-ai"
+# Override with NOMII_GITHUB_REF=v1.2.0 (or a SHA) to pin to a specific
+# release. Default "main" follows latest. Pinning is recommended for
+# production — gives you a known-good, reproducible install.
+GITHUB_REF="${NOMII_GITHUB_REF:-main}"
 COMPOSE_FILE="docker-compose.selfhosted.yml"
-COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${COMPOSE_FILE}"
+COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${COMPOSE_FILE}"
 INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"
 TOTAL_STEPS=5
 
