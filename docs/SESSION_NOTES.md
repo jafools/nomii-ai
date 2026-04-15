@@ -5,7 +5,74 @@
 
 ---
 
-## Last updated: 2026-04-15 late-evening (8-agent codebase cleanup sweep — DEPLOYED)
+## Last updated: 2026-04-15 evening (self-hosted purchase funnel validated — live Stripe smoke test passed)
+
+Ran a live $49 Stripe smoke test of the self-hosted Starter license flow. Payment → webhook → DB insert → license-key email → dashboard activation → plan-limits lifted — **all green end-to-end**. Prod HEAD `83ddc3a`. Self-hosted purchase funnel is shippable. Refunded the test purchase after validation.
+
+Fixed three real bugs surfaced by the live test, created a proper post-purchase success page, and identified the marketing-page customer-journey gap as the next priority.
+
+### Bugs fixed this session
+
+1. **Lateris/Nomii Stripe webhook crossfire** (fix applied in Lateris repo, cross-repo)
+   - Both products share one Stripe account → both webhook endpoints receive every `checkout.session.completed` → Lateris issued a spurious Lateris license key for a Nomii test purchase
+   - Fix: negative `metadata.product_type` guard in Lateris `bin/license-worker.js`. Events with `product_type !== "lateris"` are skipped with `{ received: true, skipped: "not a Lateris checkout" }`
+   - Nomii side already stamps `metadata.product_type = 'selfhosted'` on both session AND subscription (see `server/src/routes/license-checkout.js:64-65`), so the guard works with zero Nomii-side code changes
+   - Lateris worker redeployed, stale KV entry (`LIC-2026-AUSTINPONTEN-752`) cleaned up
+
+2. **Stale email activation instructions** (commit `26ad89a`)
+   - `sendLicenseKeyEmail()` in `server/src/services/emailService.js` told buyers to SSH in, edit `.env`, set `NOMII_LICENSE_KEY=`, run `docker compose restart` — contradicts the new dashboard-first activation flow
+   - Rewrote HTML + plain-text bodies: primary path is now "Log in → Plans & Billing → paste → Activate" (limits lift instantly, no restart). Kept the advanced env-var path in a collapsed `<details>` block for operators who prefer config-over-UI
+
+3. **SMTP_FROM brand drift on prod** (env-only, no commit)
+   - Prod `.env` on `nomii-prod` still had `SMTP_FROM="Knomi AI <hello@pontensolutions.com>"` — receipts branded with the retired name
+   - Changed to `"Nomii AI <hello@pontensolutions.com>"`. Required `docker compose up -d --force-recreate backend` to pick up (plain `restart` does NOT reload env files — new gotcha worth remembering)
+   - Code default at `emailService.js:44` was already correct; only the prod env override was stale
+
+### Post-purchase success page — created from scratch
+
+Before this session: Stripe's `success_url` pointed to `pontensolutions.com/nomii/license?success=true`, which redirected through the `app.pontensolutions.com → nomii.pontensolutions.com` chain and hit the SPA catch-all → login redirect. No dedicated success page existed anywhere in the Nomii app. The card showing on the old marketing site was orphaned legacy code with a "Go to Dashboard" button that sent self-hosted buyers to SaaS login.
+
+Created `client/src/pages/nomii/NomiiLicenseSuccess.jsx` — self-contained, no auth, no API calls:
+- Dark themed, matches `NomiiLogin` design language
+- **Install command embedded inline** with a copy button — buyers who haven't installed yet don't need to leave the page:
+  ```
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
+  ```
+- Two labeled sections: "Haven't installed yet?" (Terminal icon, copy-able install cmd) + "Already running Nomii?" (Server icon, pointing at Plans & Billing)
+- Wired route `/nomii/license/success` into `client/src/App.tsx`
+- Stripe `success_url` changed to `https://nomii.pontensolutions.com/nomii/license/success` — bypasses the marketing-site redirect chain entirely
+
+Commits `41c0724` (page + route + success_url) and `83ddc3a` (inline install cmd). Deployed and verified: `nomii.pontensolutions.com/nomii/license/success` returns 200, install command present in the deployed JS bundle.
+
+### Gotchas captured
+
+- **`docker compose restart` does NOT reload env files.** Use `docker compose up -d --force-recreate <service>` whenever `.env` changes.
+- **`curl -I` on SPA routes is diagnostically useless.** All routes return 200 for the HTML shell regardless of whether a route component exists. Trust code grep, not HTTP headers.
+- **Shared Stripe accounts multiply webhook fanout.** Every product under the same Stripe account receives every event. Stamp `metadata.product_type` on session AND subscription (subscription-lifecycle events don't inherit session metadata), and add negative guards in each worker.
+
+### Next session priority (Austin's explicit ask)
+
+> "I want to see the clear path on my marketing page next. I want to hand hold the customers to be able to do On prem or SaaS Nomii"
+
+Marketing page at `pontensolutions.com/nomii/*` currently has no clear on-prem vs SaaS fork. Needs two explicit buyer journeys:
+
+- **On-prem / Self-hosted (Trial-first)**: "Install Free (2 min)" primary CTA → runs `install.sh` → 7-day trial → upgrade in dashboard (Plans & Billing → paste Stripe key)
+- **SaaS / Cloud (Managed)**: "Start Free Trial" → signup at `nomii.pontensolutions.com` → managed single-tenant instance → Stripe subscription from in-app billing
+
+Work belongs in the `ponten-solutions` repo (not this repo). The `SelfHostedNomii.tsx` page drafted in the Apr 14 session is probably a starting point but needs review against the current branding + routing.
+
+### Other outstanding (non-blocking)
+
+- **Stripe customer receipts** — Austin to manually toggle in Stripe Dashboard → Settings → Emails → enable "Successful payment receipts" + "Refund receipts". Email service handles the license-key email but not invoice/receipt.
+- **Stale success card** at `pontensolutions.com/nomii/license?success=true` — orphaned (nothing links to it now). Clean up on next ponten-solutions deploy or leave as-is (unreachable).
+- **SMTP_PASS rotation** — Was visible in terminal output during an `env | grep` diagnostic this session. Low risk (local terminal only, not logged) but worth rotating at next convenient moment (One.com mail settings).
+- **portal.js split** — 3,683 LOC. Flagged by the cleanup sweep. Deferred post-launch.
+- **Pre-portal routes** (~1,646 LOC of zombies) — Needs 7-day prod log grep to confirm no external traffic before deletion.
+- **Hetzner CX22 migration** — Still on roadmap. Not blocking first customer.
+
+---
+
+## Previous session (2026-04-15 late-evening): 8-agent codebase cleanup sweep — DEPLOYED
 
 37 commits pushed to `origin/main` (cleanup + notes). 96 files changed, net **−5,223 LOC** across 7 merge commits + agent 5's direct commits. **Deployed to Proxmox prod** at HEAD `06f512d`. Backend + frontend containers rebuilt and healthy; external endpoints verified (`/api/health`, `/api/license/validate`, `/api/public/license/checkout`, `/widget.html`, `/embed.js` all 200).
 
