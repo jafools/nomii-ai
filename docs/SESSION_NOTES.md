@@ -88,11 +88,13 @@ NOMII_CF_TOKEN=eyJ... \
 Customers with no license use the dashboard activation flow built today instead of the env var.
 
 ### Next-session TODO
-1. **Phase 1A (Austin manual)** — apply `SelfHostedNomii.tsx` landing page in `~/ponten-solutions` on Proxmox so customers have a discovery entry point before they hit the buy page
-2. **Phase 1B-11 (Austin manual)** — $1 live Stripe smoke test through the now-fixed checkout, to validate the webhook → license-key-email half (the only segment not exercised by today's synthetic-key tests)
-3. **Phase 3** — SaaS parity audit: walk the same customer journey on the SaaS path (signup + Stripe subscription instead of install.sh + license activation). Confirm feature parity, fix any deployment-mode drift.
-4. **Phase 4** — Hetzner cutover: port docker-compose + .env + DB to Hetzner CX22, DNS swap, retire Proxmox.
-5. **Smaller polish (low priority)** — paid-tier upgrade banner (current global banner is trial-only), refactor `createNotification` to a shared service (currently lives in widget.js).
+1. **Phase 1B-11 (Austin manual, ONLY remaining stitch)** — $1 live Stripe smoke test through the now-fixed checkout to validate the webhook → license-key-email half. Every other segment of the on-prem journey is verified end-to-end. Visit `pontensolutions.com/nomii/license`, pick Starter monthly, real email, complete checkout. Confirm: (a) email arrives with key, (b) `SELECT * FROM licenses;` on prod-DB shows the new row.
+2. **Phase 3** — SaaS parity audit: walk the same customer journey on the SaaS path (signup + Stripe subscription instead of install.sh + license activation). Confirm feature parity, fix any deployment-mode drift.
+3. **Phase 4** — Hetzner cutover: port docker-compose + .env + DB to Hetzner CX22, DNS swap, retire Proxmox.
+4. **Smaller polish (low priority)** — paid-tier upgrade banner (current global banner is trial-only), refactor `createNotification` to a shared service (currently lives in widget.js).
+
+### Phase 1A (landing page) — ALREADY DONE
+End-of-session check on prod found `SelfHostedNomii.tsx` already committed (`ec6a63f` on prod ponten-solutions repo), `App.tsx` route mounted at `/nomii/self-hosted` above the wildcard catch-all, and `https://pontensolutions.com/nomii/self-hosted` returning HTTP 200. Austin must have applied it between sessions. The Cloudflare redirect-rule concern from the Apr 14 notes is also resolved.
 
 ### Discoveries / new context worth remembering
 - Prod SSH: `ssh nomii-prod` (configured in `~/.ssh/config` → `root@10.0.100.2`). Lateris also lives on this Proxmox host — DON'T touch any `lateris-*` containers.
