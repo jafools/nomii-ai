@@ -5,7 +5,47 @@
 
 ---
 
-## Last updated: 2026-04-14 (session 4 of the day)
+## Last updated: 2026-04-15 (onboarding wizard bugfixes)
+
+### What was completed (session 2026-04-15)
+
+Three bugs from yesterday's fresh-VM install test (2026-04-14, tracked in `projects/nomii/fresh-vm-install-test-apr14-2026.md` in the Obsidian vault) fixed in one pass.
+
+**SH-3 (CRITICAL) — hardcoded pontensolutions.com redirect mid-onboarding:**
+- `client/src/pages/nomii/NomiiOnboarding.jsx:207,288` — both logo wrappers were `<a href="https://pontensolutions.com">`. Clicking the Nomii logo in the sidebar (desktop) or header (mobile) mid-flow hard-redirected users OUT of their self-hosted instance.
+- Fix: swapped to `<Link to="/nomii/dashboard">` (react-router `Link` already imported). Logo now SPA-navigates to dashboard — works for both SaaS and self-hosted.
+- Note: NomiiLogin, NomiiSignup, NomiiResetPassword, NomiiVerifyEmail still hardcode the same external link on their logos. Left alone for now — those are pre-auth pages and the scoped task was onboarding.
+
+**SH-1 — first-run wizard skipped widget install step:**
+- `server/src/routes/setup.js:89` inserted tenant with `onboarding_steps='{}'`, so `/nomii/onboarding` resume logic treated every step as incomplete.
+- `client/src/pages/nomii/NomiiSetup.jsx:62` routed to `/nomii/dashboard` after self-hosted setup, so the operator never passed through the widget-install UI.
+- Fix:
+  - `setup.js` now pre-fills `onboarding_steps` as `{company_profile, products, customers, api_key, tools: true}` via `$5::jsonb`. Only `install_widget` stays undone.
+  - `NomiiSetup.jsx` now `navigate("/nomii/onboarding", ...)` on success; onboarding resume logic lands directly on Step4InstallWidget.
+
+**SH-2 — "Installation guide" link landed on step 1:**
+- `client/src/pages/nomii/dashboard/NomiiSettings.jsx:193` `<Link to="/nomii/onboarding">`. On self-hosted, because of SH-1's empty `onboarding_steps`, resume landed on step 1.
+- Fix: none required. The SH-1 `onboarding_steps` pre-fill means the Settings → Widget "Installation guide" link now also lands on the widget step. Dropped from scope.
+
+### Verification
+- `npm run build` in `client/` passes — 2497 modules, 4.32s, no errors.
+- `node -e "require('./server/src/routes/setup.js')"` loads cleanly.
+- `onboarding_steps` column confirmed `JSONB NOT NULL DEFAULT '{}'` in migration 005, so `$5::jsonb` cast is schema-correct.
+
+### What still needs to run (on the VM)
+1. Commit + push to `main` so CI rebuilds `ghcr.io/jafools/nomii-*:latest` images (or build from source on the VM).
+2. Reset the VM tenant (fresh-install scenario) — e.g. `docker exec nomii-db psql -U knomi -d knomi_ai -c "TRUNCATE tenants, tenant_admins, subscriptions CASCADE;"` — so `/api/setup/status` returns `required: true` again.
+3. Rerun the first-run wizard in the browser at `http://10.0.100.25/`. Expected: after step 3 (API key), lands on `/nomii/onboarding` widget step (not dashboard).
+4. Paste the widget snippet on a test page, verify → wizard flips to "You're all set!" → dashboard.
+5. Click the Nomii logo inside `/nomii/onboarding` mid-flow — must stay in-app (go to `/nomii/dashboard`), not kick out to pontensolutions.com.
+6. In Settings → Widget, remove the widget from the test page so "Not yet detected" reappears, click the "Installation guide" pill, verify it lands on the widget step (not step 1).
+7. **20-msg rate limit retest** — send 20 messages through the widget in trial mode, confirm 21st is blocked with the trial-exhausted error. `SELECT COUNT(*) FROM messages WHERE tenant_id = <id>` in `nomii-db` to double-check.
+
+---
+
+## Previous sessions
+
+### Last updated: 2026-04-14 (session 4 of the day)
 
 ## VPS / Deployment
 
