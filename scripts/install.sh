@@ -55,7 +55,11 @@ fail() { echo -e "\n${R}Error:${NC} $1\n"; exit 1; }
 ask()  { echo -e "   ${B}?${NC}  $1"; }
 
 # ── Header ───────────────────────────────────────────────────
-clear
+# Skip `clear` if TERM isn't set (CI/non-tty environments — would error
+# under `set -e`) or in headless mode (script output should be linear).
+if [ -n "$TERM" ] && [ "$NONINT" != "1" ]; then
+  clear
+fi
 echo ""
 echo -e "${W}╔═══════════════════════════════════════════╗${NC}"
 echo -e "${W}║          Nomii AI — Self-Hosted           ║${NC}"
