@@ -5,7 +5,105 @@
 
 ---
 
-## Last updated: 2026-04-15 PM (on-prem install iteration — 3 cycles, end-to-end verified)
+## Last updated: 2026-04-15 evening (on-prem journey end-to-end shippable)
+
+This was a "is the customer journey actually shippable" validation session that turned into a real-bug discovery + 3 commits to main + 1 prod hotfix + 1 prod deploy. The on-prem self-hosted journey is now genuinely complete end-to-end except a single user-driven smoke test ($1 Stripe).
+
+### What changed (commits, in order)
+| Commit | Subject |
+|---|---|
+| `5647470` | fix(deploy): pass STRIPE_SELFHOSTED_PRICE_* env vars to backend container |
+| `233820a` | feat(license): in-dashboard activation for self-hosted licenses |
+| `6325c1e` | feat(notifications): in-app trial-limit notification (SMTP-independent) |
+
+### 🚨 Critical bug found and fixed (5647470)
+`pontensolutions.com/nomii/license` Stripe checkout was **completely broken** — every plan/interval combo returned 503 "Price not configured". Root cause: the 6 `STRIPE_SELFHOSTED_PRICE_*` env vars were set in `.env` on prod but `docker-compose.yml`'s `environment:` block didn't list them, so they never propagated to the running backend container. `docker compose restart` doesn't pick up new env-var lists; needed `--force-recreate`.
+
+Confirmed via the `licenses` table on prod: **0 licenses ever issued** since the checkout endpoint started returning 503. Today's fix is the first time customers can actually purchase a self-hosted license.
+
+### 🎯 Big build (233820a) — in-dashboard license activation
+Before: customer buys a license → receives email → has to SSH in, edit `.env`, run `docker compose restart`. Tech-support nightmare for the SMB target market.
+
+After: customer buys → receives email → opens dashboard → pastes key in `/nomii/dashboard/plans` → trial limits lift instantly. No SSH, no `.env` editing, no restart.
+
+Backend changes:
+- Migration 030: `tenants.license_key` + `license_key_validated_at` columns
+- `licenseService.activateLicense(key, tenantId)` — validate with master, persist to DB, `applyPlanLimits`, schedule heartbeat
+- `licenseService.deactivateLicense(tenantId)` — null the key, revert to trial, clear heartbeat
+- `licenseService.getLicenseStatus(tenantId)` — returns masked key + plan + validated_at + signals env_var_in_use
+- `checkLicenseOnStartup()` falls back to DB key when env var unset (env var still wins for existing operator-pinned installs)
+- DB-sourced key invalid on startup falls to trial rather than crashing (env-var path stays strict)
+- **Heartbeat now reverts to trial on definitive failures** (revoked/expired/not-found/instance-bind-mismatch). Closes a revenue leak: previously, if a customer let their license lapse, heartbeat warned but limits stayed paid forever.
+
+Portal endpoints (gated to `NOMII_DEPLOYMENT=selfhosted`):
+- `GET    /api/portal/license` — current status
+- `POST   /api/portal/license/activate` — validate + persist + lift limits
+- `DELETE /api/portal/license` — clear key + revert
+- `/api/portal/me` now exposes `deployment_mode` so the dashboard branches its billing UI correctly
+
+`NomiiPlans.jsx` replaces the static "Step 1: edit .env / Step 2: restart" instruction box with an interactive activate form + status panel. Hides the form (with an explanation) when key is pinned via `NOMII_LICENSE_KEY`.
+
+### 🛎️ In-app limit notification (6325c1e)
+`sendLimitNotificationIfNeeded` previously only sent an email — useless on default installs since `install.sh` makes SMTP optional. Now also creates a `notifications` row, picked up by the dashboard bell icon. New `limit_reached` notification type with a red Zap icon in the sidebar.
+
+### Phase 2 audit revealed three NOT-A-BUG findings
+- **Plans copy "mismatch"** (marketing $349 vs dashboard $399 for Pro): different products. Self-hosted is intentionally cheaper; SaaS includes infrastructure. After the activation build, self-hosted dashboards don't even show SaaS prices anymore.
+- **Global upgrade banner**: already exists at `client/src/layouts/NomiiDashboardLayout.jsx:512-552` for trial/free plans. Earlier audit was API-only and missed it. Small follow-up: doesn't fire for paid plans hitting their cap, worth a separate ticket.
+- **CSV upload silent fail at customer cap**: my earlier test used multipart; correct format is JSON `{csv:"..."}`. Endpoint actually returns 200 with per-row errors + `limit_reached: true` flag.
+
+### End-to-end verification on test VM (10.0.100.25)
+Wiped completely, re-installed via `curl install.sh`, drove the entire customer journey via API:
+- ✅ install.sh completes ~60s, 3 containers up, /api/health OK
+- ✅ Setup wizard creates tenant + admin + key, JWT issued, idempotent (409 on retry)
+- ✅ Onboarding pre-filled correctly (only `install_widget` undone — SH-1 verified)
+- ✅ Tool building: created `lookup_investments` lookup tool linked to `investments` data category. AI invoked it via widget chat and returned Alice's exact seeded holdings ("100 AAPL, 50 MSFT, 25 NVDA — total $87,400 as of April 14")
+- ✅ Per-minute rate limit fires at burst ~10 messages with "Message rate limit reached. Please slow down."
+- ✅ Trial monthly limit (20 msg) fires correctly with `{error: "message_limit_reached"}` HTTP 429
+- ✅ Synthetic license activation lifts trial→starter (20→1000 msg, 1→50 customers) instantly via dashboard endpoint, no restart
+- ✅ Bad key returns clean error: `{error: "License key not found"}` HTTP 400
+- ✅ Deactivate reverts to trial limits instantly
+- ✅ In-app notification fires on limit hit, visible at /api/portal/notifications
+
+### Prod state at session end
+- Git: at HEAD `6325c1e`, **0 commits behind main** (was 16 behind at session start)
+- All 4 containers running: db, backend, frontend, cloudflared
+- Stripe checkout: returns live URLs for all 6 plan/interval combos
+- License master endpoint: responsive
+- New /api/portal/license/* endpoints: mounted (return 404 on SaaS by design)
+- Migration 030: applied
+
+### Customer install command (unchanged from previous session)
+```bash
+# Trial / dev:
+NOMII_PUBLIC_URL=https://nomii.yourfirm.com \
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
+
+# Headless / CI / Ansible:
+NOMII_NONINTERACTIVE=1 \
+NOMII_PUBLIC_URL=https://nomii.yourfirm.com \
+NOMII_LICENSE_KEY=NOMII-XXXX-XXXX-XXXX-XXXX \
+NOMII_CF_TOKEN=eyJ... \
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
+```
+Customers with no license use the dashboard activation flow built today instead of the env var.
+
+### Next-session TODO
+1. **Phase 1A (Austin manual)** — apply `SelfHostedNomii.tsx` landing page in `~/ponten-solutions` on Proxmox so customers have a discovery entry point before they hit the buy page
+2. **Phase 1B-11 (Austin manual)** — $1 live Stripe smoke test through the now-fixed checkout, to validate the webhook → license-key-email half (the only segment not exercised by today's synthetic-key tests)
+3. **Phase 3** — SaaS parity audit: walk the same customer journey on the SaaS path (signup + Stripe subscription instead of install.sh + license activation). Confirm feature parity, fix any deployment-mode drift.
+4. **Phase 4** — Hetzner cutover: port docker-compose + .env + DB to Hetzner CX22, DNS swap, retire Proxmox.
+5. **Smaller polish (low priority)** — paid-tier upgrade banner (current global banner is trial-only), refactor `createNotification` to a shared service (currently lives in widget.js).
+
+### Discoveries / new context worth remembering
+- Prod SSH: `ssh nomii-prod` (configured in `~/.ssh/config` → `root@10.0.100.2`). Lateris also lives on this Proxmox host — DON'T touch any `lateris-*` containers.
+- Prod DB user is `knomi` (not `nomii`) — kept from old brand to preserve volume.
+- License master endpoint default in `licenseService.js` is `https://api.pontensolutions.com/api/license/validate` — both `api.` and `nomii.` resolve to the same backend.
+- Stripe price IDs (live mode): saved in prod `.env`. Self-hosted plans range $49–$349/mo monthly, slightly different annual.
+- The widget-side per-minute rate limit ("slow down") is distinct from the trial monthly cap. Defined in `server/src/index.js:77`.
+
+---
+
+## Earlier today: 2026-04-15 PM (on-prem install iteration — 3 cycles, end-to-end verified)
 
 After the SH-1/SH-2/SH-3 surgical fixes earlier in the day landed, scope expanded to "make the on-prem install actually stress-free for customers". Drove 3 iterative install cycles directly against VM 10.0.100.25 (jafools@, key set up apr-14). VM completely wiped (volumes dropped, ~/nomii rm'd) and `install.sh` re-run from raw GitHub on every cycle. Final state — cycle 3 — passed every verification cleanly.
 
