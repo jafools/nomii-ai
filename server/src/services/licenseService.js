@@ -9,6 +9,29 @@
  *   selfhosted + key present, valid         → apply plan limits; schedule 24h heartbeat
  *   selfhosted + key present, invalid       → log error + exit(1)
  *   heartbeat fails (transient network)     → warn only, do NOT crash running instance
+ *
+ * Shared shapes
+ * -------------
+ *
+ * @typedef {"trial"|"starter"|"growth"|"professional"|"enterprise"|"master"} LicensePlan
+ *
+ * @typedef {Object} ValidateResponse
+ * @property {true}         valid
+ * @property {LicensePlan}  plan
+ * @property {string|null}  [expires_at]  ISO 8601 timestamp (or null for perpetual).
+ *
+ * @typedef {Object} ActivateResult
+ * @property {LicensePlan}  plan
+ * @property {string|null}  [expires_at]
+ *
+ * @typedef {Object} LicenseStatus
+ * @property {boolean}      has_license       True when any key is pinned (env or DB).
+ * @property {string|null}  key_masked        First 12 + last 4 of the key, or null.
+ * @property {LicensePlan}  plan              Current plan (falls back to "trial").
+ * @property {number|null}  max_messages_month
+ * @property {number|null}  max_customers
+ * @property {string|null}  validated_at      ISO timestamp of last successful heartbeat.
+ * @property {boolean}      env_var_in_use    True if NOMII_LICENSE_KEY is set in env.
  */
 
 const https  = require('https');
@@ -37,6 +60,13 @@ let _heartbeatTimer = null;
 
 // ── HTTP helper ────────────────────────────────────────────────────────────────
 
+/**
+ * POST a JSON body and parse the JSON response.
+ * @param {string} url
+ * @param {Object} body  JSON-serialisable request body.
+ * @returns {Promise<{ status: number, body: Object }>} Parsed body is `{}` on
+ *   non-JSON responses (never throws on parse errors).
+ */
 function post(url, body) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify(body);
@@ -72,13 +102,31 @@ function post(url, body) {
 
 // ── Cloud validation call ─────────────────────────────────────────────────────
 
+/**
+ * Call the license master's /validate endpoint.
+ *
+ * @param   {string} licenseKey  Trimmed license key.
+ * @returns {Promise<ValidateResponse>}
+ * @throws  {Error} `License invalid: <reason>` — caller MUST treat messages
+ *          containing "License key not found" / "revoked" / "expired" /
+ *          "already bound" as DEFINITIVE (see {@link isDefinitiveFailure}).
+ *          All other throws are transient (network, 5xx).
+ */
 async function callValidate(licenseKey) {
   const { status, body } = await post(VALIDATE_URL, {
     license_key: licenseKey,
     instance_id: INSTANCE_ID,
   });
 
-  if (status === 200 && body.valid) return body; // { valid, plan, expires_at }
+  // Narrow the validated-response shape before returning — everything else
+  // becomes a definitive failure the caller can branch on.
+  if (status === 200 && body && body.valid === true && typeof body.plan === 'string') {
+    return {
+      valid:      true,
+      plan:       body.plan,
+      expires_at: body.expires_at ?? null,
+    };
+  }
 
   const reason = (body && body.error) || `HTTP ${status}`;
   throw new Error(`License invalid: ${reason}`);
@@ -88,6 +136,12 @@ async function callValidate(licenseKey) {
 // Upserts the subscription row for the single self-hosted tenant so the
 // existing subscription middleware enforces the correct limits.
 
+/**
+ * Apply the limits for `plan` to the single self-hosted tenant's
+ * subscription row. Swallows DB errors (only warns).
+ * @param {LicensePlan} plan
+ * @returns {Promise<void>}
+ */
 async function applyPlanLimits(plan) {
   const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
   try {
@@ -253,9 +307,23 @@ async function checkLicenseOnStartup() {
 // the existing subscription middleware reads from the DB on every request,
 // so limits flip on the very next API call.
 
+/**
+ * Validate a license key against the master, persist it to the tenant row,
+ * apply paid limits immediately, and schedule a 24h heartbeat.
+ *
+ * @param   {string} licenseKey  Raw user-entered key (trimmed internally).
+ * @param   {string} tenantId    UUID of the single self-hosted tenant.
+ * @returns {Promise<ActivateResult>}
+ * @throws  {Error} Propagates the master's validation error (e.g.
+ *          "License invalid: License has expired") so the route can
+ *          surface the reason to the dashboard.
+ */
 async function activateLicense(licenseKey, tenantId) {
   if (!licenseKey || typeof licenseKey !== 'string') {
     throw new Error('License key is required');
+  }
+  if (!tenantId || typeof tenantId !== 'string') {
+    throw new Error('tenantId is required');
   }
   const trimmed = licenseKey.trim();
 
@@ -283,7 +351,17 @@ async function activateLicense(licenseKey, tenantId) {
   return { plan: result.plan, expires_at: result.expires_at };
 }
 
+/**
+ * Clear the tenant's license key, stop the heartbeat, and revert to trial
+ * limits. Safe to call even when no key is pinned.
+ *
+ * @param   {string} tenantId
+ * @returns {Promise<void>}
+ */
 async function deactivateLicense(tenantId) {
+  if (!tenantId || typeof tenantId !== 'string') {
+    throw new Error('tenantId is required');
+  }
   const db = require('../db');
   await db.query(
     `UPDATE tenants
@@ -297,6 +375,13 @@ async function deactivateLicense(tenantId) {
   console.log(`[License] License deactivated for tenant ${tenantId} — back to trial limits.`);
 }
 
+/**
+ * Read the licence + plan state for a tenant, with the key MASKED so the
+ * dashboard can display it without exposing the secret.
+ *
+ * @param   {string} tenantId
+ * @returns {Promise<LicenseStatus|null>} Null if the tenant row doesn't exist.
+ */
 async function getLicenseStatus(tenantId) {
   const db = require('../db');
   const { rows } = await db.query(
