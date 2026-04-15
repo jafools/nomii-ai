@@ -116,6 +116,24 @@ async function applyPlanLimits(plan) {
 }
 
 // ── Heartbeat ─────────────────────────────────────────────────────────────────
+//
+// Definitive failure (revoked / expired / not found / instance bind mismatch)
+// REVERTS the local subscription to trial limits — protects against a customer
+// letting their license lapse while still enjoying paid limits.
+//
+// Transient failure (network timeout, 5xx) just logs a warning. The heartbeat
+// retries every 24h; we don't want a 30-second blip to demote a paying customer.
+
+const DEFINITIVE_FAILURE_PATTERNS = [
+  'License key not found',
+  'License has been revoked',
+  'License has expired',
+  'License key is already bound',
+];
+
+function isDefinitiveFailure(errMessage) {
+  return DEFINITIVE_FAILURE_PATTERNS.some(p => errMessage.includes(p));
+}
 
 function scheduleHeartbeat(licenseKey) {
   if (_heartbeatTimer) clearInterval(_heartbeatTimer);
@@ -125,13 +143,34 @@ function scheduleHeartbeat(licenseKey) {
       const result = await callValidate(licenseKey);
       console.log(`[License] Heartbeat OK — plan: ${result.plan}`);
       await applyPlanLimits(result.plan);
+      // Track last successful validation on the tenant row (best-effort).
+      try {
+        const db = require('../db');
+        await db.query(
+          `UPDATE tenants SET license_key_validated_at = NOW() WHERE license_key = $1`,
+          [licenseKey]
+        );
+      } catch { /* tenant column may not exist on pre-migration installs — non-fatal */ }
     } catch (err) {
-      console.warn(`[License] Heartbeat failed: ${err.message}`);
-      console.warn('[License] Server continues running. Check key and connectivity.');
+      if (isDefinitiveFailure(err.message)) {
+        console.warn(`[License] Heartbeat: license is no longer valid — reverting to trial. Reason: ${err.message}`);
+        await applyPlanLimits('trial');
+        // Don't clear the key. Owner sees status in dashboard and can reactivate.
+      } else {
+        console.warn(`[License] Heartbeat failed (transient?): ${err.message}`);
+        console.warn('[License] Server continues running. Will retry in 24h.');
+      }
     }
   }, HEARTBEAT_INTERVAL_MS);
 
   if (_heartbeatTimer.unref) _heartbeatTimer.unref();
+}
+
+function clearHeartbeat() {
+  if (_heartbeatTimer) {
+    clearInterval(_heartbeatTimer);
+    _heartbeatTimer = null;
+  }
 }
 
 // ── Startup check ─────────────────────────────────────────────────────────────
@@ -143,7 +182,28 @@ async function checkLicenseOnStartup() {
   // SaaS VPS → skip (license enforcement is for self-hosted only)
   if (!isSelfHosted()) return;
 
-  const licenseKey = process.env.NOMII_LICENSE_KEY;
+  // Precedence: env var > DB column > trial mode.
+  // Env var lets operators pin a key in .env (the original behaviour).
+  // DB column lets owners activate from the dashboard without restart.
+  let licenseKey = process.env.NOMII_LICENSE_KEY;
+  let keySource  = 'env';
+
+  if (!licenseKey) {
+    // Try DB. Wrapped in try/catch because the column was added in migration
+    // 030; a server starting up before that migration runs would throw here.
+    try {
+      const db = require('../db');
+      const { rows } = await db.query(
+        `SELECT license_key FROM tenants
+         WHERE license_key IS NOT NULL
+         ORDER BY created_at LIMIT 1`
+      );
+      if (rows.length > 0) {
+        licenseKey = rows[0].license_key;
+        keySource  = 'db';
+      }
+    } catch { /* column missing → fall through to trial */ }
+  }
 
   if (!licenseKey) {
     // ── Trial mode ───────────────────────────────────────────────────────────
@@ -157,7 +217,7 @@ async function checkLicenseOnStartup() {
   }
 
   // ── Paid mode ────────────────────────────────────────────────────────────
-  console.log(`[License] Validating license key (instance ${INSTANCE_ID})…`);
+  console.log(`[License] Validating license key from ${keySource} (instance ${INSTANCE_ID})…`);
   try {
     const result = await callValidate(licenseKey);
     const expiry = result.expires_at
@@ -168,10 +228,109 @@ async function checkLicenseOnStartup() {
     scheduleHeartbeat(licenseKey);
   } catch (err) {
     console.error(`[License] Validation failed: ${err.message}`);
-    console.error('[License] Check NOMII_LICENSE_KEY and internet connectivity.');
-    console.error('[License] Refusing to start.');
-    process.exit(1);
+    if (keySource === 'db') {
+      // Dashboard-activated key turned out to be invalid (revoked, expired,
+      // network down on first boot, etc). Don't crash — fall back to trial
+      // limits and let the owner reactivate from the dashboard.
+      console.warn('[License] Falling back to trial limits. Reactivate from /nomii/dashboard/plans.');
+      try { await applyPlanLimits('trial'); } catch { /* best-effort */ }
+    } else {
+      // Env-var path stays strict: an invalid key in .env is almost certainly
+      // operator error and should fail loud rather than silently downgrade.
+      console.error('[License] Check NOMII_LICENSE_KEY and internet connectivity.');
+      console.error('[License] Refusing to start.');
+      process.exit(1);
+    }
   }
 }
 
-module.exports = { checkLicenseOnStartup, INSTANCE_ID };
+// ── Dashboard activation helpers ──────────────────────────────────────────────
+//
+// activateLicense / deactivateLicense are called by the portal route to let
+// the owner manage their license without editing .env or restarting Docker.
+//
+// Both run synchronously against the master and apply changes immediately;
+// the existing subscription middleware reads from the DB on every request,
+// so limits flip on the very next API call.
+
+async function activateLicense(licenseKey, tenantId) {
+  if (!licenseKey || typeof licenseKey !== 'string') {
+    throw new Error('License key is required');
+  }
+  const trimmed = licenseKey.trim();
+
+  // 1. Validate with the master. Throws on invalid (caller should surface
+  //    the original error message — these are user-friendly already).
+  const result = await callValidate(trimmed);
+
+  // 2. Persist to tenant row so future restarts pick it up.
+  const db = require('../db');
+  await db.query(
+    `UPDATE tenants
+     SET license_key              = $1,
+         license_key_validated_at = NOW()
+     WHERE id = $2`,
+    [trimmed, tenantId]
+  );
+
+  // 3. Apply limits immediately — no restart required.
+  await applyPlanLimits(result.plan);
+
+  // 4. Start heartbeat so revocation / expiry get caught within 24h.
+  scheduleHeartbeat(trimmed);
+
+  console.log(`[License] Dashboard-activated key for tenant ${tenantId} — plan: ${result.plan}`);
+  return { plan: result.plan, expires_at: result.expires_at };
+}
+
+async function deactivateLicense(tenantId) {
+  const db = require('../db');
+  await db.query(
+    `UPDATE tenants
+     SET license_key              = NULL,
+         license_key_validated_at = NULL
+     WHERE id = $1`,
+    [tenantId]
+  );
+  await applyPlanLimits('trial');
+  clearHeartbeat();
+  console.log(`[License] License deactivated for tenant ${tenantId} — back to trial limits.`);
+}
+
+async function getLicenseStatus(tenantId) {
+  const db = require('../db');
+  const { rows } = await db.query(
+    `SELECT t.license_key, t.license_key_validated_at,
+            s.plan, s.max_messages_month, s.max_customers
+     FROM tenants t
+     LEFT JOIN subscriptions s ON s.tenant_id = t.id
+     WHERE t.id = $1`,
+    [tenantId]
+  );
+  if (rows.length === 0) return null;
+
+  const r   = rows[0];
+  const key = r.license_key;
+  // Mask all but first 12 + last 4 chars; very short keys just show ****
+  const masked = key
+    ? (key.length > 16 ? `${key.slice(0, 12)}…${key.slice(-4)}` : '****')
+    : null;
+
+  return {
+    has_license:           !!key,
+    key_masked:            masked,
+    plan:                  r.plan || 'trial',
+    max_messages_month:    r.max_messages_month,
+    max_customers:         r.max_customers,
+    validated_at:          r.license_key_validated_at,
+    env_var_in_use:        !!process.env.NOMII_LICENSE_KEY,
+  };
+}
+
+module.exports = {
+  checkLicenseOnStartup,
+  activateLicense,
+  deactivateLicense,
+  getLicenseStatus,
+  INSTANCE_ID,
+};

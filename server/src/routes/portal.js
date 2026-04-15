@@ -150,6 +150,9 @@ router.get('/me', async (req, res, next) => {
         canceled_at:             sub.canceled_at,
         stripe_customer_id:      sub.stripe_customer_id || null,
       } : null,
+      // Lets the dashboard branch its billing UI: SaaS shows Stripe pricing
+      // table; self-hosted shows "Buy a license" + Activate-Key form.
+      deployment_mode: process.env.NOMII_DEPLOYMENT === 'selfhosted' ? 'selfhosted' : 'saas',
     });
   } catch (err) { next(err); }
 });
@@ -2010,6 +2013,78 @@ router.get('/visitors', async (req, res, next) => {
       page,
       limit,
     });
+  } catch (err) { next(err); }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SELF-HOSTED LICENSE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+// These endpoints are only exposed on self-hosted instances. They let the
+// owner activate / change / remove their license from the dashboard without
+// editing .env or restarting Docker.
+//
+// The env-var path (NOMII_LICENSE_KEY in .env) still works and takes
+// precedence — operators who provisioned via install.sh aren't affected.
+
+function requireSelfHostedDeployment(req, res, next) {
+  if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
+    return res.status(404).json({ error: 'Not available on this deployment' });
+  }
+  next();
+}
+
+// GET /api/portal/license  — current license status (key masked)
+router.get('/license', requireSelfHostedDeployment, async (req, res, next) => {
+  try {
+    const { getLicenseStatus } = require('../services/licenseService');
+    const status = await getLicenseStatus(req.portal.tenant_id);
+    if (!status) return res.status(404).json({ error: 'Tenant not found' });
+    res.json(status);
+  } catch (err) { next(err); }
+});
+
+// POST /api/portal/license/activate  — validate + persist + lift limits
+router.post('/license/activate', requireSelfHostedDeployment, async (req, res, next) => {
+  try {
+    const { license_key } = req.body || {};
+    if (!license_key || !license_key.trim()) {
+      return res.status(400).json({ error: 'License key is required' });
+    }
+    if (process.env.NOMII_LICENSE_KEY) {
+      return res.status(409).json({
+        error: 'A license key is already pinned in NOMII_LICENSE_KEY. Remove it from .env and restart, then re-activate from the dashboard.',
+      });
+    }
+
+    const { activateLicense } = require('../services/licenseService');
+    const result = await activateLicense(license_key.trim(), req.portal.tenant_id);
+
+    res.json({
+      activated:  true,
+      plan:       result.plan,
+      expires_at: result.expires_at,
+    });
+  } catch (err) {
+    // callValidate throws "License invalid: <reason>" — bubble that to the user
+    if (err.message && err.message.startsWith('License invalid:')) {
+      return res.status(400).json({ error: err.message.replace('License invalid: ', '') });
+    }
+    next(err);
+  }
+});
+
+// DELETE /api/portal/license  — clear key + revert to trial limits
+router.delete('/license', requireSelfHostedDeployment, async (req, res, next) => {
+  try {
+    if (process.env.NOMII_LICENSE_KEY) {
+      return res.status(409).json({
+        error: 'License is pinned in NOMII_LICENSE_KEY. Remove it from .env and restart to deactivate from the dashboard.',
+      });
+    }
+    const { deactivateLicense } = require('../services/licenseService');
+    await deactivateLicense(req.portal.tenant_id);
+    res.json({ deactivated: true });
   } catch (err) { next(err); }
 });
 

@@ -6,8 +6,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
-import { createBillingPortal, getSubscription as fetchSubscriptionUsage } from "@/lib/nomiiApi";
-import { ExternalLink, Crown, Users, MessageSquare, Zap, TrendingUp, AlertTriangle } from "lucide-react";
+import {
+  createBillingPortal,
+  getSubscription as fetchSubscriptionUsage,
+  getLicense,
+  activateLicense,
+  deactivateLicense,
+} from "@/lib/nomiiApi";
+import { ExternalLink, Crown, Users, MessageSquare, Zap, TrendingUp, AlertTriangle, Key, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 const STRIPE_PRICING_TABLE_ID  = "prctbl_1TBzcVBlxts7IvMoJ2bWRd47";
 const STRIPE_PUBLISHABLE_KEY   = "pk_live_U89VEYjy02VivrGxi5QF2IIw00cPn8Ts2n";
@@ -88,6 +94,13 @@ const NomiiPlans = () => {
   const [usage, setUsage] = useState(null);
   const [isSelfHosted, setIsSelfHosted] = useState(false);
 
+  // Self-hosted license activation state
+  const [licenseInfo, setLicenseInfo]       = useState(null);
+  const [licenseInput, setLicenseInput]     = useState("");
+  const [licenseBusy, setLicenseBusy]       = useState(false);
+  const [licenseError, setLicenseError]     = useState(null);
+  const [licenseSuccess, setLicenseSuccess] = useState(null);
+
   const currentPlan = subscription?.plan || "free";
   const isMaster    = currentPlan === "master";
   const isEnterprise = currentPlan === "enterprise";
@@ -103,6 +116,13 @@ const NomiiPlans = () => {
     } catch {}
   }, []);
 
+  const fetchLicenseStatus = useCallback(async () => {
+    try {
+      const data = await getLicense();
+      setLicenseInfo(data);
+    } catch { /* 404 on SaaS / non-self-hosted, just ignore */ }
+  }, []);
+
   // Detect deployment mode — determines whether to show Stripe or license panel
   useEffect(() => {
     fetch("/api/config")
@@ -110,6 +130,47 @@ const NomiiPlans = () => {
       .then((d) => { if (d.deployment === "selfhosted") setIsSelfHosted(true); })
       .catch(() => {});
   }, []);
+
+  // Load license status whenever we discover we're on self-hosted
+  useEffect(() => {
+    if (isSelfHosted) fetchLicenseStatus();
+  }, [isSelfHosted, fetchLicenseStatus]);
+
+  const handleActivateLicense = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (!licenseInput.trim()) return;
+    setLicenseBusy(true);
+    setLicenseError(null);
+    setLicenseSuccess(null);
+    try {
+      const res = await activateLicense(licenseInput.trim());
+      setLicenseSuccess(`License activated — ${res.plan} plan${res.expires_at ? ` (expires ${new Date(res.expires_at).toLocaleDateString()})` : ""}.`);
+      setLicenseInput("");
+      await fetchLicenseStatus();
+      await fetchUsage();
+    } catch (err) {
+      setLicenseError(err.message || "Activation failed");
+    } finally {
+      setLicenseBusy(false);
+    }
+  };
+
+  const handleDeactivateLicense = async () => {
+    if (!window.confirm("Deactivate this license? You'll revert to trial limits (20 messages/mo, 1 customer).")) return;
+    setLicenseBusy(true);
+    setLicenseError(null);
+    setLicenseSuccess(null);
+    try {
+      await deactivateLicense();
+      setLicenseSuccess("License deactivated. Trial limits restored.");
+      await fetchLicenseStatus();
+      await fetchUsage();
+    } catch (err) {
+      setLicenseError(err.message || "Deactivation failed");
+    } finally {
+      setLicenseBusy(false);
+    }
+  };
 
   // Inject Stripe pricing table script once (SaaS only)
   useEffect(() => {
@@ -212,60 +273,143 @@ const NomiiPlans = () => {
           </div>
         )}
 
-        {/* Upgrade instructions */}
+        {/* ── Current license status (only if a key is active) ────────────── */}
+        {licenseInfo?.has_license && (
+          <div className="rounded-2xl p-6 space-y-3"
+            style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.20)" }}>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 size={20} style={{ color: "#22C55E" }} />
+              <p className="font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
+                License active
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.30)" }}>Key</p>
+                <code className="text-xs px-2 py-1 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.75)" }}>
+                  {licenseInfo.key_masked}
+                </code>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.30)" }}>Plan</p>
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                  {(PLAN_LABELS[licenseInfo.plan] || licenseInfo.plan)} — {licenseInfo.max_messages_month} msg/mo, {licenseInfo.max_customers} customers
+                </p>
+              </div>
+            </div>
+            {licenseInfo.validated_at && (
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
+                Last validated {new Date(licenseInfo.validated_at).toLocaleString()} (revalidates every 24h)
+              </p>
+            )}
+            {!licenseInfo.env_var_in_use && (
+              <button
+                onClick={handleDeactivateLicense}
+                disabled={licenseBusy}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444" }}
+              >
+                <XCircle size={14} />
+                Deactivate license
+              </button>
+            )}
+            {licenseInfo.env_var_in_use && (
+              <p className="text-xs italic" style={{ color: "rgba(255,255,255,0.40)" }}>
+                License is pinned in <code style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY</code> in your .env — to deactivate, remove that line and restart.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Activate / change license ─────────────────────────────────────── */}
         <div className="rounded-2xl p-6 space-y-4"
           style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="flex items-center gap-3">
-            <Crown size={20} style={{ color: "#C9A84C" }} />
+            <Key size={20} style={{ color: "#C9A84C" }} />
             <p className="font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
-              {isTrialPlan ? "Upgrade from trial" : "Change your license"}
+              {licenseInfo?.has_license ? "Change license" : (isTrialPlan ? "Activate a license" : "Update license")}
             </p>
           </div>
-          <ol className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-            <li className="flex items-start gap-2">
-              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>1.</span>
-              <span>
-                Purchase a license at{" "}
+
+          {!licenseInfo?.has_license && (
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+              Purchase a license at{" "}
+              <a
+                href="https://pontensolutions.com/nomii/license"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+                style={{ color: "#C9A84C" }}
+              >
+                pontensolutions.com/nomii/license
+              </a>
+              {" "}— you'll receive a key by email. Paste it below to activate immediately (no restart needed).
+            </p>
+          )}
+
+          {licenseInfo?.env_var_in_use ? (
+            <p className="text-xs italic" style={{ color: "rgba(255,255,255,0.50)" }}>
+              Your license is currently pinned via <code style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY</code> in .env. To change it from the dashboard, remove that line and restart, then come back here.
+            </p>
+          ) : (
+            <form onSubmit={handleActivateLicense} className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] block mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>
+                  License key
+                </label>
+                <input
+                  type="text"
+                  value={licenseInput}
+                  onChange={(e) => setLicenseInput(e.target.value)}
+                  placeholder="NOMII-XXXX-XXXX-XXXX-XXXX"
+                  disabled={licenseBusy}
+                  spellCheck={false}
+                  autoComplete="off"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm font-mono outline-none transition-all disabled:opacity-50"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    color: "rgba(255,255,255,0.92)",
+                  }}
+                />
+              </div>
+
+              {licenseError && (
+                <div className="flex items-start gap-2 text-xs" style={{ color: "#EF4444" }}>
+                  <XCircle size={14} className="shrink-0 mt-0.5" />
+                  <span>{licenseError}</span>
+                </div>
+              )}
+              {licenseSuccess && (
+                <div className="flex items-start gap-2 text-xs" style={{ color: "#22C55E" }}>
+                  <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
+                  <span>{licenseSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={licenseBusy || !licenseInput.trim()}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+                  style={{ background: "rgba(201,168,76,0.20)", border: "1px solid rgba(201,168,76,0.45)", color: "#C9A84C" }}
+                >
+                  {licenseBusy ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                  {licenseInfo?.has_license ? "Replace license" : "Activate license"}
+                </button>
                 <a
                   href="https://pontensolutions.com/nomii/license"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline"
-                  style={{ color: "#C9A84C" }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.70)" }}
                 >
-                  pontensolutions.com/nomii/license
+                  Get a license
+                  <ExternalLink size={12} />
                 </a>
-                {" "}— you'll receive a key by email.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>2.</span>
-              <span>
-                Open your <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>.env</code> file
-                and set <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY=your-key</code>.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>3.</span>
-              <span>
-                Restart the backend:{" "}
-                <code className="text-xs px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>
-                  docker compose -f docker-compose.selfhosted.yml restart backend
-                </code>
-              </span>
-            </li>
-          </ol>
-          <a
-            href="https://pontensolutions.com/nomii/license"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.35)", color: "#C9A84C" }}
-          >
-            <Zap size={14} />
-            Get a license
-            <ExternalLink size={12} />
-          </a>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );

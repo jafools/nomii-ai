@@ -162,6 +162,11 @@ export const getPlans = () => apiRequest("GET", "/api/portal/plans");
 export const createCheckout = (plan) => apiRequest("POST", "/api/portal/billing/checkout", { plan });
 export const createBillingPortal = () => apiRequest("POST", "/api/portal/billing/portal");
 
+// Self-Hosted License Management (returns 404 on SaaS deployments)
+export const getLicense = () => apiRequest("GET", "/api/portal/license");
+export const activateLicense = (license_key) => apiRequest("POST", "/api/portal/license/activate", { license_key });
+export const deactivateLicense = () => apiRequest("DELETE", "/api/portal/license");
+
 // API Key Management
 export const saveApiKey = (api_key, provider = "anthropic") =>
   apiRequest("POST", "/api/portal/api-key", { api_key, provider });
