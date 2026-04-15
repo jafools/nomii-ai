@@ -5,9 +5,11 @@
 
 ---
 
-## Last updated: 2026-04-15 late-evening (8-agent codebase cleanup sweep)
+## Last updated: 2026-04-15 late-evening (8-agent codebase cleanup sweep — DEPLOYED)
 
-36 commits landed locally on `main` (unpushed). 96 files changed, net **−5,223 LOC** across 7 merge commits + agent 5's direct commits. Production **NOT YET DEPLOYED** — Austin to review, push, and rebuild on Proxmox.
+37 commits pushed to `origin/main` (cleanup + notes). 96 files changed, net **−5,223 LOC** across 7 merge commits + agent 5's direct commits. **Deployed to Proxmox prod** at HEAD `06f512d`. Backend + frontend containers rebuilt and healthy; external endpoints verified (`/api/health`, `/api/license/validate`, `/api/public/license/checkout`, `/widget.html`, `/embed.js` all 200).
+
+**Still needs Austin's hands for the user-visible verification**: log into `/nomii/dashboard`, open Tools page, click "Test" on a non-connect tool — agent 7's latent bug fix means this should now work (was silently broken since `f6f0edb`). Widget chat round-trip also worth a smoke test.
 
 ### What changed (8 parallel subagents, worktree-isolated, background)
 
