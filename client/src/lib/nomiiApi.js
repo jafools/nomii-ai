@@ -3,13 +3,65 @@
 // at build time to point at the separate API subdomain.
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
+/**
+ * JSDoc typedefs for this module.
+ *
+ * These describe the expected shape of the JSON bodies accepted by the
+ * backend and the responses consumed by the React UI. They are advisory
+ * only — the backend is the authoritative validator — but make the
+ * wrapper signatures much easier to read at a glance.
+ *
+ * @typedef {Object} ApiError
+ * @property {string} message
+ * @property {string|null} [code]     Stable machine-readable error code
+ *                                    (e.g. "email_unverified").
+ *
+ * @typedef {Object} ProductRecord
+ * @property {string} [name]
+ * @property {string} [description]
+ * @property {string} [category]
+ * @property {string} [price_info]
+ * @property {string} [notes]
+ *
+ * @typedef {Object} ConversationFilters
+ * @property {string} [status]
+ * @property {string} [mode]
+ * @property {boolean} [unread]
+ * @property {string} [search]
+ *
+ * @typedef {Object} LoginError
+ * @property {string} error
+ * @property {string} code
+ * @property {string} [email]
+ *
+ * @typedef {"GET"|"POST"|"PUT"|"PATCH"|"DELETE"} HttpMethod
+ */
+
 // Auth helpers
+/** @returns {string|null} Current portal JWT from localStorage. */
 export const getToken = () => localStorage.getItem("nomii_portal_token");
+/** @param {string} token */
 export const setToken = (token) => localStorage.setItem("nomii_portal_token", token);
 export const clearToken = () => localStorage.removeItem("nomii_portal_token");
+/** @returns {boolean} true when a JWT is present in localStorage. */
 export const isLoggedIn = () => !!getToken();
 
-// API request helper with 30-second timeout
+/**
+ * Unified fetch helper for all JSON API requests.
+ *
+ * - Attaches the portal JWT from localStorage (when present).
+ * - Serializes the body as JSON.
+ * - Aborts after 30 seconds and throws a user-friendly timeout error.
+ * - On 401, clears the token and redirects to /nomii/login (SPA UX).
+ * - On non-2xx, throws an Error whose `.code` is the server's stable
+ *   code string (or null) and `.message` is the server's error string.
+ *
+ * @param {HttpMethod} method      HTTP method.
+ * @param {string}     path        Path under BASE_URL (must start with "/").
+ * @param {object}     [body]      Optional JSON-serialisable body.
+ * @returns {Promise<object>}      Parsed JSON response on success.
+ * @throws  {Error & { code?: string|null }} On timeout, network error, 401, or non-2xx.
+ */
 export async function apiRequest(method, path, body) {
   const headers = { "Content-Type": "application/json" };
   const token = getToken();
@@ -49,15 +101,38 @@ export async function apiRequest(method, path, body) {
 }
 
 // Setup endpoints (self-hosted first-run wizard)
+/**
+ * Check whether the self-hosted install still needs the first-run wizard.
+ * Errors and non-2xx responses are swallowed — the wizard never blocks the
+ * login page from rendering on SaaS.
+ * @returns {Promise<{ required: boolean }>}
+ */
 export const getSetupStatus = () =>
   fetch(`${BASE_URL}/api/setup/status`)
     .then(r => r.ok ? r.json() : { required: false })
     .catch(() => ({ required: false }));
 
+/**
+ * Complete the first-run wizard. Server expects:
+ *   { companyName, email, password, anthropicApiKey }
+ * Returns { token, tenant:{ id, name } } — caller is responsible for setToken().
+ * @param {{ companyName: string, email: string, password: string, anthropicApiKey: string }} data
+ */
 export const completeSetup = (data) =>
   apiRequest("POST", "/api/setup/complete", data);
 
 // Auth endpoints
+/**
+ * Register a new SaaS tenant + admin. See server/src/routes/onboard.js:register.
+ * @param {string} email
+ * @param {string} password
+ * @param {string} firstName
+ * @param {string} lastName
+ * @param {string} companyName
+ * @param {string} vertical
+ * @param {boolean} tosAccepted
+ * @param {boolean} [newsletterOptIn=false]
+ */
 export const register = (email, password, firstName, lastName, companyName, vertical, tosAccepted, newsletterOptIn = false) =>
   apiRequest("POST", "/api/onboard/register", {
     email, password, first_name: firstName, last_name: lastName,
@@ -65,21 +140,40 @@ export const register = (email, password, firstName, lastName, companyName, vert
     newsletter_opt_in: newsletterOptIn,
   });
 
+/**
+ * Redeem an email-verification token. Auto-stores the issued JWT on success.
+ * @param {string} token
+ * @returns {Promise<{ token?: string, tenant?: object, [k: string]: unknown }>}
+ */
 export const verifyEmail = async (token) => {
   const data = await apiRequest("GET", `/api/onboard/verify/${token}`);
   if (data.token) setToken(data.token);
   return data;
 };
 
+/** @param {string} email */
 export const resendVerification = (email) =>
   apiRequest("POST", "/api/onboard/resend-verification", { email });
 
+/** @param {string} email */
 export const forgotPassword = (email) =>
   apiRequest("POST", "/api/onboard/forgot-password", { email });
 
+/** @param {string} token @param {string} new_password */
 export const resetPassword = (token, new_password) =>
   apiRequest("POST", "/api/onboard/reset-password", { token, new_password });
 
+/**
+ * Authenticate against the portal. Diverges from apiRequest so the
+ * email_unverified soft-error can be surfaced to the UI without throwing.
+ *
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{ token: string, tenant: object } | LoginError>}
+ *          On an unverified email the server replies 4xx with `code:"email_unverified"`;
+ *          we return that payload so the login page can show the resend-verification UI.
+ *          Any other non-2xx throws.
+ */
 export const login = async (email, password) => {
   const headers = { "Content-Type": "application/json" };
   const res = await fetch(`${BASE_URL}/api/onboard/login`, {
