@@ -1,30 +1,21 @@
 /**
  * NOMII AI — Tool Configurator (AI-Assisted Onboarding)
  *
- * When a new tenant onboards, they describe their business.
- * This module sends that description to Claude, which reads the
- * tool registry and outputs a complete tenant configuration:
- *
+ * Sends a tenant's free-text business description to Claude along with the
+ * tool registry and returns a complete tenant configuration:
  *   - vertical_config    — industry terminology and framing rules
- *   - enabled_tools      — which tools are relevant for this business
- *   - tool_configs       — industry-specific descriptions for each tool
- *   - compliance_config  — appropriate disclaimers and restrictions
- *   - onboarding_config  — what to learn about this industry's clients
- *
- * This means Nomii can onboard any new industry without anyone at
- * Ponten Solutions touching a line of code — the AI figures out the
- * right configuration from the business description alone.
+ *   - enabled_tools      — tools relevant to the business
+ *   - tool_configs       — industry-specific per-tool descriptions
+ *   - compliance_config  — disclaimers and restricted topics
+ *   - onboarding_config  — what the AI should learn about clients
  *
  * Usage:
  *   const config = await generateTenantConfig(businessDescription, apiKey);
- *   // config is ready to be saved directly to the tenants table
  */
 
 const Anthropic   = require('@anthropic-ai/sdk');
 const { listAllTools } = require('../tools/registry');
 
-// ── System prompt ─────────────────────────────────────────────────────────────
-// Instructs Claude to act as a configuration expert and return clean JSON.
 const CONFIGURATOR_SYSTEM_PROMPT = `You are a configuration expert for Nomii AI — a multi-industry client engagement platform.
 
 Your job: given a business description, produce a complete JSON tenant configuration that makes Nomii feel completely native to that business.
@@ -38,7 +29,7 @@ You will be given a list of available tools. For each tool you enable, write a d
 
 Return ONLY valid JSON — no markdown fences, no explanation text. The JSON must be parseable by JSON.parse().`;
 
-// ── Few-shot example (improves output quality significantly) ──────────────────
+// Few-shot example — significantly improves output quality.
 const EXAMPLE_INPUT = `Business: "Covenant Trust — a retirement planning firm. We manage IRA, 401(k), pension, and brokerage accounts for clients aged 55-75 approaching or in retirement."`;
 
 const EXAMPLE_OUTPUT = JSON.stringify({
@@ -135,10 +126,8 @@ async function generateTenantConfig(businessDescription, apiKey) {
     max_tokens: 3000,
     system:     CONFIGURATOR_SYSTEM_PROMPT,
     messages: [
-      // Few-shot example
       { role: 'user',      content: EXAMPLE_INPUT },
       { role: 'assistant', content: EXAMPLE_OUTPUT },
-      // Actual request
       {
         role: 'user',
         content:
