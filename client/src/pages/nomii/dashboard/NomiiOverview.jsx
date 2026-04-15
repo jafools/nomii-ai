@@ -1,33 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDashboard, getVisitors, getSubscription } from "@/lib/nomiiApi";
+import { relativeTime, relativeDay } from "@/lib/format";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import NomiiAnalyticsCharts from "./NomiiAnalyticsCharts";
 import { MessageSquare, Users, AlertTriangle, RefreshCw, TrendingUp, ArrowUpRight, Mail, UserX, ChevronDown, ChevronUp, UserMinus } from "lucide-react";
-
-const relativeTime = (dateStr) => {
-  if (!dateStr) return "";
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
-
-const relativeDay = (dateStr) => {
-  if (!dateStr) return "—";
-  const now = new Date();
-  const dt = new Date(dateStr);
-  const diffDays = Math.floor((now - dt) / 86400000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return `${diffDays} days ago`;
-};
 
 const cardStyle = {
   background: "rgba(255,255,255,0.03)",
