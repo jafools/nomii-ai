@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
     const params = {
       mode:        'subscription',
       line_items:  [{ price: priceId, quantity: 1 }],
-      success_url: 'https://pontensolutions.com/nomii/license?success=true',
+      success_url: 'https://nomii.pontensolutions.com/nomii/license/success',
       cancel_url:  'https://pontensolutions.com/nomii/license',
       // Metadata on both the session and the subscription so the webhook can detect selfhosted
       metadata:           { product_type: 'selfhosted', plan, interval },

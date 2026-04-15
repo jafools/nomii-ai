@@ -27,6 +27,7 @@ import NomiiAcceptInvite from "./pages/nomii/NomiiAcceptInvite";
 import NomiiProtectedRoute from "./components/nomii/NomiiProtectedRoute";
 import { NomiiAuthProvider } from "./contexts/NomiiAuthContext";
 import NomiiSetup from "./pages/nomii/NomiiSetup";
+import NomiiLicenseSuccess from "./pages/nomii/NomiiLicenseSuccess";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,9 @@ const App = () => (
           <Route path="/nomii/verify/:token" element={<NomiiVerifyEmail />} />
           <Route path="/nomii/reset-password" element={<NomiiResetPassword />} />
           <Route path="/nomii/accept-invite" element={<NomiiAcceptInvite />} />
+
+          {/* Post-purchase success page (self-hosted license checkout) */}
+          <Route path="/nomii/license/success" element={<NomiiLicenseSuccess />} />
 
           {/* Protected onboarding */}
           <Route path="/nomii/onboarding" element={
