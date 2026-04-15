@@ -765,18 +765,28 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
   </div>
   <p style="margin:0 0 8px;color:#374151"><strong>Plan:</strong> ${plan.charAt(0).toUpperCase() + plan.slice(1)}</p>
   ${expiryLine}
-  <p style="margin:16px 0 8px;color:#374151"><strong>How to activate:</strong></p>
+  <p style="margin:16px 0 8px;color:#374151"><strong>How to activate (recommended):</strong></p>
   <ol style="margin:0 0 16px;padding-left:20px;color:#374151">
-    <li style="margin-bottom:6px">Open the <code>.env</code> file in your Nomii installation directory.</li>
-    <li style="margin-bottom:6px">Add this line: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
-    <li style="margin-bottom:6px">Restart: <code>docker compose -f docker-compose.selfhosted.yml up -d</code></li>
+    <li style="margin-bottom:6px">Log in to your Nomii dashboard.</li>
+    <li style="margin-bottom:6px">Go to <strong>Plans &amp; Billing</strong> in the sidebar.</li>
+    <li style="margin-bottom:6px">Paste your license key above into the activation field and click <strong>Activate</strong>.</li>
   </ol>
+  <p style="margin:0 0 12px;color:#374151">Your plan limits lift instantly — no restart, no SSH, no file editing.</p>
+  <details style="margin:0 0 16px;color:#6b7280;font-size:13px">
+    <summary style="cursor:pointer;color:#4b5563">Advanced: activate via <code>.env</code> instead</summary>
+    <ol style="margin:8px 0 0;padding-left:20px">
+      <li style="margin-bottom:4px">Open the <code>.env</code> file in your Nomii installation directory.</li>
+      <li style="margin-bottom:4px">Add: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
+      <li style="margin-bottom:4px">Recreate the backend: <code>docker compose up -d --force-recreate backend</code></li>
+      <li>This path pins the license via environment variable and locks out the dashboard activation UI.</li>
+    </ol>
+  </details>
   <p style="margin:0;color:#6b7280;font-size:13px">Keep this key private. Do not share it or commit it to version control. If you lose it, contact <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.</p>
   ${tenantFooterHtml()}
 </div>
 </body></html>`;
 
-  const text = `Your Nomii AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nTo activate, add this to your .env file:\n  NOMII_LICENSE_KEY=${licenseKey}\n\nThen restart: docker compose -f docker-compose.selfhosted.yml up -d\n\nKeep this key private.\n`;
+  const text = `Your Nomii AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nHow to activate (recommended):\n  1. Log in to your Nomii dashboard.\n  2. Go to Plans & Billing in the sidebar.\n  3. Paste the key above into the activation field and click Activate.\n\nYour plan limits lift instantly — no restart, no SSH, no file editing.\n\nAdvanced (env-var path): add NOMII_LICENSE_KEY=${licenseKey} to your .env file and run \`docker compose up -d --force-recreate backend\`. This pins the license and disables dashboard activation.\n\nKeep this key private.\n`;
 
   await transporter.sendMail({
     from:    FROM,
