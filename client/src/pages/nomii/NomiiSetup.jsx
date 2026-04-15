@@ -59,7 +59,10 @@ const NomiiSetup = () => {
         anthropicApiKey: apiKey.trim(),
       });
       setToken(data.token);
-      navigate("/nomii/dashboard", { replace: true });
+      // Self-hosted first-run: land on widget-install step of onboarding
+      // (products/customers/api_key/tools are pre-marked complete server-side,
+      // so /nomii/onboarding resumes at install_widget — fixes SH-1/SH-2).
+      navigate("/nomii/onboarding", { replace: true });
     } catch (err) {
       setError(err.message || "Setup failed. Please try again.");
     } finally {

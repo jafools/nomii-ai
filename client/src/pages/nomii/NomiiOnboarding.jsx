@@ -204,9 +204,9 @@ const NomiiOnboarding = () => {
         {/* Logo + User pill */}
         <div className="p-6 pb-2 relative z-10">
           <div className="flex items-center justify-between mb-1">
-            <a href="https://pontensolutions.com">
+            <Link to="/nomii/dashboard">
               <img src={nomiiLogo} alt="Nomii AI" className="h-14 brightness-0 invert" />
-            </a>
+            </Link>
             {admin && <UserPill admin={admin} />}
           </div>
           <p className="text-[10px] font-medium tracking-widest uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Setup Wizard</p>
@@ -285,9 +285,9 @@ const NomiiOnboarding = () => {
         <div className="md:hidden p-4 border-b" style={{ backgroundColor: "#0F1A2E", borderColor: "rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <a href="https://pontensolutions.com">
+              <Link to="/nomii/dashboard">
                 <img src={nomiiLogo} alt="Nomii AI" className="h-12 brightness-0 invert" />
-              </a>
+              </Link>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
                 Step {activeStep + 1} of {STEPS.length}
               </span>

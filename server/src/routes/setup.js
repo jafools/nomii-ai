@@ -80,15 +80,27 @@ router.post('/complete', requireSelfHosted, async (req, res, next) => {
     const last4             = getLast4(cleanKey);
 
     // ── Create tenant ──────────────────────────────────────────────────────────
+    // Pre-fill onboarding_steps: company_profile + api_key were captured by the
+    // setup wizard; products/customers/tools are optional and marked done so the
+    // post-setup resume lands directly on the install_widget step (fixes SH-1).
+    // Only install_widget remains — that's the one step the wizard can't do for
+    // the operator since it requires pasting a script on their own site.
+    const initialOnboardingSteps = JSON.stringify({
+      company_profile: true,
+      products: true,
+      customers: true,
+      api_key: true,
+      tools: true,
+    });
     const { rows: tenantRows } = await db.query(
       `INSERT INTO tenants (
          name, slug, agent_name, vertical,
          primary_color, secondary_color, widget_api_key, is_active,
          onboarding_steps, llm_api_key_encrypted, llm_api_key_iv,
          llm_api_key_provider, llm_api_key_validated, llm_api_key_last4
-       ) VALUES ($1,$2,$3,'other','#1E3A5F','#C9A84C',$4,true,'{}', $5,$6,'anthropic',true,$7)
+       ) VALUES ($1,$2,$3,'other','#1E3A5F','#C9A84C',$4,true,$5::jsonb, $6,$7,'anthropic',true,$8)
        RETURNING id`,
-      [cleanCompany, slug, `${cleanCompany} Assistant`, widgetApiKey, encrypted, iv, last4]
+      [cleanCompany, slug, `${cleanCompany} Assistant`, widgetApiKey, initialOnboardingSteps, encrypted, iv, last4]
     );
     const tenantId = tenantRows[0].id;
 
