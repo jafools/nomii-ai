@@ -2925,69 +2925,6 @@ router.delete('/settings/data-api-key', async (req, res, next) => {
 });
 
 
-// =============================================================================
-// CONNECT TOOL — TEST WEBHOOK
-// =============================================================================
-
-// POST /api/portal/tools/:toolId/test
-// Fire a test request to the tool's webhook URL so the tenant can verify it's working.
-router.post('/tools/:toolId/test', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT * FROM custom_tools WHERE id = $1 AND tenant_id = $2 AND is_active = true`,
-      [req.params.toolId, req.portal.tenant_id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Tool not found' });
-
-    const tool = rows[0];
-    if (tool.tool_type !== 'connect') {
-      return res.status(400).json({ error: 'Only connect-type tools support test requests.' });
-    }
-
-    const { webhook_url, method = 'POST', headers = {}, auth_type, auth_token, auth_header_name } = tool.config || {};
-
-    if (!webhook_url) return res.status(400).json({ error: 'Tool has no webhook_url configured.' });
-
-    // Build auth headers
-    const authHeaders = {};
-    if (auth_type === 'bearer' && auth_token) {
-      authHeaders['Authorization'] = `Bearer ${auth_token}`;
-    } else if (auth_type === 'api_key' && auth_token && auth_header_name) {
-      authHeaders[auth_header_name] = auth_token;
-    }
-
-    const samplePayload = {
-      tool_name:   tool.name,
-      customer_id: 'test-customer-id',
-      tenant_id:   req.portal.tenant_id,
-      params:      req.body.params || {},
-      _test:       true,
-    };
-
-    const fetchResponse = await fetch(webhook_url, {
-      method,
-      headers: { 'Content-Type': 'application/json', ...headers, ...authHeaders },
-      body: method !== 'GET' ? JSON.stringify(samplePayload) : undefined,
-      signal: AbortSignal.timeout(10000),
-    });
-
-    const responseText = await fetchResponse.text();
-    let responseData;
-    try { responseData = JSON.parse(responseText); } catch { responseData = responseText; }
-
-    res.json({
-      success:     fetchResponse.ok,
-      status:      fetchResponse.status,
-      status_text: fetchResponse.statusText,
-      data:        responseData,
-    });
-  } catch (err) {
-    if (err.name === 'TimeoutError') return res.status(504).json({ error: 'Request timed out (10s).' });
-    res.status(502).json({ error: `Could not reach webhook: ${err.message}` });
-  }
-});
-
-
 // ── Soul Management ────────────────────────────────────────────────────────────
 
 // GET /api/portal/settings/agent-soul — return current soul template
