@@ -102,30 +102,27 @@ services:
   # The easiest way to get a public HTTPS URL without opening
   # firewall ports or managing SSL certificates.
   #
-  # To use: set CLOUDFLARE_TUNNEL_TOKEN in your .env
-  # To skip: leave CLOUDFLARE_TUNNEL_TOKEN blank — the service
-  #          stays idle (sleep infinity) so docker ps shows it as
-  #          "Up" rather than restart-looping.
+  # This service only runs when activated via `profiles: [tunnel]`.
+  # install.sh detects CLOUDFLARE_TUNNEL_TOKEN and adds --profile tunnel
+  # automatically. To enable manually:
   #
-  # We override `entrypoint:` to /bin/sh because the cloudflared image
-  # ships with `cloudflared` as its entrypoint — without overriding it,
-  # docker would exec `cloudflared sh -c "..."` and treat `sh` as a
-  # cloudflared subcommand, which fails immediately and triggers an
-  # endless restart loop.
+  #   CLOUDFLARE_TUNNEL_TOKEN=eyJ... docker compose --profile tunnel \
+  #     -f docker-compose.selfhosted.yml up -d
+  #
+  # The cloudflared image is distroless (no /bin/sh) so we can't use
+  # a shell wrapper to no-op gracefully when the token is missing —
+  # profiles is the clean way to keep it out of the base bring-up.
   cloudflared:
+    profiles: ["tunnel"]
     image: cloudflare/cloudflared:2025.4.0
     container_name: nomii-cloudflared
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "-c"]
     command:
-      - |
-        if [ -z "$$CLOUDFLARE_TUNNEL_TOKEN" ]; then
-          echo 'No CLOUDFLARE_TUNNEL_TOKEN set — cloudflared idle. Set CLOUDFLARE_TUNNEL_TOKEN in .env and restart to enable.'
-          exec sleep infinity
-        fi
-        exec cloudflared tunnel --no-autoupdate run --token "$$CLOUDFLARE_TUNNEL_TOKEN"
-    environment:
-      CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - backend
       - frontend

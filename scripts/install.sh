@@ -341,13 +341,27 @@ echo ""
 echo -e "   ${D}Pulling Docker images (this may take a few minutes)...${NC}"
 echo ""
 
-$DOCKER_CMD compose -f "$COMPOSE_FILE" pull
+# Auto-enable the cloudflared profile when a tunnel token is configured.
+# We re-read .env in case this is a "keep existing config" run.
+if [ -f .env ]; then
+  CFT=$(grep -E '^CLOUDFLARE_TUNNEL_TOKEN=' .env | cut -d= -f2-)
+else
+  CFT=""
+fi
+if [ -n "$CFT" ]; then
+  COMPOSE_PROFILE_FLAG=(--profile tunnel)
+  ok "Cloudflare Tunnel enabled (--profile tunnel)"
+else
+  COMPOSE_PROFILE_FLAG=()
+fi
+
+$DOCKER_CMD compose "${COMPOSE_PROFILE_FLAG[@]}" -f "$COMPOSE_FILE" pull
 
 echo ""
 echo -e "   ${D}Starting services...${NC}"
 echo ""
 
-$DOCKER_CMD compose -f "$COMPOSE_FILE" up -d
+$DOCKER_CMD compose "${COMPOSE_PROFILE_FLAG[@]}" -f "$COMPOSE_FILE" up -d
 
 ok "Services started"
 
