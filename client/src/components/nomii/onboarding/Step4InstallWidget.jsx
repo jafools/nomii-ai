@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getMe } from "@/lib/nomiiApi";
+import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "@/hooks/use-toast";
 import { Check, Copy, Download, ArrowRight } from "lucide-react";
 
@@ -70,25 +71,6 @@ const Step4InstallWidget = ({ nomiiTenant, setNomiiTenant, markComplete, advance
     }, 5000);
     return () => clearInterval(intervalRef.current);
   }, [verified]);
-
-  const copyToClipboard = (text) => {
-    if (navigator.clipboard?.writeText) {
-      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-    }
-    fallbackCopy(text);
-  };
-
-  const fallbackCopy = (text) => {
-    const el = document.createElement("textarea");
-    el.value = text;
-    el.style.position = "fixed";
-    el.style.opacity = "0";
-    document.body.appendChild(el);
-    el.focus();
-    el.select();
-    document.execCommand("copy");
-    document.body.removeChild(el);
-  };
 
   const copyKey = () => {
     copyToClipboard(widgetKey);

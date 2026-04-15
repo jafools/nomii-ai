@@ -1,22 +1,5 @@
 import { useState, useEffect } from "react";
-
-// navigator.clipboard is only available on HTTPS/localhost.
-// Fall back to execCommand for plain-HTTP self-hosted installs.
-const copyToClipboard = (text) => {
-  if (navigator.clipboard?.writeText) {
-    return navigator.clipboard.writeText(text).catch(() => _fallbackCopy(text));
-  }
-  _fallbackCopy(text);
-};
-const _fallbackCopy = (text) => {
-  const el = document.createElement("textarea");
-  el.value = text;
-  el.style.cssText = "position:fixed;opacity:0";
-  document.body.appendChild(el);
-  el.focus(); el.select();
-  document.execCommand("copy");
-  document.body.removeChild(el);
-};
+import { copyToClipboard } from "@/lib/clipboard";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import { getMe, updateCompany, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams, getEmailTemplates, updateEmailTemplates } from "@/lib/nomiiApi";
 import { toast } from "@/hooks/use-toast";
