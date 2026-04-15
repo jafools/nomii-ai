@@ -214,23 +214,38 @@ export const getConversations = (page, { status, mode, unread, search } = {}, li
   return apiRequest("GET", `/api/portal/conversations?${p.toString()}`);
 };
 export const getConversation = (id) => apiRequest("GET", `/api/portal/conversations/${id}`);
-export const downloadTranscript = async (conversationId, customerName) => {
+
+// Sanitize a string for use in a download filename (strip whitespace + special chars).
+const safeFilename = (s) => String(s || "").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
+
+// Fetch an authenticated binary blob and trigger a browser download.
+// `fallbackErrorMessage` is used if the server returns a non-OK response with no JSON error body.
+async function downloadAuthenticatedFile(path, filename, fallbackErrorMessage) {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/api/portal/conversations/${conversationId}/transcript`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Transcript download failed");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || fallbackErrorMessage);
+  }
   const blob = await res.blob();
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  const safe = (customerName || conversationId).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
-  a.download = `transcript_${safe}.txt`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-};
+}
+
+export const downloadTranscript = (conversationId, customerName) =>
+  downloadAuthenticatedFile(
+    `/api/portal/conversations/${conversationId}/transcript`,
+    `transcript_${safeFilename(customerName || conversationId)}.txt`,
+    "Transcript download failed",
+  );
 export const getConcerns = () => apiRequest("GET", "/api/portal/concerns");
 export const getVisitors = () => apiRequest("GET", "/api/portal/visitors");
 export const getAnalytics = (period = "30d") => apiRequest("GET", `/api/portal/analytics?period=${period}`);
@@ -311,26 +326,13 @@ export const triggerMemorySummary = (conversationId) =>
 
 // GDPR — Right to Access / Data Portability (Art. 20)
 // Fetches the full data export and triggers a browser file download.
-export const exportCustomerData = async (customerId, customerName) => {
-  const token = getToken();
-  const res = await fetch(`${BASE_URL}/api/portal/customers/${customerId}/export`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Export failed");
-  }
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  const safeName = (customerName || customerId).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
-  a.download = `data_export_${safeName}_${new Date().toISOString().split("T")[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export const exportCustomerData = (customerId, customerName) => {
+  const datestamp = new Date().toISOString().split("T")[0];
+  return downloadAuthenticatedFile(
+    `/api/portal/customers/${customerId}/export`,
+    `data_export_${safeFilename(customerName || customerId)}_${datestamp}.json`,
+    "Export failed",
+  );
 };
 
 // Customer Data Records (portal)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getConversation, takeoverConversation, handbackConversation, replyToConversation, downloadTranscript, getLabels, addConversationLabel, removeConversationLabel, scoreConversation } from "@/lib/nomiiApi";
+import { fmtTime } from "@/lib/format";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import { ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, UserCheck, Bot, Send, Download, Tag, Plus, X, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 
@@ -13,12 +14,6 @@ const statusStyle = {
 const modeStyle = {
   ai:    { bg: "rgba(96,165,250,0.12)",   color: "#60A5FA",  icon: "🤖", label: "AI" },
   human: { bg: "rgba(16,185,129,0.12)",   color: "#10B981",  icon: "👤", label: "Human" },
-};
-
-const fmtTime = (d) => {
-  if (!d) return "";
-  const dt = new Date(d);
-  return dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
 const NomiiConversationDetail = () => {

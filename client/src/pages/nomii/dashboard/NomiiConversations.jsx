@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getConversations, getConversation, getLabels, bulkConversations, takeoverConversation } from "@/lib/nomiiApi";
+import { relTime, fmtTime } from "@/lib/format";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
 import {
   MessageSquare, AlertTriangle, RefreshCw, ExternalLink, ArrowUpRight,
@@ -13,25 +14,6 @@ const statusStyle = {
   active:    { bg: "rgba(34,197,94,0.12)",   color: "#4ADE80",              label: "Active"    },
   ended:     { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", label: "Ended"   },
   escalated: { bg: "rgba(239,68,68,0.12)",   color: "#F87171",              label: "Escalated" },
-};
-
-const relTime = (d) => {
-  if (!d) return "";
-  const diffMs = Date.now() - new Date(d);
-  const mins   = Math.floor(diffMs / 60000);
-  if (mins < 1)  return "now";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7)   return new Date(d).toLocaleDateString(undefined, { weekday: "short" });
-  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
-
-const fmtTime = (d) => {
-  if (!d) return "";
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
 function useDebounce(value, delay = 300) {
