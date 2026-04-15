@@ -314,15 +314,8 @@ function detectFlags(customerMessage, agentResponse) {
 
 /**
  * Detect if the customer is trying to name the agent.
- * Returns the detected name string or null.
- *
- * Patterns recognized:
- *   "Call you Rosie"  |  "I'll call you Rosie"  |  "Your name is Rosie"
- *   "How about Rosie"  |  "Let's go with Rosie"  |  "I'll name you Rosie"
- *   Quoted names: 'call you "Rosie"' or "call you 'Rosie'"
- *
- * When Claude API is live, the LLM itself will handle this more naturally
- * and we can extract the name from the agent's confirmation response.
+ * Returns the detected name or null. Matches patterns like "call you Rosie",
+ * "your name is Rosie", or `"Rosie" sounds good`.
  */
 function detectAgentNaming(message) {
   const lower = message.toLowerCase().trim();

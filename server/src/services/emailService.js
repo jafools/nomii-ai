@@ -37,7 +37,6 @@ function getTransporter() {
   return _transporter;
 }
 
-// Keep old name for minimal diff in callers
 function createTransporter() {
   return getTransporter();
 }
