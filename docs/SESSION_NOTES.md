@@ -5,7 +5,67 @@
 
 ---
 
-## Last updated: 2026-04-15 (onboarding wizard bugfixes)
+## Last updated: 2026-04-15 PM (on-prem install iteration — 3 cycles, end-to-end verified)
+
+After the SH-1/SH-2/SH-3 surgical fixes earlier in the day landed, scope expanded to "make the on-prem install actually stress-free for customers". Drove 3 iterative install cycles directly against VM 10.0.100.25 (jafools@, key set up apr-14). VM completely wiped (volumes dropped, ~/nomii rm'd) and `install.sh` re-run from raw GitHub on every cycle. Final state — cycle 3 — passed every verification cleanly.
+
+### Commits shipped in the iteration (all on main)
+| Commit | Subject |
+|---|---|
+| `f5c0dd5` | fix(onboarding): SH-1/SH-2/SH-3 wizard bugs |
+| `642fb98` | chore(session): notes |
+| `9d673c0` | fix(self-hosted): polish on-prem install — branding, cloudflared, headless mode |
+| `0925c0e` | fix(install): skip clear when TERM unset or headless |
+| `411ab53` | fix(self-hosted): cloudflared via profiles, fixes distroless /bin/sh |
+| `2fc8dc2` | feat(install): add NOMII_GITHUB_REF for version pinning |
+
+### Issues found and fixed
+- **HTML branding leak**: `client/index.html` had Pontén marketing title + og:image to `pontensolutions.com/og-image.png`. Self-hosted operators sharing their URL got the wrong link preview. Now generic "Nomii AI" + relative `/og-image.png`. Improvement for SaaS too.
+- **8 pre-auth logo links** to `https://pontensolutions.com` across NomiiLogin (3), NomiiSignup (2), NomiiResetPassword (2), NomiiVerifyEmail (1) — same SH-3 pattern as the post-auth onboarding. Removed the `<a>` wrappers; static logos on login forms is standard UX anyway.
+- **Cloudflared restart loop** — root cause: compose `command:` was passed to the cloudflared image's ENTRYPOINT, so the actual exec was `cloudflared sh -c "..."`, sh got treated as a cloudflared subcommand, exit 1, restart-looped forever. **Two failed attempts** before the right fix:
+  1. Tried entrypoint override `["/bin/sh","-c"]` + `exec sleep infinity` on no-token. **Failed:** the cloudflared image is distroless, no `/bin/sh` exists.
+  2. Switched to **compose `profiles: [tunnel]`**. install.sh detects `CLOUDFLARE_TUNNEL_TOKEN` in `.env` and adds `--profile tunnel` automatically. When no token, no cloudflared container exists at all. Verified scenario A (no token → 3 containers) and scenario B (token set → 4 containers, profile auto-activated).
+- **install.sh `clear` crashed in headless mode** — `clear` errors with "TERM environment variable not set" when no tty + `set -e` aborts. Now gated by `[ -n "$TERM" ] && [ "$NONINT" != "1" ]`.
+- **install.sh stale CDN cache** — install.sh hardcoded `main` branch URL for compose download; CDN can lag pushes by minutes. Added `NOMII_GITHUB_REF` env var so customers can pin to a release tag (the production-correct way) and so testers can pin to a SHA.
+- **install.sh post-docker-install group bug** — install.sh installed Docker, added user to docker group, then immediately tried `docker compose pull` in the same shell — always failed (group not active in current shell). Now uses `DOCKER_CMD="sudo docker"` for the rest of the run when we just installed Docker. User logs out + back in for subsequent runs without sudo.
+- **install.sh headless mode** — added `NOMII_NONINTERACTIVE=1` (skips `/dev/tty` redirect, reads answers from `NOMII_PUBLIC_URL`, `NOMII_SMTP_*`, `NOMII_CF_TOKEN`, `NOMII_LICENSE_KEY`). Real customer feature — needed for CI/Ansible/Terraform/Docker-build workflows. Also unblocks automated testing.
+
+### Final verification (cycle 3, scenario A, fresh VM)
+- `bash <(curl ...install.sh)` with `NOMII_NONINTERACTIVE=1 NOMII_PUBLIC_URL=http://10.0.100.25 NOMII_GITHUB_REF=<sha>` — completes in ~30s, ends with "Nomii AI is almost ready!"
+- 3 containers up: `nomii-db (healthy)`, `nomii-backend`, `nomii-frontend`. No cloudflared.
+- `/api/health` → `{"status":"ok"}` in 1s
+- `POST /api/setup/complete` → tenant created with `onboarding_steps` pre-filled `{tools, api_key, products, customers, company_profile: true}` — only `install_widget` undone (SH-1 verified end-to-end)
+- HTML head: `<title>Nomii AI</title>`, og:image=`/og-image.png`, og:site_name=`Nomii AI`
+- 0 `pontensolutions.com` refs on `/`, `/nomii/login`, `/nomii/setup`, `/nomii/onboarding`, `/nomii/signup`
+- 20-msg trial limit: with `messages_used_this_month=20`, the 21st widget chat returns `HTTP 429 message_limit_reached`
+
+### Customer install command (post-iteration, recommended)
+```bash
+# Trial / dev:
+NOMII_PUBLIC_URL=https://nomii.yourfirm.com \
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
+
+# Headless / CI / Ansible:
+NOMII_NONINTERACTIVE=1 \
+NOMII_PUBLIC_URL=https://nomii.yourfirm.com \
+NOMII_LICENSE_KEY=NOMII-XXXX-XXXX-XXXX-XXXX \
+NOMII_CF_TOKEN=eyJ... \
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
+
+# Production: pin to a tag (when we cut releases)
+NOMII_GITHUB_REF=v1.0.0 \
+  bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/v1.0.0/scripts/install.sh)
+```
+
+### Still open / future polish (NOT touched in this iteration)
+- SH-4 (LOW): `/nomii/*` URL prefix is a SaaS artifact on self-hosted — aesthetic, not functional
+- SH-5 (LOW): widget snippet template placeholders shown without inline help
+- Pre-existing `widget.js:1284` join bug (selects `t.managed_ai_enabled` from tenants instead of subscriptions)
+- Self-hosted onboarding shows SaaS-only steps (Products, Customers) in sidebar even though they're pre-marked done. Customer can click into them — not broken, just redundant. Worth gating those steps on deployment mode.
+
+---
+
+## Earlier today: 2026-04-15 (onboarding wizard bugfixes)
 
 ### What was completed (session 2026-04-15)
 
