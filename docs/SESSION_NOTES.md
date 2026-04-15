@@ -5,6 +5,60 @@
 
 ---
 
+## Last updated: 2026-04-15 late-evening (8-agent codebase cleanup sweep)
+
+36 commits landed locally on `main` (unpushed). 96 files changed, net **−5,223 LOC** across 7 merge commits + agent 5's direct commits. Production **NOT YET DEPLOYED** — Austin to review, push, and rebuild on Proxmox.
+
+### What changed (8 parallel subagents, worktree-isolated, background)
+
+| Agent | Branch / merge | Outcome |
+|---|---|---|
+| 1 DRY | `merge(cleanup-1)` 70a78b8 | Extracted `lib/format.js`, `lib/clipboard.js` (copyToClipboard + plain-HTTP fallback), and `downloadAuthenticatedFile` helper in `nomiiApi.js`. Resisted extracting `ErrorState`/skeletons (drift across 8 sites); left `requireTenantAccess` vs `requireTenantScope` alone (different role checks). |
+| 2 Types | `merge(cleanup-2)` bc75394 | Centralized plan/status/notification/deployment enums + JSDoc typedefs (first in repo). `server/src/config/plans.js` sources `UNRESTRICTED_PLANS`/`TRIAL_PLANS`/`VALID_ADMIN_PLANS`/`VALID_LICENSE_PLANS`. New `client/src/lib/constants.js` for `PLAN_LABELS` + enums. `DEPLOYMENT_MODES`/`isSelfHosted()` replaced 10 literal checks. 14 files touched. |
+| 3 Unused | `merge(cleanup-3)` ad8fb1e | Deleted **48 client files** (42 shadcn/ui, 3 orphan hooks, `NomiiDashboard.jsx` placeholder, `Step5TestAgent.jsx`). Removed **38 npm deps** (client: `react-hook-form`, `zod`, `framer-motion`, 25 Radix primitives, cmdk, vaul…; server: `uuid`). Client CSS bundle 73.45 kB → 38.55 kB (−48%). |
+| 4 Circular | `merge(cleanup-4)` 34e36d2 | **0 cycles** in client (91 files, TS/TSX aware) or server (52 files). Report-only. |
+| 5 Weak types | *leaked onto main* (9b65c11 → 4908225) | Added JSDoc to `nomiiApi.js` (80+ consumers had zero docs). Narrowed `licenseService.callValidate` return shape. Added boundary `TypeError`s to `apiKeyService.encrypt/decrypt` and `promptBuilder.buildSystemPrompt`. Added `typeof` guards + length caps on 4 portal mutation routes. **Verified safe against master `/validate` contract** at `server/src/routes/license.js:82-86` — always returns `{ valid, plan, expires_at }`. |
+| 6 try/catch | `merge(cleanup-6)` 8964803 | Only 2 simplifications (redundant `console.error` before `next(err)` in `middleware/subscription.js`). Report documents ~349 try/catch sites as consistently purposeful. |
+| 7 Deprecated | `merge(cleanup-7)` 9f63590 | **Real latent bug fix**: `portal.js` had TWO `POST /tools/:toolId/test` handlers — older webhook-only one was shadowing the newer agentic sandbox handler (Express first-match). Tools dashboard Test button has been broken for every non-connect tool since `f6f0edb`. Removed shadower (−63 LOC). |
+| 8 Comments | `merge(cleanup-8)` 7e2260b | 62 `// =====` banner lines across 10 files. 2 engine-file AI marketing headers replaced with terse module JSDoc. 4 stale narrating comments. 0 debug `console.log`s removed — all 75+ are structured `[Prefix]` grep targets. |
+
+### Big finding from agent 7 (DEFERRED — your call)
+
+Seven **pre-portal route files** (`chat.js`, `conversations.js`, `customers.js`, `advisors.js`, `flags.js`, `tenants.js`, `customTools.js` — ~**1,646 LOC**) have **zero in-repo callers**. All dashboard features moved to `/api/portal/*`; widget chat moved to `/api/widget/chat`. Agent deliberately did not auto-delete due to possible external consumers (WordPress plugin?). Needs a separate decision.
+
+### Agent 5 broke isolation
+
+Despite the worktree sandbox, agent 5 committed 6 commits directly to `main` instead of its branch (`worktree-agent-a93f98e0` is empty). Commits are still local and recoverable. Work itself is good (verified callValidate contract against master). Going forward: explicit "NEVER commit to main" in subagent briefings OR use a pre-commit hook that blocks writes to `main` inside agents' worktrees.
+
+### Open issues the sweep surfaced (not fixed)
+
+- `server/src/routes/portal.js` is **3,683 lines** — violates CLAUDE.md `<500-line` guideline. Should be split into route-group modules.
+- `planDefaults` in `portal.js` vs `PLAN_LIMITS` shape mismatch (`null` vs sentinel int for unlimited; `managed_ai_enabled` vs `managed_ai`). Too risky pre-launch but worth aligning after first paying customer.
+- Eslint config not present but devDeps installed; vitest scripts exist but no tests. Pick one: restore or remove.
+
+### Post-merge verification (this session)
+
+- `cd client && npm install && npm run build` → PASS (2497 modules, 4.70s)
+- `cd server && npm install` → PASS
+- `node -c` on 14 key server files (index, portal, widget, license, license-checkout, setup, onboard, auth, chat, promptBuilder, licenseService, apiKeyService, subscription, plans) → all PASS
+- 2 merge conflicts resolved by hand: `promptBuilder.js` (agent 5 JSDoc + agent 8 banner removal) and `portal.js` (agent 7 handler removal superseded agent 8's edit inside the deleted block). Both resolutions verified by re-running `node -c`.
+
+### Reports for review
+
+All 8 cleanup reports landed at `docs/cleanup-reports/1-dedup.md` through `8-comments.md`. Each has methodology, concrete file:line findings, HIGH/MEDIUM/LOW recommendations, and a deferred list.
+
+### Next-session TODO (updated)
+
+0. **Review + push the cleanup to prod.** `git push origin main` pushes 36 commits. Then on Proxmox: `cd ~/Knomi/knomi-ai && git pull && docker compose up -d --build backend frontend`. Validate dashboard loads, Test Tool button fires, widget chat works. The sweep is LOCAL until pushed.
+1. **Phase 1B-11 (Austin manual, still outstanding)** — $1 live Stripe smoke test through the now-fixed checkout. Cleanup sweep is independent of this.
+2. **Phase 3** — SaaS parity audit (as in previous notes).
+3. **Phase 4** — Hetzner cutover (as in previous notes).
+4. **Decide on 1,646 LOC of pre-portal routes** (agent 7's HIGH deferred finding). Grep production logs for hits to `/api/chat`, `/api/conversations`, `/api/customers`, `/api/advisors`, `/api/flags`, `/api/tenants`, `/api/tools` (not `/api/portal/tools`). If zero hits in 7d, safe to delete.
+5. **Split `portal.js`** (3,683 LOC → sensible route-group modules). Separate ticket.
+6. **Smaller polish (unchanged)** — paid-tier upgrade banner, refactor `createNotification` to shared service.
+
+---
+
 ## Last updated: 2026-04-15 evening (on-prem journey end-to-end shippable)
 
 This was a "is the customer journey actually shippable" validation session that turned into a real-bug discovery + 3 commits to main + 1 prod hotfix + 1 prod deploy. The on-prem self-hosted journey is now genuinely complete end-to-end except a single user-driven smoke test ($1 Stripe).
