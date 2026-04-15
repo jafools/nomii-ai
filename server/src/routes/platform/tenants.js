@@ -18,9 +18,6 @@ const { requirePlatformAuth } = require('../../middleware/platformAuth');
 router.use(requirePlatformAuth());
 
 
-// ============================================================
-// GET /api/platform/tenants — List all tenants with basic stats
-// ============================================================
 router.get('/', async (req, res, next) => {
   try {
     const { rows } = await db.query(`
@@ -41,9 +38,7 @@ router.get('/', async (req, res, next) => {
 });
 
 
-// ============================================================
-// POST /api/platform/tenants — Create new tenant + first admin
-// ============================================================
+// Creates a tenant and its first admin advisor atomically.
 router.post('/', async (req, res, next) => {
   const client = await db.pool.connect();
   try {
@@ -195,9 +190,6 @@ router.post('/', async (req, res, next) => {
 });
 
 
-// ============================================================
-// GET /api/platform/tenants/:id — Tenant details + full stats
-// ============================================================
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -236,9 +228,6 @@ router.get('/:id', async (req, res, next) => {
 });
 
 
-// ============================================================
-// PUT /api/platform/tenants/:id — Update tenant config
-// ============================================================
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -297,9 +286,6 @@ router.put('/:id', async (req, res, next) => {
 });
 
 
-// ============================================================
-// PATCH /api/platform/tenants/:id/status — Toggle active/inactive
-// ============================================================
 router.patch('/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params;

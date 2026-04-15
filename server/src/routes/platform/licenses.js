@@ -27,9 +27,6 @@ function generateLicenseKey() {
   return `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
 }
 
-// ============================================================
-// GET /api/platform/licenses
-// ============================================================
 router.get('/', async (req, res, next) => {
   try {
     const { rows } = await db.query(`
@@ -43,10 +40,7 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// POST /api/platform/licenses — Issue a new license key
-// Body: { issued_to_email, issued_to_name?, plan?, expires_at?, notes? }
-// ============================================================
+// Body: { issued_to_email, issued_to_name?, plan?, expires_at?, notes?, send_email? }
 router.post('/', async (req, res, next) => {
   try {
     const {
@@ -96,9 +90,6 @@ router.post('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// GET /api/platform/licenses/:id
-// ============================================================
 router.get('/:id', async (req, res, next) => {
   try {
     const { rows } = await db.query(
@@ -110,9 +101,6 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// PATCH /api/platform/licenses/:id/revoke
-// ============================================================
 router.patch('/:id/revoke', async (req, res, next) => {
   try {
     const { rows } = await db.query(
@@ -124,9 +112,6 @@ router.patch('/:id/revoke', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// PATCH /api/platform/licenses/:id/reactivate
-// ============================================================
 router.patch('/:id/reactivate', async (req, res, next) => {
   try {
     const { rows } = await db.query(
@@ -138,10 +123,7 @@ router.patch('/:id/reactivate', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// DELETE /api/platform/licenses/:id — Hard delete (admin only)
-// Prefer revoke for audit trail. Use delete only for test data.
-// ============================================================
+// DELETE — hard delete. Prefer revoke for audit trail; use delete only for test data.
 router.delete('/:id', async (req, res, next) => {
   try {
     const { rowCount } = await db.query(
