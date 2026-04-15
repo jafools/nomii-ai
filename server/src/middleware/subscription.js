@@ -131,7 +131,6 @@ async function requireActiveSubscription(req, res, next) {
     req.subscription = sub;
     next();
   } catch (err) {
-    console.error('[Subscription] Portal check failed:', err.message);
     next(err);
   }
 }
@@ -165,7 +164,6 @@ async function requireActiveWidgetSubscription(req, res, next) {
     req.subscription = sub;
     next();
   } catch (err) {
-    console.error('[Subscription] Widget check failed:', err.message);
     next(err);
   }
 }
