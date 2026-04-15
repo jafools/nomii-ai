@@ -13,12 +13,9 @@ const { hashPassword, verifyPassword, generateToken, validatePasswordStrength } 
 const { requireAuth } = require('../middleware/auth');
 const { writeAuditLog } = require('../middleware/auditLog');
 
-// ============================================================
-// POST /api/auth/detect-tenant
-// Step 1 of two-step login: look up which tenant an email belongs to.
-// Returns tenant branding so the login page can update its UI.
-// Does NOT require password — just email lookup.
-// ============================================================
+// Step 1 of two-step login: look up which tenant an email belongs to so
+// the login page can rebrand. Email-only — never returns "found=false" with
+// user-enumerable detail.
 router.post('/detect-tenant', async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -54,9 +51,6 @@ router.post('/detect-tenant', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// POST /api/auth/register
-// ============================================================
 router.post('/register', async (req, res, next) => {
   try {
     const { email, password, first_name, last_name, user_type, tenant_id, phone } = req.body;
@@ -137,9 +131,6 @@ router.post('/register', async (req, res, next) => {
 });
 
 
-// ============================================================
-// POST /api/auth/login
-// ============================================================
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -292,9 +283,6 @@ router.post('/login', async (req, res, next) => {
 });
 
 
-// ============================================================
-// GET /api/auth/me — Return current user from JWT
-// ============================================================
 router.get('/me', requireAuth(), async (req, res, next) => {
   try {
     const { user_id, user_type, tenant_id } = req.user;

@@ -266,10 +266,7 @@ router.get('/context/:conversation_id', requireAuth(), requireTenantScope(), asy
 });
 
 
-// ============================================================
-// FLAG DETECTION (simple keyword-based for MVP)
-// ============================================================
-
+// Flag detection — simple keyword-based heuristic for MVP.
 function detectFlags(customerMessage, agentResponse) {
   const flags = [];
   const msg = customerMessage.toLowerCase();
@@ -314,10 +311,6 @@ function detectFlags(customerMessage, agentResponse) {
   return flags;
 }
 
-
-// ============================================================
-// AGENT NAMING DETECTION
-// ============================================================
 
 /**
  * Detect if the customer is trying to name the agent.

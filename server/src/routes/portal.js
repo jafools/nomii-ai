@@ -2819,9 +2819,7 @@ router.delete('/tools/:toolId', async (req, res, next) => {
 });
 
 
-// =============================================================================
-// DATA API KEY MANAGEMENT
-// =============================================================================
+// --- Data API key management ---
 
 // bcrypt — graceful fallback
 let bcrypt;
@@ -2889,9 +2887,7 @@ router.delete('/settings/data-api-key', async (req, res, next) => {
 });
 
 
-// =============================================================================
-// CONNECT TOOL — TEST WEBHOOK
-// =============================================================================
+// --- Connect tool: test webhook ---
 
 // POST /api/portal/tools/:toolId/test
 // Fire a test request to the tool's webhook URL so the tenant can verify it's working.

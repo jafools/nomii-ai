@@ -24,9 +24,6 @@ const db     = require('../db');
 // Self-hosted instances must NOT set NOMII_LICENSE_MASTER.
 const isMaster = process.env.NOMII_LICENSE_MASTER === 'true';
 
-// ============================================================
-// POST /api/license/validate
-// ============================================================
 router.post('/validate', async (req, res, next) => {
   if (!isMaster) {
     // On self-hosted instances, this route is intentionally absent.
@@ -88,12 +85,8 @@ router.post('/validate', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ============================================================
-// POST /api/license/trial
-// Registers a new trial instance and returns a trial license key.
-// Trial: 14-day expiry, plan='trial' (20 msg/mo, 1 customer).
-// One active trial per email address enforced.
-// ============================================================
+// Trial key issuance: 14-day expiry, plan='trial' (20 msg/mo, 1 customer).
+// One active trial per email — re-requests return the existing key.
 router.post('/trial', async (req, res, next) => {
   if (!isMaster) {
     return res.status(404).json({ error: 'Not found' });
