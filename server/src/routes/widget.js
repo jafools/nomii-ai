@@ -40,8 +40,7 @@ const { writeAuditLog } = require('../middleware/auditLog');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const { fireWebhooks }               = require('../services/webhookService');
 const { fireNotifications }          = require('../services/notificationService');
-
-const UNRESTRICTED_PLANS = ['master', 'enterprise'];
+const { UNRESTRICTED_PLANS, NOTIFICATION_TYPES } = require('../config/plans');
 
 // ── In-app notification helper ─────────────────────────────────────────────
 // Fire-and-forget. Errors are swallowed so they never interrupt the request.
@@ -825,7 +824,7 @@ router.post('/flag', requireWidgetAuth, async (req, res, next) => {
       const cEmail = custRows[0]?.email || '';
 
       createNotification(tenant_id, {
-        type:         'flag',
+        type:         NOTIFICATION_TYPES.FLAG,
         title:        `${cName} raised a concern`,
         body:         description,
         resourceType: 'conversation',
@@ -995,7 +994,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
           }
           // In-app notification so advisor sees the reply even if email is delayed
           createNotification(tenant_id, {
-            type:         'human_reply',
+            type:         NOTIFICATION_TYPES.HUMAN_REPLY,
             title:        `${customerName} replied`,
             body:         sanitized.slice(0, 120),
             resourceType: 'conversation',

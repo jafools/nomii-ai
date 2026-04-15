@@ -8,6 +8,7 @@ const cors    = require('cors');
 const path    = require('path');
 
 const { securityHeaders, portalCors } = require('./middleware/security');
+const { isSelfHosted, DEPLOYMENT_MODES } = require('./config/plans');
 
 // ── Startup secret validation ──────────────────────────────────────────────────
 // Refuse to start in production with known-default secrets.
@@ -174,7 +175,7 @@ app.use('/api/auth', require('./routes/auth'));
 
 // Routes — Platform Admin (separate auth layer, no tenant scope)
 // Disabled on self-hosted deployments — operators use the tenant dashboard, not platform admin.
-if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
+if (!isSelfHosted()) {
   app.use('/api/platform/auth',     require('./routes/platform/auth'));
   app.use('/api/platform/tenants',  require('./routes/platform/tenants'));
   app.use('/api/platform/licenses', require('./routes/platform/licenses'));
@@ -205,9 +206,9 @@ app.get('/api/health', (req, res) => {
 
 // Deployment config — consumed by the frontend to toggle SaaS vs self-hosted UI
 app.get('/api/config', (req, res) => {
-  const selfHosted = process.env.NOMII_DEPLOYMENT === 'selfhosted';
+  const selfHosted = isSelfHosted();
   res.json({
-    deployment:   selfHosted ? 'selfhosted' : 'saas',
+    deployment:   selfHosted ? DEPLOYMENT_MODES.SELFHOSTED : DEPLOYMENT_MODES.SAAS,
     features: {
       registration:      !selfHosted,  // hide sign-up page on self-hosted
       managedAI:         !selfHosted,  // BYOK only on self-hosted
@@ -240,7 +241,7 @@ app.use((err, req, res, next) => {
 // Order: seed tenant (self-hosted) → license check → listen
 (async () => {
   // 1. Self-hosted: auto-provision tenant + admin on first boot
-  if (process.env.NOMII_DEPLOYMENT === 'selfhosted') {
+  if (isSelfHosted()) {
     try {
       const { seedSelfHostedTenant } = require('./jobs/seedSelfHostedTenant');
       await seedSelfHostedTenant();

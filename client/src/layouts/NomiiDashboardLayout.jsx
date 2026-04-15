@@ -9,6 +9,7 @@ import {
   markNotificationsRead,
 } from "@/lib/nomiiApi";
 import SubscriptionGate from "@/components/nomii/SubscriptionGate";
+import { PLAN_LABELS, NOTIFICATION_TYPES } from "@/lib/constants";
 import nomiiLogo from "@/assets/nomiiai-full-dark.svg";
 import {
   LayoutDashboard,
@@ -30,11 +31,12 @@ import {
 } from "lucide-react";
 
 // ── Notification helpers ───────────────────────────────────────────────────
+// Keys use the NOTIFICATION_TYPES enum from @/lib/constants.
 const NOTIF_ICON = {
-  flag:          { Icon: Flag,          color: "#EF4444" },
-  human_reply:   { Icon: MessageCircle, color: "#C9A84C" },
-  escalation:    { Icon: TrendingUp,    color: "#F97316" },
-  limit_reached: { Icon: Zap,           color: "#EF4444" },
+  [NOTIFICATION_TYPES.FLAG]:          { Icon: Flag,          color: "#EF4444" },
+  [NOTIFICATION_TYPES.HUMAN_REPLY]:   { Icon: MessageCircle, color: "#C9A84C" },
+  [NOTIFICATION_TYPES.ESCALATION]:    { Icon: TrendingUp,    color: "#F97316" },
+  [NOTIFICATION_TYPES.LIMIT_REACHED]: { Icon: Zap,           color: "#EF4444" },
 };
 
 function timeAgo(dateStr) {
@@ -79,16 +81,7 @@ function NotifItem({ n, onNavigate }) {
   );
 }
 
-// Plan display helpers
-const PLAN_LABELS = {
-  free:         { label: "Free",         color: "#6B7280" },
-  trial:        { label: "Trial",        color: "#8B5CF6" },
-  starter:      { label: "Starter",      color: "#3B82F6" },
-  growth:       { label: "Growth",       color: "#10B981" },
-  professional: { label: "Professional", color: "#C9A84C" },
-  enterprise:   { label: "Enterprise",   color: "#C9A84C" },
-  master:       { label: "Master",       color: "#C9A84C" },
-};
+// Plan display helpers live in @/lib/constants as PLAN_LABELS (imported above).
 
 function UsageBar({ label, used, limit, pct, nearLimit }) {
   if (limit === null || limit === undefined) return null; // unrestricted

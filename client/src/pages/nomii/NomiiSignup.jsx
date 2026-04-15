@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register as apiRegister, setToken, resendVerification } from "@/lib/nomiiApi";
+import { DEPLOYMENT_MODES } from "@/lib/constants";
 import nomiiLogo from "@/assets/nomiiai-full-dark.svg";
 import { Check, ArrowRight, Brain, Shield, Sparkles, Mail, ArrowLeft } from "lucide-react";
 
@@ -141,7 +142,7 @@ const NomiiSignup = () => {
     fetch("/api/config")
       .then((r) => r.json())
       .then((d) => {
-        if (d.deployment === "selfhosted") navigate("/nomii/login", { replace: true });
+        if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/nomii/login", { replace: true });
       })
       .catch(() => {});
   }, [navigate]);

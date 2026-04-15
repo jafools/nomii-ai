@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const db     = require('../../db');
 const { requirePlatformAuth } = require('../../middleware/platformAuth');
 const { sendLicenseKeyEmail } = require('../../services/emailService');
+const { VALID_LICENSE_PLANS } = require('../../config/plans');
 
 router.use(requirePlatformAuth());
 
@@ -62,9 +63,8 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'issued_to_email is required' });
     }
 
-    const VALID_PLANS = ['starter', 'growth', 'professional', 'enterprise'];
-    if (!VALID_PLANS.includes(plan)) {
-      return res.status(400).json({ error: `plan must be one of: ${VALID_PLANS.join(', ')}` });
+    if (!VALID_LICENSE_PLANS.includes(plan)) {
+      return res.status(400).json({ error: `plan must be one of: ${VALID_LICENSE_PLANS.join(', ')}` });
     }
 
     const license_key = generateLicenseKey();

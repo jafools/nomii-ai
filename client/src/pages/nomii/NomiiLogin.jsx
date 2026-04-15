@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login as apiLogin, setToken, isLoggedIn, resendVerification, forgotPassword } from "@/lib/nomiiApi";
+import { DEPLOYMENT_MODES } from "@/lib/constants";
 import nomiiLogo from "@/assets/nomiiai-full-dark.svg";
 import { ArrowRight, Brain, Shield, MessageSquare, Mail, CheckCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 
@@ -38,7 +39,7 @@ const NomiiLogin = () => {
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
-      .then((d) => { if (d.deployment === "selfhosted") setIsSelfHosted(true); })
+      .then((d) => { if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) setIsSelfHosted(true); })
       .catch(() => {});
   }, []);
 

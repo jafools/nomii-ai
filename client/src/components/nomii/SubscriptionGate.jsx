@@ -8,14 +8,13 @@
 import { useState } from "react";
 import { Lock, Zap, Clock } from "lucide-react";
 import { createCheckout } from "@/lib/nomiiApi";
-
-const UNRESTRICTED = ["master", "enterprise"];
+import { UNRESTRICTED_PLANS, SUBSCRIPTION_STATUSES } from "@/lib/constants";
 
 function isValid(sub) {
   if (!sub) return false;
-  if (UNRESTRICTED.includes(sub.plan)) return true;
-  if (sub.status === "active") return true;
-  if (sub.status === "trialing") return new Date(sub.trial_ends_at) > new Date();
+  if (UNRESTRICTED_PLANS.includes(sub.plan)) return true;
+  if (sub.status === SUBSCRIPTION_STATUSES.ACTIVE) return true;
+  if (sub.status === SUBSCRIPTION_STATUSES.TRIALING) return new Date(sub.trial_ends_at) > new Date();
   return false;
 }
 
@@ -27,7 +26,7 @@ function daysLeft(dateStr) {
 
 export function useSubscriptionStatus(subscription) {
   const valid = isValid(subscription);
-  const trialing = subscription?.status === "trialing";
+  const trialing = subscription?.status === SUBSCRIPTION_STATUSES.TRIALING;
   const trialDays = trialing ? daysLeft(subscription?.trial_ends_at) : 0;
   const isMaster = subscription?.plan === "master";
   return { valid, trialing, trialDays, isMaster, plan: subscription?.plan, status: subscription?.status };
@@ -75,11 +74,11 @@ export default function SubscriptionGate({ subscription, children }) {
   // ── Locked state ─────────────────────────────────────────────────────────
   const reason = !subscription
     ? "No subscription found."
-    : subscription.status === "trialing"
+    : subscription.status === SUBSCRIPTION_STATUSES.TRIALING
     ? "Your free trial has ended."
-    : subscription.status === "past_due"
+    : subscription.status === SUBSCRIPTION_STATUSES.PAST_DUE
     ? "Your payment is past due."
-    : subscription.status === "canceled"
+    : subscription.status === SUBSCRIPTION_STATUSES.CANCELED
     ? "Your subscription has been canceled."
     : "Your subscription is not active.";
 

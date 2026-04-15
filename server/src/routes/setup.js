@@ -15,13 +15,13 @@ const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');
 const db     = require('../db');
 const { encrypt, getLast4 } = require('../services/apiKeyService');
-const { PLAN_LIMITS }       = require('../config/plans');
+const { PLAN_LIMITS, isSelfHosted } = require('../config/plans');
 
 const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret';
 const PORTAL_JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
 
 function requireSelfHosted(req, res, next) {
-  if (process.env.NOMII_DEPLOYMENT !== 'selfhosted') {
+  if (!isSelfHosted()) {
     return res.status(404).json({ error: 'Not found' });
   }
   next();
