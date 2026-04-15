@@ -47,9 +47,7 @@ const NomiiResetPassword = () => {
 
         <div className="relative z-10 max-w-sm space-y-10">
           <div>
-            <a href="https://pontensolutions.com">
-              <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
-            </a>
+            <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
             <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
           </div>
 
@@ -71,9 +69,7 @@ const NomiiResetPassword = () => {
       <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#0B1222" }}>
         <div className="w-full max-w-md">
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <a href="https://pontensolutions.com">
-              <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
-            </a>
+            <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
           </div>
 
           {success ? (

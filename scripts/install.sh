@@ -11,8 +11,23 @@
 
 set -e
 
+# ── Headless mode (CI/Ansible/Terraform/automated tests) ─────────────────────
+# Set NOMII_NONINTERACTIVE=1 to skip all prompts and use defaults / env vars:
+#   NOMII_DIR             — install directory (default: ~/nomii)
+#   NOMII_PUBLIC_URL      — public URL (default: http://localhost)
+#   NOMII_SMTP_HOST       — SMTP host (default: empty / skip)
+#   NOMII_SMTP_PORT       — SMTP port (default: 465)
+#   NOMII_SMTP_USER       — SMTP username
+#   NOMII_SMTP_PASS       — SMTP password
+#   NOMII_SMTP_FROM       — SMTP from address
+#   NOMII_CF_TOKEN        — Cloudflare Tunnel token (default: empty / skip)
+#   NOMII_LICENSE_KEY     — Nomii license key (default: empty / trial)
+#   NOMII_AUTO_INSTALL_DOCKER=1 — also auto-install Docker if missing
+NONINT="${NOMII_NONINTERACTIVE:-0}"
+
 # ── Ensure interactive input works even when piped (curl | bash) ─────────────
-if [ ! -t 0 ]; then
+# Skip the tty redirect in headless mode — there's nothing to redirect to.
+if [ "$NONINT" != "1" ] && [ ! -t 0 ]; then
   exec < /dev/tty
 fi
 
@@ -25,6 +40,13 @@ COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${COMPOSE_FILE}"
 INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"
 TOTAL_STEPS=5
+
+# ── Wrap docker calls so they work right after a fresh install ───────────────
+# When install.sh installs Docker itself, the new "docker" group membership
+# isn't active in the current shell — `docker compose pull` would fail with
+# permission denied. We detect that case in step 1 and force `sudo` for the
+# rest of the run.
+DOCKER_CMD="docker"
 
 step() { echo -e "\n${W}── Step $1 of $TOTAL_STEPS  $2${NC}"; }
 ok()   { echo -e "   ${G}✓${NC} $1"; }
@@ -57,27 +79,41 @@ if ! command -v docker &>/dev/null; then
   echo ""
   warn "Docker is not installed."
   echo ""
-  ask "Install Docker automatically? This requires sudo. [Y/n]"
-  read -r INSTALL_DOCKER
-  if [[ "$INSTALL_DOCKER" =~ ^[Nn]$ ]]; then
-    fail "Docker is required. Install it from https://docs.docker.com/get-docker/ and re-run this script."
+
+  if [ "$NONINT" = "1" ]; then
+    if [ "${NOMII_AUTO_INSTALL_DOCKER:-0}" = "1" ]; then
+      INSTALL_DOCKER="y"
+    else
+      fail "Docker is required. Set NOMII_AUTO_INSTALL_DOCKER=1 to auto-install, or install it from https://docs.docker.com/get-docker/ and re-run."
+    fi
+  else
+    ask "Install Docker automatically? This requires sudo. [Y/n]"
+    read -r INSTALL_DOCKER
+    if [[ "$INSTALL_DOCKER" =~ ^[Nn]$ ]]; then
+      fail "Docker is required. Install it from https://docs.docker.com/get-docker/ and re-run this script."
+    fi
   fi
+
   echo ""
   echo -e "   ${D}Installing Docker...${NC}"
   curl -fsSL https://get.docker.com | sh
   sudo usermod -aG docker "$USER"
   echo ""
   ok "Docker installed."
-  warn "You may need to log out and back in for Docker permissions to take effect."
-  warn "If the next step fails, run: newgrp docker"
+  # The new docker group isn't active in the current shell — run subsequent
+  # docker commands via sudo so the install completes in a single script run.
+  # The user can drop the sudo on subsequent runs (after they re-login).
+  DOCKER_CMD="sudo docker"
+  warn "Using sudo for docker for the rest of this run."
+  warn "Log out and back in (or run 'newgrp docker') so future commands work without sudo."
 else
   ok "Docker $(docker --version | grep -oP '\d+\.\d+\.\d+' | head -1)"
 fi
 
-if ! docker compose version &>/dev/null; then
+if ! $DOCKER_CMD compose version &>/dev/null; then
   fail "Docker Compose v2 not found. Update Docker Desktop or install the plugin:\n   https://docs.docker.com/compose/install/"
 fi
-ok "Docker Compose $(docker compose version --short)"
+ok "Docker Compose $($DOCKER_CMD compose version --short)"
 
 if ! sudo docker info &>/dev/null 2>&1; then
   echo ""
@@ -98,9 +134,14 @@ echo ""
 echo -e "   ${D}Nomii AI will be installed to a folder on your server."
 echo -e "   This folder stores your configuration and database.${NC}"
 echo ""
-ask "Installation directory [${INSTALL_DIR}]:"
-read -r USER_DIR
-INSTALL_DIR="${USER_DIR:-$INSTALL_DIR}"
+
+if [ "$NONINT" = "1" ]; then
+  ok "Headless: using $INSTALL_DIR (set NOMII_DIR to override)"
+else
+  ask "Installation directory [${INSTALL_DIR}]:"
+  read -r USER_DIR
+  INSTALL_DIR="${USER_DIR:-$INSTALL_DIR}"
+fi
 
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
@@ -128,11 +169,18 @@ step 3 "Configure Nomii AI"
 if [ -f ".env" ]; then
   echo ""
   warn "An existing .env configuration was found."
-  ask "Reconfigure from scratch? Existing settings will be overwritten. [y/N]"
-  read -r REDO
-  if [[ ! "$REDO" =~ ^[Yy]$ ]]; then
-    ok "Keeping existing configuration — skipping setup."
-    SKIP_CONFIG=1
+  if [ "$NONINT" = "1" ]; then
+    ok "Headless: keeping existing .env (set NOMII_FORCE_RECONFIGURE=1 to overwrite)"
+    if [ "${NOMII_FORCE_RECONFIGURE:-0}" != "1" ]; then
+      SKIP_CONFIG=1
+    fi
+  else
+    ask "Reconfigure from scratch? Existing settings will be overwritten. [y/N]"
+    read -r REDO
+    if [[ ! "$REDO" =~ ^[Yy]$ ]]; then
+      ok "Keeping existing configuration — skipping setup."
+      SKIP_CONFIG=1
+    fi
   fi
 fi
 
@@ -146,30 +194,48 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   ${W}Your public URL${NC}"
   echo -e "   ${D}The web address where Nomii will be accessible."
   echo -e "   Examples: https://nomii.yourfirm.com  or  http://192.168.1.100${NC}"
-  ask "Public URL [http://localhost]:"
-  read -r PUBLIC_URL
-  PUBLIC_URL="${PUBLIC_URL:-http://localhost}"
+  if [ "$NONINT" = "1" ]; then
+    PUBLIC_URL="${NOMII_PUBLIC_URL:-http://localhost}"
+    ok "Headless: using $PUBLIC_URL"
+  else
+    ask "Public URL [http://localhost]:"
+    read -r PUBLIC_URL
+    PUBLIC_URL="${PUBLIC_URL:-http://localhost}"
+  fi
 
   # ── SMTP ──────────────────────────────────────
   echo ""
   echo -e "   ${W}Email (SMTP) — optional but recommended${NC}"
   echo -e "   ${D}Used for advisor notifications and invite emails."
   echo -e "   Skip for now by pressing Enter — you can add it later in .env${NC}"
-  ask "SMTP host [skip]:"
-  read -r SMTP_HOST
+  if [ "$NONINT" = "1" ]; then
+    SMTP_HOST="${NOMII_SMTP_HOST:-}"
+    SMTP_PORT="${NOMII_SMTP_PORT:-465}"
+    SMTP_USER="${NOMII_SMTP_USER:-}"
+    SMTP_PASS="${NOMII_SMTP_PASS:-}"
+    SMTP_FROM="${NOMII_SMTP_FROM:-}"
+    if [ -n "$SMTP_HOST" ]; then
+      ok "Headless: SMTP $SMTP_HOST:$SMTP_PORT (user $SMTP_USER)"
+    else
+      ok "Headless: no SMTP configured"
+    fi
+  else
+    ask "SMTP host [skip]:"
+    read -r SMTP_HOST
 
-  if [ -n "$SMTP_HOST" ]; then
-    ask "SMTP port [465]:"
-    read -r SMTP_PORT
-    SMTP_PORT="${SMTP_PORT:-465}"
-    ask "SMTP username:"
-    read -r SMTP_USER
-    ask "SMTP password:"
-    read -rs SMTP_PASS
-    echo ""
-    ask "From address [noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)]:"
-    read -r SMTP_FROM
-    SMTP_FROM="${SMTP_FROM:-noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)}"
+    if [ -n "$SMTP_HOST" ]; then
+      ask "SMTP port [465]:"
+      read -r SMTP_PORT
+      SMTP_PORT="${SMTP_PORT:-465}"
+      ask "SMTP username:"
+      read -r SMTP_USER
+      ask "SMTP password:"
+      read -rs SMTP_PASS
+      echo ""
+      ask "From address [noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)]:"
+      read -r SMTP_FROM
+      SMTP_FROM="${SMTP_FROM:-noreply@$(echo "$PUBLIC_URL" | sed 's|https\?://||' | cut -d'/' -f1)}"
+    fi
   fi
 
   # ── Cloudflare Tunnel ─────────────────────────
@@ -179,8 +245,17 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   opening firewall ports or managing SSL certificates."
   echo -e "   Create a free tunnel at: dash.cloudflare.com > Zero Trust > Networks > Tunnels"
   echo -e "   Leave blank to skip — you can add it later in .env${NC}"
-  ask "Cloudflare Tunnel token [skip]:"
-  read -r CF_TOKEN
+  if [ "$NONINT" = "1" ]; then
+    CF_TOKEN="${NOMII_CF_TOKEN:-}"
+    if [ -n "$CF_TOKEN" ]; then
+      ok "Headless: Cloudflare Tunnel token set"
+    else
+      ok "Headless: no Cloudflare Tunnel"
+    fi
+  else
+    ask "Cloudflare Tunnel token [skip]:"
+    read -r CF_TOKEN
+  fi
 
   # ── License key ──────────────────────────────
   echo ""
@@ -188,12 +263,21 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   ${D}Leave blank to start with the free trial (20 messages/mo, 1 customer)."
   echo -e "   If you already have a paid license key, enter it here."
   echo -e "   You can add or upgrade a key at any time by editing .env and restarting.${NC}"
-  ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
-  read -r NOMII_LICENSE_KEY
-  if [ -z "$NOMII_LICENSE_KEY" ]; then
-    ok "Starting with free trial — 20 messages/mo, 1 customer"
+  if [ "$NONINT" = "1" ]; then
+    NOMII_LICENSE_KEY="${NOMII_LICENSE_KEY:-}"
+    if [ -z "$NOMII_LICENSE_KEY" ]; then
+      ok "Headless: starting on free trial"
+    else
+      ok "Headless: license key set"
+    fi
   else
-    ok "License key noted — will be validated on first start"
+    ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
+    read -r NOMII_LICENSE_KEY
+    if [ -z "$NOMII_LICENSE_KEY" ]; then
+      ok "Starting with free trial — 20 messages/mo, 1 customer"
+    else
+      ok "License key noted — will be validated on first start"
+    fi
   fi
 
   # ── Generate secrets ──────────────────────────
@@ -253,13 +337,13 @@ echo ""
 echo -e "   ${D}Pulling Docker images (this may take a few minutes)...${NC}"
 echo ""
 
-docker compose -f "$COMPOSE_FILE" pull
+$DOCKER_CMD compose -f "$COMPOSE_FILE" pull
 
 echo ""
 echo -e "   ${D}Starting services...${NC}"
 echo ""
 
-docker compose -f "$COMPOSE_FILE" up -d
+$DOCKER_CMD compose -f "$COMPOSE_FILE" up -d
 
 ok "Services started"
 

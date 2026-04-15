@@ -44,9 +44,7 @@ const BrandingPanel = () => (
     <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
     <div className="relative z-10">
-      <a href="https://pontensolutions.com">
-        <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
-      </a>
+      <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
       <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
     </div>
 
@@ -195,9 +193,7 @@ const NomiiSignup = () => {
         <div className="w-full max-w-lg">
           {/* Mobile logo */}
           <div className="lg:hidden flex flex-col items-center mb-6">
-            <a href="https://pontensolutions.com">
-              <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
-            </a>
+            <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
           </div>
 
           {pendingEmail ? (

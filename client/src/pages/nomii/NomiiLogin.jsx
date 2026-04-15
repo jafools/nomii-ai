@@ -104,9 +104,7 @@ const NomiiLogin = () => {
 
         <div className="relative z-10 max-w-sm space-y-10">
           <div>
-            <a href="https://pontensolutions.com">
-              <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
-            </a>
+            <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
             <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
           </div>
 
@@ -134,9 +132,7 @@ const NomiiLogin = () => {
             /* ---- Forgot Password Form ---- */
             <div className="w-full max-w-md">
               <div className="lg:hidden flex flex-col items-center mb-8">
-                <a href="https://pontensolutions.com">
-                  <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
-                </a>
+                <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
               </div>
 
               <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Reset your password</h1>
@@ -173,9 +169,7 @@ const NomiiLogin = () => {
             /* ---- Login Form ---- */
             <div className="w-full max-w-md">
               <div className="lg:hidden flex flex-col items-center mb-8">
-                <a href="https://pontensolutions.com">
-                  <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
-                </a>
+                <img src={nomiiLogo} alt="Nomii AI" className="h-7 mb-3 brightness-0 invert" />
               </div>
 
               <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Sign in to Nomii AI</h1>

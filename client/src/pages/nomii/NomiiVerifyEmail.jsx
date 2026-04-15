@@ -63,9 +63,7 @@ const NomiiVerifyEmail = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-6">
       <div className="w-full max-w-md text-center space-y-6">
-        <a href="https://pontensolutions.com">
-          <img src={nomiiLogo} alt="Nomii AI" className="h-7 mx-auto mb-8" />
-        </a>
+        <img src={nomiiLogo} alt="Nomii AI" className="h-7 mx-auto mb-8" />
 
         {status === "loading" && (
           <div className="space-y-4">
