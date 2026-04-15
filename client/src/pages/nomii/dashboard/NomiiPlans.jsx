@@ -14,30 +14,11 @@ import {
   deactivateLicense,
 } from "@/lib/nomiiApi";
 import { ExternalLink, Crown, Users, MessageSquare, Zap, TrendingUp, AlertTriangle, Key, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { PLAN_LABELS, DEPLOYMENT_MODES } from "@/lib/constants";
 
 const STRIPE_PRICING_TABLE_ID  = "prctbl_1TBzcVBlxts7IvMoJ2bWRd47";
 const STRIPE_PUBLISHABLE_KEY   = "pk_live_U89VEYjy02VivrGxi5QF2IIw00cPn8Ts2n";
 const STRIPE_PORTAL_LINK       = "https://billing.stripe.com/p/login/28EbJ0cqz4y5gZEgS68N200";
-
-const PLAN_LABELS = {
-  free:         "Free",
-  trial:        "Trial",
-  starter:      "Starter",
-  growth:       "Growth",
-  professional: "Professional",
-  enterprise:   "Enterprise",
-  master:       "Master",
-};
-
-const PLAN_COLORS = {
-  free:         "#6B7280",
-  trial:        "#8B5CF6",
-  starter:      "#3B82F6",
-  growth:       "#10B981",
-  professional: "#C9A84C",
-  enterprise:   "#C9A84C",
-  master:       "#C9A84C",
-};
 
 function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReached }) {
   if (limit === null || limit === undefined) {
@@ -105,8 +86,9 @@ const NomiiPlans = () => {
   const isMaster    = currentPlan === "master";
   const isEnterprise = currentPlan === "enterprise";
   const isActive    = ["active"].includes(subscription?.status) && !["free", "trial"].includes(currentPlan);
-  const planColor   = PLAN_COLORS[currentPlan] || "#6B7280";
-  const planLabel   = PLAN_LABELS[currentPlan] || currentPlan;
+  const planInfo    = PLAN_LABELS[currentPlan] || { label: currentPlan, color: "#6B7280" };
+  const planColor   = planInfo.color;
+  const planLabel   = planInfo.label;
   const isTrialPlan = ["free", "trial"].includes(currentPlan);
 
   const fetchUsage = useCallback(async () => {
@@ -127,7 +109,7 @@ const NomiiPlans = () => {
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
-      .then((d) => { if (d.deployment === "selfhosted") setIsSelfHosted(true); })
+      .then((d) => { if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) setIsSelfHosted(true); })
       .catch(() => {});
   }, []);
 
@@ -293,7 +275,7 @@ const NomiiPlans = () => {
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.30)" }}>Plan</p>
                 <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
-                  {(PLAN_LABELS[licenseInfo.plan] || licenseInfo.plan)} — {licenseInfo.max_messages_month} msg/mo, {licenseInfo.max_customers} customers
+                  {(PLAN_LABELS[licenseInfo.plan]?.label || licenseInfo.plan)} — {licenseInfo.max_messages_month} msg/mo, {licenseInfo.max_customers} customers
                 </p>
               </div>
             </div>
