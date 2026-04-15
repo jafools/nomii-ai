@@ -11,11 +11,7 @@ const db = require('../../db');
 const { hashPassword, verifyPassword, generateToken, validatePasswordStrength } = require('../../services/authService');
 const { requirePlatformAuth } = require('../../middleware/platformAuth');
 
-// ============================================================
-// POST /api/platform/auth/setup
-// One-time setup: create the first platform admin.
-// Blocked once any platform admin exists.
-// ============================================================
+// One-time setup: creates the first platform admin. Blocks once one exists.
 router.post('/setup', async (req, res, next) => {
   try {
     // Only allowed if no platform admins exist yet
@@ -56,9 +52,6 @@ router.post('/setup', async (req, res, next) => {
 });
 
 
-// ============================================================
-// POST /api/platform/auth/login
-// ============================================================
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -98,9 +91,6 @@ router.post('/login', async (req, res, next) => {
 });
 
 
-// ============================================================
-// GET /api/platform/auth/me
-// ============================================================
 router.get('/me', requirePlatformAuth(), async (req, res, next) => {
   try {
     const { platform_admin_id } = req.platformAdmin;

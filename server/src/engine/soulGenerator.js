@@ -1,18 +1,13 @@
 /**
  * NOMII AI — Agent Soul Generator
  *
- * Generates a rich, industry-appropriate agent soul template from a tenant's
- * onboarding data (company name, agent name, industry, description).
- *
- * The generated soul is stored in tenants.agent_soul_template and pre-applied
- * to every new customer's soul_file when they are created.
- *
- * This replaces manual soul seeding — every new tenant gets a proper agent
- * identity automatically from the moment they finish onboarding.
+ * Generates an industry-appropriate agent soul from a tenant's onboarding
+ * data (company, agent name, vertical, description). The generated soul is
+ * stored in tenants.agent_soul_template and copied into each new customer's
+ * soul_file on creation.
  *
  * Usage:
  *   const soul = await generateAgentSoul(tenant, apiKey);
- *   // Returns a soul object ready to store in agent_soul_template
  */
 
 const Anthropic = require('@anthropic-ai/sdk');

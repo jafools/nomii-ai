@@ -70,9 +70,6 @@ const FIELD_ALIASES = {
 // Financial column detection suffixes
 const FINANCIAL_SUFFIXES = ['_balance', '_monthly', '_value', '_income', '_payment', '_amount'];
 
-// ============================================================
-// POST /api/customers — Create a single customer (admin only)
-// ============================================================
 router.post('/', requireAuth(), requireTenantScope(), async (req, res, next) => {
   try {
     if (!['admin'].includes(req.user.role) && req.user.user_type !== 'advisor') {
@@ -122,13 +119,9 @@ router.post('/', requireAuth(), requireTenantScope(), async (req, res, next) => 
 });
 
 
-// ============================================================
-// POST /api/customers/import — Bulk CSV import (admin only)
-//
-// Accepts { csv_text: "...", default_password: "..." } in JSON body.
-// The frontend reads the file via FileReader and sends the string.
-// Returns { created, skipped, errors } summary.
-// ============================================================
+// Bulk CSV import (admin only).
+// Body: { csv_text, default_password }. Frontend reads the file via FileReader
+// and sends the raw string. Returns { created, skipped, errors } summary.
 router.post('/import', requireAuth(), requireTenantScope(), async (req, res, next) => {
   try {
     if (req.user.role !== 'admin') {

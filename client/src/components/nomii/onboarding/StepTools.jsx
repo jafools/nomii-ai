@@ -230,17 +230,15 @@ export default function StepTools({ nomiiTenant, advance, stepIndex, onSkip }) {
     }
 
     try {
-      // Create each enabled tool in parallel
       await Promise.all(
         enabledTypes.map(type => {
           const info = TOOL_ONBOARDING[type];
           const trigger = triggers[type] || info.default_trigger;
           const config  = configs[type] || {};
 
-          // Build machine name: e.g. "look_up_client_data" from heading
+          // Machine name must be unique per tenant; random suffix avoids
+          // collisions when the same tool type is enabled more than once.
           const machineName = type + "_" + (Math.random().toString(36).slice(2, 6));
-
-          // Friendly display name from heading
           const displayName = info.heading;
 
           return createTool({

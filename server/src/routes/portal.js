@@ -2855,9 +2855,7 @@ router.delete('/tools/:toolId', async (req, res, next) => {
 });
 
 
-// =============================================================================
-// DATA API KEY MANAGEMENT
-// =============================================================================
+// --- Data API key management ---
 
 // bcrypt — graceful fallback
 let bcrypt;

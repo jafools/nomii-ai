@@ -37,7 +37,6 @@ function getTransporter() {
   return _transporter;
 }
 
-// Keep old name for minimal diff in callers
 function createTransporter() {
   return getTransporter();
 }
@@ -742,9 +741,6 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
 }
 
 
-// ============================================================
-// sendLicenseKeyEmail — deliver a self-hosted license key
-// ============================================================
 async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt }) {
   const transporter = createTransporter();
   if (!transporter) {

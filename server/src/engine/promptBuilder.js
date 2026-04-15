@@ -52,10 +52,6 @@
  *                                                   greeted — suppress re-greet.
  */
 
-// ============================================================
-// MAIN PROMPT BUILDER
-// ============================================================
-
 /**
  * Assemble the full system prompt for one chat turn.
  *
@@ -109,9 +105,7 @@ ${buildSessionRulesBlock(customer, tenant, date, widgetGreeted)}`;
 }
 
 
-// ============================================================
-// PROMPT SECTIONS
-// ============================================================
+// --- Prompt sections ---
 
 function buildIdentityBlock(soul, tenant, verticalConfig) {
   const identity = soul.base_identity || {};
@@ -635,10 +629,7 @@ RESPONSE LENGTH: Keep replies SHORT and conversational — 2-4 sentences is idea
 }
 
 
-// ============================================================
-// MOCK LLM RESPONSE (for development before API key)
-// ============================================================
-
+// Mock LLM response — used when no API key is configured (local dev).
 function generateMockResponse(customerName, messageContent, agentDisplayName) {
   const lowerMsg = messageContent.toLowerCase();
   const firstName = customerName.split(' ')[0];
@@ -672,10 +663,6 @@ function generateMockResponse(customerName, messageContent, agentDisplayName) {
   return `That's a great question, ${firstName}. Let me think through this with you. Based on what I know about your situation, here are some things to consider...\n\nCould you tell me a bit more about what prompted this? That will help me give you more relevant information.\n\n*As always, for specific decisions, your advisor is available to discuss the details with you.*`;
 }
 
-
-// ============================================================
-// EXPORTS
-// ============================================================
 
 module.exports = {
   buildSystemPrompt,
