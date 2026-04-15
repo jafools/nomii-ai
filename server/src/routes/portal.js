@@ -159,13 +159,28 @@ router.get('/me', async (req, res, next) => {
 
 
 // PUT /api/portal/admin/profile  — update admin's own name
+// Body: { first_name?: string, last_name?: string }
 router.put('/admin/profile', async (req, res, next) => {
   try {
-    const { first_name, last_name } = req.body;
+    const { first_name, last_name } = req.body || {};
+
+    // Guard against non-string payloads (e.g. UI bug submitting {first_name: null}
+    // as a number). COALESCE already handles undefined, but an explicit array or
+    // object would reach the DB as a JSON value which fails the VARCHAR cast.
+    if (first_name !== undefined && first_name !== null && typeof first_name !== 'string') {
+      return res.status(400).json({ error: 'first_name must be a string' });
+    }
+    if (last_name !== undefined && last_name !== null && typeof last_name !== 'string') {
+      return res.status(400).json({ error: 'last_name must be a string' });
+    }
+
+    const cleanFirst = typeof first_name === 'string' ? first_name.trim().slice(0, 100) : null;
+    const cleanLast  = typeof last_name  === 'string' ? last_name.trim().slice(0, 100)  : null;
+
     await db.query(
       `UPDATE tenant_admins SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name)
        WHERE id = $3`,
-      [first_name || null, last_name || null, req.portal.admin_id]
+      [cleanFirst || null, cleanLast || null, req.portal.admin_id]
     );
     res.json({ ok: true });
   } catch (err) { next(err); }
@@ -363,17 +378,26 @@ router.post('/products/upload', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /api/portal/products
+// Body: { name: string (required),
+//         description?, category?, price_info?, notes?: string }
 router.post('/products', async (req, res, next) => {
   try {
-    const { name, description, category, price_info, notes } = req.body;
-    if (!name) return res.status(400).json({ error: 'name is required' });
+    const { name, description, category, price_info, notes } = req.body || {};
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'name is required' });
+    }
 
     const { rows } = await db.query(
       `INSERT INTO tenant_products (tenant_id, name, description, category, price_info, notes)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.portal.tenant_id, name, description || null, category || null,
-       price_info || null, notes || null]
+      [req.portal.tenant_id,
+       name.trim().slice(0, 255),
+       typeof description === 'string' ? description.slice(0, 2000) : null,
+       typeof category    === 'string' ? category.slice(0, 100)     : null,
+       typeof price_info  === 'string' ? price_info.slice(0, 255)   : null,
+       typeof notes       === 'string' ? notes.slice(0, 1000)       : null]
     );
 
     await markStepComplete(req.portal.tenant_id, 'products');
@@ -967,15 +991,27 @@ router.get('/customers/:id', async (req, res, next) => {
 });
 
 // PUT /api/portal/customers/:id
+// Body: { first_name?: string, last_name?: string }
 router.put('/customers/:id', async (req, res, next) => {
   try {
-    const { first_name, last_name } = req.body;
+    const { first_name, last_name } = req.body || {};
+
+    if (first_name !== undefined && first_name !== null && typeof first_name !== 'string') {
+      return res.status(400).json({ error: 'first_name must be a string' });
+    }
+    if (last_name !== undefined && last_name !== null && typeof last_name !== 'string') {
+      return res.status(400).json({ error: 'last_name must be a string' });
+    }
+
+    const cleanFirst = typeof first_name === 'string' ? first_name.trim().slice(0, 100) : null;
+    const cleanLast  = typeof last_name  === 'string' ? last_name.trim().slice(0, 100)  : null;
+
     const { rowCount } = await db.query(
       `UPDATE customers SET
          first_name = COALESCE($1, first_name),
          last_name  = COALESCE($2, last_name)
        WHERE id = $3 AND tenant_id = $4 AND deleted_at IS NULL`,
-      [first_name, last_name, req.params.id, req.portal.tenant_id]
+      [cleanFirst, cleanLast, req.params.id, req.portal.tenant_id]
     );
     if (rowCount === 0) return res.status(404).json({ error: 'Customer not found' });
     res.json({ ok: true });
@@ -3025,13 +3061,26 @@ router.get('/customers/:id/data', requirePortalAuth, async (req, res, next) => {
 });
 
 // POST /api/portal/customers/:id/data — add or update a single data record
+// Body: { category: string, label: string, value?, secondary_value?, value_type?: string,
+//         metadata?: object }
 router.post('/customers/:id/data', requirePortalAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { category, label, value, secondary_value, value_type, metadata } = req.body;
+    const { category, label, value, secondary_value, value_type, metadata } = req.body || {};
 
-    if (!category || !label) {
-      return res.status(400).json({ error: 'category and label are required' });
+    if (typeof category !== 'string' || !category.trim()) {
+      return res.status(400).json({ error: 'category is required' });
+    }
+    if (typeof label !== 'string' || !label.trim()) {
+      return res.status(400).json({ error: 'label is required' });
+    }
+    if (value_type !== undefined && value_type !== null && typeof value_type !== 'string') {
+      return res.status(400).json({ error: 'value_type must be a string' });
+    }
+    // metadata is stored as JSONB — reject anything that won't round-trip
+    if (metadata !== undefined && metadata !== null &&
+        (typeof metadata !== 'object' || Array.isArray(metadata))) {
+      return res.status(400).json({ error: 'metadata must be an object' });
     }
 
     const { rows: cRows } = await db.query(
