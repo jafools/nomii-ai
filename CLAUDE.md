@@ -224,6 +224,22 @@ npx @claude-flow/cli@latest doctor --fix
 
 Product renamed from Knomi AI → Nomii AI on 2026-03-18. DB name `knomi_ai` and user `knomi` kept to avoid breaking production.
 
+### Marketing-site repo (ponten-solutions) — CRITICAL deploy gotcha
+
+The sibling `jafools/ponten-solutions` repo (checked out at `~/ponten-solutions` on the Proxmox VM, hosts `pontensolutions.com`) is **Lovable-managed**. Lovable auto-syncs GitHub commits into its Version History panel, but **does NOT auto-publish to production**. Austin must manually click **Publish** in the Lovable UI after every `git push` for the change to go live.
+
+A successful `git push origin main` is step 1 of 2. Step 2 is Austin publishing in Lovable. Don't mark a ponten-solutions task complete until Austin confirms "published" AND a bundle-hash curl-grep of `pontensolutions.com` shows the new content (HTTP 200 is NOT sufficient — Vite SPAs return 200 for every route):
+
+```bash
+NEW_BUNDLE=$(curl -s https://pontensolutions.com/products/nomii-ai \
+  | grep -oE 'src="/assets/[^"]+\.js"' | head -1 | sed 's/src="//;s/"$//')
+curl -s "https://pontensolutions.com${NEW_BUNDLE}" \
+  | grep -c "<unique-string-from-latest-commit>"
+# expect 1 once Lovable publishes
+```
+
+Full detail: see [[wiki/concepts/lovable-deploy-pipeline]] in the vault, or memory `reference_lovable_manual_publish.md`.
+
 ## Second Brain (Obsidian Vault)
 
 Vault path: `C:\Users\ajace\Documents\Work\Obsidian\jafools' Vault`

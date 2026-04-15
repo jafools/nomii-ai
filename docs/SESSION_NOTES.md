@@ -5,7 +5,106 @@
 
 ---
 
-## Last updated: 2026-04-15 evening (self-hosted purchase funnel validated — live Stripe smoke test passed)
+## Last updated: 2026-04-15 late-evening (marketing-page buyer-journey fork — Cloud vs Self-Hosted)
+
+Shipped Austin's explicit ask from the previous session: a clear two-path fork on the Nomii product page so visitors immediately see both deployment options. Work was done in the `ponten-solutions` repo (not this one), committed directly on the Proxmox VM at `~/ponten-solutions`, pushed to `origin/main`, Lovable auto-redeploys.
+
+### What shipped (ponten-solutions commit `2086711`)
+
+New **"Two Ways to Run Nomii"** section inserted between the hero and "The Challenge" section on `/products/nomii-ai`. Two equal-weight cards:
+
+- **Nomii Cloud** (★ FASTEST TO START badge) → `https://nomii.pontensolutions.com/nomii/signup` — "We run it. You focus on your customers." 5-min signup, fully managed, auto-updates, 14-day trial, from $49/mo.
+- **Nomii Self-Hosted** (accent color `#C9A84C` to match SelfHostedNomii.tsx) → `/nomii/self-hosted` — "You run it. Data stays on your own infrastructure." One-line install, data stays on your network, BYO Anthropic key, free trial, from $49/mo.
+- **"Not sure which fits?"** → `/contact` (Book a 20-minute chat).
+
+Design follows existing patterns in the file: `card-glass`, `FadeIn`, `section-padding`/`section-container`, eyebrow label + gradient-text headline. Cloud card gets the same visual priority treatment as the "MOST POPULAR" Growth plan card in the pricing section (primary-color border + glow). Self-Hosted card uses the gold accent from SelfHostedNomii.tsx for cohesion across the on-prem flow.
+
+### Drive-by cleanups in the same commit
+
+- **5x `app.pontensolutions.com/nomii/signup` → `nomii.pontensolutions.com/nomii/signup`** (hero CTA, 3 pricing cards, closing CTA). Skips the `app.` → `nomii.` redirect hop and survives eventual retirement of the `app.` subdomain.
+- **Reframed "Need total control?" row** (line ~960 of NomiiAI.tsx) into "Enterprise & regulated industries" — since the new section now owns the self-hosted fork, this row is now pitched for SLA/BAA/volume-pricing conversations on either deployment. CTA text changed from "Buy a License" → "Self-Hosted Plans".
+- Added `Cloud, Server` icons to the lucide-react import list.
+
+### What was NOT touched
+
+Hero, Challenge, Architecture (Soul/Memory), Anonymous Widget, Use Cases, Business, Features, Who It's For, 3 SaaS pricing cards (Starter/Growth/Professional), Data Model row, Closing CTA. Non-destructive addition + targeted tweaks only.
+
+### Verification
+
+- Local TSX syntax check via `npx esbuild` on the VM — PARSE OK (no type errors)
+- `git diff --stat`: +120/−10 in a single file
+- `git push origin main`: `ec6a63f..2086711 main -> main` — confirmed via `git ls-remote` that GitHub main HEAD is `2086711`.
+
+### 🔑 New gotcha discovered: Lovable does NOT auto-publish on GitHub pushes
+
+After the push landed, the deployed bundle (`/assets/index-D8j9QHlx.js`) still served pre-Apr-14 content:
+
+| Commit | String signature | In deployed bundle? |
+|---|---|---|
+| `2086711` (today, mine) | "Two Ways to Run Nomii" | ❌ 0 |
+| `ec6a63f` (Apr 14) | "Run Nomii AI on your own" | ❌ 0 |
+| `bfbbbf3` (Apr 14) | "Buy a License" | ❌ 0 |
+| pre-`bfbbbf3` | "Need total control" | ✅ 1 |
+
+At first I thought the Vercel auto-deploy was broken. It wasn't. Austin showed me a screenshot of his Lovable UI: **my commit WAS synced into Lovable's version history, Lovable just hadn't published it to production.** Lovable's GitHub integration syncs commits to version history automatically, but the live URL stays on whatever the last *published* build was. Austin has to click **Publish** in Lovable manually.
+
+**Consequence for future marketing-page work in `ponten-solutions`:**
+- `git push origin main` is step 1 of 2, not the whole shipping process.
+- Step 2 is: Austin clicks Publish in Lovable.
+- Don't mark a marketing-page task complete until Austin confirms "published" and a curl-grep of the deployed bundle shows the new content.
+- The Apr 14 handoff note ("Austin must have applied it between sessions … `/nomii/self-hosted` returning HTTP 200") was also misleading — HTTP 200 just means the SPA shell loaded. The `SelfHostedNomii` component likely wasn't in the live bundle until Austin clicked Publish. Any prior session that claimed "deployed" without a bundle-grep verification is suspect.
+
+**Hosting layer (confirmed):** Lovable → (internal pipeline) → Vercel. Response cookie `__dpl=...` confirms Vercel as the serving platform, Cloudflare is the CDN edge in front. No `vercel.json` or `.github/workflows/` in the repo — deploy config is entirely on Lovable/Vercel's side.
+
+**Saved as memory:** `reference_lovable_manual_publish.md` in the auto-memory system, indexed in `MEMORY.md`.
+
+### Status at session end
+
+- Code on GitHub at `2086711` ✓
+- Commit visible in Lovable Version History ✓
+- Austin is clicking Publish now — live in a few minutes.
+
+Post-publish verification:
+```bash
+NEW_BUNDLE=$(curl -s https://pontensolutions.com/products/nomii-ai | grep -oE 'src="/assets/[^"]+\.js"' | head -1 | sed 's/src="//;s/"$//')
+curl -s "https://pontensolutions.com${NEW_BUNDLE}" | grep -c "Two Ways to Run Nomii"
+# Expect: 1 once Lovable publishes
+```
+
+### Gotcha captured
+
+- **Vite SPA diagnostic gotcha (reinforces an earlier one)**: curl of `/products/nomii-ai` returns the HTML shell — none of the React-rendered content. To verify copy changes on pontensolutions.com, find the `/assets/index-*.js` bundle URL in the HTML and grep the bundle. Hash in the URL changes on each deploy, so a stale hash + old content = deploy not complete yet.
+
+### Git identity warning on the VM
+
+`~/ponten-solutions` on Proxmox has no `user.name`/`user.email` configured, so commits land as `root@pontenprox.local`. Not breaking anything but worth setting once:
+```bash
+ssh nomii-prod "git config --global user.name 'Austin Ponten' && git config --global user.email '<your email>'"
+```
+
+### Security flag
+
+The `origin` remote in `~/ponten-solutions/.git/config` has a GitHub PAT embedded directly in the URL (`https://ghp_...@github.com/...`). Seen in terminal output this session → already in shell history and process tables. Rotate at GitHub → Settings → Developer settings → PATs → revoke + reissue, then `git remote set-url origin https://github.com/jafools/ponten-solutions.git` and use SSH key or credential helper instead. Low blast radius (PAT is scoped to this repo, not org-wide), but don't forget.
+
+### Next session TODO (updated)
+
+1. **Visual QA the new section in a browser** — desktop + mobile. Adjust spacing/copy if anything reads awkward.
+2. **Stripe receipts toggle** — Austin to enable "Successful payment receipts" + "Refund receipts" in Stripe Dashboard → Settings → Emails. Manual, 30 seconds.
+3. **Stale success card at `pontensolutions.com/nomii/license?success=true`** — orphaned after Apr 15 evening redirect fix. Clean up next ponten-solutions deploy.
+4. **SMTP_PASS rotation** — was visible in terminal `env` output during the earlier session. Low risk, worth rotating at convenience.
+5. **portal.js split** (3,683 LOC in nomii-ai repo) — deferred post-launch.
+6. **Delete 1,646 LOC of pre-portal zombie routes** — after 7-day prod log grep confirms no external traffic.
+7. **Hetzner CX22 migration** — still on roadmap, not blocking.
+8. **Marketing-page nitpicks** (optional): the `SelfHostedNomii.tsx` "7-day trial" copy in session notes doesn't match the actual behavior (unlimited days, capped at 20 msg/mo + 1 customer). New section copy was rewritten to say "Free trial included" — the SelfHostedNomii.tsx landing page itself is fine, but worth a copy review.
+
+### Prod HEAD state at session end
+
+- `nomii-ai` repo: `83ddc3a` (unchanged from earlier this evening — no nomii-ai code edits this session)
+- `ponten-solutions` repo: `2086711` (NEW — this session's marketing-page fork)
+
+---
+
+## Earlier this evening: 2026-04-15 evening (self-hosted purchase funnel validated — live Stripe smoke test passed)
 
 Ran a live $49 Stripe smoke test of the self-hosted Starter license flow. Payment → webhook → DB insert → license-key email → dashboard activation → plan-limits lifted — **all green end-to-end**. Prod HEAD `83ddc3a`. Self-hosted purchase funnel is shippable. Refunded the test purchase after validation.
 
