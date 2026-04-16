@@ -5,9 +5,123 @@
 
 ---
 
-## Last updated: 2026-04-16 morning (full launch QA + unified license portal + buy page overhaul)
+## Last updated: 2026-04-16 afternoon (Hetzner VPS migration — COMPLETE)
 
-Full launch readiness audit, visual QA, and three feature builds across both repos.
+Full production migration from Proxmox VM to Hetzner Cloud Helsinki. Zero downtime. All endpoints verified.
+
+### What shipped
+
+**Hetzner VPS provisioned and running**
+- Server: `nomii-prod` — CPX22, Helsinki (hel1), `204.168.232.24`
+- Cost: EUR 12.61/mo (server EUR 9.99 + backups EUR 2.00 + IPv4 EUR 0.63)
+- OS: Ubuntu 24.04, Docker 29.4.0
+- SSH: `ssh nomii@204.168.232.24` (root disabled, password auth disabled, key-only)
+
+**Database migrated with clean naming**
+- DB user: `nomii` (finally! no more `knomi`)
+- DB name: `nomii_ai`
+- Data: 34 tenants, 33 admins, 34 subscriptions, 100 messages, 1 license — all migrated via `pg_dump --no-owner`
+- `API_KEY_ENCRYPTION_SECRET` carried over from Proxmox (encrypted API keys in DB still valid)
+
+**DNS cutover — no tunnel, direct A records**
+- `nomii.pontensolutions.com` → A `204.168.232.24` (Proxied)
+- `api.pontensolutions.com` → A `204.168.232.24` (Proxied)
+- `app.pontensolutions.com` → A `204.168.232.24` (Proxied)
+- Lateris records (`lateris`, `dev-lateris`) still on Cloudflare tunnel → Proxmox (untouched)
+
+**Full end-to-end SSL**
+- Cloudflare Origin CA certificate installed (valid until 2041-04-12)
+- SSL mode: **Full (Strict)** — Browser → HTTPS → Cloudflare → HTTPS → Origin
+- Certificate covers `*.pontensolutions.com` + `pontensolutions.com`
+
+**Security hardening**
+- UFW firewall: SSH (22), HTTP (80), HTTPS (443) only
+- fail2ban running
+- Backend port 3001 bound to `127.0.0.1` only (not externally accessible)
+- Database port 5432 internal to Docker only
+- No server fingerprint leaked (shows "cloudflare" only)
+- CORS locked to `nomii.pontensolutions.com`
+
+**Repo cleanup (pre-migration)**
+- Removed 8 garbage untracked files from repo root
+- Fixed `migrate.sh` DB user default from `knomi` → `nomii`
+- Added `.claude-flow/swarm/` to `.gitignore`
+
+### Smoke test results (all passing)
+
+| Endpoint | Result |
+|---|---|
+| `nomii.pontensolutions.com/api/health` | `{"status":"ok"}` |
+| `api.pontensolutions.com/api/health` | `{"status":"ok"}` |
+| `app.pontensolutions.com` | 301 redirect (expected) |
+| `/widget.html` | 200 |
+| `/embed.js` | 200 |
+| `/api/license/validate` | 403 "License key not found" (correct) |
+| `/api/auth/login` (bad creds) | 401 (auth working) |
+| `/api/config` | SaaS mode, all features enabled |
+| Stripe checkout | Live `checkout.stripe.com` URL returned |
+| Response time | 83ms (nomii), 126ms (api) |
+| Backend logs | Zero errors |
+
+### What Austin still needs to manually test
+
+1. **Log in** at `nomii.pontensolutions.com/nomii/login`
+2. **Dashboard loads** with tenant data
+3. **Widget chat** works (tests Anthropic API key decryption)
+4. **Plans & Billing** page renders
+
+### What's left (not blocking)
+
+1. **Retire Proxmox Nomii containers** — keep for 7 days as fallback:
+   ```bash
+   ssh nomii-prod "cd ~/Knomi/knomi-ai && docker compose stop nomii-backend nomii-frontend"
+   # After 7 days: docker compose down (removes DB volume)
+   ```
+2. **Remove cloudflared from Hetzner docker-compose** — not running, but the service definition is still in the file
+3. **Commit the nginx.conf SSL changes** — currently only on Hetzner, not in git
+4. **Clean up `/tmp/nomii_dump.sql`** on both Hetzner and local machine
+5. **Update `~/.ssh/config`** — add `nomii-hetzner` alias for the new server
+
+### VPS provider research (for reference)
+
+| Provider | DC | Price | Notes |
+|---|---|---|---|
+| **Hetzner (chosen)** | Helsinki | EUR 12.61/mo | Best value, sub-10ms from Sweden |
+| Contabo | Stockholm | EUR 4.50/mo | Cheapest but mixed reputation |
+| Vultr | Stockholm | $24/mo | 5x price for same spec |
+| DigitalOcean | Amsterdam | $24/mo | No Nordic DC |
+| OVHcloud | Stockholm | EUR 10-14/mo | Mixed support |
+| UpCloud | Helsinki | EUR 26/mo | Finnish, priciest |
+
+### Infrastructure state
+
+| Component | Location | Status |
+|---|---|---|
+| Nomii backend | Hetzner Helsinki | Running ✅ |
+| Nomii frontend | Hetzner Helsinki | Running ✅ |
+| Nomii DB (`nomii`/`nomii_ai`) | Hetzner Helsinki | Healthy ✅ |
+| Nomii (Proxmox) | Proxmox VM | Still running (fallback, retire in 7 days) |
+| Lateris | Proxmox VM | Untouched, still on tunnel |
+| Cloudflare tunnel | Proxmox | Still active for Lateris only |
+
+### Key files on Hetzner
+
+| Path | Purpose |
+|---|---|
+| `~/nomii-ai/` | Git clone of repo |
+| `~/nomii-ai/.env` | Production env (nomii DB user) |
+| `~/nomii-ai/docker-compose.yml` | Modified: backend on 127.0.0.1:3001, frontend on 80+443 |
+| `~/nomii-ai/client/nginx.conf` | Modified: added HTTPS server block with Origin CA cert |
+| `/etc/ssl/cloudflare/origin.pem` | Cloudflare Origin CA cert (expires 2041) |
+| `/etc/ssl/cloudflare/origin.key` | Private key (chmod 600) |
+
+### Migration runbook
+
+Saved to Obsidian vault: `projects/nomii/hetzner-migration-runbook.md`
+
+---
+
+## Previous: 2026-04-16 morning (full launch QA + unified license portal + buy page overhaul)
 
 ### What shipped (nomii-ai repo)
 

@@ -20,7 +20,7 @@
 
 const db = require('../db');
 
-const PORTAL_URL  = (process.env.PORTAL_URL || 'https://portal.pontensolutions.com').replace(/\/$/, '');
+const PORTAL_URL  = (process.env.PORTAL_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
 const TIMEOUT_MS  = 8_000;
 const BRAND_COLOR = 'C9A84C';
 

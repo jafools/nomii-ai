@@ -578,10 +578,11 @@ async function updateMemoryAfterSession(conversationId, customerId) {
     const { rows: convRows } = await db.query(
       `SELECT co.*, c.memory_file, c.soul_file, c.first_name,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
-              t.managed_ai_enabled
+              s.managed_ai_enabled
        FROM conversations co
        JOIN customers c ON co.customer_id = c.id
        JOIN tenants t ON c.tenant_id = t.id
+       JOIN subscriptions s ON s.tenant_id = t.id
        WHERE co.id = $1`,
       [conversationId]
     );

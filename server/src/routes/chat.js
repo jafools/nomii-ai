@@ -29,10 +29,11 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
               t.id as tenant_id, t.name as tenant_name, t.agent_name,
               t.vertical, t.vertical_config,
               t.compliance_config, t.base_soul_template, t.llm_provider, t.llm_model,
-              t.managed_ai_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated
+              s.managed_ai_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated
        FROM conversations co
        JOIN customers c ON co.customer_id = c.id
        JOIN tenants t ON c.tenant_id = t.id
+       JOIN subscriptions s ON s.tenant_id = t.id
        WHERE co.id = $1`,
       [conversation_id]
     );

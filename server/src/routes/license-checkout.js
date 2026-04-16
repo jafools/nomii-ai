@@ -13,6 +13,8 @@
 
 const router = require('express').Router();
 
+const APP_URL = (process.env.APP_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
+
 const PRICE_IDS = {
   starter: {
     monthly: process.env.STRIPE_SELFHOSTED_PRICE_STARTER_MONTHLY,
@@ -58,8 +60,8 @@ router.post('/', async (req, res) => {
     const params = {
       mode:        'subscription',
       line_items:  [{ price: priceId, quantity: 1 }],
-      success_url: 'https://nomii.pontensolutions.com/nomii/license/success',
-      cancel_url:  'https://pontensolutions.com/nomii/license',
+      success_url: `${APP_URL}/nomii/license/success`,
+      cancel_url:  `${APP_URL}/nomii/license`,
       // Metadata on both the session and the subscription so the webhook can detect selfhosted
       metadata:           { product_type: 'selfhosted', plan, interval },
       subscription_data:  { metadata: { product_type: 'selfhosted', plan, interval } },

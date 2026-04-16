@@ -8,8 +8,8 @@
 set -e
 
 CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
-DB_USER="${NOMII_DB_USER:-knomi}"
-DB_NAME="${NOMII_DB_NAME:-knomi_ai}"
+DB_USER="${NOMII_DB_USER:-nomii}"
+DB_NAME="${NOMII_DB_NAME:-nomii_ai}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/../server/db/migrations" && pwd)"
 
 # Colour helpers

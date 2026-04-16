@@ -1281,9 +1281,10 @@ router.post('/greeting', requireWidgetAuth, async (req, res, next) => {
       `SELECT c.memory_file, c.soul_file,
               t.agent_name,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
-              t.managed_ai_enabled
+              s.managed_ai_enabled
        FROM customers c
        JOIN tenants t ON c.tenant_id = t.id
+       JOIN subscriptions s ON s.tenant_id = t.id
        WHERE c.id = $1 AND t.id = $2`,
       [customer_id, tenant_id]
     );
@@ -1378,7 +1379,7 @@ router.post('/verify', async (req, res, next) => {
       await db.query(
         `UPDATE tenants
          SET widget_verified_at = NOW(),
-             onboarding_steps   = onboarding_steps || '{"widget": true}'::jsonb
+             onboarding_steps   = onboarding_steps || '{"install_widget": true}'::jsonb
          WHERE widget_api_key = $1
            AND widget_verified_at IS NULL`,
         [widget_key]

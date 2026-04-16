@@ -265,7 +265,7 @@ async function checkLicenseOnStartup() {
     // subscription row seeded by seedSelfHostedTenant (20 msg, 1 customer).
     console.log('[License] No license key — running in self-hosted trial mode.');
     console.log('[License]   Limits: 20 messages/mo, 1 customer.');
-    const appUrl = (process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '');
+    const appUrl = (process.env.APP_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
     console.log(`[License]   Upgrade: ${appUrl}/nomii/license`);
     return;
   }

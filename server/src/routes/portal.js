@@ -3103,10 +3103,11 @@ router.post('/conversations/:id/summarize', async (req, res, next) => {
     const { rows: convRows } = await db.query(
       `SELECT co.id, co.customer_id, c.memory_file, c.soul_file,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
-              t.managed_ai_enabled
+              s.managed_ai_enabled
        FROM conversations co
        JOIN customers c ON co.customer_id = c.id
        JOIN tenants t ON c.tenant_id = t.id
+       JOIN subscriptions s ON s.tenant_id = t.id
        WHERE co.id = $1 AND c.tenant_id = $2`,
       [req.params.id, req.portal.tenant_id]
     );
@@ -3480,9 +3481,11 @@ router.post('/tools/:toolId/test', async (req, res, next) => {
 
     // 2. Load tenant for API key resolution
     const { rows: tenantRows } = await db.query(
-      `SELECT id, name, agent_name, llm_model, managed_ai_enabled,
-              llm_api_key_encrypted, llm_api_key_iv, llm_api_key_validated
-       FROM tenants WHERE id = $1`,
+      `SELECT t.id, t.name, t.agent_name, t.llm_model, s.managed_ai_enabled,
+              t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated
+       FROM tenants t
+       JOIN subscriptions s ON s.tenant_id = t.id
+       WHERE t.id = $1`,
       [req.portal.tenant_id]
     );
     const tenant = tenantRows[0];

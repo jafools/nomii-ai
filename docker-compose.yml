@@ -32,7 +32,7 @@ services:
       PORT: 3001
       JWT_SECRET: ${JWT_SECRET:-nomii-dev-secret-change-in-production}
       WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET:-}
-      FRONTEND_URL: ${FRONTEND_URL:-https://app.pontensolutions.com}
+      FRONTEND_URL: ${FRONTEND_URL:-https://nomii.pontensolutions.com}
       FRONTEND_URL_PROD: ${FRONTEND_URL_PROD:-}
       JWT_EXPIRY: ${JWT_EXPIRY:-24h}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}

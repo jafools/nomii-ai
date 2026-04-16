@@ -42,7 +42,7 @@ function createTransporter() {
 }
 
 const FROM = process.env.SMTP_FROM || 'Nomii AI <hello@pontensolutions.com>';
-const APP_URL = (process.env.APP_URL || 'https://app.pontensolutions.com').replace(/\/$/, '');
+const APP_URL = (process.env.APP_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
 const SMTP_USER = process.env.SMTP_USER;
 // Derive the public domain from APP_URL for use in email footers
 const APP_DOMAIN = APP_URL.replace(/^https?:\/\//, '').split('/')[0];

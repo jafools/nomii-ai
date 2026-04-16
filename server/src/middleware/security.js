@@ -25,7 +25,6 @@
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',                                        // Vite dev
   'http://localhost:3000',                                        // Local preview
-  'https://app.pontensolutions.com',                              // Legacy frontend URL
   'https://nomii.pontensolutions.com',                            // Production portal (primary)
   'https://pontensolutions.com',                                  // Marketing site (license purchase page)
   process.env.FRONTEND_URL,                                       // Override via env
