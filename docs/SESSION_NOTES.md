@@ -5,7 +5,52 @@
 
 ---
 
-## Last updated: 2026-04-16 afternoon (Hetzner VPS migration — COMPLETE)
+## Last updated: 2026-04-16 late-evening (pre-test targeted cleanup — deployed to Hetzner)
+
+Targeted cleanup before Austin's manual testing of both SaaS and self-hosted flows.
+
+### What shipped (commit `4820b6c`, deployed)
+
+**Critical: managed_ai_enabled SQL fix (5 queries)**
+- Column `managed_ai_enabled` lives on `subscriptions`, NOT `tenants`
+- 5 queries were reading `t.managed_ai_enabled` — hard PostgreSQL crash
+- Fixed: `widget.js:1284` (greeting), `portal.js:3106` (summarize), `portal.js:3483` (tool test), `memoryUpdater.js:581`, `chat.js:32`
+- Each now JOINs `subscriptions s ON s.tenant_id = t.id`
+
+**Onboarding step key standardized**
+- `widget.js:1381` was setting `{"widget": true}`, setup.js uses `install_widget`
+- Standardized to `install_widget` everywhere
+
+**Stripe checkout URLs dynamic**
+- `license-checkout.js` now uses `process.env.APP_URL` instead of hardcoded domain
+
+**Stale URL defaults fixed**
+- `emailService.js`, `notificationService.js`, `licenseService.js` — all default to `nomii.pontensolutions.com`
+- Removed legacy `app.pontensolutions.com` from CORS allowlist
+- `docker-compose.yml` FRONTEND_URL default updated
+
+**CLAUDE.md updated** (commit `cfd10c0`)
+- Replaced stale Proxmox VPS section with Hetzner deploy workflow
+- Documented `git stash/pull/pop` pattern (Hetzner has local docker-compose overrides)
+
+### Prod state
+- Hetzner: `4820b6c` deployed, health check passing
+- Proxmox: still running (cloudflared serves Lateris — do NOT stop)
+
+### Next session: Austin's manual testing
+1. **SaaS flow**: signup → email verify → login → onboarding (6 steps) → dashboard → widget chat
+2. **Self-hosted flow**: install.sh → setup wizard → onboarding (widget step) → dashboard → widget chat
+3. After testing: retire Proxmox Nomii containers (`docker compose stop backend frontend db` — leave cloudflared)
+
+### Still deferred (not blocking)
+- `portal.js` split (3,683 LOC)
+- Delete 1,646 LOC of pre-portal zombie routes (after 7-day prod log grep)
+- Customer-facing self-hosted Getting Started guide
+- Update README.md (still references Covenant Trust)
+
+---
+
+## Previous: 2026-04-16 afternoon (Hetzner VPS migration — COMPLETE)
 
 Full production migration from Proxmox VM to Hetzner Cloud Helsinki. Zero downtime. All endpoints verified.
 
