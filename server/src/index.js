@@ -190,6 +190,17 @@ app.use('/api/license', require('./routes/license'));
 // Routes — Public license checkout (creates Stripe Checkout Session for self-hosted license purchases)
 app.use('/api/public/license/checkout', require('./routes/license-checkout'));
 
+// Routes — Public portal license lookup (called by pontensolutions.com license portal)
+const portalLookupLimiter = makeRateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'rate_limited' },
+});
+app.use('/api/public/portal', portalLookupLimiter);
+app.use('/api/public/portal', require('./routes/public-portal'));
+
 // Routes — Protected (auth middleware applied per-route)
 app.use('/api/tenants', require('./routes/customTools'));   // custom tool builder (CRUD)
 app.use('/api/tenants', require('./routes/tenants'));
