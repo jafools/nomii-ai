@@ -5,7 +5,92 @@
 
 ---
 
-## Last updated: 2026-04-15 late-evening (marketing-page buyer-journey fork — Cloud vs Self-Hosted)
+## Last updated: 2026-04-16 morning (full launch QA + unified license portal + buy page overhaul)
+
+Full launch readiness audit, visual QA, and three feature builds across both repos.
+
+### What shipped (nomii-ai repo)
+
+**Commit `9685343`** — Portal license lookup endpoint
+- New `POST /api/public/portal/licenses` at `server/src/routes/public-portal.js`
+- Accepts portal session token, verifies via Cloudflare Worker proxy, returns Nomii licenses for the authenticated email
+- Gated by `NOMII_LICENSE_MASTER=true`, rate-limited 10 req/min
+- Deployed to prod via `docker compose up -d --build backend`
+
+### What shipped (ponten-solutions repo — 3 commits)
+
+**Commit `e7d1eb2`** — Badge clipping fix + self-hosted nav
+- Removed `overflow-hidden` from Cloud card and Growth pricing card (badges were clipped)
+- Added `rounded-t-2xl` to Growth card decorative header to preserve corner clipping
+- Wrapped `SelfHostedNomii.tsx` in `<Layout>` for Navbar + Footer
+- Added `/nomii/self-hosted` to Navbar product-page check
+
+**Commit `2beb197`** — Unified license portal + Buy page CTA
+- Portal fetches Nomii licenses alongside Lateris, displays grouped by product
+- New `NomiiLicenseCard` component (shows plan, status, key, instance_id)
+- `portalApi.ts`: `getNomiiLicenses()` function + `NomiiLicenseRecord` type
+- Login branding updated to product-neutral (both product icons)
+- Buy page CTA updated (was pointing to product explainer)
+
+**Commit `38b129a`** — Combined Cloud + Self-Hosted pricing page
+- Cloud/Self-Hosted deploy mode toggle on `/nomii/license`
+- Cloud mode: SaaS pricing tiers with "Start Free Trial" → signup
+- Self-Hosted mode: existing Stripe checkout pricing (unchanged)
+- Bottom CTA dynamically offers the other deploy mode
+- Buy overview CTA now links directly to `/nomii/license`
+
+### Launch readiness verified
+
+| Touchpoint | Status |
+|---|---|
+| Marketing page "Two Ways to Run Nomii" | Live ✅ |
+| Self-hosted landing page + nav | Live ✅ |
+| SaaS signup page | ✅ |
+| Login page | ✅ |
+| License pricing (Cloud + Self-Hosted) | Live ✅ |
+| Stripe checkout (live mode) | ✅ |
+| License validate (master) | ✅ |
+| Widget embed.js + widget.html | ✅ |
+| Backend /api/health | ✅ |
+| Install script (GitHub raw) | ✅ |
+| Client build | Passes ✅ |
+| Server syntax | All files clean ✅ |
+| Stripe receipts | Already enabled ✅ |
+| SMTP_PASS | Not leaked externally ✅ |
+
+### Manual items resolved
+- Stripe receipt emails — already toggled on
+- SMTP_PASS — only visible in Claude session, not leaked externally
+- GitHub PAT — low priority, deferred (scoped to one repo, only root has access)
+
+### Next session: Hetzner VPS port
+
+Austin wants to do the VPS migration in a fresh session. Steps:
+1. Provision Hetzner CX22 + SSH keys
+2. Harden server (ufw, fail2ban, non-root user)
+3. Install Docker + clone repo
+4. Copy `.env` + adjust secrets
+5. `pg_dump` from Proxmox → `pg_restore` on Hetzner
+6. `docker compose up -d`
+7. New Cloudflare tunnel token → point to Hetzner
+8. Smoke test all endpoints
+9. DNS cutover (Cloudflare tunnel swap)
+10. Verify + retire Proxmox Nomii containers
+
+Estimated: 1-2 hours. No code changes needed — same docker-compose.yml works anywhere.
+
+### Still deferred (not blocking launch)
+- portal.js split (3,683 LOC) — post-first-customer
+- Delete zombie pre-portal routes (1,646 LOC) — needs 7-day prod log grep
+- Stale success card at `pontensolutions.com/nomii/license?success=true` — orphaned, nothing links to it
+
+### Prod HEAD state
+- `nomii-ai`: `9685343` (deployed to Proxmox)
+- `ponten-solutions`: `38b129a` (published via Lovable)
+
+---
+
+## Previous: 2026-04-15 late-evening (marketing-page buyer-journey fork — Cloud vs Self-Hosted)
 
 Shipped Austin's explicit ask from the previous session: a clear two-path fork on the Nomii product page so visitors immediately see both deployment options. Work was done in the `ponten-solutions` repo (not this one), committed directly on the Proxmox VM at `~/ponten-solutions`, pushed to `origin/main`, Lovable auto-redeploys.
 
