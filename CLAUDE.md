@@ -195,23 +195,46 @@ npx @claude-flow/cli@latest doctor --fix
 
 ### Architecture
 
-- **Server:** Node.js + Express, PostgreSQL (`knomi_ai` DB, user `knomi`)
+- **Server:** Node.js + Express, PostgreSQL (`nomii_ai` DB, user `nomii`)
 - **Client:** React (Vite), served via nginx, API calls via `client/src/lib/nomiiApi.js`
 - **Widget:** Embeddable chat widget (`server/public/widget.html` + `embed.js`)
-- **Deployment:** Docker Compose on Proxmox VPS (`pontenprox`)
+- **Deployment:** Docker Compose on Hetzner Cloud Helsinki (`nomii-prod`)
 - **Three modes:** SaaS, Self-Hosted (`NOMII_DEPLOYMENT=selfhosted`), License Master (`NOMII_LICENSE_MASTER=true`)
 
-### VPS Infrastructure
+### Hetzner Production (nomii-prod)
 
 | Component | Detail |
 |-----------|--------|
-| DB container | `nomii-db` (postgres:16.9-alpine), port NOT exposed to host |
-| Backend | `nomii-backend` (built from source), port 3001 |
-| Frontend | `nomii-frontend` (nginx), port 80 |
-| Tunnel | `nomii-cloudflared` via Cloudflare |
-| DB credentials | `knomi:knomi_prod_2026 / knomi_ai` |
-| Migrations | Run via `docker exec -i nomii-db psql -U knomi -d knomi_ai < file.sql` |
-| Rebuild | `cd ~/Knomi/knomi-ai && docker compose up -d --build backend frontend` |
+| Server | CPX22, Helsinki (hel1), `204.168.232.24`, EUR 12.61/mo |
+| SSH | `ssh nomii@204.168.232.24` (key-only, root disabled) |
+| Repo | `~/nomii-ai/` |
+| DB container | `nomii-db` (postgres:16.9-alpine), internal only |
+| Backend | `nomii-backend`, port 3001 bound to 127.0.0.1 |
+| Frontend | `nomii-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
+| DB credentials | `nomii:nomii_prod_2026 / nomii_ai` |
+| SSL | Cloudflare Full (Strict), Origin CA cert valid until 2041 |
+| Firewall | UFW: SSH (22), HTTP (80), HTTPS (443) only |
+
+### Deploy to production (Hetzner)
+
+```bash
+# Standard deploy (after pushing to main):
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git pull && git stash pop && docker compose up -d --build backend frontend"
+
+# Verify:
+ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
+
+# Run a migration:
+ssh nomii@204.168.232.24 "docker exec -i nomii-db psql -U nomii -d nomii_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
+
+# View backend logs:
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=100"
+
+# Restart without rebuild:
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose restart backend frontend"
+```
+
+**Important:** Hetzner has local docker-compose.yml changes (backend bound to 127.0.0.1, nginx SSL block). Always `git stash && git pull && git stash pop` — never `git pull` directly or the local overrides will conflict.
 
 ### Key env vars for self-hosted
 
@@ -219,10 +242,6 @@ npx @claude-flow/cli@latest doctor --fix
 - `APP_URL` — used by email service, portal, license service to derive domain/URLs
 - `NOMII_DEPLOYMENT=selfhosted` — enables single-tenant mode
 - `NOMII_LICENSE_MASTER=true` — enables license validation endpoints on SaaS VPS
-
-### Brand note
-
-Product renamed from Knomi AI → Nomii AI on 2026-03-18. DB name `knomi_ai` and user `knomi` kept to avoid breaking production.
 
 ### Marketing-site repo (ponten-solutions) — CRITICAL deploy gotcha
 
