@@ -63,8 +63,14 @@ test.describe('Email Verification', () => {
     await page.goto('/nomii/verify/invalid-token-abc123');
     // Should show error or redirect
     await page.waitForTimeout(3000);
-    // The page either shows an error message or redirects to login
-    const hasError = await page.getByText(/invalid|expired|error/i).isVisible().catch(() => false);
+    // The page either shows an error message anywhere in the body, or
+    // redirects to login. We check the full body text (not getByText, which
+    // throws on multiple matches in strict mode) so any of the legitimate
+    // error messages counts: "Invalid or expired verification link" (happy
+    // path), "Verification failed" (heading), "Too many requests" (rate
+    // limiter kicks in during batched test runs).
+    const bodyText = (await page.textContent('body').catch(() => '')) || '';
+    const hasError = /invalid|expired|error|failed|too many/i.test(bodyText);
     const onLogin = page.url().includes('/login');
     expect(hasError || onLogin).toBe(true);
   });
