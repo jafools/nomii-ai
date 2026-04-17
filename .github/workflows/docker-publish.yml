@@ -65,16 +65,34 @@ jobs:
 
       # ── Tag plan ────────────────────────────────────────────
       # Branch push to main       → :edge
-      # Tag push v1.2.3           → :v1.2.3, :v1.2, :stable, :latest
+      # Tag push v1.2.3           → :1.2.3, :1.2, :stable, :latest
       # workflow_dispatch on tag  → same as tag push
       # workflow_dispatch on main → :edge
-      - name: Compute image tags
-        id: tags
+      #
+      # Each image (backend, frontend) computes its own tag set — do NOT
+      # use a combined metadata-action that emits tags for both images.
+      # The docker/build-push-action treats every tag in the list as
+      # "push the image I just built to this name", so a combined list
+      # would push backend content under the frontend's name (and vice
+      # versa on the next step). Keep them separate.
+
+      - name: Compute backend tags
+        id: backend_tags
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.BACKEND_IMAGE }}
-            ${{ env.FRONTEND_IMAGE }}
+          images: ${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Compute frontend tags
+        id: frontend_tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.FRONTEND_IMAGE }}
           tags: |
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
@@ -88,38 +106,12 @@ jobs:
         with:
           context: ./server
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          labels: ${{ steps.tags.outputs.labels }}
+          tags: ${{ steps.backend_tags.outputs.tags }}
+          labels: ${{ steps.backend_tags.outputs.labels }}
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
       # ── Frontend ────────────────────────────────────────────
-      # (metadata-action emits tags for BOTH images at once; we
-      #  split by filtering to frontend-only in a second step)
-      - name: Compute frontend-only tags
-        id: frontend_tags
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-
-      - name: Compute backend-only tags
-        id: backend_tags
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.BACKEND_IMAGE }}
-          tags: |
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:

@@ -52,12 +52,17 @@ This triggers `.github/workflows/docker-publish.yml`, which builds and pushes
 the backend + frontend images to GHCR with these tags:
 
 ```
-ghcr.io/jafools/nomii-backend:v1.2.3
-ghcr.io/jafools/nomii-backend:v1.2
+ghcr.io/jafools/nomii-backend:1.2.3      ← note: no "v" prefix on image tags
+ghcr.io/jafools/nomii-backend:1.2
 ghcr.io/jafools/nomii-backend:stable
 ghcr.io/jafools/nomii-backend:latest
 (same 4 tags for nomii-frontend)
 ```
+
+> **Git tags vs. Docker image tags:** we push `v1.2.3` to git, but the docker
+> image tag is `1.2.3` (no `v`). This is the docker/metadata-action SemVer
+> convention. Use the `v`-prefixed form when checking out git, the plain form
+> when pinning `image:` in a compose file.
 
 Wait for the GitHub Actions run to go green (~5–10 min).
 
@@ -135,7 +140,7 @@ Then tell customers to `docker compose pull && up -d`.
 | Tag | Moves when | Who pins here |
 |-----|------------|---------------|
 | `:edge` | Every push to main | Internal / staging only |
-| `:v1.2.3` | When tag is cut | Customers who want an exact version |
-| `:v1.2` | When any v1.2.x tag is cut | Customers who want all 1.2 patches |
+| `:1.2.3` | When tag is cut | Customers who want an exact version |
+| `:1.2` | When any 1.2.x tag is cut | Customers who want all 1.2 patches |
 | `:stable` | When any tag is cut | **Default for self-hosted customers** |
 | `:latest` | When any tag is cut | Legacy — treat as alias for `:stable` |
