@@ -1,17 +1,25 @@
 # ============================================================
 # Nomii AI — Docker Image Publisher
 #
-# Builds and pushes backend + frontend images to GitHub
-# Container Registry (ghcr.io) automatically.
+# Release model (changed 2026-04-17):
+#
+#   main push     → :edge tag only (for internal staging/testing)
+#   tag  v1.2.3   → :v1.2.3  +  :v1.2  +  :stable  +  :latest
+#   manual run    → uses current ref (tag or branch)
+#
+# Why :edge on main?
+#   Customers running the default self-hosted compose pin to :stable.
+#   A push to main MUST NOT silently upgrade their production deployment.
+#   To actually release, cut a tag:
+#
+#       git tag v1.2.3
+#       git push origin v1.2.3
+#
+#   See docs/RELEASING.md for the full procedure.
 #
 # Images are published to:
-#   ghcr.io/YOUR_GITHUB_USERNAME/nomii-backend:latest
-#   ghcr.io/YOUR_GITHUB_USERNAME/nomii-frontend:latest
-#
-# Triggers:
-#   - Every push to main  → tags image as :latest
-#   - Every version tag   → tags image as :v1.2.3 AND :latest
-#     (create a tag with: git tag v1.0.0 && git push origin v1.0.0)
+#   ghcr.io/jafools/nomii-backend
+#   ghcr.io/jafools/nomii-frontend
 # ============================================================
 
 name: Publish Docker Images
@@ -22,7 +30,7 @@ on:
       - main
     tags:
       - 'v*'
-  workflow_dispatch:  # allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -55,18 +63,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version metadata
-        id: meta
+      # ── Tag plan ────────────────────────────────────────────
+      # Branch push to main       → :edge
+      # Tag push v1.2.3           → :v1.2.3, :v1.2, :stable, :latest
+      # workflow_dispatch on tag  → same as tag push
+      # workflow_dispatch on main → :edge
+      - name: Compute image tags
+        id: tags
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.BACKEND_IMAGE }}
             ${{ env.FRONTEND_IMAGE }}
           tags: |
-            type=ref,event=branch
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       # ── Backend ─────────────────────────────────────────────
       - name: Build and push backend image
@@ -74,25 +88,47 @@ jobs:
         with:
           context: ./server
           push: true
-          tags: |
-            ${{ env.BACKEND_IMAGE }}:latest
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}:{1}', env.BACKEND_IMAGE, github.ref_name) || '' }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.tags.outputs.tags }}
+          labels: ${{ steps.tags.outputs.labels }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
 
       # ── Frontend ────────────────────────────────────────────
+      # (metadata-action emits tags for BOTH images at once; we
+      #  split by filtering to frontend-only in a second step)
+      - name: Compute frontend-only tags
+        id: frontend_tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Compute backend-only tags
+        id: backend_tags
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./client
           push: true
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}:{1}', env.FRONTEND_IMAGE, github.ref_name) || '' }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.frontend_tags.outputs.tags }}
+          labels: ${{ steps.frontend_tags.outputs.labels }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
   # ── Make packages public ────────────────────────────────────
   # GHCR packages default to private on first push.
@@ -100,7 +136,6 @@ jobs:
   #
   # Requires a repo secret named PACKAGES_PAT containing a
   # classic PAT with the  write:packages  scope.
-  # (Settings → Secrets → Actions → New repository secret)
   make-public:
     name: Make Packages Public
     runs-on: ubuntu-latest
@@ -112,7 +147,6 @@ jobs:
     steps:
       - name: Set packages to public
         env:
-          # Falls back to GITHUB_TOKEN; add PACKAGES_PAT for reliability
           TOKEN: ${{ secrets.PACKAGES_PAT || secrets.GITHUB_TOKEN }}
           OWNER: ${{ needs.build-and-push.outputs.owner }}
         run: |
