@@ -1,3 +1,14 @@
+# ============================================================
+# Shared log-rotation policy (Finding #9 — audit 2026-04-17).
+# Caps each container's JSON log at ~50MB (5 files × 10MB).
+# json-file is the default driver; we're only adding rotation.
+# ============================================================
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # ============================================
   # PostgreSQL Database
@@ -6,10 +17,14 @@ services:
     image: postgres:16.9-alpine
     container_name: nomii-db
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: nomii_ai
       POSTGRES_USER: nomii
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-nomii_dev_2026}
+      # SECRETS FAIL FAST (Finding #1 — audit 2026-04-17).
+      # The `:?` form refuses to start the container when the var is unset or
+      # empty, eliminating the silent fallback to a committed dev value.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,11 +42,16 @@ services:
       dockerfile: Dockerfile
     container_name: nomii-backend
     restart: unless-stopped
+    logging: *default-logging
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://nomii:${DB_PASSWORD:-nomii_dev_2026}@db:5432/nomii_ai}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nomii:${DB_PASSWORD:?DB_PASSWORD must be set in .env}@db:5432/nomii_ai}
       PORT: 3001
-      JWT_SECRET: ${JWT_SECRET:-nomii-dev-secret-change-in-production}
-      WIDGET_JWT_SECRET: ${WIDGET_JWT_SECRET:-}
+      # Required secrets fail-fast (Finding #1 — audit 2026-04-17).
+      # Values are single-quoted because the `?` message contains colons,
+      # which YAML would otherwise interpret as a mapping separator.
+      JWT_SECRET: '${JWT_SECRET:?JWT_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
+      WIDGET_JWT_SECRET: '${WIDGET_JWT_SECRET:?WIDGET_JWT_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
+      API_KEY_ENCRYPTION_SECRET: '${API_KEY_ENCRYPTION_SECRET:?API_KEY_ENCRYPTION_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
       FRONTEND_URL: ${FRONTEND_URL:-https://nomii.pontensolutions.com}
       FRONTEND_URL_PROD: ${FRONTEND_URL_PROD:-}
       JWT_EXPIRY: ${JWT_EXPIRY:-24h}
@@ -48,7 +68,6 @@ services:
       SMTP_FROM: ${SMTP_FROM:-}
       APP_URL: ${APP_URL:-https://nomii.pontensolutions.com}
       MASTER_EMAIL: ${MASTER_EMAIL:-}
-      API_KEY_ENCRYPTION_SECRET: ${API_KEY_ENCRYPTION_SECRET:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_PRICE_STARTER: ${STRIPE_PRICE_STARTER:-}
@@ -85,6 +104,7 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.pontensolutions.com}
     container_name: nomii-frontend
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "80:80"
     depends_on:
@@ -100,6 +120,7 @@ services:
     image: cloudflare/cloudflared:2025.4.0
     container_name: nomii-cloudflared
     restart: unless-stopped
+    logging: *default-logging
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - backend

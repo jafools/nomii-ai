@@ -115,3 +115,54 @@ jobs:
 
       - name: Run integration tests
         run: npm test
+
+  # ── Self-hosted compose smoke test ─────────────────────────────
+  # Catches things like YAML syntax breaks, missing env refs, mismatched
+  # service names, DB-user drift. Doesn't test the backend image content
+  # (that's covered by server-test above) — just that a fresh self-hosted
+  # deploy parses and comes up healthy.
+  selfhosted-smoke:
+    name: selfhosted-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The compose file pins :stable, which may not exist yet on a brand-new
+      # repo. Fall back gracefully: the smoke test is about YAML + env
+      # wiring, not about the specific image content.
+      - name: Write minimal .env so compose can resolve required vars
+        run: |
+          cat > .env <<'EOF'
+          DB_PASSWORD=ci_smoke_db_password_32_chars_0123
+          JWT_SECRET=ci_smoke_jwt_secret_at_least_32_chars_1
+          WIDGET_JWT_SECRET=ci_smoke_widget_secret_at_least_32_chars
+          API_KEY_ENCRYPTION_SECRET=ci_smoke_api_key_encryption_32_chars1
+          APP_URL=http://localhost
+          FRONTEND_URL=http://localhost
+          EOF
+
+      - name: Validate compose config
+        run: docker compose -f docker-compose.selfhosted.yml config >/dev/null
+
+      - name: Bring up db + backend
+        run: docker compose -f docker-compose.selfhosted.yml up -d db backend
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+              echo "healthy after $((i*3))s"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Backend never became healthy. Dumping logs:"
+          docker compose -f docker-compose.selfhosted.yml logs backend
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.selfhosted.yml down -v

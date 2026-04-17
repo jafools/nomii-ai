@@ -91,6 +91,8 @@ router.post('/register', async (req, res, next) => {
     if (!tos_accepted) {
       return res.status(400).json({
         error: 'You must accept the Terms of Service and confirm you have the right to upload customer data.',
+        field: 'tos_accepted',
+        hint: 'Send {"tos_accepted": true} in the request body.',
       });
     }
     if (password.length < 8) {

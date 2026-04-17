@@ -188,6 +188,59 @@ GitHub → Actions → Publish Docker Images → Run workflow → Select tag: v1
 
 Then tell customers to `docker compose pull && up -d`.
 
+## When a migration fails
+
+The backend runs `server/db/migrations/*.sql` on startup. If a migration
+fails, the backend crash-loops and the UI goes down. Here's the recovery
+path.
+
+### SaaS (Hetzner)
+
+```bash
+# 1. Look at the error
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=200"
+
+# 2. Identify the failing migration (the runner logs each file as it runs,
+#    the failed one is the last "Running:" before the crash).
+
+# 3. Roll back to the previous release's code. This gets the UI back up
+#    immediately — the DB will still have any *partially-applied* schema
+#    from the failed migration, but the old code will ignore it.
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git checkout v1.X.Y-prev && git stash pop && docker compose up -d --build backend frontend"
+
+# 4. Fix the migration on a branch → PR → merge → new tag.
+#    If you need to clean up partial schema state on prod first, `psql`
+#    into the DB and do it by hand — never auto-run from startup code.
+
+# 5. Deploy the new tag the normal way.
+```
+
+### Self-hosted
+
+Customers don't get automatic rollback — they have to manually pin the
+compose file to the previous tag:
+
+```bash
+# In their install directory (typically ~/nomii)
+sed -i 's|:stable|:v1.X.Y-prev|' docker-compose.selfhosted.yml
+docker compose pull
+docker compose up -d
+```
+
+Write a proper upgrade-safety release note and send it to customers before
+cutting any tag that includes a non-idempotent migration.
+
+### Preventing this
+
+Every new migration SQL file must use `IF NOT EXISTS` / `ADD COLUMN IF NOT
+EXISTS` / similar guards — our migration runner treats those as success on
+re-run, which is what keeps boot-time idempotency working. If you can't make
+a migration idempotent (e.g. a one-shot data backfill), split it into a
+separate out-of-band script and run it manually via `docker exec nomii-db
+psql …`.
+
+---
+
 ## Tag cheat sheet
 
 | Tag | Moves when | Who pins here |
