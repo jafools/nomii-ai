@@ -12,6 +12,16 @@
 #   docker compose -f docker-compose.selfhosted.yml up -d
 # ============================================================
 
+# ============================================================
+# Shared log-rotation policy (Finding #9 — audit 2026-04-17).
+# Caps each container's JSON log at ~50MB (5 files × 10MB).
+# ============================================================
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
 
   # ── Database ──────────────────────────────────────────────
@@ -19,10 +29,11 @@ services:
     image: postgres:16.9-alpine
     container_name: nomii-db
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: knomi_ai
       POSTGRES_USER: knomi
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -40,8 +51,9 @@ services:
     image: ghcr.io/jafools/nomii-backend:stable
     container_name: nomii-backend
     restart: unless-stopped
+    logging: *default-logging
     environment:
-      DATABASE_URL: postgresql://knomi:${DB_PASSWORD}@db:5432/knomi_ai
+      DATABASE_URL: postgresql://knomi:${DB_PASSWORD:?DB_PASSWORD must be set in .env}@db:5432/knomi_ai
       PORT: 3001
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
@@ -96,6 +108,7 @@ services:
     image: ghcr.io/jafools/nomii-frontend:stable
     container_name: nomii-frontend
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "80:80"
     depends_on:
@@ -120,6 +133,7 @@ services:
     image: cloudflare/cloudflared:2025.4.0
     container_name: nomii-cloudflared
     restart: unless-stopped
+    logging: *default-logging
     command:
       - tunnel
       - --no-autoupdate

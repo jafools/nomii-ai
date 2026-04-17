@@ -8,8 +8,11 @@
 set -e
 
 CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
-DB_USER="${NOMII_DB_USER:-nomii}"
-DB_NAME="${NOMII_DB_NAME:-nomii_ai}"
+# Default to the self-hosted DB identity — that's the compose file this
+# repo ships. Override for SaaS dev:
+#   NOMII_DB_USER=nomii NOMII_DB_NAME=nomii_ai bash scripts/migrate.sh
+DB_USER="${NOMII_DB_USER:-knomi}"
+DB_NAME="${NOMII_DB_NAME:-knomi_ai}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/../server/db/migrations" && pwd)"
 
 # Colour helpers

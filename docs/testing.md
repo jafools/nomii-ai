@@ -21,14 +21,14 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
 # Install Chromium for Playwright
-cd ~/Knomi/knomi-ai
+cd ~/nomii-ai
 npm install
 npx playwright install chromium --with-deps
 ```
 
 ### Required env vars
 
-Add to **both** `~/Knomi/knomi-ai/.env` (for Docker Compose) and `~/Knomi/knomi-ai/server/.env` (for dev server / Playwright):
+Add to **both** `~/nomii-ai/.env` (for Docker Compose) and `~/nomii-ai/server/.env` (for dev server / Playwright):
 
 ```
 TEST_ADMIN_EMAIL=<your admin email>
@@ -46,7 +46,7 @@ WIDGET_SESSION_RATE_LIMIT_MAX=200
 ### Standard run (most common)
 
 ```bash
-cd ~/Knomi/knomi-ai
+cd ~/nomii-ai
 git pull
 docker compose up --build -d   # backend on :3001, frontend (nginx) on :80
 npm run test:e2e                # Playwright spins up Vite dev server on :5173
