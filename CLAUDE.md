@@ -1,6 +1,51 @@
 # Claude Code Configuration - RuFlo V3
 
-## Session Continuity (Read First)
+## How we ship Nomii features (READ FIRST — non-negotiable)
+
+> Set up 2026-04-17. Applies to every change in this repo. Full procedure: `docs/RELEASING.md`.
+
+```
+  feature work ─► feat/fix/chore branch ─► PR ─► CI green ─► squash-merge to main
+       │                                                              │
+       │                                                              ▼
+       │                                              GHCR rebuilds  :edge  (internal)
+       │                                                              │
+       │                                                              ▼
+       │                                     systemd timer on Proxmox pulls :edge every 5 min
+       │                                                              │
+       │                                                              ▼
+       │                          Preview at  https://nomii-staging.pontensolutions.com
+       │                                                              │
+       │                                        happy?  ──────────────┘
+       ▼
+   git tag v1.X.Y && git push origin v1.X.Y
+       │
+       ▼
+   GHCR rebuilds :vX.Y.Z, :vX.Y, :stable, :latest  (on-prem customers get this)
+       │
+       ▼
+   ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git fetch --tags && git checkout vX.Y.Z && git stash pop && docker compose up -d --build backend frontend"
+       │
+       ▼
+   SaaS live on Hetzner at https://nomii.pontensolutions.com
+```
+
+**Three rules that make this work:**
+1. **NEVER push to main directly.** Branch protection will reject it anyway. Always `feat/*`, `fix/*`, `chore/*` → PR → CI → squash-merge.
+2. **Merging to main does NOT ship to customers.** It ships to staging only. Tagging is the deploy act.
+3. **Release = `git tag vX.Y.Z && git push origin vX.Y.Z`** + manual Hetzner SSH to check out the tag. Never "just push main to Hetzner".
+
+**Where things live:**
+
+| | URL | Image tag | Host |
+|---|---|---|---|
+| Staging | https://nomii-staging.pontensolutions.com | `:edge` (auto-refresh 5 min) | Proxmox (`ssh pontenprox`) |
+| Prod SaaS | https://nomii.pontensolutions.com | built from `v*` git tag | Hetzner (`ssh nomii@204.168.232.24`) |
+| Prod on-prem | customer's server | `:stable` from GHCR | customer hardware |
+
+If a user asks "just push this to prod" — the answer is still branch + PR + CI + merge. They're asking about **reaching prod**, not bypassing the flow. The correct outcome is the tag + Hetzner deploy, not a `git push origin main`.
+
+## Session Continuity (Read Second)
 
 At the start of every session, read `docs/SESSION_NOTES.md` — it contains the latest deployment details, what was completed last session, and the current bug/TODO list. Update it at the end of each session before committing.
 
