@@ -211,6 +211,21 @@ npx @claude-flow/cli@latest doctor --fix
 - **Deployment:** Docker Compose on Hetzner Cloud Helsinki (`nomii-prod`)
 - **Three modes:** SaaS, Self-Hosted (`NOMII_DEPLOYMENT=selfhosted`), License Master (`NOMII_LICENSE_MASTER=true`)
 
+### Staging (Proxmox)
+
+| Component | Detail |
+|-----------|--------|
+| Host | Proxmox VM at `10.0.100.2` (LAN only) — SSH alias `nomii-prod` (misnomer; see "Known gotchas" below) |
+| Public URL | https://nomii-staging.pontensolutions.com |
+| Image tag | `:edge` — rebuilt on every merge to main, after CI passes |
+| DB | Fresh `nomii_ai_staging`, user `nomii`, separate from prod |
+| Stack path | `/root/nomii-staging/` (compose + .env + refresh script) |
+| Public routing | Cloudflare tunnel `knomi-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) → `http://nomii-frontend-staging:80` on shared docker network |
+| Old fallback | The old Proxmox Nomii containers are STOPPED (backup at `/root/backups/knomi_ai_proxmox_final_*.sql`). Lateris and `nomii-cloudflared` are untouched and must stay running. |
+
+Purpose: click through new features at a real prod-shaped URL before cutting
+a release. See `docs/RELEASING.md` for the full pre-release workflow.
+
 ### Hetzner Production (nomii-prod)
 
 | Component | Detail |
@@ -253,6 +268,21 @@ ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose restart backend fronte
 ```
 
 **Important:** Hetzner has local docker-compose.yml changes (backend bound to 127.0.0.1, nginx SSL block). Always `git stash && git pull && git stash pop` — never `git pull` directly or the local overrides will conflict.
+
+### Refresh staging (after merge to main)
+
+```bash
+ssh nomii-prod "bash /root/nomii-staging/refresh-staging.sh"
+```
+
+The script pulls `:edge` from GHCR, rolls staging containers if digests
+changed, and no-ops otherwise. The public URL reflects the new code in
+~30 seconds after it runs.
+
+### Known gotchas
+
+- The SSH alias `nomii-prod` in `~/.ssh/config` maps to `10.0.100.2` which is the **Proxmox VM** (staging + Lateris), NOT the Hetzner prod server. The Hetzner production server is reached via `ssh nomii@204.168.232.24` directly. Renaming the alias to `pontenprox` is on the cleanup list.
+- The shared docker network on Proxmox is called `knomi-ai_default` (pre-rename). Renaming would require stopping `nomii-cloudflared` which also serves Lateris — left as-is.
 
 ### Key env vars for self-hosted
 

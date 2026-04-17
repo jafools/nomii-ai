@@ -5,7 +5,44 @@
 
 ---
 
-## Last updated: 2026-04-17 morning (release-flow + branch protection — SHIPPED, v1.0.0 live)
+## Last updated: 2026-04-17 midday (staging env stood up on Proxmox — nomii-staging.pontensolutions.com LIVE)
+
+Followed release-flow setup with a working staging environment so new features can be previewed at a real URL before cutting a tag.
+
+### What shipped
+
+- **Old Proxmox Nomii fallback retired** — `nomii-backend`, `nomii-frontend`, `nomii-db` stopped. Backup saved to `/root/backups/knomi_ai_proxmox_final_20260417_131426.sql` (645K). Lateris + `nomii-cloudflared` untouched.
+- **Fresh staging stack** at `/root/nomii-staging/` on Proxmox:
+  - `nomii-db-staging` (fresh `nomii_ai_staging` DB, 31 migrations clean)
+  - `nomii-backend-staging` running `ghcr.io/jafools/nomii-backend:edge`, bound to `127.0.0.1:3002` (local debugging only)
+  - `nomii-frontend-staging` running `ghcr.io/jafools/nomii-frontend:edge`, on the shared `knomi-ai_default` docker network so `nomii-cloudflared` reaches it by container name (no host port exposure)
+- **Cloudflare tunnel route**: `nomii-staging.pontensolutions.com` → `http://nomii-frontend-staging:80` via the existing `knomi-ai` tunnel (added via dashboard).
+- **Docs updated**: `CLAUDE.md` (staging section + refresh snippet + SSH alias gotcha), `docs/RELEASING.md` (environments table + staging refresh procedures).
+
+### Verification
+
+- Internal: `curl http://127.0.0.1:3002/api/health` returns `{"status":"ok"}`
+- Cross-container (`alpine/curl` on `knomi-ai_default`): `http://nomii-frontend-staging:80` returns HTTP 200
+- Public: `curl https://nomii-staging.pontensolutions.com/api/health` returns `{"status":"ok","service":"nomii-ai",...}`
+- `/api/config` reports SaaS mode, all features enabled
+
+### Deferred / pending Austin input
+
+- **Auto-refresh mechanism**: permission system blocked creating a systemd timer without explicit authorization. Options on the table:
+  1. Manual refresh via `ssh nomii-prod "bash /root/nomii-staging/refresh-staging.sh"` (no background automation)
+  2. Systemd timer polling GHCR every 5 min (needs explicit approval)
+  3. Watchtower container in the staging compose
+- **SSH alias rename**: `nomii-prod` currently maps to the Proxmox VM (10.0.100.2), not Hetzner prod. Confusing. Rename to `pontenprox` recommended.
+
+### Next session
+
+1. Austin picks auto-refresh mechanism (1, 2, or 3). If he picks 2, I'll write + authorize the systemd unit + timer. If 1, `refresh-staging.sh` stays as a manual script on the box.
+2. Rename SSH alias + test from fresh terminal.
+3. The manual QA flows (SaaS signup → onboarding → widget, self-hosted install.sh → setup) can now run against staging instead of prod.
+
+---
+
+## Previous: 2026-04-17 morning (release-flow + branch protection — SHIPPED, v1.0.0 live)
 
 Flipped Nomii from "push to main = ship to customers" to a tagged-release model.
 Main is now a protected branch. CI must pass before merge. Customer-facing

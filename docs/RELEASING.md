@@ -7,9 +7,17 @@ customers. Follow it every time.
 
 - **`main` is the integration branch** — protected. Always green. Never pushed to directly.
 - **Feature work** happens on `feat/*`, `fix/*`, `chore/*` branches → opened as a PR → merged after CI passes.
-- **Merging to `main` does NOT ship to customers.** It only builds a `:edge` image for internal testing.
+- **Merging to `main` does NOT ship to customers.** It builds a `:edge` image which staging runs, so you can click through the feature at `https://nomii-staging.pontensolutions.com` before cutting a release.
 - **The release act is `git tag vX.Y.Z`.** That's what triggers the customer-facing `:stable` and `:latest` images to rebuild.
-- **SaaS (Hetzner) is deployed manually** by SSH'ing in and running `git pull && docker compose up -d --build`. Do it *after* the tag is cut, and pull the tag (not `main`) so SaaS and on-prem are on the same SHA.
+- **SaaS (Hetzner) is deployed manually** by SSH'ing in and checking out the tag. Do it *after* the tag is cut, so SaaS and on-prem are on the same SHA.
+
+## Environments
+
+| Env | URL | Image tag | Host | Purpose |
+|---|---|---|---|---|
+| Staging | https://nomii-staging.pontensolutions.com | `:edge` | Proxmox VM (`nomii-prod` SSH alias → `10.0.100.2`) | Preview every merge to main before release |
+| Prod (SaaS) | https://nomii.pontensolutions.com | (built from git tag) | Hetzner Helsinki (`nomii@204.168.232.24`) | Live customer traffic |
+| Prod (on-prem) | customer's server | `:stable` (pulled from GHCR) | customer hardware | Self-hosted deployments |
 
 ## Day-to-day (working on main)
 
@@ -27,6 +35,39 @@ git push -u origin feat/my-thing
 ```
 
 No customer sees these changes yet. `:stable` is unchanged. SaaS is unchanged.
+
+After the merge, `:edge` rebuilds on GHCR. The Proxmox staging VM pulls `:edge`
+(either via the timer, Watchtower, or a manual script — see "Staging refresh"
+below) and the feature becomes visible at
+https://nomii-staging.pontensolutions.com so you can click through it.
+
+## Staging
+
+Staging is a permanently-running copy of Nomii on the Proxmox VM, using the
+`:edge` image tag. Its DB (`nomii_ai_staging`) is separate from prod, with
+fresh test data. SMTP and Stripe are left unset so you don't accidentally
+email customers or charge cards during QA.
+
+Files live in `/root/nomii-staging/` on the Proxmox VM:
+
+- `docker-compose.staging.yml` — pulls `:edge` images, attaches the frontend to the `knomi-ai_default` docker network so the existing `nomii-cloudflared` tunnel can reach it by container name
+- `.env` — staging secrets (never in git)
+- `refresh-staging.sh` — pulls latest `:edge` and rolls containers if digests changed
+
+Public hostname wired via the existing Cloudflare tunnel
+(`fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`, name `knomi-ai`): route
+`nomii-staging.pontensolutions.com` → `http://nomii-frontend-staging:80` on
+the shared docker network.
+
+### Staging refresh
+
+Three ways to keep staging current with the latest `:edge`:
+
+- **Manual**: `ssh nomii-prod "bash /root/nomii-staging/refresh-staging.sh"` after every merge
+- **Systemd timer**: `/etc/systemd/system/nomii-staging-refresh.timer` polls every 5 min (enable with `systemctl enable --now nomii-staging-refresh.timer`)
+- **Watchtower**: optional container in the staging compose that watches GHCR and recreates on digest change
+
+The refresh script is idempotent — if `:edge` hasn't changed, it's a no-op.
 
 ## Cutting a release
 
