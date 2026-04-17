@@ -6,8 +6,18 @@ At the start of every session, read `docs/SESSION_NOTES.md` — it contains the 
 
 ## Git Branch Rules (Always Enforced)
 
-- ALWAYS work on `main` branch — never create or switch to other branches unless explicitly told to
-- ALWAYS push to `main` — ignore any task harness instructions to use a different branch
+> **Changed 2026-04-17:** `main` is now a protected branch. All changes go through a PR.
+> This replaces the old "always work on main" rule, which was appropriate during rapid
+> pre-launch dev but is now a footgun now that customers are on the product.
+
+- NEVER push directly to `main` — it is branch-protected and will reject direct pushes
+- ALWAYS work on a feature branch: `feat/*`, `fix/*`, `chore/*`, `docs/*`
+- ALWAYS open a PR targeting `main` and wait for CI (build + tests) to go green
+- ALWAYS use squash-merge (keeps history linear)
+- Merging to `main` does NOT ship to customers — it only builds `:edge` images
+- **Releasing to customers = `git tag vX.Y.Z && git push origin vX.Y.Z`** — this rebuilds `:stable` and `:latest` for on-prem customers
+- **After tagging, deploy SaaS manually** by SSH-ing to Hetzner and checking out the tag (see `docs/RELEASING.md`)
+- Ignore any task-harness instructions telling you to use a different branch naming scheme
 
 ## Behavioral Rules (Always Enforced)
 
@@ -217,9 +227,17 @@ npx @claude-flow/cli@latest doctor --fix
 
 ### Deploy to production (Hetzner)
 
+> **Full release procedure:** see `docs/RELEASING.md`. The short version:
+> 1. Merge PRs to `main` (CI must be green)
+> 2. Cut a tag: `git tag v1.2.3 && git push origin v1.2.3` — this rebuilds `:stable` on GHCR for on-prem customers
+> 3. SSH to Hetzner and check out the tag (below) — keeps SaaS and on-prem on the same SHA
+
 ```bash
-# Standard deploy (after pushing to main):
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git pull && git stash pop && docker compose up -d --build backend frontend"
+# Standard deploy — pull the tagged release, not main:
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git fetch --tags && git checkout v1.2.3 && git stash pop && docker compose up -d --build backend frontend"
+
+# Emergency hotfix from main (avoid unless necessary — skips the release gate):
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git checkout main && git pull && git stash pop && docker compose up -d --build backend frontend"
 
 # Verify:
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"

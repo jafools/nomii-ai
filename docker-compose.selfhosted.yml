@@ -34,7 +34,10 @@ services:
   # ── Backend API ───────────────────────────────────────────
   # Migrations run automatically on every start.
   backend:
-    image: ghcr.io/jafools/nomii-backend:latest
+    # Customers pin to :stable — this tag only moves on a tagged release
+    # (see docs/RELEASING.md). Use :v1.2.3 to pin to a specific version,
+    # or :edge to track the latest main commit (not recommended for prod).
+    image: ghcr.io/jafools/nomii-backend:stable
     container_name: nomii-backend
     restart: unless-stopped
     environment:
@@ -90,7 +93,7 @@ services:
 
   # ── Frontend ──────────────────────────────────────────────
   frontend:
-    image: ghcr.io/jafools/nomii-frontend:latest
+    image: ghcr.io/jafools/nomii-frontend:stable
     container_name: nomii-frontend
     restart: unless-stopped
     ports:

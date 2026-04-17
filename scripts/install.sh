@@ -36,10 +36,24 @@ R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m'
 B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
 
 GITHUB_REPO="jafools/nomii-ai"
-# Override with NOMII_GITHUB_REF=v1.2.0 (or a SHA) to pin to a specific
-# release. Default "main" follows latest. Pinning is recommended for
-# production — gives you a known-good, reproducible install.
-GITHUB_REF="${NOMII_GITHUB_REF:-main}"
+# By default, pull from the latest tagged release (reproducible, known-good).
+# Override with:
+#   NOMII_GITHUB_REF=v1.2.0  — pin to a specific release
+#   NOMII_GITHUB_REF=main    — track latest main (edge / not recommended for prod)
+#   NOMII_GITHUB_REF=<sha>   — pin to an exact commit
+if [ -n "${NOMII_GITHUB_REF:-}" ]; then
+  GITHUB_REF="$NOMII_GITHUB_REF"
+else
+  # Resolve the latest release tag via the GitHub API.
+  # Fall back to "main" if there are no releases yet or the call fails.
+  LATEST_TAG=$(curl -fsSL \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" 2>/dev/null \
+    | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"[^"]+"' \
+    | head -1 \
+    | sed -E 's/.*"([^"]+)"$/\1/')
+  GITHUB_REF="${LATEST_TAG:-main}"
+fi
 COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${COMPOSE_FILE}"
 INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"

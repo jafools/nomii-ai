@@ -1,0 +1,117 @@
+# ============================================================
+# Nomii AI — Continuous Integration
+#
+# Runs on every pull request targeting main, and on direct
+# pushes to main. Jobs must pass before a PR can merge
+# (enforced via GitHub branch protection).
+#
+# Two parallel jobs:
+#   - client-build  — vite build + vitest + eslint (no DB needed)
+#   - server-test   — spins up Postgres, runs migrations, runs
+#                     the integration test suite
+# ============================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ── Frontend build + unit tests ─────────────────────────────
+  client-build:
+    name: client-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      # NOTE: client lint + unit tests are skipped until there's actually
+      # something to run — ESLint 9 needs a flat eslint.config.js, and
+      # vitest has no *.test.* files yet. The build step below is the
+      # real safety gate (catches TS/import/syntax breaks).
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+        env:
+          # Placeholder for CI build — real value is injected at deploy time.
+          VITE_API_BASE_URL: ""
+
+  # ── Backend integration tests (needs Postgres) ──────────────
+  server-test:
+    name: server-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16.9-alpine
+        env:
+          POSTGRES_USER: nomii
+          POSTGRES_PASSWORD: nomii_ci_2026
+          POSTGRES_DB: nomii_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U nomii -d nomii_ai_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://nomii:nomii_ci_2026@localhost:5432/nomii_ai_test
+      TEST_DATABASE_URL: postgresql://nomii:nomii_ci_2026@localhost:5432/nomii_ai_test
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long-1234
+      WIDGET_JWT_SECRET: ci-widget-secret-at-least-32-chars-long-1234
+      API_KEY_ENCRYPTION_SECRET: ci-encryption-key-32-chars-long-12345
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Run migrations against test DB
+        working-directory: server
+        run: npm run db:migrate
+
+      - name: Run integration tests
+        run: npm test
