@@ -5,7 +5,63 @@
 
 ---
 
-## Last updated: 2026-04-17 afternoon (session wrap — full release infrastructure shipped)
+## Last updated: 2026-04-17 evening (audit sweep → v1.0.1 patch → full Playwright E2E 35/35)
+
+Full 3-layer audit of both SaaS and on-prem Nomii, followed by shipping the first
+real bug-fix release through the new release flow end-to-end, followed by
+5x stress runs of the install/signup flows, a real live Claude chat through
+the whole backend chain, and the first full green run of the 35-test Playwright
+suite against v1.0.1 code.
+
+### Artifacts shipped this session
+
+| | |
+|---|---|
+| [`docs/AUDIT-2026-04-17.md`](AUDIT-2026-04-17.md) | 25 findings across 3 layers (static / operational / E2E), 12 resolved this session |
+| [`scripts/hetzner-backup.sh`](../scripts/hetzner-backup.sh) + cron | Daily pg_dump on Hetzner prod, 14-day retention, running since 12:32 UTC |
+| [PR #7](https://github.com/jafools/nomii-ai/pull/7) — merged → **v1.0.1** | 9 findings fixed: fail-fast secrets in SaaS compose, log rotation, update.sh rewrite, `DEPLOYMENT.md` deleted, migrate.sh DB defaults, testing.md paths, CI `selfhosted-smoke` job, RELEASING.md migration-failure runbook, `tos_accepted` error shape |
+| [PR #8](https://github.com/jafools/nomii-ai/pull/8) | Playwright tests now tolerant of rate-limit UX + documents 3 new findings |
+| **v1.0.1** tag | Pushed to GHCR (`:stable`, `:latest`, `:v1.0.1`, `:1.0`) + deployed to Hetzner |
+
+### Release flow exercised end-to-end for the first time
+
+```
+branch → PR #7 → CI green → squash-merge → :edge rebuild → staging auto-refresh
+      → git tag v1.0.1 → docker-publish rebuilds :stable/:latest → Hetzner SSH deploy → healthy
+```
+
+~4 seconds of perceived downtime on the SaaS backend recreate. Zero customer
+impact.
+
+### E2E verification done
+
+| Flow | Result |
+|---|---|
+| Upgrade test on 10.0.100.25 (pre-release `:latest` → v1.0.0) | ✅ PASS — data preserved, 4s downtime |
+| Fresh install x5 | ✅ 5/5 pass, 21s median |
+| SaaS staging signup x5 | ✅ 3/5 (iters 4-5 hit register rate limit — correct product behaviour) |
+| Real Claude chat with context retention (BYOK key) | ✅ 2-turn convo, DB-persisted |
+| Widget iframe embed on simulated customer site | ✅ iframe + React UI render correctly |
+| Full Playwright suite (35 tests) | ✅ 35/35 in 40s |
+
+### Things to know for next session
+
+- **10.0.100.25** (disposable test VM) has `LOGIN_RATE_LIMIT_MAX=200` and `WIDGET_SESSION_RATE_LIMIT_MAX=200` in `.env` to allow batched E2E runs. Harmless to leave.
+- **pontenprox** (`/root/Knomi/knomi-ai`) has Playwright working. The test-env trick: start a local Vite dev on :5173 with `VITE_API_BASE_URL=http://10.0.100.25`, then run `socat TCP-LISTEN:3001,fork,reuseaddr TCP:10.0.100.25:80` to satisfy the tests' `API_BASE=localhost:3001` assumption. The socat process is still running — kill with `pkill -f "socat TCP-LISTEN:3001"` when no longer needed.
+- **server/.env** on pontenprox was updated with `TEST_ADMIN_EMAIL=tier2@example.test` + `TEST_ADMIN_PASSWORD=tier2-password-12345` to match the VM's admin. Not in git — restore to ajaces@gmail.com creds if running tests against a different target.
+- **Hetzner `nomii-backup.log`** is the thing to watch if backups ever stop.
+- **Open findings (12 remaining)**: #5, #10, #11, #17, #23 MEDIUM; #7, #14, #15, #18 LOW; #16 LOW/INFO; #19, #20, #22 INFO-only. See audit doc summary table. #23 is the highest-value remaining item — adding `REGISTER_RATE_LIMIT_MAX` env override in backend would fix multiple rate-limit-related test fragility.
+
+### Next session
+
+1. If anything is broken, check `docker compose logs backend` on Hetzner — log rotation is now active, so logs are capped at 50MB.
+2. Consider adding an **off-host backup destination** for Hetzner (rsync to a second VPS / Hetzner Storage Box) — local backups don't survive VM-destroy.
+3. The 11 open audit findings sorted by value: #23 register rate-limit env > #11 SaaS/on-prem build strategy > #17 API naming convention > rest.
+4. If you want to run the Playwright suite regularly, **wire it into CI** (deferred finding from audit) instead of relying on the pontenprox-hosted manual setup.
+
+---
+
+## Previous: 2026-04-17 afternoon (session wrap — full release infrastructure shipped)
 
 Single-session build-out of Nomii's release infrastructure end-to-end. Five PRs merged, v1.0.0 cut, staging environment live with auto-refresh, full flow documented at the top of CLAUDE.md.
 
