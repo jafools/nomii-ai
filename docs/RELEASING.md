@@ -15,7 +15,7 @@ customers. Follow it every time.
 
 | Env | URL | Image tag | Host | Purpose |
 |---|---|---|---|---|
-| Staging | https://nomii-staging.pontensolutions.com | `:edge` | Proxmox VM (`nomii-prod` SSH alias → `10.0.100.2`) | Preview every merge to main before release |
+| Staging | https://nomii-staging.pontensolutions.com | `:edge` | Proxmox VM (`pontenprox` SSH alias → `10.0.100.2`) | Preview every merge to main before release |
 | Prod (SaaS) | https://nomii.pontensolutions.com | (built from git tag) | Hetzner Helsinki (`nomii@204.168.232.24`) | Live customer traffic |
 | Prod (on-prem) | customer's server | `:stable` (pulled from GHCR) | customer hardware | Self-hosted deployments |
 
@@ -61,13 +61,25 @@ the shared docker network.
 
 ### Staging refresh
 
-Three ways to keep staging current with the latest `:edge`:
+Staging is refreshed automatically by a systemd timer
+(`nomii-staging-refresh.timer`) running on the Proxmox VM. Every 5 minutes
+it invokes `/root/nomii-staging/refresh-staging.sh`, which pulls `:edge`
+from GHCR and rolls the staging containers if the image digest changed.
+Idempotent — if `:edge` hasn't moved, it's a no-op.
 
-- **Manual**: `ssh nomii-prod "bash /root/nomii-staging/refresh-staging.sh"` after every merge
-- **Systemd timer**: `/etc/systemd/system/nomii-staging-refresh.timer` polls every 5 min (enable with `systemctl enable --now nomii-staging-refresh.timer`)
-- **Watchtower**: optional container in the staging compose that watches GHCR and recreates on digest change
+To trigger manually (e.g. right after a merge, if you don't want to wait):
 
-The refresh script is idempotent — if `:edge` hasn't changed, it's a no-op.
+```bash
+ssh pontenprox "bash /root/nomii-staging/refresh-staging.sh"
+```
+
+To pause auto-refresh:
+
+```bash
+ssh pontenprox "systemctl disable --now nomii-staging-refresh.timer"
+```
+
+Re-enable with the `enable --now` form. Logs: `journalctl -u nomii-staging-refresh.service`.
 
 ## Cutting a release
 

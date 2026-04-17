@@ -215,7 +215,7 @@ npx @claude-flow/cli@latest doctor --fix
 
 | Component | Detail |
 |-----------|--------|
-| Host | Proxmox VM at `10.0.100.2` (LAN only) — SSH alias `nomii-prod` (misnomer; see "Known gotchas" below) |
+| Host | Proxmox VM at `10.0.100.2` (LAN only) — SSH alias `pontenprox` |
 | Public URL | https://nomii-staging.pontensolutions.com |
 | Image tag | `:edge` — rebuilt on every merge to main, after CI passes |
 | DB | Fresh `nomii_ai_staging`, user `nomii`, separate from prod |
@@ -269,20 +269,37 @@ ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose restart backend fronte
 
 **Important:** Hetzner has local docker-compose.yml changes (backend bound to 127.0.0.1, nginx SSL block). Always `git stash && git pull && git stash pop` — never `git pull` directly or the local overrides will conflict.
 
-### Refresh staging (after merge to main)
+### Refresh staging
+
+Staging auto-refreshes every 5 minutes via a systemd timer
+(`nomii-staging-refresh.timer`) that pulls `:edge` from GHCR and rolls the
+staging containers if the image digests changed. Manual run:
 
 ```bash
-ssh nomii-prod "bash /root/nomii-staging/refresh-staging.sh"
+ssh pontenprox "bash /root/nomii-staging/refresh-staging.sh"
 ```
 
-The script pulls `:edge` from GHCR, rolls staging containers if digests
-changed, and no-ops otherwise. The public URL reflects the new code in
-~30 seconds after it runs.
+After a merge to main, `:edge` rebuilds on GHCR; staging picks it up within
+5 minutes.
 
-### Known gotchas
+Manage the timer:
 
-- The SSH alias `nomii-prod` in `~/.ssh/config` maps to `10.0.100.2` which is the **Proxmox VM** (staging + Lateris), NOT the Hetzner prod server. The Hetzner production server is reached via `ssh nomii@204.168.232.24` directly. Renaming the alias to `pontenprox` is on the cleanup list.
-- The shared docker network on Proxmox is called `knomi-ai_default` (pre-rename). Renaming would require stopping `nomii-cloudflared` which also serves Lateris — left as-is.
+```bash
+ssh pontenprox "systemctl status nomii-staging-refresh.timer"
+ssh pontenprox "systemctl disable --now nomii-staging-refresh.timer"  # to stop auto-refresh
+ssh pontenprox "systemctl enable --now nomii-staging-refresh.timer"   # to resume
+```
+
+### SSH aliases
+
+| Alias | Target | Notes |
+|-------|--------|-------|
+| `pontenprox` | Proxmox VM at `10.0.100.2` (staging + Lateris) | Private LAN only |
+| *(no alias)* | Hetzner prod at `nomii@204.168.232.24` | Connect directly by IP |
+
+Note: the shared docker network on Proxmox is called `knomi-ai_default`
+(pre-rename). Renaming it would require stopping `nomii-cloudflared` which
+also serves Lateris — left as-is.
 
 ### Key env vars for self-hosted
 
