@@ -21,7 +21,9 @@ suite against v1.0.1 code.
 | [`scripts/hetzner-backup.sh`](../scripts/hetzner-backup.sh) + cron | Daily pg_dump on Hetzner prod, 14-day retention, running since 12:32 UTC |
 | [PR #7](https://github.com/jafools/nomii-ai/pull/7) — merged → **v1.0.1** | 9 findings fixed: fail-fast secrets in SaaS compose, log rotation, update.sh rewrite, `DEPLOYMENT.md` deleted, migrate.sh DB defaults, testing.md paths, CI `selfhosted-smoke` job, RELEASING.md migration-failure runbook, `tos_accepted` error shape |
 | [PR #8](https://github.com/jafools/nomii-ai/pull/8) | Playwright tests now tolerant of rate-limit UX + documents 3 new findings |
+| [PR #10](https://github.com/jafools/nomii-ai/pull/10) | Finding #23 resolved — `REGISTER_RATE_LIMIT_MAX` env override in backend + both compose files |
 | **v1.0.1** tag | Pushed to GHCR (`:stable`, `:latest`, `:v1.0.1`, `:1.0`) + deployed to Hetzner |
+| **v1.0.2** tag | Pushed to GHCR + deployed to Hetzner ~13:55 UTC. Proved the full release flow works twice in one day. |
 
 ### Release flow exercised end-to-end for the first time
 
