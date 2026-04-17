@@ -79,9 +79,12 @@ const widgetChatLimiter = makeRateLimiter({
 });
 
 // Tenant registration: 3 per hour per IP (prevents spam accounts)
+// Override via REGISTER_RATE_LIMIT_MAX env var for test environments or
+// shared-IP situations (corporate NAT, office networks) where 3 per hour
+// is too aggressive.
 const registerLimiter = makeRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max:      3,
+  max:      parseInt(process.env.REGISTER_RATE_LIMIT_MAX || '3', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many registration attempts. Try again later.' },
