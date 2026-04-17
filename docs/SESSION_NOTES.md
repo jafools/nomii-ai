@@ -5,7 +5,72 @@
 
 ---
 
-## Last updated: 2026-04-16 late-evening (pre-test targeted cleanup — deployed to Hetzner)
+## Last updated: 2026-04-17 morning (release-flow + branch protection — SHIPPED, v1.0.0 live)
+
+Flipped Nomii from "push to main = ship to customers" to a tagged-release model.
+Main is now a protected branch. CI must pass before merge. Customer-facing
+images (`:stable`, `:latest`) only rebuild on `git tag vX.Y.Z`.
+
+### What shipped (branch `chore/release-flow-and-branch-protection`, PR [#1](https://github.com/jafools/nomii-ai/pull/1))
+
+- **New**: `.github/workflows/ci.yml` — client build + server integration tests (Postgres service container). Client lint is currently skipped (no `eslint.config.js` — separate issue).
+- **Rewrote**: `.github/workflows/docker-publish.yml` — main push now builds `:edge` only. Tagged release (`v*`) builds `:vX.Y.Z` + `:vX.Y` + `:stable` + `:latest`.
+- **Pinned**: `docker-compose.selfhosted.yml` images now use `:stable` (was `:latest`). Customers only receive updates on a deliberate release.
+- **Updated**: `scripts/install.sh` — defaults to the latest tagged release via the GitHub API (falls back to `main` if no tags exist).
+- **New**: `docs/RELEASING.md` — full release procedure (day-to-day flow, cutting releases, hotfixes, rollback).
+- **Updated**: `CLAUDE.md` — flipped the "always work on main" rule; documented the new branching + release model.
+
+### Repo settings applied via `gh api` (not in the PR itself)
+
+- Branch protection on `main`: required status checks (`client-build`, `server-test`), PR required (0 approvals), no force-push, no deletion, linear history, admins NOT enforced (solo-dev escape hatch).
+- Merge settings: squash-merge only (`allow_merge_commit=false`, `allow_rebase_merge=false`), `delete_branch_on_merge=true`, `allow_update_branch=true`.
+
+### Current state of prod (v1.0.0 is live on both SaaS and GHCR)
+
+- **Hetzner SaaS**: on `v1.0.0` (commit `53cda5b`). `git describe --tags` returns `v1.0.0`. Public health check 200, internal health check `{"status":"ok"}`, migrations clean, DB connected.
+- **GHCR (on-prem distribution)**: `:1.0.0`, `:1.0`, `:stable`, `:latest` all rebuilt for both `nomii-backend` and `nomii-frontend`. Customers pulling `:stable` will now receive v1.0.0's code.
+- **Flow dogfooded end-to-end**: PR #1 merged via squash, branch auto-deleted, `:edge` rebuilt on main push, `:stable`/`:latest` rebuilt on tag push, SaaS deployed from the tag.
+
+### Next session
+
+1. **Austin's manual testing** (deferred from last session):
+   - SaaS flow: signup → email verify → login → onboarding → dashboard → widget chat
+   - Self-hosted flow: install.sh → setup wizard → onboarding → dashboard → widget
+2. After testing: retire Proxmox Nomii containers (`docker compose stop backend frontend db` — leave cloudflared for Lateris).
+3. Optional: add `client/eslint.config.js` + re-enable lint step in CI.
+4. Optional: add a first vitest smoke test + re-enable the client test step.
+
+### Known follow-ups
+
+- `client/` has ESLint 9 deps but no flat config — lint step skipped in CI with a TODO.
+- `docker-compose.selfhosted.yml` still has `knomi_ai`/`knomi` DB user/name (pre-rename) — the live Hetzner compose uses `nomii`. Cosmetic for fresh on-prem installs but worth fixing in a future PR.
+- `portal.js` split (3,683 LOC) — still deferred.
+- Delete 1,646 LOC pre-portal zombie routes (after 7-day prod log grep).
+
+### How to work from now on
+
+```bash
+# New feature
+git checkout main && git pull
+git checkout -b feat/my-thing
+# ... commit ...
+git push -u origin feat/my-thing
+gh pr create
+# wait for CI green, then merge via GitHub UI or `gh pr merge --squash`
+
+# Release
+git checkout main && git pull
+git tag v1.2.3
+git push origin v1.2.3
+# wait for docker-publish workflow to go green
+# then SSH Hetzner, checkout v1.2.3, rebuild
+```
+
+See `docs/RELEASING.md` for the full procedure.
+
+---
+
+## Previous: 2026-04-16 late-evening (pre-test targeted cleanup — deployed to Hetzner)
 
 Targeted cleanup before Austin's manual testing of both SaaS and self-hosted flows.
 
