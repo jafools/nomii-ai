@@ -5,7 +5,43 @@
 
 ---
 
-## Last updated: 2026-04-17 evening (audit sweep → v1.0.1 patch → full Playwright E2E 35/35)
+## Last updated: 2026-04-17 late night (bedtime wrap — audit followups #14 / #17 / #18 + client ESLint)
+
+One last short session before bed. Closed out three audit findings with
+docs + a working client-side ESLint config + CI lint step re-enabled.
+
+### Artifacts shipped this session
+
+| | |
+|---|---|
+| [`docs/MONITORING.md`](MONITORING.md) | Finding #14 — UptimeRobot setup recipe for `https://nomii.pontensolutions.com/api/health` + optional pontenprox fallback template. Actual account creation is an Austin task (external signup). |
+| [`docs/API-CONVENTIONS.md`](API-CONVENTIONS.md) | Findings #17 + #18 — snake_case chosen as the go-forward convention, three `/login` endpoints documented with their distinct user populations (customers+advisors / tenant_admins / platform_admins), JWT payload shapes, and why we're keeping them separate. |
+| `client/eslint.config.js` + `ci.yml` `Lint client` step | Flat ESLint 9 config tuned for the existing loose TS setup. Currently 0 errors / 10 warnings — warnings are allowed, errors fail CI. |
+| `docs/AUDIT-2026-04-17.md` | Summary table updated: #14 → DOCUMENTED, #17 + #18 → RESOLVED. |
+
+### Open findings after this session (9 remaining, down from 12)
+
+- **MEDIUM (3):** #5 knomi DB branding drift, #10 Hetzner uncommitted overrides, #11 SaaS-source vs on-prem-GHCR build strategy
+- **LOW (4):** #7 migration 015b naming, #14 uptime (pending external signup), #15 CI DB name alignment, #16 `:latest` pinning
+- **INFO (3):** #19, #20, #22 — positive observations, no action
+
+### Next session — priority order
+
+1. **Spend 5 minutes on UptimeRobot signup** — instructions in `docs/MONITORING.md`. Closes #14 for real. External account + 2 monitors.
+2. **#11 SaaS/on-prem build strategy** is the highest-value remaining finding — it's the last architectural loose end.
+3. **Off-host backup destination for Hetzner** — still deferred. `rsync` to a Hetzner Storage Box (~EUR 4/mo for 1TB).
+4. Wire Playwright into CI whenever the manual pontenprox setup becomes annoying.
+
+### Still-true things carried forward from previous session
+
+- Hetzner backup cron runs 03:00 daily, log at `~/nomii-backup.log`.
+- Log rotation active on all three compose files (10MB × 5 files = 50MB cap per container).
+- `10.0.100.25` disposable VM has boosted login/widget rate limits for E2E batches (harmless to leave).
+- pontenprox socat bridge to `10.0.100.25:80` still running; kill with `pkill -f "socat TCP-LISTEN:3001"` when no longer needed.
+
+---
+
+## Previous: 2026-04-17 evening (audit sweep → v1.0.1 patch → full Playwright E2E 35/35)
 
 Full 3-layer audit of both SaaS and on-prem Nomii, followed by shipping the first
 real bug-fix release through the new release flow end-to-end, followed by

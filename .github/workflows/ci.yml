@@ -49,10 +49,14 @@ jobs:
         working-directory: client
         run: npm ci
 
-      # NOTE: client lint + unit tests are skipped until there's actually
-      # something to run — ESLint 9 needs a flat eslint.config.js, and
-      # vitest has no *.test.* files yet. The build step below is the
-      # real safety gate (catches TS/import/syntax breaks).
+      # Flat ESLint config lives at client/eslint.config.js and is tuned
+      # for the current loose TS setup (see tsconfig.json). Warnings are
+      # allowed; errors fail the build. vitest is still skipped — no
+      # *.test.* files yet; add the step when the first frontend test
+      # is worth writing.
+      - name: Lint client
+        working-directory: client
+        run: npm run lint
 
       - name: Build client
         working-directory: client
