@@ -5,7 +5,96 @@
 
 ---
 
-## Last updated: 2026-04-17 late night (bedtime wrap — audit followups #14 / #17 / #18 + client ESLint)
+## Last updated: 2026-04-18 morning (SaaS→GHCR cutover PR + launch-readiness audit)
+
+Austin stepped away mid-session. Two PRs left open for his review when he
+returns — he has the final call on when to merge + cut the next tag.
+
+### Artifacts shipped this session
+
+| | |
+|---|---|
+| [PR #12](https://github.com/jafools/nomii-ai/pull/12) — merged overnight | Audit follow-ups #14 (MONITORING.md), #17/#18 (API-CONVENTIONS.md), client ESLint config wired into CI |
+| [PR #13](https://github.com/jafools/nomii-ai/pull/13) — **OPEN, all CI green** | SaaS flips from `build: ./server` to `image: ghcr.io/jafools/nomii-{backend,frontend}:${IMAGE_TAG:-stable}`. Resolves Findings #10 + #11. Committed `docker-compose.prod.override.yml` + `config/nginx/prod.conf` so Hetzner's uncommitted overrides finally live in git. Deploy is now `pull + up -d`, not `--build`. |
+| [PR #14](https://github.com/jafools/nomii-ai/pull/14) — **OPEN, CI running** | Launch-readiness audit: fixes one real customer-facing dead link (`docs.pontensolutions.com/data-api` — DNS doesn't resolve), adds `docs/DATA-API.md` reference, adds `docs/LAUNCH-READINESS-2026-04-18.md` with the go-to-market blocker list. |
+
+### Austin's launch bar (captured from this session)
+
+> "I want strangers to be able to do the entire E2E setup and payment and
+> dashboard features without any bugs or breaking."
+
+Translated: SaaS-signup → verify → onboarding → dashboard → payment flow
+must work cold for a human who has never seen the product. Plus the
+self-hosted install.sh → setup wizard → onboarding flow.
+
+### Remaining launch blockers (human action only)
+
+See `docs/LAUNCH-READINESS-2026-04-18.md` for the full doc. TL;DR:
+
+1. **Stripe test mode on staging** (~10 min in Stripe dashboard). #1 unblock.
+2. **Live stranger walkthrough of SaaS signup flow** — nothing substitutes.
+3. **Live stranger walkthrough of self-hosted install** on a fresh VM.
+
+Everything else is polish (UptimeRobot, off-host backups, Playwright in CI,
+portal.js split, published docs site).
+
+### Hetzner first-time cutover (one-time, after PR #13 merges + tag cut)
+
+Required the first time PR #13's new compose layout hits Hetzner. Once:
+
+```bash
+ssh nomii@204.168.232.24
+cd ~/nomii-ai
+echo 'COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml' >> .env
+git fetch --tags
+git checkout vX.Y.Z              # whatever tag has PR #13
+git stash drop                   # throw out the old stashed overrides — in git now
+IMAGE_TAG=X.Y.Z docker compose pull backend frontend
+IMAGE_TAG=X.Y.Z docker compose up -d backend frontend
+curl -s http://127.0.0.1:3001/api/health
+docker inspect nomii-backend --format '{{.Config.Image}}'
+#   → ghcr.io/jafools/nomii-backend:X.Y.Z
+```
+
+After this cutover, all future deploys use the simpler `pull + up -d` form
+(documented at the new `docs/RELEASING.md`).
+
+### Next session priorities
+
+1. Merge PR #13 + cut v1.0.3 tag + do the Hetzner cutover above. Verify
+   `docker inspect nomii-backend` shows the GHCR image ref.
+2. Merge PR #14 (docs-only except for one JSX line — low risk).
+3. Set up Stripe test keys on staging. See `docs/LAUNCH-READINESS-2026-04-18.md`
+   §1 for step-by-step.
+4. Schedule the stranger walkthrough.
+
+### Still-true things carried forward
+
+- Hetzner backup cron runs 03:00 daily, log at `~/nomii-backup.log`.
+- Log rotation active (10MB × 5 = 50MB cap per container).
+- `10.0.100.25` disposable VM has boosted login/widget rate limits — harmless to leave.
+- pontenprox socat bridge to `10.0.100.25:80` still running; kill with
+  `pkill -f "socat TCP-LISTEN:3001"` when no longer needed.
+- Hetzner `.env` currently has TWO `APP_URL` lines (`nomii.pontensolutions.com`
+  AND `app.pontensolutions.com`). Last-one-wins = `app.` which is wrong but
+  the client never actually hits that URL in production (same-origin fetches).
+  **Clean up in the Hetzner cutover** — edit `.env` to have just
+  `APP_URL=https://nomii.pontensolutions.com`.
+
+### Open audit findings after this session
+
+Down to **8 remaining** (out of 25 originally):
+
+- **MEDIUM (1):** #5 knomi DB branding drift
+- **LOW (4):** #7 migration 015b naming, #14 uptime (external signup pending),
+  #15 CI DB name alignment, #16 `:latest` pinning
+- **INFO (3):** #19, #20, #22 — positive observations
+
+Once UptimeRobot signup happens, down to 7.
+
+---
+
+## Previous: 2026-04-17 late night (bedtime wrap — audit followups #14 / #17 / #18 + client ESLint)
 
 One last short session before bed. Closed out three audit findings with
 docs + a working client-side ESLint config + CI lint step re-enabled.
