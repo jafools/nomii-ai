@@ -16,7 +16,7 @@ customers. Follow it every time.
 | Env | URL | Image tag | Host | Purpose |
 |---|---|---|---|---|
 | Staging | https://nomii-staging.pontensolutions.com | `:edge` | Proxmox VM (`pontenprox` SSH alias → `10.0.100.2`) | Preview every merge to main before release |
-| Prod (SaaS) | https://nomii.pontensolutions.com | (built from git tag) | Hetzner Helsinki (`nomii@204.168.232.24`) | Live customer traffic |
+| Prod (SaaS) | https://nomii.pontensolutions.com | `:vX.Y.Z` pulled from GHCR | Hetzner Helsinki (`nomii@204.168.232.24`) | Live customer traffic |
 | Prod (on-prem) | customer's server | `:stable` (pulled from GHCR) | customer hardware | Self-hosted deployments |
 
 ## Day-to-day (working on main)
@@ -121,16 +121,27 @@ Wait for the GitHub Actions run to go green (~5–10 min).
 
 ## Deploying SaaS (Hetzner) to the new release
 
+> **Changed 2026-04-18:** SaaS now **pulls** the same GHCR image that on-prem
+> customers get (Finding #11 resolved). No more local source build on Hetzner.
+> The deploy step is `pull + up -d`, not `build`. `.env` on Hetzner has
+> `COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml` set so
+> the prod-specific SSL + localhost-bind config layers on automatically.
+
 ```bash
-# Fetch the tag on Hetzner and rebuild
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git fetch --tags && git checkout v1.2.3 && git stash pop && docker compose up -d --build backend frontend"
+# Fetch the tag, set IMAGE_TAG, pull matching GHCR image, roll containers.
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
 
 # Verify
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
+
+# Confirm Hetzner is running exactly the GHCR tag, not a stray local build:
+ssh nomii@204.168.232.24 "docker inspect nomii-backend --format '{{.Config.Image}}'"
+#  → ghcr.io/jafools/nomii-backend:1.2.3
 ```
 
-Keep SaaS on the exact tag, not `main`. That way `git describe` on the box
-tells you what version customers are running.
+Keep SaaS on the exact version tag (not `:stable` and not `main`). That way
+`docker inspect` tells you what version customers are running, and you can
+reproduce any production issue by running the same image tag locally.
 
 ## On-prem customer experience
 
@@ -175,8 +186,12 @@ git push origin v1.2.4
 If a release breaks production, roll back SaaS to the previous tag:
 
 ```bash
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git checkout v1.2.2 && git stash pop && docker compose up -d --build backend frontend"
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.2 && IMAGE_TAG=1.2.2 docker compose pull backend frontend && IMAGE_TAG=1.2.2 docker compose up -d backend frontend"
 ```
+
+All prior GHCR tags are retained (`:1.2.2`, `:1.1`, etc.), so rollback is just
+a re-pull of the older image — no rebuild, no risk of transient build
+breakage reintroducing itself.
 
 For on-prem customers: retag `:stable` on GHCR to point at the previous
 version. Fastest way is to re-run the docker-publish workflow manually

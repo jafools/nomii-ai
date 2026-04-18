@@ -36,10 +36,15 @@ services:
   # ============================================
   # Backend API (Express.js)
   # ============================================
+  # SaaS now pulls the same pre-built image that on-prem customers get
+  # (Finding #11 — audit 2026-04-17). Source-build is no longer part of
+  # the deploy path — the release flow (docs/RELEASING.md) is the only
+  # way new code reaches production. Override IMAGE_TAG in .env to pin
+  # to a specific version (e.g. v1.0.3); :stable tracks the latest
+  # tagged release.
   backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: ghcr.io/jafools/nomii-backend:${IMAGE_TAG:-stable}
+    pull_policy: always
     container_name: nomii-backend
     restart: unless-stopped
     logging: *default-logging
@@ -97,12 +102,13 @@ services:
   # ============================================
   # Frontend (React + nginx)
   # ============================================
+  # Pulled from GHCR — same image on-prem customers get. The docker-publish
+  # workflow builds this with the Dockerfile default (VITE_API_BASE_URL=""),
+  # so the client makes same-origin API calls — nginx (inside frontend)
+  # proxies /api/* to the backend container over the docker network.
   frontend:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.pontensolutions.com}
+    image: ghcr.io/jafools/nomii-frontend:${IMAGE_TAG:-stable}
+    pull_policy: always
     container_name: nomii-frontend
     restart: unless-stopped
     logging: *default-logging

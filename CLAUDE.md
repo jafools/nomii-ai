@@ -24,7 +24,7 @@
    GHCR rebuilds :vX.Y.Z, :vX.Y, :stable, :latest  (on-prem customers get this)
        │
        ▼
-   ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git fetch --tags && git checkout vX.Y.Z && git stash pop && docker compose up -d --build backend frontend"
+   ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout vX.Y.Z && IMAGE_TAG=X.Y.Z docker compose pull backend frontend && IMAGE_TAG=X.Y.Z docker compose up -d backend frontend"
        │
        ▼
    SaaS live on Hetzner at https://nomii.pontensolutions.com
@@ -40,7 +40,7 @@
 | | URL | Image tag | Host |
 |---|---|---|---|
 | Staging | https://nomii-staging.pontensolutions.com | `:edge` (auto-refresh 5 min) | Proxmox (`ssh pontenprox`) |
-| Prod SaaS | https://nomii.pontensolutions.com | built from `v*` git tag | Hetzner (`ssh nomii@204.168.232.24`) |
+| Prod SaaS | https://nomii.pontensolutions.com | `:vX.Y.Z` pulled from GHCR | Hetzner (`ssh nomii@204.168.232.24`) |
 | Prod on-prem | customer's server | `:stable` from GHCR | customer hardware |
 
 If a user asks "just push this to prod" — the answer is still branch + PR + CI + merge. They're asking about **reaching prod**, not bypassing the flow. The correct outcome is the tag + Hetzner deploy, not a `git push origin main`.
@@ -293,14 +293,17 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 > 3. SSH to Hetzner and check out the tag (below) — keeps SaaS and on-prem on the same SHA
 
 ```bash
-# Standard deploy — pull the tagged release, not main:
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git fetch --tags && git checkout v1.2.3 && git stash pop && docker compose up -d --build backend frontend"
+# Standard deploy — pull the GHCR image matching the tag you just cut:
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
 
 # Emergency hotfix from main (avoid unless necessary — skips the release gate):
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git checkout main && git pull && git stash pop && docker compose up -d --build backend frontend"
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git checkout main && git pull && IMAGE_TAG=edge docker compose pull backend frontend && IMAGE_TAG=edge docker compose up -d backend frontend"
 
 # Verify:
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
+
+# Confirm Hetzner is running the exact GHCR tag:
+ssh nomii@204.168.232.24 "docker inspect nomii-backend --format '{{.Config.Image}}'"
 
 # Run a migration:
 ssh nomii@204.168.232.24 "docker exec -i nomii-db psql -U nomii -d nomii_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
@@ -308,11 +311,16 @@ ssh nomii@204.168.232.24 "docker exec -i nomii-db psql -U nomii -d nomii_ai < ~/
 # View backend logs:
 ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=100"
 
-# Restart without rebuild:
+# Restart without re-pull:
 ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose restart backend frontend"
 ```
 
-**Important:** Hetzner has local docker-compose.yml changes (backend bound to 127.0.0.1, nginx SSL block). Always `git stash && git pull && git stash pop` — never `git pull` directly or the local overrides will conflict.
+**Changed 2026-04-18 (PR resolving Findings #10 + #11):** SaaS now pulls the same
+GHCR image that on-prem customers get. No more local source build, no more
+`git stash` dance — prod-specific overrides (SSL + 127.0.0.1 binding) live in
+the committed `docker-compose.prod.override.yml`, and Hetzner's `.env` sets
+`COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml` so docker
+compose layers them automatically. `git pull` on Hetzner is now safe.
 
 ### Refresh staging
 
