@@ -5,7 +5,106 @@
 
 ---
 
-## Last updated: 2026-04-18 morning (SaaS→GHCR cutover PR + launch-readiness audit)
+## Last updated: 2026-04-18 afternoon (SaaS→GHCR cutover SHIPPED — v1.0.3 live on GHCR images)
+
+Cutover done. Both PRs merged, tag cut, Hetzner fully migrated to GHCR-pull
+deploy. Binary parity with on-prem customers achieved.
+
+### Cutover log (executed in one SSH invocation, ~45s including pull+recreate)
+
+```
+=== Step 1: discard old local overrides (now in git)
+     git checkout -- client/nginx.conf docker-compose.yml        [✓]
+=== Step 2: add COMPOSE_FILE to .env                             [✓]
+=== Step 3: remove duplicate APP_URL (app.pontensolutions.com)   [✓]
+=== Step 4: git fetch + checkout v1.0.3                          [✓]
+=== Step 5: pull GHCR images (backend + frontend @ 1.0.3)        [✓]
+=== Step 6: recreate containers (db healthy, backend+frontend up) [✓]
+=== Step 7: verify
+     /api/health (internal):  {"status":"ok"...}                 [✓]
+     /api/health (public):    {"status":"ok"...}                 [✓]
+     nomii-backend image:     ghcr.io/jafools/nomii-backend:1.0.3 [✓]
+     nomii-frontend image:    ghcr.io/jafools/nomii-frontend:1.0.3 [✓]
+     git HEAD:                v1.0.3                              [✓]
+     Bundle hash changed:     D1g5IfPw → DBJt-PRb (new image live) [✓]
+```
+
+No customer impact (Austin confirmed he had no customers during the
+cutover, and the recreate is ~5s of backend downtime behind Cloudflare
+anyway).
+
+### Pre-flight that caught two things before they bit us
+
+1. Ran `docker compose -f docker-compose.yml -f docker-compose.prod.override.yml config`
+   on pontenprox against the merged files from main — parse OK, no YAML errors.
+2. SSH'd to Hetzner before starting the cutover to capture pre-state.
+   Discovered there was **no `git stash` entry** — Austin's overrides lived
+   as uncommitted working-tree edits, not a stash. Adjusted the cutover to
+   use `git checkout -- <files>` instead of `git stash drop`. Everything
+   else went as documented.
+
+### Artifacts shipped this session
+
+| | |
+|---|---|
+| [PR #12](https://github.com/jafools/nomii-ai/pull/12) — merged earlier (overnight wrap) | Audit follow-ups #14 / #17 / #18 + client ESLint |
+| [PR #13](https://github.com/jafools/nomii-ai/pull/13) — **MERGED** ([c633d95](https://github.com/jafools/nomii-ai/commit/c633d95)) | SaaS→GHCR. Findings #10 + #11 resolved. |
+| [PR #14](https://github.com/jafools/nomii-ai/pull/14) — **MERGED** ([7afcc50](https://github.com/jafools/nomii-ai/commit/7afcc50)) | Launch-readiness audit: fixed `docs.pontensolutions.com/data-api` dead link, added `docs/DATA-API.md`, added `docs/LAUNCH-READINESS-2026-04-18.md` |
+| **v1.0.3** tag | Pushed to GHCR (`:1.0.3`, `:1.0`, `:stable`, `:latest`), deployed to Hetzner, live |
+
+### Austin's launch bar (still the guiding star)
+
+> "I want strangers to be able to do the entire E2E setup and payment
+> and dashboard features without any bugs or breaking."
+
+### Remaining launch blockers (unchanged since morning — all human action)
+
+See `docs/LAUNCH-READINESS-2026-04-18.md` for full doc. TL;DR:
+
+1. **Stripe test mode on staging** (~10 min in Stripe dashboard) — #1 unblock
+2. **Live stranger walkthrough of SaaS signup flow** — cold, no-coaching
+3. **Live stranger walkthrough of self-hosted install** on a fresh VM
+
+### New stuff to know after this cutover
+
+- **`docker-compose.yml` on Hetzner** is now the clean-from-git version (no
+  local edits). Future deploys: `git fetch --tags && git checkout vX.Y.Z &&
+  IMAGE_TAG=X.Y.Z docker compose pull && docker compose up -d`. No stash.
+- **`.env` on Hetzner** now has `COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml`
+  which causes docker compose to auto-layer the prod override file. Don't
+  remove this line without also moving the overrides back into the base file.
+- **`.env` duplicate `APP_URL` line cleaned up** — only `APP_URL=https://nomii.pontensolutions.com`
+  remains. The old `app.pontensolutions.com` line was removed.
+- **SaaS + on-prem now run byte-for-byte identical images** — both pull
+  `ghcr.io/jafools/nomii-backend:1.0.3`. If a bug exists in one, it exists
+  in the other; confirmed via `docker inspect` post-cutover.
+
+### Audit findings scoreboard
+
+**After this session:** 8 → still 8 open (cutover just proved the fixes
+work, didn't resolve new findings).
+
+- **LOW (4):** #7, #14 (UptimeRobot signup pending), #15, #16
+- **INFO (3):** #19, #20, #22
+- **MEDIUM (1):** #5 knomi DB branding drift
+
+### Next session priorities
+
+1. **Stripe test mode config** — see `docs/LAUNCH-READINESS-2026-04-18.md` §1
+2. **Live stranger walkthrough** — no substitute
+3. **UptimeRobot signup** — 5 min, closes #14
+
+### Still-true things carried forward
+
+- Hetzner backup cron runs 03:00 daily, log at `~/nomii-backup.log`
+- Log rotation active (10MB × 5 = 50MB cap per container)
+- `10.0.100.25` disposable VM has boosted login/widget rate limits — harmless
+- pontenprox socat bridge to `10.0.100.25:80` still running; kill with
+  `pkill -f "socat TCP-LISTEN:3001"` when no longer needed
+
+---
+
+## Previous: 2026-04-18 morning (SaaS→GHCR cutover PR + launch-readiness audit)
 
 Austin stepped away mid-session. Two PRs left open for his review when he
 returns — he has the final call on when to merge + cut the next tag.
