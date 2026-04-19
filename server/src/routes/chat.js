@@ -29,7 +29,8 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
               t.id as tenant_id, t.name as tenant_name, t.agent_name,
               t.vertical, t.vertical_config,
               t.compliance_config, t.base_soul_template, t.llm_provider, t.llm_model,
-              s.managed_ai_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated
+              s.managed_ai_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
+              t.pii_tokenization_enabled
        FROM conversations co
        JOIN customers c ON co.customer_id = c.id
        JOIN tenants t ON c.tenant_id = t.id
@@ -103,7 +104,9 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
       || soulFile.base_identity?.agent_name
       || conv.agent_name;
 
-    // 8. Get response (real Claude or mock fallback)
+    // 8. Get response (real Claude or mock fallback). Tokenizer is built
+    //    here from tenant + decrypted memory/soul; the llmService is
+    //    responsible for tokenize → audit → send → detokenize.
     const agentResponse = await getAgentResponse({
       systemPrompt,
       messages:        llmMessages,
@@ -111,6 +114,14 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
       customerName:    `${conv.first_name} ${conv.last_name}`,
       agentName:       agentDisplayName,
       lastUserMessage: content,
+      tenant:          conv,
+      memoryFile:      conv.memory_file,
+      soulFile:        conv.soul_file,
+      breachCtx: {
+        tenantId:       conv.tenant_id,
+        conversationId: conversation_id,
+        customerId:     conv.customer_id,
+      },
     });
 
     // 9. Save agent response
@@ -136,6 +147,7 @@ router.post('/message', requireAuth(), requireTenantScope(), async (req, res, ne
         messageCount,
         sessionType,
         apiKey,
+        tenant:          { id: conv.tenant_id, pii_tokenization_enabled: conv.pii_tokenization_enabled },
         db,
       }).catch(err => console.error('[Chat] Memory update error:', err.message));
     });

@@ -12,9 +12,59 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 const { decrypt } = require('./apiKeyService');
+const { Tokenizer, BreachError } = require('./piiTokenizer');
 
 // Cache Anthropic clients by API key hash to avoid re-creating
 const _clientCache = new Map();
+
+// Global emergency kill-switch. Set PII_TOKENIZER_ENABLED=false to force-off
+// for every tenant regardless of per-tenant flag. Default is enabled.
+const TOKENIZER_GLOBAL_ENABLED =
+  process.env.PII_TOKENIZER_ENABLED !== 'false' &&
+  process.env.PII_TOKENIZER_ENABLED !== '0';
+
+
+/**
+ * Decide whether PII tokenization runs for this call.
+ * Per-tenant flag defaults TRUE after migration 031; callers without a
+ * tenant (dev scripts, tests) default TRUE as well. Global kill-switch wins.
+ */
+function tokenizationEnabledFor(tenant) {
+  if (!TOKENIZER_GLOBAL_ENABLED) return false;
+  if (!tenant) return true; // safest default
+  // Explicitly false → off; anything else (true/null/undefined) → on.
+  return tenant.pii_tokenization_enabled !== false;
+}
+
+
+/**
+ * Build a Tokenizer configured for this tenant + customer context.
+ * Passes memory_file + soul_file so names are pseudonymized deterministically.
+ */
+function buildTokenizer({ tenant, memoryFile, soulFile } = {}) {
+  if (!tokenizationEnabledFor(tenant)) return null;
+  return new Tokenizer({ memoryFile, soulFile });
+}
+
+
+/**
+ * Persist a breach log row. Best-effort — never throws, never blocks.
+ * Called only when the breach detector fires.
+ */
+async function logBreach({ tenantId, conversationId, customerId, callSite, findings }) {
+  try {
+    const db = require('../db');
+    await db.query(
+      `INSERT INTO pii_breach_log (tenant_id, conversation_id, customer_id, call_site, findings)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [tenantId || null, conversationId || null, customerId || null, callSite || 'unknown', JSON.stringify(findings)]
+    );
+    console.warn(`[PII] BLOCKED outbound request — ${findings.length} residual finding(s), tenant=${tenantId || 'unknown'}, site=${callSite}`);
+  } catch (err) {
+    // Logging the breach log failure is itself important — but don't escalate.
+    console.error('[PII] Failed to persist breach log:', err.message);
+  }
+}
 
 /**
  * Get or create an Anthropic client for a given API key.
@@ -73,21 +123,57 @@ function resolveApiKey(tenant) {
 
 /**
  * Call Claude API with a system prompt and message history (no tools).
+ *
+ * Tokenization flow (when `opts.tokenizer` is provided):
+ *   1. Tokenize systemPrompt + messages, producing an in-memory TokenMap.
+ *   2. Run the breach detector on the tokenized payload. If anything that
+ *      looks like PII remains, THROW BreachError (caller blocks + logs).
+ *   3. Send the tokenized payload to Anthropic.
+ *   4. Detokenize Claude's response using the same map before returning.
+ *
+ * @param {object} [opts]
+ * @param {Tokenizer} [opts.tokenizer]   Pre-built tokenizer with tenant context.
+ * @param {object}    [opts.breachCtx]   { tenantId, conversationId, customerId, callSite }
+ *                                        Used to persist breach log on BreachError.
  */
-async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null) {
+async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null, opts = {}) {
   const key = apiKey || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
   if (!key) throw new Error('No API key configured');
 
   const client = getClient(key);
+  const tokenizer = opts.tokenizer || null;
+
+  let sendSystem = systemPrompt;
+  let sendMessages = messages;
+  let tokenMap = null;
+
+  if (tokenizer) {
+    const sys = tokenizer.tokenize(systemPrompt);
+    tokenMap = sys.map;
+    sendSystem = sys.text;
+    const msgs = tokenizer.tokenizeMessages(messages, tokenMap);
+    sendMessages = msgs.messages;
+
+    try {
+      tokenizer.auditOutbound(sendSystem, sendMessages);
+    } catch (err) {
+      if (err instanceof BreachError) {
+        await logBreach({ ...(opts.breachCtx || {}), findings: err.findings });
+        throw err; // caller translates to safe user response
+      }
+      throw err;
+    }
+  }
 
   const response = await client.messages.create({
     model: model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
     max_tokens: maxTokens,
-    system: systemPrompt,
-    messages,
+    system: sendSystem,
+    messages: sendMessages,
   });
 
-  return response.content[0]?.text ?? '';
+  const rawText = response.content[0]?.text ?? '';
+  return tokenizer ? tokenizer.detokenize(rawText, tokenMap) : rawText;
 }
 
 /**
@@ -115,12 +201,14 @@ async function callClaudeWithTools(
   toolExecutor,
   model,
   maxTokens = 2048,
-  apiKey = null
+  apiKey = null,
+  opts = {}
 ) {
   const key = apiKey || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
   if (!key) throw new Error('No API key configured');
 
-  const client = getClient(key);
+  const client    = getClient(key);
+  const tokenizer = opts.tokenizer || null;
 
   // Format tool definitions for Anthropic API
   const anthropicTools = toolDefs.map(t => ({
@@ -129,15 +217,39 @@ async function callClaudeWithTools(
     input_schema: t.inputSchema,
   }));
 
-  // Agentic loop: Claude may call tools multiple times
+  // Tokenize system prompt + initial messages once. The TokenMap carries
+  // across loop iterations so repeated identifiers get consistent tokens.
+  let tokenMap  = null;
+  let sendSystem = systemPrompt;
   let currentMessages = [...messages];
+
+  if (tokenizer) {
+    const sys = tokenizer.tokenize(systemPrompt);
+    tokenMap = sys.map;
+    sendSystem = sys.text;
+    const msgs = tokenizer.tokenizeMessages(currentMessages, tokenMap);
+    currentMessages = msgs.messages;
+  }
+
   const MAX_TOOL_ROUNDS = 6; // safety ceiling — prevent runaway loops
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    if (tokenizer) {
+      try {
+        tokenizer.auditOutbound(sendSystem, currentMessages);
+      } catch (err) {
+        if (err instanceof BreachError) {
+          await logBreach({ ...(opts.breachCtx || {}), findings: err.findings });
+          throw err;
+        }
+        throw err;
+      }
+    }
+
     const response = await client.messages.create({
       model:      model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
       max_tokens: maxTokens,
-      system:     systemPrompt,
+      system:     sendSystem,
       messages:   currentMessages,
       tools:      anthropicTools,
     });
@@ -146,31 +258,49 @@ async function callClaudeWithTools(
     const hasToolUse = response.content.some(b => b.type === 'tool_use');
     if (!hasToolUse || response.stop_reason === 'end_turn') {
       const textBlocks = response.content.filter(b => b.type === 'text');
-      return textBlocks.map(b => b.text).join('\n').trim();
+      const joined = textBlocks.map(b => b.text).join('\n').trim();
+      return tokenizer ? tokenizer.detokenize(joined, tokenMap) : joined;
     }
 
-    // Claude wants to call tools — add its response to history
+    // Claude wants to call tools — add its response to history.
+    // Response content may contain tokenized text in text blocks; it's fine
+    // to feed back as-is since we'll re-tokenize any raw text on next audit.
     currentMessages.push({ role: 'assistant', content: response.content });
 
-    // Execute each tool call and collect results
+    // Execute each tool call. Tool inputs reference the tokenized text
+    // Claude saw, so we must DETOKENIZE them back to real values before
+    // executing against the DB, then RE-TOKENIZE the result going back in.
     const toolResults = [];
     for (const block of response.content) {
       if (block.type !== 'tool_use') continue;
 
-      console.log(`[LLM] Tool call: ${block.name}`, block.input);
-      const result = await toolExecutor(block.name, block.input);
+      let execInput = block.input;
+      if (tokenizer) {
+        // Shallow-walk input object and detokenize any string values.
+        execInput = {};
+        for (const [k, v] of Object.entries(block.input || {})) {
+          execInput[k] = typeof v === 'string' ? tokenizer.detokenize(v, tokenMap) : v;
+        }
+      }
+
+      console.log(`[LLM] Tool call: ${block.name}`);
+      const result = await toolExecutor(block.name, execInput);
+      let resultStr = JSON.stringify(result);
+
+      if (tokenizer) {
+        const tok = tokenizer.tokenize(resultStr, tokenMap);
+        resultStr = tok.text;
+      }
 
       toolResults.push({
         type:        'tool_result',
         tool_use_id: block.id,
-        content:     JSON.stringify(result),
+        content:     resultStr,
       });
     }
 
     // Feed results back to Claude as the next user turn
     currentMessages.push({ role: 'user', content: toolResults });
-
-    // Loop: Claude will now have the tool results and can respond or call more tools
   }
 
   // Safety fallback if loop limit is hit
@@ -233,8 +363,25 @@ async function validateApiKey(apiKey, provider = 'anthropic') {
 
 /**
  * Main entry point — chooses real or mock, supports per-tenant keys.
+ *
+ * When tenant.pii_tokenization_enabled is true (default) AND a memory_file
+ * is available, outbound text is tokenized before hitting Anthropic and
+ * swapped back on response. Breaches are log-and-block: if our detector
+ * finds residual PII in the tokenized payload, the request never leaves
+ * this process and the user sees a safe retry message.
  */
-async function getAgentResponse({ systemPrompt, messages, model, customerName, agentName, lastUserMessage, tenant }) {
+async function getAgentResponse({
+  systemPrompt,
+  messages,
+  model,
+  customerName,
+  agentName,
+  lastUserMessage,
+  tenant,
+  memoryFile,           // optional — enables name pseudonymization
+  soulFile,             // optional — enables name pseudonymization
+  breachCtx,            // { tenantId, conversationId, customerId, callSite }
+}) {
   // Determine provider: use tenant setting, then env, then mock
   const provider = tenant?.llm_provider || process.env.LLM_PROVIDER || 'mock';
 
@@ -244,11 +391,42 @@ async function getAgentResponse({ systemPrompt, messages, model, customerName, a
       console.warn('[LLM] No API key available for tenant, falling back to mock');
       return generateMockResponse(customerName, lastUserMessage, agentName);
     }
-    const raw = await callClaude(systemPrompt, messages, model, 1024, apiKey);
-    return sanitiseResponse(raw);
+
+    const tokenizer = buildTokenizer({ tenant, memoryFile, soulFile });
+
+    try {
+      const raw = await callClaude(
+        systemPrompt,
+        messages,
+        model,
+        1024,
+        apiKey,
+        { tokenizer, breachCtx: { ...(breachCtx || {}), callSite: 'chat' } }
+      );
+      return sanitiseResponse(raw);
+    } catch (err) {
+      if (err instanceof BreachError) {
+        // Log-and-block: request was NOT sent to Anthropic. Return a safe,
+        // generic message that signals to the user to retry without PII.
+        console.error(`[LLM] BreachError blocked chat request — ${err.findings.length} finding(s)`);
+        return 'I noticed some sensitive information in that message. For your security, I can\'t process it in this form. Please rephrase without the specific details and I\'ll be happy to help.';
+      }
+      throw err;
+    }
   }
 
   return generateMockResponse(customerName, lastUserMessage, agentName);
 }
 
-module.exports = { getAgentResponse, callClaude, callClaudeWithTools, generateMockResponse, validateApiKey, resolveApiKey, sanitiseResponse };
+module.exports = {
+  getAgentResponse,
+  callClaude,
+  callClaudeWithTools,
+  generateMockResponse,
+  validateApiKey,
+  resolveApiKey,
+  sanitiseResponse,
+  buildTokenizer,
+  tokenizationEnabledFor,
+  logBreach,
+};

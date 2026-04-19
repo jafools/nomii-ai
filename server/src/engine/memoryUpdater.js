@@ -27,7 +27,8 @@
  * Keyword-based fallback for fact extraction when no API key is available.
  */
 
-const { callClaude, resolveApiKey } = require('../services/llmService');
+const { callClaude, resolveApiKey, buildTokenizer } = require('../services/llmService');
+const { BreachError } = require('../services/piiTokenizer');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const db = require('../db');
 
@@ -48,19 +49,24 @@ function isSessionEnd(message) {
 
 // ─── LLM JSON extractor ────────────────────────────────────────────────────────
 
-async function callHaikuForJSON(systemPrompt, userContent, apiKey, maxTokens = 512) {
+async function callHaikuForJSON(systemPrompt, userContent, apiKey, maxTokens = 512, opts = {}) {
   try {
     const raw = await callClaude(
       systemPrompt,
       [{ role: 'user', content: userContent }],
       HAIKU,
       maxTokens,
-      apiKey
+      apiKey,
+      opts
     );
     const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     return JSON.parse(cleaned);
   } catch (err) {
-    console.warn('[MemoryUpdater] LLM JSON extraction failed:', err.message);
+    if (err instanceof BreachError) {
+      console.warn(`[MemoryUpdater] BreachError blocked Haiku call — ${err.findings.length} finding(s); skipping memory update`);
+    } else {
+      console.warn('[MemoryUpdater] LLM JSON extraction failed:', err.message);
+    }
     return null;
   }
 }
@@ -99,7 +105,7 @@ Return JSON with ONLY fields that contain NEW information:
 
 Include only keys with new data. Return {} if nothing is new.`;
 
-async function extractFactsFromExchange({ customerMessage, agentResponse, currentMemory, apiKey }) {
+async function extractFactsFromExchange({ customerMessage, agentResponse, currentMemory, apiKey, tokenizerOpts = {} }) {
   if (!apiKey) return keywordFallbackExtraction(customerMessage, currentMemory);
 
   const userContent = `Already known about this customer:
@@ -110,7 +116,7 @@ Agent replied: "${agentResponse.substring(0, 300)}"
 
 Extract NEW facts from the customer's message only. Return {} if nothing new.`;
 
-  const result = await callHaikuForJSON(FACT_EXTRACTION_SYSTEM, userContent, apiKey, 400);
+  const result = await callHaikuForJSON(FACT_EXTRACTION_SYSTEM, userContent, apiKey, 400, tokenizerOpts);
   // If LLM fails, use keyword fallback
   return result !== null ? result : keywordFallbackExtraction(customerMessage, currentMemory);
 }
@@ -178,7 +184,7 @@ Return ONLY valid JSON (no explanation, no markdown):
 
 Topics: short snake_case slugs e.g. retirement_income, healthcare_costs, estate_planning, product_inquiry`;
 
-async function generateSessionSummary({ messages, currentMemory, sessionType = 'regular', apiKey }) {
+async function generateSessionSummary({ messages, currentMemory, sessionType = 'regular', apiKey, tokenizerOpts = {} }) {
   const transcript = messages
     .slice(-30)
     .map(m => `${m.role === 'customer' ? 'Customer' : 'Agent'}: ${m.content.substring(0, 400)}`)
@@ -197,7 +203,7 @@ ${transcript}
 
 Generate a session summary for the agent's long-term memory.`;
 
-  const result = await callHaikuForJSON(SESSION_SUMMARY_SYSTEM, userContent, apiKey, 600);
+  const result = await callHaikuForJSON(SESSION_SUMMARY_SYSTEM, userContent, apiKey, 600, tokenizerOpts);
   return result !== null ? result : keywordFallbackSummary(messages, currentMemory);
 }
 
@@ -260,7 +266,7 @@ Return JSON with only fields that need updating:
 complexity_level: 1=very simple to 5=expert. Only change if clearly signaled.
 Only return fields that need to change. Return {} if no style signals.`;
 
-async function evolveSoulFromExchange({ customerMessage, agentResponse, currentSoul, apiKey }) {
+async function evolveSoulFromExchange({ customerMessage, agentResponse, currentSoul, apiKey, tokenizerOpts = {} }) {
   if (!apiKey) return {};
 
   const currentStyle = currentSoul.communication_style || currentSoul.communication_profile || {};
@@ -275,7 +281,7 @@ Agent: "${agentResponse.substring(0, 300)}"
 
 Detect communication style signals. Return {} if none.`;
 
-  return await callHaikuForJSON(SOUL_EVOLUTION_SYSTEM, userContent, apiKey, 300) || {};
+  return await callHaikuForJSON(SOUL_EVOLUTION_SYSTEM, userContent, apiKey, 300, tokenizerOpts) || {};
 }
 
 
@@ -467,12 +473,26 @@ async function updateMemoryAfterExchange({
   messageCount,
   sessionType,
   apiKey,
+  tenant,          // optional — enables PII tokenization on all Haiku sub-calls
   db,
 }) {
   let updatedMemory = JSON.parse(JSON.stringify(currentMemory || {}));
   let updatedSoul   = JSON.parse(JSON.stringify(currentSoul   || {}));
   let memoryChanged = false;
   let soulChanged   = false;
+
+  // Build one tokenizer for all Haiku sub-calls in this exchange. Uses the
+  // CURRENT (pre-update) memory/soul for name hints, which is correct: we
+  // want names that already exist to be pseudonymized consistently; net-new
+  // names appearing in this exchange are caught by regex where applicable.
+  const tokenizer = buildTokenizer({
+    tenant:     tenant || null,
+    memoryFile: currentMemory,
+    soulFile:   currentSoul,
+  });
+  const tokenizerOpts = tokenizer
+    ? { tokenizer, breachCtx: { tenantId: tenant?.id, conversationId, customerId, callSite: 'memoryUpdater' } }
+    : {};
 
   try {
     // ── 1. Fact extraction — every exchange ────────────────────────────────
@@ -481,6 +501,7 @@ async function updateMemoryAfterExchange({
       agentResponse,
       currentMemory: updatedMemory,
       apiKey,
+      tokenizerOpts,
     });
 
     if (facts && Object.keys(facts).length > 0) {
@@ -510,6 +531,7 @@ async function updateMemoryAfterExchange({
         currentMemory: updatedMemory,
         sessionType,
         apiKey,
+        tokenizerOpts,
       });
 
       if (summary) {
@@ -535,6 +557,7 @@ async function updateMemoryAfterExchange({
         agentResponse,
         currentSoul: updatedSoul,
         apiKey,
+        tokenizerOpts,
       });
 
       if (signals && Object.keys(signals).length > 0) {
