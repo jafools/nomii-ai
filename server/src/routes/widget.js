@@ -29,7 +29,8 @@ const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
 const db      = require('../db');
 const { buildSystemPrompt }                      = require('../engine/promptBuilder');
-const { getAgentResponse, callClaudeWithTools, callClaude, sanitiseResponse, resolveApiKey } = require('../services/llmService');
+const { getAgentResponse, callClaudeWithTools, callClaude, sanitiseResponse, resolveApiKey, buildTokenizer } = require('../services/llmService');
+const { BreachError } = require('../services/piiTokenizer');
 const { updateMemoryAfterSession, updateMemoryAfterExchange } = require('../engine/memoryUpdater');
 const { getToolDefinitions }                     = require('../tools/registry');
 const { execute: executeTool }                   = require('../tools/executor');
@@ -1025,7 +1026,8 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
          t.compliance_config, t.base_soul_template,
          t.llm_provider, t.llm_model, t.website_url,
          t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
-         t.enabled_tools, t.tool_configs
+         t.enabled_tools, t.tool_configs,
+         t.pii_tokenization_enabled
        FROM customers c
        JOIN tenants t ON c.tenant_id = t.id
        WHERE c.id = $1 AND t.id = $2`,
@@ -1120,11 +1122,24 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
     //   - Standard call      → if no tools enabled (pure conversation)
     //   - Mock response      → if no API key available
     const tenantForLLM = {
-      llm_provider:          conv.llm_provider,
-      llm_api_key_encrypted: conv.llm_api_key_encrypted,
-      llm_api_key_iv:        conv.llm_api_key_iv,
-      llm_api_key_validated: conv.llm_api_key_validated,
-      managed_ai_enabled:    req.subscription ? req.subscription.managed_ai_enabled : false,
+      llm_provider:             conv.llm_provider,
+      llm_api_key_encrypted:    conv.llm_api_key_encrypted,
+      llm_api_key_iv:           conv.llm_api_key_iv,
+      llm_api_key_validated:    conv.llm_api_key_validated,
+      managed_ai_enabled:       req.subscription ? req.subscription.managed_ai_enabled : false,
+      pii_tokenization_enabled: conv.pii_tokenization_enabled,
+    };
+
+    // Build tokenizer once; llmService applies it on every Anthropic call.
+    const tokenizer = buildTokenizer({
+      tenant:     tenantForLLM,
+      memoryFile: conv.memory_file,
+      soulFile:   conv.soul_file,
+    });
+    const breachCtx = {
+      tenantId:       tenant_id,
+      conversationId: conversation_id,
+      customerId:     customer_id,
     };
 
     // Resolve the enabled tools for this tenant (universal registry tools)
@@ -1187,7 +1202,8 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
           toolExecutor,
           conv.llm_model,
           2048,
-          resolvedKey
+          resolvedKey,
+          { tokenizer, breachCtx: { ...breachCtx, callSite: 'toolLoop' } }
         );
         agentResponse = sanitiseResponse(raw);
 
@@ -1201,18 +1217,28 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
           agentName:       agentDisplayName,
           lastUserMessage: sanitized,
           tenant:          tenantForLLM,
+          memoryFile:      conv.memory_file,
+          soulFile:        conv.soul_file,
+          breachCtx,
         });
       }
     } catch (llmErr) {
-      // Tag the failure so grepping backend logs for `[Widget][chat][llm]` lands
-      // on the exact cause of the user-facing "Sorry, I had trouble responding".
-      console.error(
-        `[Widget][chat][llm] path=${llmPath} provider=${conv.llm_provider || 'unknown'} ` +
-        `model=${conv.llm_model || 'default'} tenant=${tenant_id} conv=${conversation_id} ` +
-        `msgs=${existingMessages.length + 1} — ${llmErr.message}`
-      );
-      if (llmErr.stack) console.error(llmErr.stack);
-      throw llmErr;
+      if (llmErr instanceof BreachError) {
+        // Log-and-block: request was NOT sent to Anthropic. Return safe
+        // message to the end customer so they rephrase without the PII.
+        console.error(`[Widget][chat][llm] BreachError blocked request — ${llmErr.findings.length} finding(s), conversation=${conversation_id}`);
+        agentResponse = 'I noticed some sensitive information in that message. For your security, I can\'t process it in this form. Please rephrase without the specific details and I\'ll be happy to help.';
+      } else {
+        // Tag the failure so grepping backend logs for `[Widget][chat][llm]` lands
+        // on the exact cause of the user-facing "Sorry, I had trouble responding".
+        console.error(
+          `[Widget][chat][llm] path=${llmPath} provider=${conv.llm_provider || 'unknown'} ` +
+          `model=${conv.llm_model || 'default'} tenant=${tenant_id} conv=${conversation_id} ` +
+          `msgs=${existingMessages.length + 1} — ${llmErr.message}`
+        );
+        if (llmErr.stack) console.error(llmErr.stack);
+        throw llmErr;
+      }
     }
 
     // 8b. Increment message counter
@@ -1249,6 +1275,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
         messageCount:    msgCount,
         sessionType:     conv.onboarding_status !== 'complete' ? 'onboarding' : 'regular',
         apiKey:          resolveApiKey(tenantForLLM),
+        tenant:          { id: tenant_id, pii_tokenization_enabled: conv.pii_tokenization_enabled },
         db,
       }).catch(err => console.error('[Widget] Memory update error:', err.message));
     }
@@ -1281,6 +1308,7 @@ router.post('/greeting', requireWidgetAuth, async (req, res, next) => {
       `SELECT c.memory_file, c.soul_file,
               t.agent_name,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
+              t.pii_tokenization_enabled,
               s.managed_ai_enabled
        FROM customers c
        JOIN tenants t ON c.tenant_id = t.id
@@ -1349,13 +1377,33 @@ Customer name: ${customerName}
 Days since last session: ${lastSession.date ? Math.floor((Date.now() - new Date(lastSession.date)) / 86400000) : 'unknown'}
 ${contextLine}`;
 
-    const raw = await callClaude(
-      systemPrompt,
-      [{ role: 'user', content: userContent }],
-      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
-      100,
-      apiKey
-    );
+    const greetingTokenizer = buildTokenizer({
+      tenant:     row,
+      memoryFile: memory,
+      soulFile:   soul,
+    });
+    let raw;
+    try {
+      raw = await callClaude(
+        systemPrompt,
+        [{ role: 'user', content: userContent }],
+        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        100,
+        apiKey,
+        {
+          tokenizer: greetingTokenizer,
+          breachCtx: { tenantId: tenant_id, customerId: customer_id, callSite: 'greeting' },
+        }
+      );
+    } catch (err) {
+      if (err instanceof BreachError) {
+        // Greeting is best-effort — never surface a scary message, just
+        // fall back to the static greeting.
+        console.error(`[Widget][greeting] BreachError blocked greeting generation — ${err.findings.length} finding(s)`);
+        return res.json({ greeting: null });
+      }
+      throw err;
+    }
 
     const greeting = (raw || '').replace(/^["']|["']$/g, '').trim();
     res.json({ greeting: greeting || null });
