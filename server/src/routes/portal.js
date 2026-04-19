@@ -40,7 +40,8 @@ const { parse: csvParse } = require('csv-parse/sync');
 const { requireActiveSubscription, getSubscription, isWithinCustomerLimit } = require('../middleware/subscription');
 const { UNRESTRICTED_PLANS, VALID_ADMIN_PLANS, DEPLOYMENT_MODES, isSelfHosted } = require('../config/plans');
 const { encrypt, decrypt, getLast4 } = require('../services/apiKeyService');
-const { validateApiKey, resolveApiKey } = require('../services/llmService');
+const { validateApiKey, resolveApiKey, callClaude, buildTokenizer } = require('../services/llmService');
+const { BreachError } = require('../services/piiTokenizer');
 const { updateMemoryAfterSession, generateSessionSummary, applySessionSummary, applyFactsToMemory } = require('../engine/memoryUpdater');
 const { writeAuditLog }              = require('../middleware/auditLog');
 const { anonymizeCustomer }          = require('../jobs/dataRetention');
@@ -613,8 +614,28 @@ router.post('/customers/ai-map', async (req, res, next) => {
       return res.status(400).json({ error: 'headers array required' });
     }
 
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client    = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY });
+    // Load tenant for tokenizer + API key resolution. Sample rows in CSV uploads
+    // routinely contain regulated PII (SSNs, cards, account numbers, DOBs), so
+    // the same tokenize-before-Anthropic guarantee the chat path has must apply here.
+    const { rows: tenantRows } = await db.query(
+      `SELECT t.id, t.pii_tokenization_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv,
+              t.llm_api_key_validated, t.llm_provider,
+              COALESCE(s.managed_ai_enabled, false) AS managed_ai_enabled
+         FROM tenants t
+         LEFT JOIN subscriptions s ON s.tenant_id = t.id
+         WHERE t.id = $1
+         LIMIT 1`,
+      [req.portal.tenant_id]
+    );
+    const tenant = tenantRows[0];
+    if (!tenant) return res.status(404).json({ error: 'tenant not found' });
+
+    const apiKey = resolveApiKey(tenant);
+    if (!apiKey) {
+      return res.status(503).json({ error: 'No AI key configured for this tenant. Add one in Settings and retry.' });
+    }
+
+    const tokenizer = buildTokenizer({ tenant });
 
     const systemPrompt = `You are a data mapping assistant. Map CSV column names to customer record fields.
 Return ONLY a raw JSON object. No markdown. No explanation. Start with { and end with }.
@@ -630,22 +651,48 @@ Rules:
 - Every column must be mapped to something (use "skip" if irrelevant)
 - If two columns could both be "email", pick the most likely one and skip the other
 - Map full names to first_name if there is no separate last_name column
-- Account numbers, member IDs, user IDs → external_id`;
+- Account numbers, member IDs, user IDs → external_id
+
+Sample values may be redacted to opaque tokens like [EMAIL_N], [SSN_N], [PHONE_N],
+[CC_N], [ACCOUNT_N], [DOB_N], [POSTCODE_N], [IBAN_N], [PERSON_N] — the token name
+tells you what kind of data the column holds and is a strong mapping signal.`;
 
     const userPrompt = `Map these CSV columns to customer record fields.
 Columns: ${JSON.stringify(headers)}
 Sample data (first few rows): ${JSON.stringify(sample_rows?.slice(0, 3) || [])}`;
 
-    const message = await client.messages.create({
-      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: userPrompt }],
-    });
+    let rawText;
+    try {
+      rawText = await callClaude(
+        systemPrompt,
+        [{ role: 'user', content: userPrompt }],
+        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        512,
+        apiKey,
+        {
+          tokenizer,
+          breachCtx: {
+            tenantId: req.portal.tenant_id,
+            callSite: 'csv_import_ai_map',
+          },
+        }
+      );
+    } catch (err) {
+      if (err instanceof BreachError) {
+        // Breach detector fired on the tokenized payload — request NEVER left
+        // this process. Tell the admin which rows looked unsafe so they can
+        // retry without sample values.
+        return res.status(422).json({
+          error: 'Some sample values look like unredacted personal data that our safety check blocked. Try re-uploading without sample rows, or with a smaller, less-sensitive sample.',
+          blocked_by_pii_guard: true,
+        });
+      }
+      throw err;
+    }
 
     let mapping = {};
     try {
-      let raw = message.content[0].text.trim();
+      let raw = rawText.trim();
       raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       const objMatch = raw.match(/\{[\s\S]*\}/);
       if (objMatch) raw = objMatch[0];
@@ -656,7 +703,7 @@ Sample data (first few rows): ${JSON.stringify(sample_rows?.slice(0, 3) || [])}`
         if (!validFields.has(field)) mapping[col] = 'skip';
       }
     } catch {
-      console.error('[ai-map] JSON parse failed:', message.content[0]?.text?.slice(0, 300));
+      console.error('[ai-map] JSON parse failed:', rawText?.slice(0, 300));
       return res.status(500).json({ error: 'Could not parse AI mapping. Try again.' });
     }
 
