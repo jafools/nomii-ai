@@ -5,7 +5,92 @@
 
 ---
 
-## Last updated: 2026-04-18 afternoon (SaaS→GHCR cutover SHIPPED — v1.0.3 live on GHCR images)
+## Last updated: 2026-04-19 (PII tokenizer SHIPPED — v1.1.0 live; Privacy Policy drafted)
+
+First minor-version bump. Triggered by Austin asking "what does Anthropic
+see with our API calls?" Shipped two PRs end-to-end through the release
+flow in one session:
+
+### PRs merged + tag cut
+
+| | |
+|---|---|
+| [PR #16](https://github.com/jafools/nomii-ai/pull/16) — **MERGED** ([25b3077](https://github.com/jafools/nomii-ai/commit/25b3077)) | `docs/PRIVACY.md` — Nomii-specific Privacy Policy, BYOK vs Managed AI controller/processor split explicit, "Anthropic does not train on API data" stated directly, EU-first residency posture. Prior `.docx` draft moved to `docs/legal/` out of root. |
+| [PR #17](https://github.com/jafools/nomii-ai/pull/17) — **MERGED** ([9d4f5bd](https://github.com/jafools/nomii-ai/commit/9d4f5bd)) | Log-and-block PII tokenizer. Regulated identifiers (SSN, CC+Luhn, IBAN+mod97, phone, email, DOB, postcode, account) tokenized before every Anthropic call; names pseudonymized from structured `memory_file`; breach detector blocks outbound if residual PII remains. |
+| **v1.1.0** tag | Pushed to GHCR (`:1.1.0`, `:1.1`, `:stable`, `:latest`), deployed to Hetzner, live |
+
+### Deployment log (Hetzner, 2026-04-19 ~11:21 UTC)
+
+```
+=== git fetch + checkout v1.1.0                                    [✓]
+=== migration 031 applied (tenants.pii_tokenization_enabled +
+    pii_breach_log table)                                          [✓]
+=== IMAGE_TAG=1.1.0 docker compose pull (backend + frontend)       [✓]
+=== IMAGE_TAG=1.1.0 docker compose up -d (db healthy, backend+
+    frontend recreated)                                             [✓]
+=== verify
+     /api/health (internal):  {"status":"ok"...}                   [✓]
+     /api/health (public):    {"status":"ok"...}                   [✓]
+     nomii-backend image:     ghcr.io/jafools/nomii-backend:1.1.0  [✓]
+     git HEAD:                v1.1.0                                [✓]
+     pii_breach_log table:    7 columns present                    [✓]
+     pii_tokenization_enabled: TRUE for all 5 tenants              [✓]
+```
+
+### The marketing story
+
+`docs/marketing/PII-PROTECTION.md` has:
+- One-sentence claim: *"Nomii never sends your customers' regulated personal identifiers to Anthropic. Names are pseudonymized, SSNs and account numbers are tokenized, and a second-pass breach detector blocks any request that still contains unredacted PII."*
+- Three-line pitch for slide decks
+- Five-bullet compliance sheet for DPA attachments
+- Prospect Q&A, detector list, deliberately-not-tokenized list
+
+### Rollout posture
+
+- Default ON via migration 031 (`DEFAULT TRUE` on `tenants.pii_tokenization_enabled`)
+- Per-tenant toggle for BYOK opt-out if ever needed
+- Global kill-switch env var: `PII_TOKENIZER_ENABLED=false`
+- Fail-open on unknown tokens (Claude hallucinations don't crash)
+
+### Testing
+
+- `tests/tokenizer.test.js` — 42 unit tests, ~80ms, all green. Wired into `npm test` before the integration suite.
+- CI server-test applies migration 031 to a fresh test DB — confirms schema change is clean.
+
+### Austin's launch bar (unchanged)
+
+> "I want strangers to be able to do the entire E2E setup and payment
+> and dashboard features without any bugs or breaking."
+
+### Remaining launch blockers (all human action, unchanged from Apr 18)
+
+1. Stripe test mode on staging (~10 min in dashboard)
+2. Live stranger walkthrough of SaaS signup flow
+3. Live stranger walkthrough of self-hosted install on fresh VM
+4. UptimeRobot signup (closes audit #14)
+
+### New follow-ups from this session
+
+1. Admin dashboard UI toggle for `pii_tokenization_enabled` (column exists, no UI)
+2. Presidio NER sidecar for free-text names (beyond what `memory_file` hints cover)
+3. Wire tokenizer into `portal.js:639` CSV import (admin path sends 3 customer sample rows to Claude for header-mapping — lower risk than chat but still a leak vector)
+4. Update `docs/PRIVACY.md` §6.1 to mention live tokenization explicitly
+
+### Audit findings scoreboard
+
+**Unchanged at 8 open** — this session was orthogonal to the audit list. The PII story is a net-new win that didn't exist on the audit.
+
+### Still-true things carried forward
+
+- Hetzner backup cron runs 03:00 daily, log at `~/nomii-backup.log`
+- Log rotation active (10MB × 5 = 50MB cap per container)
+- Staging auto-refresh every 5 min via `nomii-staging-refresh.timer`
+- Hetzner `.env` carries `COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml`
+- SaaS + on-prem byte-for-byte identical (both pull GHCR `:1.1.0`)
+
+---
+
+## Previous: 2026-04-18 afternoon (SaaS→GHCR cutover SHIPPED — v1.0.3 live on GHCR images)
 
 Cutover done. Both PRs merged, tag cut, Hetzner fully migrated to GHCR-pull
 deploy. Binary parity with on-prem customers achieved.
