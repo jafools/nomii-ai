@@ -122,6 +122,32 @@ Nomii AI uses Claude models operated by **Anthropic, Inc.** (San Francisco, Cali
 2. The conversation message history
 3. Any tool-call inputs and results when the agent retrieves data on the end customer's behalf
 
+Before any of the above leaves our servers, it passes through the PII tokenization layer described immediately below.
+
+**PII tokenization layer — what Anthropic actually sees (since v1.1.0, April 2026):**
+
+Nomii AI applies an in-process PII tokenization layer to every outbound call to Anthropic. The effect is that regulated personal identifiers are replaced with opaque placeholders *before* the request leaves our server, and Anthropic never receives the raw values. The substitution is reversed locally on Claude's response so the end user still sees coherent text.
+
+*What is tokenized:*
+
+- **Government and financial identifiers:** Social Security Numbers (US), Swedish personnummer and samordningsnummer, payment card numbers (Luhn-validated), IBANs (mod-97-validated), generic bank account and routing numbers
+- **Contact identifiers:** email addresses, phone numbers (international and domestic formats), postal codes
+- **Dates of birth** (multiple regional formats)
+- **Names** of the end customer, their family members, and other individuals referenced in the stored memory blob — pseudonymized using structural hints from the encrypted `memory_file` and `soul_file` (no NLP is run on free text)
+
+Each identifier is replaced with a type-tagged, per-request token such as `[SSN_1]`, `[EMAIL_1]`, `[PHONE_1]`, `[PERSON_1]`. Claude reasons about the tokens as opaque references; our server substitutes the original values back into its response before it is stored or shown to the end customer.
+
+*Second-pass breach detector (defense-in-depth):*
+
+After tokenization, the outbound payload is re-scanned with an independent pattern matcher. If any residual regulated identifier is detected — for example, a novel PII format the tokenizer did not cover — **the request is not sent to Anthropic**. The end user receives a safe retry message, and the incident is recorded in our `pii_breach_log` table (tenant ID, call site, finding types; *no raw values are logged*) for security review.
+
+*Scope and limits:*
+
+- The tokenizer runs on every Anthropic call, in both Managed AI and BYOK modes, whether the tenant holds their own Anthropic agreement or Nomii AI does.
+- The tokenizer is enabled by default for every tenant (`tenants.pii_tokenization_enabled = true`, set by migration 031). A super-administrator can opt a specific tenant out, and a platform-wide kill-switch (`PII_TOKENIZER_ENABLED=false`) is available for emergencies. Either override is recorded.
+- The tokenizer is a **reduction**, not an elimination, of PII exposure. A determined user may still type unstructured personal information into the chat that no regex or structured hint can recognize (for example, free-text narrative disclosures). Tenants deploying Nomii AI in sensitive verticals should continue to configure their agent and end-user consent flows accordingly.
+- **Deliberately not tokenized** because doing so would break legitimate agent reasoning: currency amounts, ages expressed as a number, city and country names, and generic medical or life-event terms. The full list is documented internally under change control.
+
 **What Anthropic does with it (per Anthropic's Commercial Terms of Service, current as of April 2026):**
 
 - **Anthropic does not use API inputs or outputs to train their models.** This is a contractual commitment in Anthropic's Commercial Terms — see `https://www.anthropic.com/legal/commercial-terms`.
