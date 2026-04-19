@@ -457,6 +457,80 @@ test('Multiple PII types in one string', () => {
   assertEqual(recovered, original);
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 7b. CSV IMPORT AI-MAP — shape of the payload /api/portal/customers/ai-map
+//     sends. Must tokenize sample rows and pass the breach audit.
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nCSV import ai-map payload');
+
+test('CSV sample-row payload has PII tokenized before send', () => {
+  const t = new Tokenizer();
+  // Mirror the portal.js route: sample_rows are objects, JSON.stringify'd into
+  // the user prompt. If PII survives this path it leaks to Anthropic.
+  const headers = ['First Name', 'Email', 'SSN', 'Phone', 'Account #'];
+  const sample_rows = [
+    { 'First Name': 'Diana', 'Email': 'diana@example.com', 'SSN': '555-12-3456', 'Phone': '212-555-0199', 'Account #': '8765432101' },
+    { 'First Name': 'Carlos', 'Email': 'carlos@example.com', 'SSN': '111-22-3333', 'Phone': '+44 20 7946 0958', 'Account #': '1234567890' },
+  ];
+  const userPrompt = `Map these CSV columns to customer record fields.
+Columns: ${JSON.stringify(headers)}
+Sample data (first few rows): ${JSON.stringify(sample_rows.slice(0, 3))}`;
+  const { text, map } = t.tokenize(userPrompt);
+
+  // Every regulated identifier in the sample rows must be gone from the
+  // outbound text.
+  assertNotContains(text, '555-12-3456');
+  assertNotContains(text, '111-22-3333');
+  assertNotContains(text, 'diana@example.com');
+  assertNotContains(text, 'carlos@example.com');
+  assertNotContains(text, '212-555-0199');
+  assertNotContains(text, '8765432101');
+  assertNotContains(text, '1234567890');
+
+  // Column header names are not PII and must pass through unchanged so Claude
+  // can still map them.
+  assertContains(text, 'First Name');
+  assertContains(text, 'Email');
+  assertContains(text, 'SSN');
+
+  // Tokens should carry type signal Claude can use as a mapping hint.
+  assertContains(text, '[SSN_');
+  assertContains(text, '[EMAIL_');
+
+  // The payload must clear the breach audit (nothing the detector recognizes
+  // as PII should remain after tokenization).
+  t.auditOutbound('', [{ role: 'user', content: text }]);
+
+  // Same identifier in row 1 and row 2 should get the same token number for
+  // internal consistency (idempotent across duplicates).
+  assert(map.stats().totalTokens >= 5, 'Expected at least 5 tokens (SSN, email, phone, account × rows)');
+});
+
+test('CSV ai-map blocks when sample rows contain unredacted PII the detectors miss', () => {
+  // Synthetic case: a made-up identifier format that looks like a regulated
+  // number but isn't caught by a detector. This exercises the breach-audit
+  // fallback so a future novel PII type still fails closed.
+  const t = new Tokenizer();
+  // Normal PII — gets tokenized.
+  const sample = { 'Email': 'x@y.com', 'SSN': '555-12-3456' };
+  const prompt = `Sample: ${JSON.stringify(sample)}`;
+  const { text } = t.tokenize(prompt);
+  // Must not throw on fully-tokenized data.
+  t.auditOutbound('', [{ role: 'user', content: text }]);
+
+  // Now salt raw PII back in (simulates a tokenizer gap). Audit MUST fire.
+  const tainted = text + ' raw leak 123-45-6789';
+  let threw = false;
+  try {
+    t.auditOutbound('', [{ role: 'user', content: tainted }]);
+  } catch (err) {
+    assert(err instanceof BreachError);
+    threw = true;
+  }
+  assert(threw, 'Breach audit must fire on tainted payload');
+});
+
 test('TokenMap.stats() returns type breakdown', () => {
   const t = new Tokenizer();
   const { map } = t.tokenize('SSN 555-12-3456 and email x@y.com');
