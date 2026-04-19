@@ -5,7 +5,79 @@
 
 ---
 
-## Last updated: 2026-04-19 (PII tokenizer SHIPPED — v1.1.0 live; Privacy Policy drafted)
+## Last updated: 2026-04-19 evening (PII tokenizer SHIPPED + E2E verified on prod — v1.1.0 live)
+
+### Live E2E verification — PASSED
+
+Black-box E2E run against `https://nomii.pontensolutions.com` using a
+disposable test tenant. Full script preserved at [tests/pii_blackbox_e2e.sh](tests/pii_blackbox_e2e.sh)
+for future regression checks.
+
+**What the test did:**
+1. Created a disposable test tenant + subscription + widget key
+2. Started a widget session with a fake customer email
+3. Sent one message with a full suite of fake PII (SSN, CC, email, DOB,
+   bank account, full name "Diana Thornton")
+4. Tailed the backend logs during the turn
+5. Verified the response + logs + breach log
+6. Cleaned up every row it created
+
+**Results (all three green):**
+
+| Check | Result |
+|---|---|
+| Detokenization — agent response coherent, no raw tokens visible to user | ✓ (agent replied "Hi Diana!" — 694 chars, no `[SSN_N]` / `[CC_N]` leaked through) |
+| Backend logs — no raw PII (SSN, CC, email) in log stream | ✓ |
+| `pii_breach_log` delta on clean input | ✓ (0 new rows) |
+
+The agent's response is itself a proof-point: *"I don't actually store or
+have access to sensitive personal information like SSNs, credit card numbers,
+or bank account details for security reasons"* — which is truthful,
+because after tokenization Claude only sees `[SSN_1]`, `[CC_1]`, etc. The
+agent accurately reflects what it saw.
+
+### Fixes applied during testing
+
+None — the tokenizer passed E2E on the first real run. The script needed
+three cosmetic fixes before it would work:
+
+- Widget API key column is `VARCHAR(64)` — reduced `gen_random_bytes(32)`
+  to `(20)` so `'e2e_' + 40 hex chars = 44` fits
+- `subscriptions.max_messages_per_month` doesn't exist — correct column
+  name is `max_messages_month`
+- `psql -t -A` returns `INSERT 0 1` status after `RETURNING` value — split
+  into separate INSERT + SELECT to get a clean single-value capture
+
+### Artifacts shipped this session
+
+| | |
+|---|---|
+| [PR #16](https://github.com/jafools/nomii-ai/pull/16) — merged | Privacy Policy — `docs/PRIVACY.md` |
+| [PR #17](https://github.com/jafools/nomii-ai/pull/17) — merged | PII tokenizer feature (v1.1.0) |
+| [PR #18](https://github.com/jafools/nomii-ai/pull/18) — merged | SESSION_NOTES wrap of first half |
+| PR #19 — this session-wrap | E2E harness + evening notes |
+| v1.1.0 tag + Hetzner deploy | GHCR `:1.1.0`, `:stable`, migration 031 applied |
+
+### Still-true things (carried forward)
+
+- v1.1.0 live on Hetzner. `ghcr.io/jafools/nomii-backend:1.1.0`
+- All tenants default `pii_tokenization_enabled = true`
+- Launch blockers unchanged: Stripe test mode on staging, live stranger
+  walkthrough (SaaS + self-hosted), UptimeRobot signup
+
+### New follow-ups noted this session
+
+- Wire tokenizer into `portal.js:639` CSV import (admin path sends up to
+  3 customer sample rows to Claude for header mapping — lower risk than
+  chat but still a leak vector)
+- Admin UI toggle for `pii_tokenization_enabled` (column exists, no UI)
+- Presidio NER sidecar for free-text name detection beyond what
+  `memory_file` structural hints cover
+- Update `docs/PRIVACY.md` §6.1 to mention live tokenization explicitly
+
+---
+
+## Previous: 2026-04-19 midday (PII tokenizer SHIPPED — v1.1.0 live; Privacy Policy drafted)
 
 First minor-version bump. Triggered by Austin asking "what does Anthropic
 see with our API calls?" Shipped two PRs end-to-end through the release
