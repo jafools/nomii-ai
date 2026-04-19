@@ -204,15 +204,6 @@ const portalLookupLimiter = makeRateLimiter({
 app.use('/api/public/portal', portalLookupLimiter);
 app.use('/api/public/portal', require('./routes/public-portal'));
 
-// Routes — Protected (auth middleware applied per-route)
-app.use('/api/tenants', require('./routes/customTools'));   // custom tool builder (CRUD)
-app.use('/api/tenants', require('./routes/tenants'));
-app.use('/api/customers', require('./routes/customers'));
-app.use('/api/advisors', require('./routes/advisors'));
-app.use('/api/conversations', require('./routes/conversations'));
-app.use('/api/chat', require('./routes/chat'));
-app.use('/api/flags', require('./routes/flags'));
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'nomii-ai', timestamp: new Date().toISOString() });
