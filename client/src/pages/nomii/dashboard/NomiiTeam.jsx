@@ -51,7 +51,9 @@ const NomiiTeam = () => {
       setLoading(true);
       const data = await getTeam();
       setAgents(data.agents || []);
-      setMaxAgents(data.max_agents || 3);
+      // Server now derives max_agents from the plan's limits when the DB column
+      // is NULL, so this fallback is only hit if the API call fails entirely.
+      setMaxAgents(data.max_agents || 1);
       setPlan(data.plan || "trial");
     } catch (e) {
       setError(e.message);

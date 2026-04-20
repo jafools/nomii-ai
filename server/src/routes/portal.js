@@ -38,7 +38,7 @@ const jwt     = require('jsonwebtoken');
 const db      = require('../db');
 const { parse: csvParse } = require('csv-parse/sync');
 const { requireActiveSubscription, getSubscription, isWithinCustomerLimit } = require('../middleware/subscription');
-const { UNRESTRICTED_PLANS, VALID_ADMIN_PLANS, DEPLOYMENT_MODES, isSelfHosted } = require('../config/plans');
+const { UNRESTRICTED_PLANS, VALID_ADMIN_PLANS, DEPLOYMENT_MODES, isSelfHosted, PLAN_LIMITS } = require('../config/plans');
 const { encrypt, decrypt, getLast4 } = require('../services/apiKeyService');
 const { validateApiKey, resolveApiKey, callClaude, buildTokenizer } = require('../services/llmService');
 const { BreachError } = require('../services/piiTokenizer');
@@ -2335,13 +2335,19 @@ router.get('/team', async (req, res, next) => {
        ORDER BY created_at ASC`,
       [req.portal.tenant_id]
     );
-    // Get agent limit from subscription
+    // Get agent limit from subscription — if max_agents is NULL on an old row,
+    // derive it from the plan name via PLAN_LIMITS so the fallback matches the
+    // plan the tenant is actually on (was previously a flat "|| 3" which doesn't
+    // match any real tier).
     const { rows: subRows } = await db.query(
       'SELECT max_agents, plan FROM subscriptions WHERE tenant_id = $1',
       [req.portal.tenant_id]
     );
-    const maxAgents = subRows[0]?.max_agents || 3;
-    res.json({ agents: rows, max_agents: maxAgents, plan: subRows[0]?.plan });
+    const currentPlan = subRows[0]?.plan || 'trial';
+    const maxAgents   = subRows[0]?.max_agents
+                        || PLAN_LIMITS[currentPlan]?.max_agents
+                        || PLAN_LIMITS.trial.max_agents;
+    res.json({ agents: rows, max_agents: maxAgents, plan: currentPlan });
   } catch (err) { next(err); }
 });
 
@@ -2356,12 +2362,16 @@ router.post('/team/invite', async (req, res, next) => {
       return res.status(403).json({ error: 'Only account owners can invite agents' });
     }
 
-    // Enforce plan agent limit
+    // Enforce plan agent limit (falls back to plan-derived limit when the DB
+    // column is NULL on legacy rows)
     const { rows: subRows } = await db.query(
-      'SELECT max_agents FROM subscriptions WHERE tenant_id = $1',
+      'SELECT max_agents, plan FROM subscriptions WHERE tenant_id = $1',
       [req.portal.tenant_id]
     );
-    const maxAgents = subRows[0]?.max_agents || 3;
+    const currentPlan = subRows[0]?.plan || 'trial';
+    const maxAgents   = subRows[0]?.max_agents
+                        || PLAN_LIMITS[currentPlan]?.max_agents
+                        || PLAN_LIMITS.trial.max_agents;
     const { rows: countRows } = await db.query(
       'SELECT COUNT(*) FROM tenant_admins WHERE tenant_id = $1',
       [req.portal.tenant_id]

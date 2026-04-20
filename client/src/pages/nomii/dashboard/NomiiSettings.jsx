@@ -1610,7 +1610,7 @@ const EmailTemplatesSection = () => {
         <div>
           <label className="block text-[12px] font-medium text-white/30 mb-1.5">From Name</label>
           <input type="text" value={form.email_from_name} onChange={set("email_from_name")} maxLength={100}
-            placeholder="e.g. Covenant Trust Support" className={inputClass} style={inputStyle} />
+            placeholder="e.g. Acme Co Support" className={inputClass} style={inputStyle} />
           <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
             Appears as the sender name. Defaults to "Nomii AI" if blank.
           </p>
@@ -1627,7 +1627,7 @@ const EmailTemplatesSection = () => {
       <div>
         <label className="block text-[12px] font-medium text-white/30 mb-1.5">Email Footer</label>
         <textarea rows={2} value={form.email_footer} onChange={set("email_footer")} maxLength={500}
-          placeholder="e.g. Covenant Trust · 123 Main St, Suite 400 · New York, NY 10001"
+          placeholder="e.g. Acme Co · 123 Main St, Suite 400 · Springfield, IL 62701"
           className={inputClass} style={inputStyle} />
         <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
           Added at the bottom of all emails. Useful for compliance or branding.
