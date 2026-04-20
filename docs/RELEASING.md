@@ -1,6 +1,6 @@
-# Nomii AI — Release Process
+# Shenmay AI — Release Process
 
-This is the authoritative procedure for shipping a new version of Nomii to
+This is the authoritative procedure for shipping a new version of Shenmay to
 customers. Follow it every time.
 
 ## Mental model
@@ -43,7 +43,7 @@ https://nomii-staging.pontensolutions.com so you can click through it.
 
 ## Staging
 
-Staging is a permanently-running copy of Nomii on the Proxmox VM, using the
+Staging is a permanently-running copy of Shenmay on the Proxmox VM, using the
 `:edge` image tag. Its DB (`nomii_ai_staging`) is separate from prod, with
 fresh test data. SMTP and Stripe are left unset so you don't accidentally
 email customers or charge cards during QA.
