@@ -1,4 +1,4 @@
-# Nomii AI — Architecture & Product Blueprint
+# Shenmay AI — Architecture & Product Blueprint
 
 > *"Know Me"* — An industry-agnostic platform for deploying persistent, personalized AI agents that deeply understand each customer.
 
@@ -6,24 +6,24 @@
 
 ## 1. Vision
 
-Nomii AI is a B2B SaaS platform. Companies across any industry onboard their customers into Nomii, and each customer gets a **persistent, personalized AI agent** that deeply understands who they are. The agent reads from two core files before every interaction:
+Shenmay AI is a B2B SaaS platform. Companies across any industry onboard their customers into Shenmay, and each customer gets a **persistent, personalized AI agent** that deeply understands who they are. The agent reads from two core files before every interaction:
 
 - **Soul** — *Who the agent is* for this customer (tone, approach, personality calibration)
 - **Memory** — *What the agent knows* about this customer (data, goals, conversation history, preferences)
 
 The result: every conversation feels like picking up where you left off with someone who truly knows you.
 
-**Nomii AI is the platform company.** Tenants (like Covenant Trust) are customers who integrate Nomii agents into their own businesses. Each tenant operates in a specific "vertical" (retirement planning, healthcare, insurance, wealth management, education, etc.) which configures the agent's domain knowledge, terminology, and onboarding flows.
+**Shenmay AI is the platform company.** Tenants (like Covenant Trust) are customers who integrate Shenmay agents into their own businesses. Each tenant operates in a specific "vertical" (retirement planning, healthcare, insurance, wealth management, education, etc.) which configures the agent's domain knowledge, terminology, and onboarding flows.
 
 ---
 
 ## 2. Two Deployment Models
 
-Nomii AI offers two ways for companies to deploy personalized agents to their customers:
+Shenmay AI offers two ways for companies to deploy personalized agents to their customers:
 
 ### Model A — White-Label Platform (Primary Focus)
 
-Nomii provides a **full branded web application** that the tenant's customers log into directly.
+Shenmay provides a **full branded web application** that the tenant's customers log into directly.
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -51,18 +51,18 @@ Nomii provides a **full branded web application** that the tenant's customers lo
 ```
 
 **How it works:**
-- Tenant signs up for Nomii AI, picks a vertical, configures branding and compliance
-- Nomii generates a white-labeled web app (tenant's logo, colors, agent name)
+- Tenant signs up for Shenmay AI, picks a vertical, configures branding and compliance
+- Shenmay generates a white-labeled web app (tenant's logo, colors, agent name)
 - Tenant's customers are imported or self-register
 - Each customer logs in and gets their personalized AI agent
 - Tenant admins and advisors monitor via dashboards
-- Optional: custom domain (advisor.covenanttrust.com pointing to Nomii)
+- Optional: custom domain (advisor.covenanttrust.com pointing to Shenmay)
 
 **Best for:** Companies without an existing customer portal, companies who want a turnkey solution, PoC/demo scenarios (like Covenant Trust).
 
 ### Model B — Embeddable Widget/SDK (Future Phase)
 
-For companies with an existing customer portal, Nomii provides a **lightweight JavaScript SDK** that embeds a chat widget directly into their site.
+For companies with an existing customer portal, Shenmay provides a **lightweight JavaScript SDK** that embeds a chat widget directly into their site.
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -92,9 +92,9 @@ For companies with an existing customer portal, Nomii provides a **lightweight J
 
 **How it works:**
 - Company adds `<script src="https://sdk.nomii.ai/v1/nomii.js"></script>` to their site
-- When a user logs in to the company's portal, the company's backend sends a signed token to Nomii identifying the user
-- The Nomii widget appears, loads the user's Soul + Memory, and spawns their personalized agent
-- All agent logic lives on Nomii's backend — the company's site just renders the chat UI
+- When a user logs in to the company's portal, the company's backend sends a signed token to Shenmay identifying the user
+- The Shenmay widget appears, loads the user's Soul + Memory, and spawns their personalized agent
+- All agent logic lives on Shenmay's backend — the company's site just renders the chat UI
 
 **Best for:** Companies with existing portals who want to add AI without rebuilding their app.
 
@@ -148,7 +148,7 @@ Both deployment models share the same backend engine:
 
 ## 3. Industry Verticals
 
-Nomii AI is **industry-agnostic**. The Soul/Memory architecture works for any domain where deep customer knowledge drives better outcomes. Each tenant configures a vertical that determines:
+Shenmay AI is **industry-agnostic**. The Soul/Memory architecture works for any domain where deep customer knowledge drives better outcomes. Each tenant configures a vertical that determines:
 
 - **Terminology** — What things are called (accounts vs. policies vs. records)
 - **Data categories** — What customer data is tracked (finances, health records, policies)
@@ -446,7 +446,7 @@ Customer opens chat (via platform or embedded widget)
 - LLM provider selection
 - Usage analytics
 
-### D. Nomii Platform Admin (Internal)
+### D. Shenmay Platform Admin (Internal)
 - Tenant management (create, configure, monitor)
 - Vertical template library
 - System-wide analytics
@@ -501,7 +501,7 @@ Customer opens chat (via platform or embedded widget)
 
 ### Phase 4: Embeddable Widget (Model B)
 - [ ] `nomii.js` SDK — lightweight script for embedding
-- [ ] Token-based auth flow (company backend → Nomii API)
+- [ ] Token-based auth flow (company backend → Shenmay API)
 - [ ] Configurable widget UI (position, size, theme)
 - [ ] Widget documentation for developer integration
 
@@ -524,8 +524,8 @@ Customer opens chat (via platform or embedded widget)
 4. **Dual Deployment** — White-label platform OR embeddable widget. Meet companies where they are.
 5. **Human-in-the-Loop** — AI handles daily interactions; humans handle high-stakes decisions. Flag system keeps advisors in control.
 6. **Conversational Onboarding** — No forms. Just a warm conversation that builds a complete customer profile.
-7. **B2B White-Label** — Companies get *their* branded experience, powered by Nomii.
+7. **B2B White-Label** — Companies get *their* branded experience, powered by Shenmay.
 
 ---
 
-*This document is the living blueprint for Nomii AI. Update as decisions are made.*
+*This document is the living blueprint for Shenmay AI. Update as decisions are made.*

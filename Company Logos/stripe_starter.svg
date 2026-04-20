@@ -55,7 +55,7 @@
     <circle cx="38" cy="11" r="2" fill="#00D4AA" opacity="0.8"/>
     <circle cx="38" cy="33" r="2" fill="#6C63FF" opacity="0.8"/>
   </g>
-  <text x="100" y="65" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Nomii<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
+  <text x="100" y="65" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Shenmay<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
 
   <!-- Plan label pill -->
   <rect x="48" y="110" width="90" height="28" rx="14" fill="url(#grad)" opacity="0.15"/>

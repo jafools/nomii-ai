@@ -131,5 +131,5 @@ nomii-ai/
 - `SESSION_HANDOFF.md` — Current system state, what's been built, errors & fixes, what's next
 - `DEPLOYMENT.md` — Proxmox deployment guide
 - `CLOUDFLARE_TUNNEL.md` — Cloudflare Tunnel setup guide (public URL via `cloudflared` Docker service)
-- `Covenant Trust/NOMII_AI_ARCHITECTURE.md` — Full architecture blueprint
+- `Covenant Trust/SHENMAY_AI_ARCHITECTURE.md` — Full architecture blueprint
 - `Covenant Trust/DECISIONS_LOG.md` — All product decisions (21 decisions logged)
