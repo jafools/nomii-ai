@@ -25,21 +25,21 @@ const stripe = Stripe(STRIPE_SECRET_KEY);
 const PLANS = [
   {
     key:         'starter',
-    name:        'Nomii AI — Self-Hosted Starter',
-    description: 'Run Nomii AI on your own server. Up to 50 customers, 1,000 messages/mo, 10 agents.',
+    name:        'Shenmay AI — Self-Hosted Starter',
+    description: 'Run Shenmay AI on your own server. Up to 50 customers, 1,000 messages/mo, 10 agents.',
     monthly_usd: 4900,   // $49.00
     annual_usd:  52900,  // $529.00  (= 49 × 12 × 0.9, rounded)
   },
   {
     key:         'growth',
-    name:        'Nomii AI — Self-Hosted Growth',
+    name:        'Shenmay AI — Self-Hosted Growth',
     description: 'Up to 250 customers, 5,000 messages/mo, 25 agents. Managed AI included.',
     monthly_usd: 14900,  // $149.00
     annual_usd:  159900, // $1,599.00
   },
   {
     key:         'professional',
-    name:        'Nomii AI — Self-Hosted Professional',
+    name:        'Shenmay AI — Self-Hosted Professional',
     description: 'Up to 1,000 customers, 25,000 messages/mo, 100 agents. Managed AI included.',
     monthly_usd: 39900,  // $399.00
     annual_usd:  429900, // $4,299.00
@@ -48,7 +48,7 @@ const PLANS = [
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('\nNomii AI — Stripe Self-Hosted Setup');
+  console.log('\nShenmay AI — Stripe Self-Hosted Setup');
   console.log('─'.repeat(50));
 
   const results = [];

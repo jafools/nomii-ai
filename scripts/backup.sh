@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Nomii AI — Backup Script
+# Shenmay AI — Backup Script
 # Creates a timestamped, gzipped PostgreSQL dump.
 # Run: bash scripts/backup.sh
 # Optional: add to cron for automatic backups.
@@ -33,7 +33,7 @@ FILENAME="nomii_backup_${TIMESTAMP}.sql.gz"
 FILEPATH="$BACKUP_DIR/$FILENAME"
 
 echo ""
-echo "Nomii AI — Backup"
+echo "Shenmay AI — Backup"
 echo "=================="
 echo "Destination: $FILEPATH"
 echo ""

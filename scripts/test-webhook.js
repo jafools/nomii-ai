@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ============================================================
-//  Nomii AI — Stripe Webhook Simulator
+//  Shenmay AI — Stripe Webhook Simulator
 //  Sends a fake-but-correctly-signed checkout.session.completed
 //  event to your webhook endpoint, exactly like Stripe would.
 //

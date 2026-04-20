@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Nomii AI — Hetzner SaaS DB Backup
+# Shenmay AI — Hetzner SaaS DB Backup
 #
 # Runs on the Hetzner prod VM (`ssh nomii@204.168.232.24`).
 # Daily pg_dump of the nomii_ai database, gzipped, kept 14 days.

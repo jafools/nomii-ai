@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Nomii AI — Migration 014 Fix
+#  Shenmay AI — Migration 014 Fix
 #
 #  Applies migration 014 (unread badges + multi-agent support)
 #  safely to the running database container. All statements use
@@ -18,7 +18,7 @@ set -e
 
 echo ""
 echo "=================================================="
-echo "  Nomii AI — Apply Migration 014"
+echo "  Shenmay AI — Apply Migration 014"
 echo "  unread flag + max_agents + agent invite columns"
 echo "=================================================="
 echo ""

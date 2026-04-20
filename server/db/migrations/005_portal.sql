@@ -7,7 +7,7 @@
 -- 1. Tenant admin accounts
 --    Separate from customer/advisor/admin roles.
 --    These are the people who log into pontensolutions.com
---    to manage their Nomii tenant.
+--    to manage their Shenmay tenant.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tenant_admins (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),

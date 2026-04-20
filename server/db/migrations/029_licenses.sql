@@ -2,8 +2,8 @@
 -- Migration 029 — License keys for self-hosted deployments
 --
 -- Self-hosted operators must hold a valid license key issued
--- by Nomii. This table is the authoritative record on the
--- Nomii cloud instance. Self-hosted instances only hold the
+-- by Shenmay. This table is the authoritative record on the
+-- Shenmay cloud instance. Self-hosted instances only hold the
 -- key string in their .env; they ping /api/license/validate
 -- on startup and every 24 hours to confirm validity.
 -- ============================================================
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS licenses (
   -- Allow admin to revoke without deleting the row
   is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
 
-  -- Free-text notes for the Nomii admin (not exposed to operator)
+  -- Free-text notes for the Shenmay admin (not exposed to operator)
   notes           TEXT
 );
 

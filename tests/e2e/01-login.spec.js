@@ -12,7 +12,7 @@ test.describe('Login & Logout', () => {
 
   test('login page loads with form fields', async ({ page }) => {
     await page.goto('/nomii/login');
-    await expect(page.locator('h1')).toContainText('Sign in to Nomii AI');
+    await expect(page.locator('h1')).toContainText('Sign in to Shenmay AI');
     await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.passwordInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.submitBtn)).toBeVisible();

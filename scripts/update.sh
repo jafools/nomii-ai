@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Nomii AI — Self-hosted update
+# Shenmay AI — Self-hosted update
 #
 # Pulls the latest compose file + images for a self-hosted install.
 # Safe to run repeatedly; idempotent.
@@ -50,14 +50,14 @@ NC='\033[0m'
 cd "$SCRIPT_DIR"
 
 if [ ! -f .env ]; then
-  echo -e "${YELLOW}No .env found in $(pwd). Is this a Nomii install directory?${NC}" >&2
+  echo -e "${YELLOW}No .env found in $(pwd). Is this a Shenmay install directory?${NC}" >&2
   echo -e "If you're trying to do a fresh install, run scripts/install.sh instead." >&2
   exit 1
 fi
 
 echo ""
 echo -e "${BOLD}============================================================${NC}"
-echo -e "${BOLD}  Nomii AI — Update to ${GITHUB_REF}${NC}"
+echo -e "${BOLD}  Shenmay AI — Update to ${GITHUB_REF}${NC}"
 echo -e "${BOLD}============================================================${NC}"
 echo ""
 

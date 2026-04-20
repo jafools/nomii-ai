@@ -1,13 +1,13 @@
 #!/bin/bash
 # ============================================================
-# Nomii AI — Database Setup Script
+# Shenmay AI — Database Setup Script
 # Runs migrations and seeds inside the Docker environment
 # ============================================================
 
 set -e
 
 echo ""
-echo "🧠 Nomii AI — Database Setup"
+echo "🧠 Shenmay AI — Database Setup"
 echo "=============================="
 echo ""
 

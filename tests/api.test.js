@@ -1,5 +1,5 @@
 /**
- * Nomii AI — Phase 1 API Integration Tests
+ * Shenmay AI — Phase 1 API Integration Tests
  *
  * Pure Node.js, no test framework. Requires Node 18+ (native fetch).
  * Run with: node tests/api.test.js
