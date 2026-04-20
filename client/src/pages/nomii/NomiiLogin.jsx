@@ -105,8 +105,10 @@ const NomiiLogin = () => {
 
         <div className="relative z-10 max-w-sm space-y-10">
           <div>
-            <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
-            <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
+            <a href="https://pontensolutions.com" className="inline-block hover:opacity-80 transition-opacity" title="Back to Pontén Solutions">
+              <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
+              <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
+            </a>
           </div>
 
           <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight">

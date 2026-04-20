@@ -45,8 +45,10 @@ const BrandingPanel = () => (
     <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
     <div className="relative z-10">
-      <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
-      <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
+      <a href="https://pontensolutions.com" className="inline-block hover:opacity-80 transition-opacity" title="Back to Pontén Solutions">
+        <img src={nomiiLogo} alt="Nomii AI" className="h-8 brightness-0 invert mb-2" />
+        <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
+      </a>
     </div>
 
     <div className="relative z-10 space-y-8">
