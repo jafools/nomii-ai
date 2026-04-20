@@ -13,7 +13,7 @@ import {
   activateLicense,
   deactivateLicense,
 } from "@/lib/nomiiApi";
-import { ExternalLink, Crown, Users, MessageSquare, Zap, TrendingUp, AlertTriangle, Key, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { ExternalLink, Crown, Users, MessageSquare, Zap, TrendingUp, AlertTriangle, Key, CheckCircle2, XCircle, Loader2, ArrowRight, ChevronDown } from "lucide-react";
 import { PLAN_LABELS, DEPLOYMENT_MODES } from "@/lib/constants";
 
 // Live prod defaults — used as a safety fallback if /api/config omits them.
@@ -23,6 +23,16 @@ import { PLAN_LABELS, DEPLOYMENT_MODES } from "@/lib/constants";
 const STRIPE_PRICING_TABLE_ID_LIVE = "prctbl_1TBzcVBlxts7IvMoJ2bWRd47";
 const STRIPE_PUBLISHABLE_KEY_LIVE  = "pk_live_U89VEYjy02VivrGxi5QF2IIw00cPn8Ts2n";
 const STRIPE_PORTAL_LINK           = "https://billing.stripe.com/p/login/28EbJ0cqz4y5gZEgS68N200";
+
+// Maps current plan → recommended next tier + a one-line delta pitch.
+// Absent keys (professional / enterprise / master) render no nudge; the
+// existing "Need more? Contact Sales" CTA at the bottom handles those.
+const UPGRADE_MAP = {
+  free:    { next: "starter", delta: "50 customers (vs 1) · 1,000 messages/mo (vs 20) · Keep your own API key" },
+  trial:   { next: "starter", delta: "50 customers (vs 1) · 1,000 messages/mo (vs 20) · Keep your own API key" },
+  starter: { next: "growth",  delta: "250 customers (vs 50) · 5,000 messages/mo (vs 1,000) · Managed AI unlocked" },
+  growth:  { next: "professional", delta: "1,000 customers (vs 250) · 25,000 messages/mo (vs 5,000) · Priority support" },
+};
 
 function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReached }) {
   if (limit === null || limit === undefined) {
@@ -69,6 +79,57 @@ function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReach
           style={{ width: `${displayPct}%`, background: barColor }}
         />
       </div>
+    </div>
+  );
+}
+
+function UpgradeNudge({ current, next, delta }) {
+  const currentLabel = PLAN_LABELS[current] || { label: current, color: "#6B7280" };
+  const nextLabel    = PLAN_LABELS[next]    || { label: next,    color: "#C9A84C" };
+  const scrollToPlans = (e) => {
+    e.preventDefault();
+    document.querySelector("stripe-pricing-table")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  return (
+    <div
+      className="rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-4"
+      style={{
+        background: `linear-gradient(135deg, rgba(255,255,255,0.02), ${nextLabel.color}14)`,
+        border:     `1px solid ${nextLabel.color}33`,
+      }}
+    >
+      <div className="shrink-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+          Current plan
+        </p>
+        <span
+          className="text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
+          style={{ background: `${currentLabel.color}22`, color: currentLabel.color, border: `1px solid ${currentLabel.color}44` }}
+        >
+          {currentLabel.label}
+        </span>
+      </div>
+
+      <ArrowRight className="h-5 w-5 shrink-0 hidden md:block" style={{ color: "rgba(255,255,255,0.25)" }} />
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+          Recommended next
+        </p>
+        <p className="text-base font-bold mb-0.5" style={{ color: nextLabel.color }}>
+          {nextLabel.label}
+        </p>
+        <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{delta}</p>
+      </div>
+
+      <a
+        href="#plans"
+        onClick={scrollToPlans}
+        className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:brightness-125"
+        style={{ background: `${nextLabel.color}22`, border: `1px solid ${nextLabel.color}55`, color: nextLabel.color }}
+      >
+        See plans <ChevronDown size={14} />
+      </a>
     </div>
   );
 }
@@ -533,6 +594,17 @@ const NomiiPlans = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Current plan + recommended next upgrade nudge.
+          Skips when the user is on the top public tier (professional) or
+          on any unrestricted plan — the Enterprise CTA at the bottom handles those. */}
+      {UPGRADE_MAP[currentPlan] && (
+        <UpgradeNudge
+          current={currentPlan}
+          next={UPGRADE_MAP[currentPlan].next}
+          delta={UPGRADE_MAP[currentPlan].delta}
+        />
       )}
 
       {/* Stripe Pricing Table */}
