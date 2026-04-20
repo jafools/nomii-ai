@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Shenmay">
+  <rect width="64" height="64" rx="12" fill="#0F5F5C"/>
+  <text x="20" y="44" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="36" font-weight="600" fill="#FFFFFF" letter-spacing="-1">S</text>
+  <circle cx="48" cy="41" r="3.5" fill="#FFFFFF"/>
+</svg>

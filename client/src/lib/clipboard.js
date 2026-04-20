@@ -2,7 +2,7 @@
 //
 // navigator.clipboard is only available on HTTPS / localhost, so
 // self-hosted installs served over plain HTTP need an execCommand
-// fallback. Previously duplicated in NomiiSettings and Step4InstallWidget.
+// fallback. Previously duplicated in ShenmaySettings and Step4InstallWidget.
 export const copyToClipboard = (text) => {
   if (navigator.clipboard?.writeText) {
     return navigator.clipboard.writeText(text).catch(() => _fallbackCopy(text));
