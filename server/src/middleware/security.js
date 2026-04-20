@@ -64,7 +64,7 @@ function securityHeaders(req, res, next) {
   // Limit referrer information to same origin only
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-  // Disable features that Nomii doesn't use
+  // Disable features that Shenmay doesn't use
   res.setHeader(
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=()'

@@ -1,7 +1,7 @@
 /**
  * NOMII AI — External Data Ingestion API  (v1)
  *
- * Allows tenants to push customer data into Nomii programmatically
+ * Allows tenants to push customer data into Shenmay programmatically
  * from their own CRM, backend, or nightly sync job.
  *
  * Authentication:
@@ -22,7 +22,7 @@
  *   Key-level: per API key — 120 req/min default (DATA_API_RATE_LIMIT env var to override)
  *
  * Design decisions:
- *   - customers are identified by external_id (your CRM ID) — Nomii UUID is returned but not required
+ *   - customers are identified by external_id (your CRM ID) — Shenmay UUID is returned but not required
  *   - records are upserted by (customer_id, category, label) — safe to re-push the same data
  *   - value is always stored as TEXT; numeric aggregation in tools handles parsing
  */
@@ -124,7 +124,7 @@ async function requireDataApiKey(req, res, next) {
 // ── POST /api/v1/customers ─────────────────────────────────────────────────────
 // Create or update a customer by external_id.
 // If a customer with this external_id already exists for this tenant, it is updated.
-// Returns the Nomii customer UUID.
+// Returns the Shenmay customer UUID.
 //
 // Body:
 //   { external_id, name, email, phone?, metadata? }

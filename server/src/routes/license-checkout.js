@@ -2,7 +2,7 @@
  * POST /api/public/license/checkout
  *
  * Public endpoint — no auth required.
- * Creates a Stripe Checkout Session for a self-hosted Nomii AI license purchase.
+ * Creates a Stripe Checkout Session for a self-hosted Shenmay AI license purchase.
  *
  * Body:     { plan: 'starter'|'growth'|'professional', interval: 'monthly'|'annual', email?: string }
  * Response: { url: string }  — Stripe-hosted checkout URL to redirect the browser to

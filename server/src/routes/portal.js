@@ -2887,7 +2887,7 @@ router.get('/tools/types', (req, res) => {
         label:   'Connect Your Own System',
         emoji:   '🔗',
         tagline: 'Your AI fetches live data from your own servers',
-        explanation: 'When your AI needs information, it calls your own API or system in real time. Your data never leaves your servers — Nomii just asks for what it needs.',
+        explanation: 'When your AI needs information, it calls your own API or system in real time. Your data never leaves your servers — Shenmay just asks for what it needs.',
         example: 'Use when you have an internal API, CRM, or database that your IT team can expose via a URL.',
         config_fields: [
           { key: 'webhook_url', label: 'Your system URL (endpoint)', type: 'text', required: true,
@@ -2898,7 +2898,7 @@ router.get('/tools/types', (req, res) => {
               { value: 'GET',  label: 'GET' },
             ],
             default: 'POST' },
-          { key: 'auth_type', label: 'How should Nomii authenticate to your system?', type: 'select', required: false,
+          { key: 'auth_type', label: 'How should Shenmay authenticate to your system?', type: 'select', required: false,
             options: [
               { value: 'none',    label: 'No authentication' },
               { value: 'bearer',  label: 'Bearer token (most common)' },
@@ -3390,9 +3390,9 @@ router.post('/connectors/slack/test', async (req, res, next) => {
 
     const payload = {
       blocks: [
-        { type: 'header', text: { type: 'plain_text', text: '✅  Nomii AI — Connection Successful', emoji: true } },
+        { type: 'header', text: { type: 'plain_text', text: '✅  Shenmay AI — Connection Successful', emoji: true } },
         { type: 'section', text: { type: 'mrkdwn', text: `Your Slack integration is working correctly. You'll now receive notifications here for your configured events.\n\n*Workspace:* ${rows[0].name || 'Your company'}` } },
-        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Sent from Nomii AI · Test message' }] },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Sent from Shenmay AI · Test message' }] },
       ],
     };
 
@@ -3430,9 +3430,9 @@ router.post('/connectors/teams/test', async (req, res, next) => {
       '@type':    'MessageCard',
       '@context': 'http://schema.org/extensions',
       themeColor: 'C9A84C',
-      summary:    'Nomii AI — Connection Successful',
+      summary:    'Shenmay AI — Connection Successful',
       sections: [{
-        activityTitle:    '✅ Nomii AI — Connection Successful',
+        activityTitle:    '✅ Shenmay AI — Connection Successful',
         activitySubtitle: rows[0].name || 'Your company',
         text: 'Your Microsoft Teams integration is working correctly. You\'ll now receive notifications here for your configured events.',
       }],
@@ -3577,7 +3577,7 @@ router.post('/webhooks/:id/test', async (req, res, next) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Webhook not found' });
 
     const { fireWebhooks } = require('../services/webhookService');
-    fireWebhooks(req.portal.tenant_id, 'test.ping', { message: 'This is a test ping from Nomii AI.' });
+    fireWebhooks(req.portal.tenant_id, 'test.ping', { message: 'This is a test ping from Shenmay AI.' });
 
     res.json({ ok: true, message: 'Test ping queued — check your endpoint for the delivery.' });
   } catch (err) { next(err); }
@@ -3661,7 +3661,7 @@ router.post('/tools/:toolId/test', async (req, res, next) => {
     }
 
     // 4. Build system prompt — richer when a real customer is selected
-    const agentName = tenant.agent_name || 'Nomii';
+    const agentName = tenant.agent_name || 'Shenmay';
     const customerName = `${testCustomer.first_name} ${testCustomer.last_name}`.trim();
     const systemPromptLines = [
       `You are ${agentName}, a helpful AI assistant. This is a TEST RUN by an operator.`,
