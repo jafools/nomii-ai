@@ -1,12 +1,21 @@
 -- ============================================================
--- Migration 015b — Seed Covenant Trust tool configuration
+-- Migration 032 — Seed Covenant Trust tool configuration
 --
--- This is a targeted re-apply of the UPDATE that failed in 015
--- due to shell quoting issues with single quotes in JSONB literals.
--- Dollar-quoting ($$ ... $$) avoids all shell escaping problems.
+-- Originally landed as `015b_*.sql` (a targeted re-apply of an UPDATE
+-- that failed in 015 due to shell quoting around single quotes in JSONB
+-- literals). Renamed to `032_*.sql` 2026-04-20 to fit the NNN_*.sql
+-- convention (audit finding #7).
 --
--- Safe to re-run: uses idempotent WHERE + only updates Covenant Trust.
+-- Safe to re-run on any DB that already has it applied — the UPDATE is
+-- idempotent (deterministic WHERE on slug, deterministic value).
+--
+-- The DELETE below cleans up the orphaned `schema_migrations` row from
+-- the old filename on databases (e.g. Hetzner SaaS) where the original
+-- `015b_*.sql` was already recorded. On fresh databases the DELETE is
+-- a harmless no-op.
 -- ============================================================
+
+DELETE FROM schema_migrations WHERE filename = '015b_seed_covenant_trust_tools.sql';
 
 DO $$
 BEGIN
