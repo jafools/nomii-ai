@@ -1,4 +1,4 @@
-# Nomii AI — Launch-Readiness Assessment (2026-04-18)
+# Shenmay AI — Launch-Readiness Assessment (2026-04-18)
 
 > **Context:** Austin's explicit launch bar is "strangers can do the entire
 > E2E setup + payment + dashboard features without any bugs or breaking."
@@ -10,7 +10,7 @@
 
 ## TL;DR
 
-Nomii is **close but not launch-ready.** Infrastructure (CI, staging, release
+Shenmay is **close but not launch-ready.** Infrastructure (CI, staging, release
 flow, backups, monitoring scaffold) is in place. The product flow works for
 the happy path that's been tested. The remaining gaps are concentrated in
 four areas:

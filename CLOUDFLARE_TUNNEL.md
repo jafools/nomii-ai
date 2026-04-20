@@ -1,4 +1,4 @@
-# Nomii AI — Cloudflare Tunnel Setup
+# Shenmay AI — Cloudflare Tunnel Setup
 
 Expose `api.nomii.pontensolutions.com` → your local backend at `10.0.0.2:3001`, permanently and for free, using Cloudflare Tunnel. No port forwarding, no VPS required.
 

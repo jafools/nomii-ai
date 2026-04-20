@@ -1,8 +1,8 @@
-# Nomii AI — Data API Reference (v1)
+# Shenmay AI — Data API Reference (v1)
 
 > Programmatic customer-data ingestion for tenants who don't want to upload
 > CSVs through the dashboard. Push customer records from your CRM, backend,
-> or nightly sync job. Data stays in your systems — Nomii reads it at query
+> or nightly sync job. Data stays in your systems — Shenmay reads it at query
 > time to answer questions about specific customers.
 
 **Base URL:**
@@ -12,7 +12,7 @@
 ## Authentication
 
 Generate a key in the dashboard → Settings → Data API. The full key is shown
-**once** at creation — store it somewhere safe. Nomii only stores a bcrypt
+**once** at creation — store it somewhere safe. Shenmay only stores a bcrypt
 hash, so the key is not recoverable if lost.
 
 ```
@@ -132,7 +132,7 @@ Same as above, scoped to one category.
 
 ```bash
 #!/usr/bin/env bash
-# nightly-sync.sh — push today's updated customers to Nomii
+# nightly-sync.sh — push today's updated customers to Shenmay
 set -euo pipefail
 
 API_KEY="nomii_da_pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -165,7 +165,7 @@ done
   effects besides the API key itself, so keep one key per cron/backend/
   service for clean auditing.
 - **Use `external_id` as the stable key.** Your CRM's customer ID is the
-  source of truth; Nomii's UUID should be treated as an opaque cache key.
+  source of truth; Shenmay's UUID should be treated as an opaque cache key.
 - **Use `replace_category`** for full syncs of a logical group (e.g. the
   customer's whole portfolio), and plain upserts for incremental updates
   (e.g. one new goal added).

@@ -2,7 +2,7 @@
 
 **Worktree branch:** `worktree-agent-aeec847b` (based on `main` @ `0566e49`)
 **Stack reality:** Server is pure ESM-style CommonJS JavaScript. Client is
-mixed — shadcn/ui primitives are `.tsx` but every Nomii business component
+mixed — shadcn/ui primitives are `.tsx` but every Shenmay business component
 under `client/src/pages/nomii/`, `client/src/layouts/`, `client/src/lib/`, and
 `client/src/contexts/` is plain `.jsx`/`.js`. There is no PropTypes, no
 `@typedef`, no generated types. Consolidation therefore means **shared
@@ -123,7 +123,7 @@ strings.
 
 - **Unifying `planDefaults` with `PLAN_LIMITS`** (MEDIUM). Needs a
   single-source audit of whether "unlimited" is `null` or a sentinel int.
-- **PropTypes / runtime prop validation** (LOW). The Nomii components
+- **PropTypes / runtime prop validation** (LOW). The Shenmay components
   accept a lot of shape props (`subscription`, `usage`, `license`,
   `notification`) with no validation. Adding PropTypes would touch ~30
   components; track as a separate clean-up pass.

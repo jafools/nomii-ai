@@ -1,4 +1,4 @@
-# Circular Dependency Audit — Nomii AI
+# Circular Dependency Audit — Shenmay AI
 
 **Date:** 2026-04-15
 **Worktree branch:** `worktree-agent-acd5a1b0`

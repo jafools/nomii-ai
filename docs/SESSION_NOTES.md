@@ -1,4 +1,4 @@
-# Nomii AI — Session Notes
+# Shenmay AI — Session Notes
 
 > This file is the live handoff between Claude sessions.
 > Update it at the end of every session. Claude reads it automatically via CLAUDE.md.
@@ -222,7 +222,7 @@ flow in one session:
 
 | | |
 |---|---|
-| [PR #16](https://github.com/jafools/nomii-ai/pull/16) — **MERGED** ([25b3077](https://github.com/jafools/nomii-ai/commit/25b3077)) | `docs/PRIVACY.md` — Nomii-specific Privacy Policy, BYOK vs Managed AI controller/processor split explicit, "Anthropic does not train on API data" stated directly, EU-first residency posture. Prior `.docx` draft moved to `docs/legal/` out of root. |
+| [PR #16](https://github.com/jafools/nomii-ai/pull/16) — **MERGED** ([25b3077](https://github.com/jafools/nomii-ai/commit/25b3077)) | `docs/PRIVACY.md` — Shenmay-specific Privacy Policy, BYOK vs Managed AI controller/processor split explicit, "Anthropic does not train on API data" stated directly, EU-first residency posture. Prior `.docx` draft moved to `docs/legal/` out of root. |
 | [PR #17](https://github.com/jafools/nomii-ai/pull/17) — **MERGED** ([9d4f5bd](https://github.com/jafools/nomii-ai/commit/9d4f5bd)) | Log-and-block PII tokenizer. Regulated identifiers (SSN, CC+Luhn, IBAN+mod97, phone, email, DOB, postcode, account) tokenized before every Anthropic call; names pseudonymized from structured `memory_file`; breach detector blocks outbound if residual PII remains. |
 | **v1.1.0** tag | Pushed to GHCR (`:1.1.0`, `:1.1`, `:stable`, `:latest`), deployed to Hetzner, live |
 
@@ -247,7 +247,7 @@ flow in one session:
 ### The marketing story
 
 `docs/marketing/PII-PROTECTION.md` has:
-- One-sentence claim: *"Nomii never sends your customers' regulated personal identifiers to Anthropic. Names are pseudonymized, SSNs and account numbers are tokenized, and a second-pass breach detector blocks any request that still contains unredacted PII."*
+- One-sentence claim: *"Shenmay never sends your customers' regulated personal identifiers to Anthropic. Names are pseudonymized, SSNs and account numbers are tokenized, and a second-pass breach detector blocks any request that still contains unredacted PII."*
 - Three-line pitch for slide decks
 - Five-bullet compliance sheet for DPA attachments
 - Prospect Q&A, detector list, deliberately-not-tokenized list
@@ -523,7 +523,7 @@ docs + a working client-side ESLint config + CI lint step re-enabled.
 
 ## Previous: 2026-04-17 evening (audit sweep → v1.0.1 patch → full Playwright E2E 35/35)
 
-Full 3-layer audit of both SaaS and on-prem Nomii, followed by shipping the first
+Full 3-layer audit of both SaaS and on-prem Shenmay, followed by shipping the first
 real bug-fix release through the new release flow end-to-end, followed by
 5x stress runs of the install/signup flows, a real live Claude chat through
 the whole backend chain, and the first full green run of the 35-test Playwright
@@ -581,7 +581,7 @@ impact.
 
 ## Previous: 2026-04-17 afternoon (session wrap — full release infrastructure shipped)
 
-Single-session build-out of Nomii's release infrastructure end-to-end. Five PRs merged, v1.0.0 cut, staging environment live with auto-refresh, full flow documented at the top of CLAUDE.md.
+Single-session build-out of Shenmay's release infrastructure end-to-end. Five PRs merged, v1.0.0 cut, staging environment live with auto-refresh, full flow documented at the top of CLAUDE.md.
 
 ### What's live now
 
@@ -625,7 +625,7 @@ Full procedure: `docs/RELEASING.md`. TL;DR at the top of `CLAUDE.md`.
 ### Infrastructure state
 
 - **Hetzner**: `v1.0.0` deployed. Health green. Unchanged since this morning's v1.0.0 cutover.
-- **Proxmox**: old Nomii fallback retired (DB backup at `/root/backups/knomi_ai_proxmox_final_20260417_131426.sql`). Fresh staging stack at `/root/nomii-staging/`. Lateris + `nomii-cloudflared` untouched. Systemd timer `nomii-staging-refresh.timer` polling GHCR every 5 min.
+- **Proxmox**: old Shenmay fallback retired (DB backup at `/root/backups/knomi_ai_proxmox_final_20260417_131426.sql`). Fresh staging stack at `/root/nomii-staging/`. Lateris + `nomii-cloudflared` untouched. Systemd timer `nomii-staging-refresh.timer` polling GHCR every 5 min.
 - **GHCR**: `ghcr.io/jafools/nomii-{backend,frontend}` with `:edge` (main-push), `:1.0.0`, `:1.0`, `:stable`, `:latest`.
 - **Cloudflare tunnel `knomi-ai`**: stale pre-Hetzner routes deleted by Austin. New `nomii-staging.pontensolutions.com` → `http://nomii-frontend-staging:80` added.
 - **Branch protection**: main requires PR + green CI (`client-build`, `server-test`). Squash-merge only. Auto-delete branch on merge.
@@ -659,7 +659,7 @@ Full procedure: `docs/RELEASING.md`. TL;DR at the top of `CLAUDE.md`.
 
 ## Previous: 2026-04-17 morning (release-flow + branch protection — SHIPPED, v1.0.0 live)
 
-Flipped Nomii from "push to main = ship to customers" to a tagged-release model.
+Flipped Shenmay from "push to main = ship to customers" to a tagged-release model.
 Main is now a protected branch. CI must pass before merge. Customer-facing
 images (`:stable`, `:latest`) only rebuild on `git tag vX.Y.Z`.
 
@@ -688,7 +688,7 @@ images (`:stable`, `:latest`) only rebuild on `git tag vX.Y.Z`.
 1. **Austin's manual testing** (deferred from last session):
    - SaaS flow: signup → email verify → login → onboarding → dashboard → widget chat
    - Self-hosted flow: install.sh → setup wizard → onboarding → dashboard → widget
-2. After testing: retire Proxmox Nomii containers (`docker compose stop backend frontend db` — leave cloudflared for Lateris).
+2. After testing: retire Proxmox Shenmay containers (`docker compose stop backend frontend db` — leave cloudflared for Lateris).
 3. Optional: add `client/eslint.config.js` + re-enable lint step in CI.
 4. Optional: add a first vitest smoke test + re-enable the client test step.
 
@@ -757,7 +757,7 @@ Targeted cleanup before Austin's manual testing of both SaaS and self-hosted flo
 ### Next session: Austin's manual testing
 1. **SaaS flow**: signup → email verify → login → onboarding (6 steps) → dashboard → widget chat
 2. **Self-hosted flow**: install.sh → setup wizard → onboarding (widget step) → dashboard → widget chat
-3. After testing: retire Proxmox Nomii containers (`docker compose stop backend frontend db` — leave cloudflared)
+3. After testing: retire Proxmox Shenmay containers (`docker compose stop backend frontend db` — leave cloudflared)
 
 ### Still deferred (not blocking)
 - `portal.js` split (3,683 LOC)
@@ -834,7 +834,7 @@ Full production migration from Proxmox VM to Hetzner Cloud Helsinki. Zero downti
 
 ### What's left (not blocking)
 
-1. **Retire Proxmox Nomii containers** — keep for 7 days as fallback:
+1. **Retire Proxmox Shenmay containers** — keep for 7 days as fallback:
    ```bash
    ssh nomii-prod "cd ~/Knomi/knomi-ai && docker compose stop nomii-backend nomii-frontend"
    # After 7 days: docker compose down (removes DB volume)
@@ -859,10 +859,10 @@ Full production migration from Proxmox VM to Hetzner Cloud Helsinki. Zero downti
 
 | Component | Location | Status |
 |---|---|---|
-| Nomii backend | Hetzner Helsinki | Running ✅ |
-| Nomii frontend | Hetzner Helsinki | Running ✅ |
-| Nomii DB (`nomii`/`nomii_ai`) | Hetzner Helsinki | Healthy ✅ |
-| Nomii (Proxmox) | Proxmox VM | Still running (fallback, retire in 7 days) |
+| Shenmay backend | Hetzner Helsinki | Running ✅ |
+| Shenmay frontend | Hetzner Helsinki | Running ✅ |
+| Shenmay DB (`nomii`/`nomii_ai`) | Hetzner Helsinki | Healthy ✅ |
+| Shenmay (Proxmox) | Proxmox VM | Still running (fallback, retire in 7 days) |
 | Lateris | Proxmox VM | Untouched, still on tunnel |
 | Cloudflare tunnel | Proxmox | Still active for Lateris only |
 
@@ -889,7 +889,7 @@ Saved to Obsidian vault: `projects/nomii/hetzner-migration-runbook.md`
 
 **Commit `9685343`** — Portal license lookup endpoint
 - New `POST /api/public/portal/licenses` at `server/src/routes/public-portal.js`
-- Accepts portal session token, verifies via Cloudflare Worker proxy, returns Nomii licenses for the authenticated email
+- Accepts portal session token, verifies via Cloudflare Worker proxy, returns Shenmay licenses for the authenticated email
 - Gated by `NOMII_LICENSE_MASTER=true`, rate-limited 10 req/min
 - Deployed to prod via `docker compose up -d --build backend`
 
@@ -902,7 +902,7 @@ Saved to Obsidian vault: `projects/nomii/hetzner-migration-runbook.md`
 - Added `/nomii/self-hosted` to Navbar product-page check
 
 **Commit `2beb197`** — Unified license portal + Buy page CTA
-- Portal fetches Nomii licenses alongside Lateris, displays grouped by product
+- Portal fetches Shenmay licenses alongside Lateris, displays grouped by product
 - New `NomiiLicenseCard` component (shows plan, status, key, instance_id)
 - `portalApi.ts`: `getNomiiLicenses()` function + `NomiiLicenseRecord` type
 - Login branding updated to product-neutral (both product icons)
@@ -919,7 +919,7 @@ Saved to Obsidian vault: `projects/nomii/hetzner-migration-runbook.md`
 
 | Touchpoint | Status |
 |---|---|
-| Marketing page "Two Ways to Run Nomii" | Live ✅ |
+| Marketing page "Two Ways to Run Shenmay" | Live ✅ |
 | Self-hosted landing page + nav | Live ✅ |
 | SaaS signup page | ✅ |
 | Login page | ✅ |
@@ -951,7 +951,7 @@ Austin wants to do the VPS migration in a fresh session. Steps:
 7. New Cloudflare tunnel token → point to Hetzner
 8. Smoke test all endpoints
 9. DNS cutover (Cloudflare tunnel swap)
-10. Verify + retire Proxmox Nomii containers
+10. Verify + retire Proxmox Shenmay containers
 
 Estimated: 1-2 hours. No code changes needed — same docker-compose.yml works anywhere.
 
@@ -968,14 +968,14 @@ Estimated: 1-2 hours. No code changes needed — same docker-compose.yml works a
 
 ## Previous: 2026-04-15 late-evening (marketing-page buyer-journey fork — Cloud vs Self-Hosted)
 
-Shipped Austin's explicit ask from the previous session: a clear two-path fork on the Nomii product page so visitors immediately see both deployment options. Work was done in the `ponten-solutions` repo (not this one), committed directly on the Proxmox VM at `~/ponten-solutions`, pushed to `origin/main`, Lovable auto-redeploys.
+Shipped Austin's explicit ask from the previous session: a clear two-path fork on the Shenmay product page so visitors immediately see both deployment options. Work was done in the `ponten-solutions` repo (not this one), committed directly on the Proxmox VM at `~/ponten-solutions`, pushed to `origin/main`, Lovable auto-redeploys.
 
 ### What shipped (ponten-solutions commit `2086711`)
 
-New **"Two Ways to Run Nomii"** section inserted between the hero and "The Challenge" section on `/products/nomii-ai`. Two equal-weight cards:
+New **"Two Ways to Run Shenmay"** section inserted between the hero and "The Challenge" section on `/products/nomii-ai`. Two equal-weight cards:
 
-- **Nomii Cloud** (★ FASTEST TO START badge) → `https://nomii.pontensolutions.com/nomii/signup` — "We run it. You focus on your customers." 5-min signup, fully managed, auto-updates, 14-day trial, from $49/mo.
-- **Nomii Self-Hosted** (accent color `#C9A84C` to match SelfHostedNomii.tsx) → `/nomii/self-hosted` — "You run it. Data stays on your own infrastructure." One-line install, data stays on your network, BYO Anthropic key, free trial, from $49/mo.
+- **Shenmay Cloud** (★ FASTEST TO START badge) → `https://nomii.pontensolutions.com/nomii/signup` — "We run it. You focus on your customers." 5-min signup, fully managed, auto-updates, 14-day trial, from $49/mo.
+- **Shenmay Self-Hosted** (accent color `#C9A84C` to match SelfHostedNomii.tsx) → `/nomii/self-hosted` — "You run it. Data stays on your own infrastructure." One-line install, data stays on your network, BYO Anthropic key, free trial, from $49/mo.
 - **"Not sure which fits?"** → `/contact` (Book a 20-minute chat).
 
 Design follows existing patterns in the file: `card-glass`, `FadeIn`, `section-padding`/`section-container`, eyebrow label + gradient-text headline. Cloud card gets the same visual priority treatment as the "MOST POPULAR" Growth plan card in the pricing section (primary-color border + glow). Self-Hosted card uses the gold accent from SelfHostedNomii.tsx for cohesion across the on-prem flow.
@@ -1002,8 +1002,8 @@ After the push landed, the deployed bundle (`/assets/index-D8j9QHlx.js`) still s
 
 | Commit | String signature | In deployed bundle? |
 |---|---|---|
-| `2086711` (today, mine) | "Two Ways to Run Nomii" | ❌ 0 |
-| `ec6a63f` (Apr 14) | "Run Nomii AI on your own" | ❌ 0 |
+| `2086711` (today, mine) | "Two Ways to Run Shenmay" | ❌ 0 |
+| `ec6a63f` (Apr 14) | "Run Shenmay AI on your own" | ❌ 0 |
 | `bfbbbf3` (Apr 14) | "Buy a License" | ❌ 0 |
 | pre-`bfbbbf3` | "Need total control" | ✅ 1 |
 
@@ -1028,7 +1028,7 @@ At first I thought the Vercel auto-deploy was broken. It wasn't. Austin showed m
 Post-publish verification:
 ```bash
 NEW_BUNDLE=$(curl -s https://pontensolutions.com/products/nomii-ai | grep -oE 'src="/assets/[^"]+\.js"' | head -1 | sed 's/src="//;s/"$//')
-curl -s "https://pontensolutions.com${NEW_BUNDLE}" | grep -c "Two Ways to Run Nomii"
+curl -s "https://pontensolutions.com${NEW_BUNDLE}" | grep -c "Two Ways to Run Shenmay"
 # Expect: 1 once Lovable publishes
 ```
 
@@ -1073,10 +1073,10 @@ Fixed three real bugs surfaced by the live test, created a proper post-purchase 
 
 ### Bugs fixed this session
 
-1. **Lateris/Nomii Stripe webhook crossfire** (fix applied in Lateris repo, cross-repo)
-   - Both products share one Stripe account → both webhook endpoints receive every `checkout.session.completed` → Lateris issued a spurious Lateris license key for a Nomii test purchase
+1. **Lateris/Shenmay Stripe webhook crossfire** (fix applied in Lateris repo, cross-repo)
+   - Both products share one Stripe account → both webhook endpoints receive every `checkout.session.completed` → Lateris issued a spurious Lateris license key for a Shenmay test purchase
    - Fix: negative `metadata.product_type` guard in Lateris `bin/license-worker.js`. Events with `product_type !== "lateris"` are skipped with `{ received: true, skipped: "not a Lateris checkout" }`
-   - Nomii side already stamps `metadata.product_type = 'selfhosted'` on both session AND subscription (see `server/src/routes/license-checkout.js:64-65`), so the guard works with zero Nomii-side code changes
+   - Shenmay side already stamps `metadata.product_type = 'selfhosted'` on both session AND subscription (see `server/src/routes/license-checkout.js:64-65`), so the guard works with zero Shenmay-side code changes
    - Lateris worker redeployed, stale KV entry (`LIC-2026-AUSTINPONTEN-752`) cleaned up
 
 2. **Stale email activation instructions** (commit `26ad89a`)
@@ -1085,12 +1085,12 @@ Fixed three real bugs surfaced by the live test, created a proper post-purchase 
 
 3. **SMTP_FROM brand drift on prod** (env-only, no commit)
    - Prod `.env` on `nomii-prod` still had `SMTP_FROM="Knomi AI <hello@pontensolutions.com>"` — receipts branded with the retired name
-   - Changed to `"Nomii AI <hello@pontensolutions.com>"`. Required `docker compose up -d --force-recreate backend` to pick up (plain `restart` does NOT reload env files — new gotcha worth remembering)
+   - Changed to `"Shenmay AI <hello@pontensolutions.com>"`. Required `docker compose up -d --force-recreate backend` to pick up (plain `restart` does NOT reload env files — new gotcha worth remembering)
    - Code default at `emailService.js:44` was already correct; only the prod env override was stale
 
 ### Post-purchase success page — created from scratch
 
-Before this session: Stripe's `success_url` pointed to `pontensolutions.com/nomii/license?success=true`, which redirected through the `app.pontensolutions.com → nomii.pontensolutions.com` chain and hit the SPA catch-all → login redirect. No dedicated success page existed anywhere in the Nomii app. The card showing on the old marketing site was orphaned legacy code with a "Go to Dashboard" button that sent self-hosted buyers to SaaS login.
+Before this session: Stripe's `success_url` pointed to `pontensolutions.com/nomii/license?success=true`, which redirected through the `app.pontensolutions.com → nomii.pontensolutions.com` chain and hit the SPA catch-all → login redirect. No dedicated success page existed anywhere in the Shenmay app. The card showing on the old marketing site was orphaned legacy code with a "Go to Dashboard" button that sent self-hosted buyers to SaaS login.
 
 Created `client/src/pages/nomii/NomiiLicenseSuccess.jsx` — self-contained, no auth, no API calls:
 - Dark themed, matches `NomiiLogin` design language
@@ -1098,7 +1098,7 @@ Created `client/src/pages/nomii/NomiiLicenseSuccess.jsx` — self-contained, no 
   ```
   bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)
   ```
-- Two labeled sections: "Haven't installed yet?" (Terminal icon, copy-able install cmd) + "Already running Nomii?" (Server icon, pointing at Plans & Billing)
+- Two labeled sections: "Haven't installed yet?" (Terminal icon, copy-able install cmd) + "Already running Shenmay?" (Server icon, pointing at Plans & Billing)
 - Wired route `/nomii/license/success` into `client/src/App.tsx`
 - Stripe `success_url` changed to `https://nomii.pontensolutions.com/nomii/license/success` — bypasses the marketing-site redirect chain entirely
 
@@ -1112,7 +1112,7 @@ Commits `41c0724` (page + route + success_url) and `83ddc3a` (inline install cmd
 
 ### Next session priority (Austin's explicit ask)
 
-> "I want to see the clear path on my marketing page next. I want to hand hold the customers to be able to do On prem or SaaS Nomii"
+> "I want to see the clear path on my marketing page next. I want to hand hold the customers to be able to do On prem or SaaS Shenmay"
 
 Marketing page at `pontensolutions.com/nomii/*` currently has no clear on-prem vs SaaS fork. Needs two explicit buyer journeys:
 
@@ -1303,7 +1303,7 @@ After the SH-1/SH-2/SH-3 surgical fixes earlier in the day landed, scope expande
 | `2fc8dc2` | feat(install): add NOMII_GITHUB_REF for version pinning |
 
 ### Issues found and fixed
-- **HTML branding leak**: `client/index.html` had Pontén marketing title + og:image to `pontensolutions.com/og-image.png`. Self-hosted operators sharing their URL got the wrong link preview. Now generic "Nomii AI" + relative `/og-image.png`. Improvement for SaaS too.
+- **HTML branding leak**: `client/index.html` had Pontén marketing title + og:image to `pontensolutions.com/og-image.png`. Self-hosted operators sharing their URL got the wrong link preview. Now generic "Shenmay AI" + relative `/og-image.png`. Improvement for SaaS too.
 - **8 pre-auth logo links** to `https://pontensolutions.com` across NomiiLogin (3), NomiiSignup (2), NomiiResetPassword (2), NomiiVerifyEmail (1) — same SH-3 pattern as the post-auth onboarding. Removed the `<a>` wrappers; static logos on login forms is standard UX anyway.
 - **Cloudflared restart loop** — root cause: compose `command:` was passed to the cloudflared image's ENTRYPOINT, so the actual exec was `cloudflared sh -c "..."`, sh got treated as a cloudflared subcommand, exit 1, restart-looped forever. **Two failed attempts** before the right fix:
   1. Tried entrypoint override `["/bin/sh","-c"]` + `exec sleep infinity` on no-token. **Failed:** the cloudflared image is distroless, no `/bin/sh` exists.
@@ -1314,11 +1314,11 @@ After the SH-1/SH-2/SH-3 surgical fixes earlier in the day landed, scope expande
 - **install.sh headless mode** — added `NOMII_NONINTERACTIVE=1` (skips `/dev/tty` redirect, reads answers from `NOMII_PUBLIC_URL`, `NOMII_SMTP_*`, `NOMII_CF_TOKEN`, `NOMII_LICENSE_KEY`). Real customer feature — needed for CI/Ansible/Terraform/Docker-build workflows. Also unblocks automated testing.
 
 ### Final verification (cycle 3, scenario A, fresh VM)
-- `bash <(curl ...install.sh)` with `NOMII_NONINTERACTIVE=1 NOMII_PUBLIC_URL=http://10.0.100.25 NOMII_GITHUB_REF=<sha>` — completes in ~30s, ends with "Nomii AI is almost ready!"
+- `bash <(curl ...install.sh)` with `NOMII_NONINTERACTIVE=1 NOMII_PUBLIC_URL=http://10.0.100.25 NOMII_GITHUB_REF=<sha>` — completes in ~30s, ends with "Shenmay AI is almost ready!"
 - 3 containers up: `nomii-db (healthy)`, `nomii-backend`, `nomii-frontend`. No cloudflared.
 - `/api/health` → `{"status":"ok"}` in 1s
 - `POST /api/setup/complete` → tenant created with `onboarding_steps` pre-filled `{tools, api_key, products, customers, company_profile: true}` — only `install_widget` undone (SH-1 verified end-to-end)
-- HTML head: `<title>Nomii AI</title>`, og:image=`/og-image.png`, og:site_name=`Nomii AI`
+- HTML head: `<title>Shenmay AI</title>`, og:image=`/og-image.png`, og:site_name=`Shenmay AI`
 - 0 `pontensolutions.com` refs on `/`, `/nomii/login`, `/nomii/setup`, `/nomii/onboarding`, `/nomii/signup`
 - 20-msg trial limit: with `messages_used_this_month=20`, the 21st widget chat returns `HTTP 429 message_limit_reached`
 
@@ -1355,7 +1355,7 @@ NOMII_GITHUB_REF=v1.0.0 \
 Three bugs from yesterday's fresh-VM install test (2026-04-14, tracked in `projects/nomii/fresh-vm-install-test-apr14-2026.md` in the Obsidian vault) fixed in one pass.
 
 **SH-3 (CRITICAL) — hardcoded pontensolutions.com redirect mid-onboarding:**
-- `client/src/pages/nomii/NomiiOnboarding.jsx:207,288` — both logo wrappers were `<a href="https://pontensolutions.com">`. Clicking the Nomii logo in the sidebar (desktop) or header (mobile) mid-flow hard-redirected users OUT of their self-hosted instance.
+- `client/src/pages/nomii/NomiiOnboarding.jsx:207,288` — both logo wrappers were `<a href="https://pontensolutions.com">`. Clicking the Shenmay logo in the sidebar (desktop) or header (mobile) mid-flow hard-redirected users OUT of their self-hosted instance.
 - Fix: swapped to `<Link to="/nomii/dashboard">` (react-router `Link` already imported). Logo now SPA-navigates to dashboard — works for both SaaS and self-hosted.
 - Note: NomiiLogin, NomiiSignup, NomiiResetPassword, NomiiVerifyEmail still hardcode the same external link on their logos. Left alone for now — those are pre-auth pages and the scoped task was onboarding.
 
@@ -1380,7 +1380,7 @@ Three bugs from yesterday's fresh-VM install test (2026-04-14, tracked in `proje
 2. Reset the VM tenant (fresh-install scenario) — e.g. `docker exec nomii-db psql -U knomi -d knomi_ai -c "TRUNCATE tenants, tenant_admins, subscriptions CASCADE;"` — so `/api/setup/status` returns `required: true` again.
 3. Rerun the first-run wizard in the browser at `http://10.0.100.25/`. Expected: after step 3 (API key), lands on `/nomii/onboarding` widget step (not dashboard).
 4. Paste the widget snippet on a test page, verify → wizard flips to "You're all set!" → dashboard.
-5. Click the Nomii logo inside `/nomii/onboarding` mid-flow — must stay in-app (go to `/nomii/dashboard`), not kick out to pontensolutions.com.
+5. Click the Shenmay logo inside `/nomii/onboarding` mid-flow — must stay in-app (go to `/nomii/dashboard`), not kick out to pontensolutions.com.
 6. In Settings → Widget, remove the widget from the test page so "Not yet detected" reappears, click the "Installation guide" pill, verify it lands on the widget step (not step 1).
 7. **20-msg rate limit retest** — send 20 messages through the widget in trial mode, confirm 21st is blocked with the trial-exhausted error. `SELECT COUNT(*) FROM messages WHERE tenant_id = <id>` in `nomii-db` to double-check.
 
@@ -1408,7 +1408,7 @@ Three bugs from yesterday's fresh-VM install test (2026-04-14, tracked in `proje
 
 | Repo | Purpose | Where |
 |------|---------|--------|
-| `jafools/nomii-ai` | Nomii AI app (backend + frontend) | `~/Knomi/knomi-ai` on Proxmox |
+| `jafools/nomii-ai` | Shenmay AI app (backend + frontend) | `~/Knomi/knomi-ai` on Proxmox |
 | `jafools/ponten-solutions` | Marketing site (Lovable, auto-deploys to `pontensolutions.com`) | `~/ponten-solutions` on Proxmox |
 
 **Important:** Changes to `ponten-solutions` must be committed and pushed from `~/ponten-solutions` on Proxmox. Claude's sandbox cannot push to that repo directly. Always give the user commands to run on Proxmox for `ponten-solutions` changes.
@@ -1528,7 +1528,7 @@ Wrote `src/pages/nomii/SelfHostedNomii.tsx` for the `ponten-solutions` repo — 
 | `client/src/lib/nomiiApi.js` | nomii-ai | All client API calls |
 | `client/nginx.conf` | nomii-ai | nginx config (widget iframe fix lives here) |
 | `src/pages/nomii/BuyNomiiLicense.tsx` | ponten-solutions | Self-hosted license purchase page |
-| `src/pages/NomiiAI.tsx` | ponten-solutions | Nomii product page (has Buy a License button) |
+| `src/pages/NomiiAI.tsx` | ponten-solutions | Shenmay product page (has Buy a License button) |
 | `src/App.tsx` | ponten-solutions | Router — BuyNomiiLicense imported at line 23, route at line 90 |
 | `docs/SESSION_NOTES.md` | nomii-ai | This file — session handoff |
 
@@ -1541,4 +1541,4 @@ Wrote `src/pages/nomii/SelfHostedNomii.tsx` for the `ponten-solutions` repo — 
 - **JWT expiry**: 2h (`WIDGET_JWT_EXPIRY`)
 - **Deployment modes**: `NOMII_DEPLOYMENT=selfhosted` for single-tenant; `NOMII_LICENSE_MASTER=true` for SaaS license server
 - **Stripe webhook**: `stripe-webhook.js` handles `checkout.session.completed`; detects `metadata.product_type === 'selfhosted'` → generates license key → inserts into `licenses` table → emails to buyer. No changes needed to this file.
-- **Self-hosted license flow**: buyer visits `pontensolutions.com/nomii/license` → selects plan → enters email → POST to `nomii.pontensolutions.com/api/public/license/checkout` → redirected to Stripe → webhook fires → key emailed → buyer activates in Nomii dashboard under Plans & Billing
+- **Self-hosted license flow**: buyer visits `pontensolutions.com/nomii/license` → selects plan → enters email → POST to `nomii.pontensolutions.com/api/public/license/checkout` → redirected to Stripe → webhook fires → key emailed → buyer activates in Shenmay dashboard under Plans & Billing

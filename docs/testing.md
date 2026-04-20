@@ -1,4 +1,4 @@
-# Nomii AI — Testing Guide
+# Shenmay AI — Testing Guide
 
 ## Overview
 
