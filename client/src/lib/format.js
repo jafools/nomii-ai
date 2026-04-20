@@ -1,11 +1,11 @@
-// Shared date/time formatters for the Nomii dashboard.
+// Shared date/time formatters for the Shenmay dashboard.
 //
 // These were previously inlined inside pages/nomii/dashboard/*.jsx. Each
 // variant is kept exactly as it was to preserve existing UI labels — we
 // only deduped the identical implementations.
 
 // Long style: "just now", "5m ago", "3h ago", "Yesterday", "5d ago", "Mar 12"
-// Used by: NomiiOverview (recent conversations list), NomiiSettings (webhooks "Last triggered")
+// Used by: ShenmayOverview (recent conversations list), ShenmaySettings (webhooks "Last triggered")
 export const relativeTime = (dateStr) => {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -21,7 +21,7 @@ export const relativeTime = (dateStr) => {
 };
 
 // Compact style: "now", "5m", "3h", "Yesterday", "Mon", "Mar 12"
-// Used by: NomiiConversations (conversation list — tight space)
+// Used by: ShenmayConversations (conversation list — tight space)
 export const relTime = (d) => {
   if (!d) return "";
   const diffMs = Date.now() - new Date(d);
@@ -37,7 +37,7 @@ export const relTime = (d) => {
 };
 
 // Day-granularity relative: "Today", "Yesterday", "3 days ago"
-// Used by: NomiiOverview (anonymous sessions table)
+// Used by: ShenmayOverview (anonymous sessions table)
 export const relativeDay = (dateStr) => {
   if (!dateStr) return "—";
   const now = new Date();
@@ -49,7 +49,7 @@ export const relativeDay = (dateStr) => {
 };
 
 // Message timestamp: "Mar 12, 2:15 PM"
-// Used by: NomiiConversations & NomiiConversationDetail (chat message bubbles)
+// Used by: ShenmayConversations & ShenmayConversationDetail (chat message bubbles)
 export const fmtTime = (d) => {
   if (!d) return "";
   return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });

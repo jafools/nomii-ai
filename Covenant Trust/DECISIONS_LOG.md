@@ -1,4 +1,4 @@
-# Nomii AI — Decisions Log
+# Shenmay AI — Decisions Log
 
 > Running record of product and technical decisions.
 
@@ -11,7 +11,7 @@
 
 ## Decision 002 — Product Name
 **Date:** 2026-03-05
-**Decision:** "Nomii AI" — plays on "Know Me." Overarching brand for all tenants.
+**Decision:** "Shenmay AI" — plays on "Know Me." Overarching brand for all tenants.
 **Rationale:** Captures the core value proposition of personalized, persistent AI agents.
 
 ## Decision 003 — Agent Identity
@@ -70,7 +70,7 @@
 
 ## Decision 013 — Platform Scope: Industry-Agnostic
 **Date:** 2026-03-05
-**Decision:** Nomii AI is an industry-agnostic personalized agent platform. Retirement planning (Covenant Trust) is the first vertical, but the Soul/Memory architecture should work for any industry — healthcare, insurance, wealth management, education, etc.
+**Decision:** Shenmay AI is an industry-agnostic personalized agent platform. Retirement planning (Covenant Trust) is the first vertical, but the Soul/Memory architecture should work for any industry — healthcare, insurance, wealth management, education, etc.
 **Impact:** Database schema generalizes "financial_accounts" into flexible "customer_data". Prompt builder becomes template-driven per vertical. Tenant config includes industry/vertical type.
 **Rationale:** Dramatically increases TAM. The core insight (persistent, personalized AI agents with Soul + Memory) is valuable across any domain where deep customer knowledge matters.
 
@@ -80,15 +80,15 @@
 **Stack:** Docker Compose with PostgreSQL, Node.js backend, React frontend (nginx), and Traefik reverse proxy.
 **Rationale:** Do it right from the start so there's no migration pain later. Proxmox is ready and available.
 
-## Decision 015 — Nomii AI Brand Hierarchy
+## Decision 015 — Shenmay AI Brand Hierarchy
 **Date:** 2026-03-05
-**Decision:** Nomii AI is the root platform company. Tenants (like Covenant Trust) are customers who integrate Nomii agents into their own platforms. Each tenant operates in a specific "vertical" (retirement, healthcare, etc.) which configures the agent's domain knowledge and onboarding flows.
-**Rationale:** Clean separation between platform (Nomii) and customers (tenants). Enables different verticals with shared infrastructure.
+**Decision:** Shenmay AI is the root platform company. Tenants (like Covenant Trust) are customers who integrate Shenmay agents into their own platforms. Each tenant operates in a specific "vertical" (retirement, healthcare, etc.) which configures the agent's domain knowledge and onboarding flows.
+**Rationale:** Clean separation between platform (Shenmay) and customers (tenants). Enables different verticals with shared infrastructure.
 
 ## Decision 016 — Dual Deployment Model (Platform-First)
 **Date:** 2026-03-09
-**Decision:** Nomii AI supports two deployment models:
-- **Model A: White-Label Platform (PRIMARY FOCUS)** — Full branded web application hosted by Nomii AI. Tenants' customers log in directly to a Nomii-hosted app styled with the tenant's branding. This is the primary model and the focus of the Covenant Trust PoC.
+**Decision:** Shenmay AI supports two deployment models:
+- **Model A: White-Label Platform (PRIMARY FOCUS)** — Full branded web application hosted by Shenmay AI. Tenants' customers log in directly to a Shenmay-hosted app styled with the tenant's branding. This is the primary model and the focus of the Covenant Trust PoC.
 - **Model B: Embeddable Widget/SDK (FUTURE)** — A JavaScript widget that companies drop into their existing customer portals. Shares the same backend/API as Model A but with a lightweight embeddable frontend.
 Both models share the same core backend: Soul/Memory engine, prompt builder, conversation management, flag system, and Claude integration.
 **Rationale:** Platform-first (Model A) lets us deliver a complete, polished PoC for Covenant Trust without requiring them to have existing web infrastructure. Embeddable widget (Model B) opens the market to companies with established portals who want to "add AI" without rebuilding. Building Model A first naturally creates the API layer that Model B needs.
@@ -112,7 +112,7 @@ All API routes enforce tenant isolation via JWT claims (tenant_id). Cross-tenant
 - `server/public/widget.html` — Self-contained chat UI in the iframe. No framework, no external deps. Animated typing indicator, auto-resize textarea, error/loading states.
 - `server/db/migrations/004_widget_api_key.sql` — Adds `widget_api_key VARCHAR(64) UNIQUE` to tenants table.
 **Auth model:** Widget key → identifies tenant. User email → passed by host page. Widget JWT → 15-min token issued by `/session`, consumed by `/chat`. Separate from main app JWT layer.
-**Rationale:** Enables any tenant with an existing web app to embed Nomii agents without adopting the full platform frontend. Required for Hope for This Nation (Decision 019).
+**Rationale:** Enables any tenant with an existing web app to embed Shenmay agents without adopting the full platform frontend. Required for Hope for This Nation (Decision 019).
 
 ## Decision 019 — Hope for This Nation as First External Tenant
 **Date:** 2026-03-10
@@ -147,8 +147,8 @@ All API routes enforce tenant isolation via JWT claims (tenant_id). Cross-tenant
 
 ## Decision 022 — Phase 3: Self-Serve Tenant Portal at pontensolutions.com
 **Date:** 2026-03-11
-**Decision:** Phase 3 is a self-serve tenant onboarding and management portal hosted at `pontensolutions.com`. Tenants sign up, configure their agent, install the widget, upload data, and monitor everything — without any manual Nomii backend work.
-**Architecture:** pontensolutions.com (Lovable frontend) calls `api.pontensolutions.com` directly. All business logic stays in the Nomii API.
+**Decision:** Phase 3 is a self-serve tenant onboarding and management portal hosted at `pontensolutions.com`. Tenants sign up, configure their agent, install the widget, upload data, and monitor everything — without any manual Shenmay backend work.
+**Architecture:** pontensolutions.com (Lovable frontend) calls `api.pontensolutions.com` directly. All business logic stays in the Shenmay API.
 **Proof of success:** Re-onboard Hope for This Nation entirely through the portal, replacing all manual seeding.
 
 ## Decision 023 — Tenant Admin Auth is Separate from Customer/Advisor Auth
@@ -163,7 +163,7 @@ All API routes enforce tenant isolation via JWT claims (tenant_id). Cross-tenant
 
 ## Decision 025 — WordPress Plugin as Primary Widget Install Method
 **Date:** 2026-03-11
-**Decision:** Build a downloadable Nomii WordPress plugin (.zip) as the primary installation method. WordPress powers ~43% of websites. Plugin handles script injection automatically — tenant installs, activates, enters widget key in settings.
+**Decision:** Build a downloadable Shenmay WordPress plugin (.zip) as the primary installation method. WordPress powers ~43% of websites. Plugin handles script injection automatically — tenant installs, activates, enters widget key in settings.
 **Rationale:** Highest-value single deliverable for reach. Eliminates need for WordPress owners to touch code. ~50 lines of PHP.
 
 ## Decision 026 — Products/Services Table for Agent Context
@@ -174,7 +174,7 @@ All API routes enforce tenant isolation via JWT claims (tenant_id). Cross-tenant
 ## Decision 027 — Legal: ToS Acceptance + Right-to-Erasure
 **Date:** 2026-03-11
 **Decision:** Tenants must accept Terms of Service at signup (two required checkboxes — ToS + data consent). Acceptance timestamp and IP recorded in DB. Customer deletion via the portal anonymises PII (overwrites email/name/soul/memory, deletes customer_data rows, preserves conversation structure) rather than hard-deleting, creating a GDPR/CCPA-compliant audit trail.
-**Rationale:** Nomii AI is a data processor; tenants are data controllers. Recording ToS acceptance with timestamp+IP is the standard minimum for SaaS legal protection. Anonymisation on deletion satisfies right-to-erasure while preserving conversation history integrity.
+**Rationale:** Shenmay AI is a data processor; tenants are data controllers. Recording ToS acceptance with timestamp+IP is the standard minimum for SaaS legal protection. Anonymisation on deletion satisfies right-to-erasure while preserving conversation history integrity.
 
 ## Decision 028 — Portal Route Base is /nomii (not /nomii-ai)
 **Date:** 2026-03-11

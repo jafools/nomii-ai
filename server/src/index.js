@@ -275,7 +275,7 @@ app.use((err, req, res, next) => {
   }
 
   app.listen(PORT, () => {
-    console.log(`\n🧠 Nomii AI server running on http://localhost:${PORT}`);
+    console.log(`\n🧠 Shenmay AI server running on http://localhost:${PORT}`);
     console.log(`   LLM Provider: ${process.env.LLM_PROVIDER || 'mock'}\n`);
 
     // ── Start data retention cron job ────────────────────────────────────────

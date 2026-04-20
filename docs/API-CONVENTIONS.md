@@ -1,4 +1,4 @@
-# Nomii AI — API Conventions
+# Shenmay AI — API Conventions
 
 > Living doc. Touch this whenever a new public API path is added or a
 > convention is re-decided. Addresses **Findings #17 and #18** from
@@ -49,7 +49,7 @@ on next touch.
 
 ## Three `/login` endpoints — three distinct user populations
 
-Nomii has three logical user populations, stored in three different
+Shenmay has three logical user populations, stored in three different
 tables. Each has its own login endpoint with its own JWT shape. This is
 intentional, not a refactor target — but it confused a third-party
 auditor who naturally reached for `/api/auth/login` first. Documented
@@ -59,8 +59,8 @@ out.
 | Endpoint | Users | Table | Who logs in here |
 |---|---|---|---|
 | `POST /api/auth/login` | **Widget end-users** | `customers`, `advisors` | The people Austin's *customer's customers* are — the end-users who chat with a widget deployed on a customer site. Also the advisor dashboard (human takeover). |
-| `POST /api/onboard/login` | **Tenant admins** | `tenant_admins` | Austin's direct SaaS customers. The person who signed up at pontensolutions.com to run a chatbot on their site. Logs into the Nomii dashboard at `/nomii/portal`. |
-| `POST /api/platform/auth/login` | **Platform admins** | `platform_admins` | Austin + future Nomii operators. Logs into the super-admin panel that manages tenants, licenses, billing across the SaaS. Only mounted when `NOMII_LICENSE_MASTER=true`. |
+| `POST /api/onboard/login` | **Tenant admins** | `tenant_admins` | Austin's direct SaaS customers. The person who signed up at pontensolutions.com to run a chatbot on their site. Logs into the Shenmay dashboard at `/nomii/portal`. |
+| `POST /api/platform/auth/login` | **Platform admins** | `platform_admins` | Austin + future Shenmay operators. Logs into the super-admin panel that manages tenants, licenses, billing across the SaaS. Only mounted when `NOMII_LICENSE_MASTER=true`. |
 
 ### JWT payloads differ per endpoint
 

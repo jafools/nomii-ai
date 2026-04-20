@@ -2,7 +2,7 @@
 -- Migration 016 — Custom Tool Builder
 --
 -- Allows non-technical tenants to define their own tools via a
--- form in the Nomii dashboard — no code required.
+-- form in the Shenmay dashboard — no code required.
 --
 -- Each row defines one tool available to that tenant's AI agent.
 -- A generic handler runs the appropriate behaviour based on tool_type.

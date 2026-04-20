@@ -8,7 +8,7 @@
 
 ## The one-sentence claim
 
-> Nomii never sends your customers' regulated personal identifiers to Anthropic. Names are pseudonymized, SSNs and account numbers are tokenized, and a second-pass breach detector blocks any request that still contains unredacted PII — so even if a detector missed something, the data can't leak.
+> Shenmay never sends your customers' regulated personal identifiers to Anthropic. Names are pseudonymized, SSNs and account numbers are tokenized, and a second-pass breach detector blocks any request that still contains unredacted PII — so even if a detector missed something, the data can't leak.
 
 ## The three-line pitch (for slide decks)
 
@@ -18,10 +18,10 @@
 
 ## The five-bullet compliance sheet (for DPA / vendor-review attachments)
 
-> 1. Nomii uses Claude models operated by Anthropic, Inc. under Anthropic's Commercial Terms, which contractually prohibit training on API data.
-> 2. On top of that contractual protection, Nomii runs a per-tenant PII tokenization layer that replaces regulated identifiers with opaque tokens before every LLM request, and swaps them back on response. Users and the agent never see the tokens.
+> 1. Shenmay uses Claude models operated by Anthropic, Inc. under Anthropic's Commercial Terms, which contractually prohibit training on API data.
+> 2. On top of that contractual protection, Shenmay runs a per-tenant PII tokenization layer that replaces regulated identifiers with opaque tokens before every LLM request, and swaps them back on response. Users and the agent never see the tokens.
 > 3. A second-pass breach detector scans the tokenized payload and blocks the outbound request if any residual pattern is found (log-and-block). Blocked requests are recorded in an append-only audit log.
-> 4. The tokenizer runs in-process on the same host as the Nomii application, with no additional network hop and no token map persisted beyond a single API round-trip.
+> 4. The tokenizer runs in-process on the same host as the Shenmay application, with no additional network hop and no token map persisted beyond a single API round-trip.
 > 5. Tokenization is ON by default for every tenant and can be globally force-disabled only via the `PII_TOKENIZER_ENABLED=false` operator flag (used for incident response).
 
 ---

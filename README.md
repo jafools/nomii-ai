@@ -1,10 +1,10 @@
-# Nomii AI — Personalized AI Agent Platform
+# Shenmay AI — Personalized AI Agent Platform
 
-> *"Know Me"* — Industry-agnostic platform for deploying persistent, personalized AI agents that deeply understand each customer.
+> *"Känn mej"* ("know me" in Swedish, pronounced *Shen-may*) — Industry-agnostic platform for deploying persistent, personalized AI agents that deeply understand each customer.
 
-## What is Nomii AI?
+## What is Shenmay AI?
 
-Nomii AI is a B2B SaaS platform where companies (tenants) integrate personalized AI agents for their customers. Each customer gets an agent powered by two core files:
+Shenmay AI is a B2B SaaS platform where companies (tenants) integrate personalized AI agents for their customers. Each customer gets an agent powered by two core files:
 
 - **Soul** — *Who the agent is* for this customer (tone, complexity, communication style)
 - **Memory** — *What the agent knows* (personal profile, data, conversation history, goals)
@@ -131,5 +131,5 @@ nomii-ai/
 - `SESSION_HANDOFF.md` — Current system state, what's been built, errors & fixes, what's next
 - `DEPLOYMENT.md` — Proxmox deployment guide
 - `CLOUDFLARE_TUNNEL.md` — Cloudflare Tunnel setup guide (public URL via `cloudflared` Docker service)
-- `Covenant Trust/NOMII_AI_ARCHITECTURE.md` — Full architecture blueprint
+- `Covenant Trust/SHENMAY_AI_ARCHITECTURE.md` — Full architecture blueprint
 - `Covenant Trust/DECISIONS_LOG.md` — All product decisions (21 decisions logged)

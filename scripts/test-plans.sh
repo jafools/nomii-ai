@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Nomii AI — Subscription Plan Test Script
+#  Shenmay AI — Subscription Plan Test Script
 #  Tests that each plan enforces the correct limits in the DB
 #  and that the dashboard responds correctly.
 #
@@ -15,7 +15,7 @@ API="https://api.pontensolutions.com"
 
 echo ""
 echo "=================================================="
-echo "  Nomii AI Plan Test — Starting"
+echo "  Shenmay AI Plan Test — Starting"
 echo "  Testing account: $EMAIL"
 echo "=================================================="
 echo ""

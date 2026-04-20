@@ -5,29 +5,29 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
-import NomiiLogin from "./pages/nomii/NomiiLogin";
-import NomiiSignup from "./pages/nomii/NomiiSignup";
-import NomiiVerifyEmail from "./pages/nomii/NomiiVerifyEmail";
-import NomiiTerms from "./pages/nomii/NomiiTerms";
-import NomiiResetPassword from "./pages/nomii/NomiiResetPassword";
-import NomiiOnboarding from "./pages/nomii/NomiiOnboarding";
-import NomiiDashboardLayout from "./layouts/NomiiDashboardLayout";
-import NomiiOverview from "./pages/nomii/dashboard/NomiiOverview";
-import NomiiConversations from "./pages/nomii/dashboard/NomiiConversations";
-import NomiiConversationDetail from "./pages/nomii/dashboard/NomiiConversationDetail";
-import NomiiCustomers from "./pages/nomii/dashboard/NomiiCustomers";
-import NomiiCustomerDetail from "./pages/nomii/dashboard/NomiiCustomerDetail";
-import NomiiConcerns from "./pages/nomii/dashboard/NomiiConcerns";
-import NomiiSettings from "./pages/nomii/dashboard/NomiiSettings";
-import NomiiProfile from "./pages/nomii/dashboard/NomiiProfile";
-import NomiiPlans from "./pages/nomii/dashboard/NomiiPlans";
-import NomiiTeam from "./pages/nomii/dashboard/NomiiTeam";
-import NomiiTools from "./pages/nomii/dashboard/NomiiTools";
-import NomiiAcceptInvite from "./pages/nomii/NomiiAcceptInvite";
-import NomiiProtectedRoute from "./components/nomii/NomiiProtectedRoute";
-import { NomiiAuthProvider } from "./contexts/NomiiAuthContext";
-import NomiiSetup from "./pages/nomii/NomiiSetup";
-import NomiiLicenseSuccess from "./pages/nomii/NomiiLicenseSuccess";
+import ShenmayLogin from "./pages/shenmay/ShenmayLogin";
+import ShenmaySignup from "./pages/shenmay/ShenmaySignup";
+import ShenmayVerifyEmail from "./pages/shenmay/ShenmayVerifyEmail";
+import ShenmayTerms from "./pages/shenmay/ShenmayTerms";
+import ShenmayResetPassword from "./pages/shenmay/ShenmayResetPassword";
+import ShenmayOnboarding from "./pages/shenmay/ShenmayOnboarding";
+import ShenmayDashboardLayout from "./layouts/ShenmayDashboardLayout";
+import ShenmayOverview from "./pages/shenmay/dashboard/ShenmayOverview";
+import ShenmayConversations from "./pages/shenmay/dashboard/ShenmayConversations";
+import ShenmayConversationDetail from "./pages/shenmay/dashboard/ShenmayConversationDetail";
+import ShenmayCustomers from "./pages/shenmay/dashboard/ShenmayCustomers";
+import ShenmayCustomerDetail from "./pages/shenmay/dashboard/ShenmayCustomerDetail";
+import ShenmayConcerns from "./pages/shenmay/dashboard/ShenmayConcerns";
+import ShenmaySettings from "./pages/shenmay/dashboard/ShenmaySettings";
+import ShenmayProfile from "./pages/shenmay/dashboard/ShenmayProfile";
+import ShenmayPlans from "./pages/shenmay/dashboard/ShenmayPlans";
+import ShenmayTeam from "./pages/shenmay/dashboard/ShenmayTeam";
+import ShenmayTools from "./pages/shenmay/dashboard/ShenmayTools";
+import ShenmayAcceptInvite from "./pages/shenmay/ShenmayAcceptInvite";
+import ShenmayProtectedRoute from "./components/shenmay/ShenmayProtectedRoute";
+import { ShenmayAuthProvider } from "./contexts/ShenmayAuthContext";
+import ShenmaySetup from "./pages/shenmay/ShenmaySetup";
+import ShenmayLicenseSuccess from "./pages/shenmay/ShenmayLicenseSuccess";
 
 const queryClient = new QueryClient();
 
@@ -65,48 +65,48 @@ const App = () => (
           <Route path="/signup" element={<Navigate to="/nomii/signup" replace />} />
 
           {/* First-run setup wizard (self-hosted only) */}
-          <Route path="/nomii/setup" element={<NomiiSetup />} />
+          <Route path="/nomii/setup" element={<ShenmaySetup />} />
 
           {/* Public auth routes */}
-          <Route path="/nomii/login" element={<NomiiLogin />} />
-          <Route path="/nomii/signup" element={<NomiiSignup />} />
-          <Route path="/nomii/terms" element={<NomiiTerms />} />
-          <Route path="/nomii/verify-email" element={<NomiiVerifyEmail />} />
-          <Route path="/nomii/verify/:token" element={<NomiiVerifyEmail />} />
-          <Route path="/nomii/reset-password" element={<NomiiResetPassword />} />
-          <Route path="/nomii/accept-invite" element={<NomiiAcceptInvite />} />
+          <Route path="/nomii/login" element={<ShenmayLogin />} />
+          <Route path="/nomii/signup" element={<ShenmaySignup />} />
+          <Route path="/nomii/terms" element={<ShenmayTerms />} />
+          <Route path="/nomii/verify-email" element={<ShenmayVerifyEmail />} />
+          <Route path="/nomii/verify/:token" element={<ShenmayVerifyEmail />} />
+          <Route path="/nomii/reset-password" element={<ShenmayResetPassword />} />
+          <Route path="/nomii/accept-invite" element={<ShenmayAcceptInvite />} />
 
           {/* Post-purchase success page (self-hosted license checkout) */}
-          <Route path="/nomii/license/success" element={<NomiiLicenseSuccess />} />
+          <Route path="/nomii/license/success" element={<ShenmayLicenseSuccess />} />
 
           {/* Protected onboarding */}
           <Route path="/nomii/onboarding" element={
-            <NomiiProtectedRoute>
-              <NomiiAuthProvider>
-                <NomiiOnboarding />
-              </NomiiAuthProvider>
-            </NomiiProtectedRoute>
+            <ShenmayProtectedRoute>
+              <ShenmayAuthProvider>
+                <ShenmayOnboarding />
+              </ShenmayAuthProvider>
+            </ShenmayProtectedRoute>
           } />
 
           {/* Protected dashboard */}
           <Route path="/nomii/dashboard" element={
-            <NomiiProtectedRoute>
-              <NomiiAuthProvider>
-                <NomiiDashboardLayout />
-              </NomiiAuthProvider>
-            </NomiiProtectedRoute>
+            <ShenmayProtectedRoute>
+              <ShenmayAuthProvider>
+                <ShenmayDashboardLayout />
+              </ShenmayAuthProvider>
+            </ShenmayProtectedRoute>
           }>
-            <Route index element={<NomiiOverview />} />
-            <Route path="conversations" element={<NomiiConversations />} />
-            <Route path="conversations/:id" element={<NomiiConversationDetail />} />
-            <Route path="customers" element={<NomiiCustomers />} />
-            <Route path="customers/:id" element={<NomiiCustomerDetail />} />
-            <Route path="concerns" element={<NomiiConcerns />} />
-            <Route path="tools" element={<NomiiTools />} />
-            <Route path="team" element={<NomiiTeam />} />
-            <Route path="plans" element={<NomiiPlans />} />
-            <Route path="settings" element={<NomiiSettings />} />
-            <Route path="profile" element={<NomiiProfile />} />
+            <Route index element={<ShenmayOverview />} />
+            <Route path="conversations" element={<ShenmayConversations />} />
+            <Route path="conversations/:id" element={<ShenmayConversationDetail />} />
+            <Route path="customers" element={<ShenmayCustomers />} />
+            <Route path="customers/:id" element={<ShenmayCustomerDetail />} />
+            <Route path="concerns" element={<ShenmayConcerns />} />
+            <Route path="tools" element={<ShenmayTools />} />
+            <Route path="team" element={<ShenmayTeam />} />
+            <Route path="plans" element={<ShenmayPlans />} />
+            <Route path="settings" element={<ShenmaySettings />} />
+            <Route path="profile" element={<ShenmayProfile />} />
             <Route path="*" element={<Navigate to="/nomii/dashboard" replace />} />
           </Route>
 

@@ -1,7 +1,7 @@
 # ============================================================
-# Nomii AI — Self-Hosted
+# Shenmay AI — Self-Hosted
 #
-# This is the only file you need to run Nomii AI on your
+# This is the only file you need to run Shenmay AI on your
 # own server. It pulls pre-built images from GitHub's
 # container registry — no source code required.
 #
@@ -91,7 +91,7 @@ services:
       # Enables single-tenant mode, disables SaaS registration,
       # and switches the dashboard to license-based billing.
       NOMII_DEPLOYMENT: selfhosted
-      # ── Nomii License ─────────────────────────────────────
+      # ── Shenmay License ─────────────────────────────────────
       # Leave blank to start the free trial (20 messages/mo, 1 customer).
       # Purchase a paid license at: https://pontensolutions.com/nomii/license
       # After purchase, paste your key here and restart the backend.

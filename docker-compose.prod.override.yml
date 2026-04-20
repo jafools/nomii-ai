@@ -1,5 +1,5 @@
 # ============================================================
-# Nomii SaaS — Hetzner production overrides.
+# Shenmay SaaS — Hetzner production overrides.
 #
 # This file is layered on top of docker-compose.yml via:
 #   COMPOSE_FILE=docker-compose.yml:docker-compose.prod.override.yml

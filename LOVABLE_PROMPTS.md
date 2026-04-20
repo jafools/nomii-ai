@@ -1,13 +1,13 @@
-# Nomii AI — Lovable Build Prompts
+# Shenmay AI — Lovable Build Prompts
 ## pontensolutions.com Tenant Portal
 
 Paste these prompts into Lovable **in order**, one at a time. Wait for each one to finish before pasting the next. Each prompt builds on the previous one.
 
-**Important context:** pontensolutions.com is a multi-product site. All Nomii AI pages live under the `/nomii` path so they don't interfere with other products on the site. The existing homepage and other product pages are untouched.
+**Important context:** pontensolutions.com is a multi-product site. All Shenmay AI pages live under the `/nomii` path so they don't interfere with other products on the site. The existing homepage and other product pages are untouched.
 
 **Route structure:**
 ```
-pontensolutions.com/nomii              ← Nomii AI marketing/landing page
+pontensolutions.com/nomii              ← Shenmay AI marketing/landing page
 pontensolutions.com/nomii/signup       ← Sign up
 pontensolutions.com/nomii/login        ← Log in
 pontensolutions.com/nomii/terms        ← Terms of Service (public)
@@ -30,9 +30,9 @@ Paste this first. It sets up the shared API layer everything else uses.
 
 ---
 
-> I'm adding a new product section to this site called Nomii AI. All Nomii AI pages will live under the `/nomii` path. Please create the following foundation files — do not modify any existing pages or routes.
+> I'm adding a new product section to this site called Shenmay AI. All Shenmay AI pages will live under the `/nomii` path. Please create the following foundation files — do not modify any existing pages or routes.
 >
-> Create `src/lib/nomiiApi.js` that exports a configured API client for the Nomii AI backend at `https://api.pontensolutions.com`.
+> Create `src/lib/nomiiApi.js` that exports a configured API client for the Shenmay AI backend at `https://api.pontensolutions.com`.
 >
 > Export the following functions:
 >
@@ -66,7 +66,7 @@ Paste this first. It sets up the shared API layer everything else uses.
 > - `getConversation(id)` — GET `/api/portal/conversations/${id}`
 > - `getConcerns()` — GET `/api/portal/concerns`
 >
-> Also create `src/contexts/NomiiAuthContext.jsx` (use a Nomii-specific name to avoid conflicts with any existing auth context on the site) that:
+> Also create `src/contexts/NomiiAuthContext.jsx` (use a Shenmay-specific name to avoid conflicts with any existing auth context on the site) that:
 > - Stores `nomiiUser` (admin object) and `nomiiTenant` (tenant object) state
 > - On mount, if `isLoggedIn()`, calls `getMe()` and populates state; if the call fails, calls `clearToken()` and redirects to `/nomii/login`
 > - Exports `useNomiiAuth()` hook
@@ -78,45 +78,45 @@ Paste this first. It sets up the shared API layer everything else uses.
 
 ---
 
-## PROMPT 2 — Nomii AI Landing Page, Auth Pages & Terms of Service
+## PROMPT 2 — Shenmay AI Landing Page, Auth Pages & Terms of Service
 
 > Add the following pages under the `/nomii` path. Do not modify any existing pages.
 >
 > **Landing page (`/nomii`):**
-> A clean marketing page for Nomii AI specifically. Header with the Nomii AI logo/wordmark and tagline: "Add a personalized AI agent to your website in minutes." Two CTA buttons: "Get Started Free" (→ `/nomii/signup`) and "Sign In" (→ `/nomii/login`). Below the header, three feature cards: "Easy Setup — Install with one script tag or our WordPress plugin", "Knows Your Customers — Your agent learns each user's preferences and history", "You Stay in Control — Monitor every conversation from your dashboard." Keep it simple and professional. Use a navy and gold color scheme (`#1E3A5F` / `#C9A84C`).
+> A clean marketing page for Shenmay AI specifically. Header with the Shenmay AI logo/wordmark and tagline: "Add a personalized AI agent to your website in minutes." Two CTA buttons: "Get Started Free" (→ `/nomii/signup`) and "Sign In" (→ `/nomii/login`). Below the header, three feature cards: "Easy Setup — Install with one script tag or our WordPress plugin", "Knows Your Customers — Your agent learns each user's preferences and history", "You Stay in Control — Monitor every conversation from your dashboard." Keep it simple and professional. Use a navy and gold color scheme (`#1E3A5F` / `#C9A84C`).
 >
 > **Terms of Service page (`/nomii/terms`):**
-> A clean, readable legal page. Title: "Nomii AI — Terms of Service". Include the following sections as plain prose under headings:
+> A clean, readable legal page. Title: "Shenmay AI — Terms of Service". Include the following sections as plain prose under headings:
 >
-> *1. Service Description* — Nomii AI is a platform provided by Ponten Solutions that enables businesses ("Tenants") to deploy personalized AI agents on their websites. Nomii AI acts as a data processor on behalf of Tenants.
+> *1. Service Description* — Shenmay AI is a platform provided by Ponten Solutions that enables businesses ("Tenants") to deploy personalized AI agents on their websites. Shenmay AI acts as a data processor on behalf of Tenants.
 >
-> *2. Tenant Responsibilities* — By using Nomii AI, you confirm that: (a) you have obtained all necessary rights, consents, and permissions to upload your customers' personal data to Nomii AI; (b) your use of Nomii AI complies with all applicable privacy laws including GDPR, CCPA, and any other relevant regulations in your jurisdiction; (c) you will notify your customers that their interactions with your website's AI agent are processed by Nomii AI on your behalf.
+> *2. Tenant Responsibilities* — By using Shenmay AI, you confirm that: (a) you have obtained all necessary rights, consents, and permissions to upload your customers' personal data to Shenmay AI; (b) your use of Shenmay AI complies with all applicable privacy laws including GDPR, CCPA, and any other relevant regulations in your jurisdiction; (c) you will notify your customers that their interactions with your website's AI agent are processed by Shenmay AI on your behalf.
 >
-> *3. Data Processing* — Nomii AI stores customer data (email, name, and any data you upload) solely to power the AI agent service on your behalf. We do not sell your customer data to third parties. Data is stored securely and access is restricted to your tenant account.
+> *3. Data Processing* — Shenmay AI stores customer data (email, name, and any data you upload) solely to power the AI agent service on your behalf. We do not sell your customer data to third parties. Data is stored securely and access is restricted to your tenant account.
 >
-> *4. Data Deletion* — You may request deletion of any customer record at any time from your Nomii AI dashboard. Upon deletion, all personally identifiable information is anonymised. You may also request full account deletion by contacting support@pontensolutions.com.
+> *4. Data Deletion* — You may request deletion of any customer record at any time from your Shenmay AI dashboard. Upon deletion, all personally identifiable information is anonymised. You may also request full account deletion by contacting support@pontensolutions.com.
 >
-> *5. Limitation of Liability* — Nomii AI is provided "as is." Ponten Solutions is not liable for any damages arising from your use of the service or from your customers' use of AI agents deployed through Nomii AI.
+> *5. Limitation of Liability* — Shenmay AI is provided "as is." Ponten Solutions is not liable for any damages arising from your use of the service or from your customers' use of AI agents deployed through Shenmay AI.
 >
-> *6. Changes* — We may update these terms. Continued use of Nomii AI after changes are posted constitutes acceptance.
+> *6. Changes* — We may update these terms. Continued use of Shenmay AI after changes are posted constitutes acceptance.
 >
 > *Last updated: March 2026.* Footer: "Questions? Contact support@pontensolutions.com"
 >
 > **Login page (`/nomii/login`):**
-> Centered card on a light gray background. "Nomii AI" heading at the top. Fields: Email, Password. "Sign in to Nomii AI" button — calls `login(email, password)` from `nomiiApi.js`. On success: calls `setToken(token)`, stores tenant/admin in `NomiiAuthContext`, redirects to `/nomii/dashboard`. On error: shows the error message in red below the form. Link: "Don't have an account? Get started →" links to `/nomii/signup`.
+> Centered card on a light gray background. "Shenmay AI" heading at the top. Fields: Email, Password. "Sign in to Shenmay AI" button — calls `login(email, password)` from `nomiiApi.js`. On success: calls `setToken(token)`, stores tenant/admin in `NomiiAuthContext`, redirects to `/nomii/dashboard`. On error: shows the error message in red below the form. Link: "Don't have an account? Get started →" links to `/nomii/signup`.
 >
 > **Sign up page (`/nomii/signup`):**
-> Same card layout. "Get started with Nomii AI" heading. Fields: First Name, Last Name, Email, Password (min 8 characters, show strength hint), Company Name, Industry (dropdown: Financial, Retirement, Ministry, Healthcare, Insurance, Education, E-commerce, Other).
+> Same card layout. "Get started with Shenmay AI" heading. Fields: First Name, Last Name, Email, Password (min 8 characters, show strength hint), Company Name, Industry (dropdown: Financial, Retirement, Ministry, Healthcare, Insurance, Education, E-commerce, Other).
 >
 > Below the fields, before the submit button, add two required checkboxes:
 >
-> Checkbox 1 — must be checked to submit: "I agree to the Nomii AI [Terms of Service](/nomii/terms) (opens in new tab)."
+> Checkbox 1 — must be checked to submit: "I agree to the Shenmay AI [Terms of Service](/nomii/terms) (opens in new tab)."
 >
-> Checkbox 2 — must be checked to submit: "I confirm that I have obtained the necessary rights and consents to upload my customers' personal data to Nomii AI, and that my use complies with applicable privacy laws (GDPR, CCPA, etc.)."
+> Checkbox 2 — must be checked to submit: "I confirm that I have obtained the necessary rights and consents to upload my customers' personal data to Shenmay AI, and that my use complies with applicable privacy laws (GDPR, CCPA, etc.)."
 >
 > Pass `tos_accepted: true` in the registration API call only when both boxes are checked. If either is unchecked and the user clicks submit, show an inline error: "Please accept the terms and confirm your data rights before continuing."
 >
-> "Create my Nomii account" button — calls `register(...)` from `nomiiApi.js` with `tos_accepted: true`. On success: calls `setToken(token)`, stores tenant/admin in `NomiiAuthContext`, redirects to `/nomii/onboarding`. On error: shows error in red. Link: "Already have an account? Sign in →" links to `/nomii/login`.
+> "Create my Shenmay account" button — calls `register(...)` from `nomiiApi.js` with `tos_accepted: true`. On success: calls `setToken(token)`, stores tenant/admin in `NomiiAuthContext`, redirects to `/nomii/onboarding`. On error: shows error in red. Link: "Already have an account? Sign in →" links to `/nomii/login`.
 
 ---
 
@@ -124,7 +124,7 @@ Paste this first. It sets up the shared API layer everything else uses.
 
 > Add the onboarding wizard at `/nomii/onboarding`. This route is protected by `NomiiProtectedRoute`. Do not modify any existing pages.
 >
-> **Layout:** Split view. Left sidebar (~260px) shows the 5 steps as a vertical list with icons. Each step shows: step number, name, and status (gray circle = not started, green checkmark = complete). Read completion status from `nomiiTenant.onboarding_steps` in `NomiiAuthContext`. Main content area on the right renders the active step. Nomii AI logo at the top of the sidebar. "Back to dashboard →" link at the bottom of the sidebar (visible once at least one step is complete).
+> **Layout:** Split view. Left sidebar (~260px) shows the 5 steps as a vertical list with icons. Each step shows: step number, name, and status (gray circle = not started, green checkmark = complete). Read completion status from `nomiiTenant.onboarding_steps` in `NomiiAuthContext`. Main content area on the right renders the active step. Shenmay AI logo at the top of the sidebar. "Back to dashboard →" link at the bottom of the sidebar (visible once at least one step is complete).
 >
 > **Step 1 — Company Profile:**
 > Form fields: Company Name (pre-filled from `nomiiTenant.name`), Agent Name ("What should your AI agent be called?" — pre-filled from `nomiiTenant.agent_name`), Industry (dropdown, pre-filled), Primary Color (color picker, pre-filled from `nomiiTenant.primary_color`), Secondary Color (color picker), Website URL, Company Description (textarea — placeholder: "Describe what your company does. This helps your AI agent represent you accurately to your customers."). "Save & Continue" button calls `updateCompany(data)`. On success, mark step 1 complete locally and advance to step 2. Show a success toast.
@@ -141,11 +141,11 @@ Paste this first. It sets up the shared API layer everything else uses.
 > Show a dashed drop zone for CSV upload. When a file is selected, read it as text, show a preview table of the first 3 rows (with headers), and a "Confirm Import" button that calls `uploadCustomersCsv(csvString)`. Show result: "X customers added, Y updated." Include a "Download template" link that downloads: `email,first_name,last_name,phone,account_id,notes` as `nomii-customers-template.csv`. Below everything: "Skip for now →" link that marks this step complete and advances. "Continue" button also advances.
 >
 > **Step 4 — Install Widget:**
-> Heading: "Add Nomii AI to your website" Show the widget key in a styled read-only box with a "Copy key" button.
+> Heading: "Add Shenmay AI to your website" Show the widget key in a styled read-only box with a "Copy key" button.
 >
 > Below it, a platform selector with icon tabs. Show instructions for each:
 >
-> **WordPress** (show first — most common): "Install our WordPress plugin — no coding needed." Download button linking to `https://api.pontensolutions.com/downloads/nomii-wordpress-plugin.zip`. Steps: 1. Download the plugin. 2. Go to WordPress Admin → Plugins → Add New → Upload Plugin. 3. Select the downloaded zip and click Install Now. 4. Activate the plugin. 5. Go to Settings → Nomii AI, paste your Widget Key, and save.
+> **WordPress** (show first — most common): "Install our WordPress plugin — no coding needed." Download button linking to `https://api.pontensolutions.com/downloads/nomii-wordpress-plugin.zip`. Steps: 1. Download the plugin. 2. Go to WordPress Admin → Plugins → Add New → Upload Plugin. 3. Select the downloaded zip and click Install Now. 4. Activate the plugin. 5. Go to Settings → Shenmay AI, paste your Widget Key, and save.
 >
 > **Webflow**: "Go to Site Settings → Custom Code → Footer Code. Paste this before `</body>`:" Show copy-able code snippet.
 >
@@ -176,18 +176,18 @@ Paste this first. It sets up the shared API layer everything else uses.
 > **Step 5 — Test Your Agent:**
 > Heading: "Send a test message to your agent." Embed an iframe: `https://api.pontensolutions.com/widget.html?key=WIDGET_KEY&email=preview@test.com&name=Preview+User` — styled at 400px wide, 500px tall, centered, with a subtle shadow. Below the iframe: "This is exactly what your customers will see." Big "Go to my dashboard →" button navigates to `/nomii/dashboard` and marks step 5 complete.
 >
-> When all 5 steps are complete, show a full-width green banner at the top: "🎉 Setup complete! Your Nomii AI agent is live." with a "Go to Dashboard" button.
+> When all 5 steps are complete, show a full-width green banner at the top: "🎉 Setup complete! Your Shenmay AI agent is live." with a "Go to Dashboard" button.
 
 ---
 
 ## PROMPT 4 — Dashboard Layout
 
-> Add the Nomii AI dashboard layout that wraps all `/nomii/dashboard/*` pages. All dashboard routes are protected by `NomiiProtectedRoute`. Do not modify any existing pages or layouts.
+> Add the Shenmay AI dashboard layout that wraps all `/nomii/dashboard/*` pages. All dashboard routes are protected by `NomiiProtectedRoute`. Do not modify any existing pages or layouts.
 >
 > Create `src/layouts/NomiiDashboardLayout.jsx`.
 >
 > **Left sidebar** (fixed, 240px, dark navy `#1E3A5F`):
-> - "Nomii AI" wordmark at the top in white
+> - "Shenmay AI" wordmark at the top in white
 > - Below it: tenant name in small gold text, agent name in smaller gray text
 > - Nav links with icons (white text, gold highlight on active):
 >   - Overview (home icon) → `/nomii/dashboard`
@@ -207,7 +207,7 @@ Paste this first. It sets up the shared API layer everything else uses.
 
 ## PROMPT 5 — Dashboard Overview (`/nomii/dashboard`)
 
-> Add the Nomii AI overview page at `/nomii/dashboard`. Use `NomiiDashboardLayout`. Do not modify existing pages.
+> Add the Shenmay AI overview page at `/nomii/dashboard`. Use `NomiiDashboardLayout`. Do not modify existing pages.
 >
 > On mount, call `getDashboard()` and display:
 >
@@ -437,7 +437,7 @@ Two parts — paste in order.
 > **Part A — Signup page (`/nomii/signup`):**
 >
 > 1. Add a newsletter opt-in checkbox near the bottom of the form, above the submit button:
->    - Label: "I'd like to receive product updates and occasional tips from Nomii AI"
+>    - Label: "I'd like to receive product updates and occasional tips from Shenmay AI"
 >    - Default: unchecked
 >    - Pass its value as `newsletter_opt_in` when calling `register()`
 >
@@ -1003,7 +1003,7 @@ Once all pages are live in Lovable, test the full flow:
 > 5. On success, shows "Your password has been reset!" with a "Go to Login" button
 > 6. On error (expired/invalid token), shows the error message with a "Request a new link" button that navigates back to the forgot password form
 >
-> **Styling:** Match the existing login page styling — same card layout, Nomii AI branding, primary color buttons.
+> **Styling:** Match the existing login page styling — same card layout, Shenmay AI branding, primary color buttons.
 
 ---
 

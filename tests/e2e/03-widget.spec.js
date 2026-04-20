@@ -6,7 +6,7 @@ const { loginViaAPI, getWidgetKey } = require('./helpers/auth');
 /**
  * Widget E2E tests
  *
- * These tests create a standalone HTML page that embeds the Nomii widget
+ * These tests create a standalone HTML page that embeds the Shenmay widget
  * via embed.js, simulating a real customer-facing site. They verify:
  *   - Widget launcher renders
  *   - Click to open/close the chat panel
@@ -40,7 +40,7 @@ function hostPageHTML(opts = {}) {
 <html><head><title>Test Host Page</title></head>
 <body>
   <h1>Host Page</h1>
-  <p>This simulates a customer's website with the Nomii widget embedded.</p>
+  <p>This simulates a customer's website with the Shenmay widget embedded.</p>
   <script
     src="${API_BASE}/embed.js"
     data-widget-key="${widgetKey}"

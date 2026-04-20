@@ -2,7 +2,7 @@
  * NOMII AI — Prompt Builder Engine
  * 
  * Assembles the system prompt that gives the agent its identity and knowledge.
- * This is the core of Nomii: before every conversation, the agent reads its
+ * This is the core of Shenmay: before every conversation, the agent reads its
  * Soul (who it is), Memory (what it knows), and Financial Context (the data).
  * 
  * Usage:

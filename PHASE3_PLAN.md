@@ -1,4 +1,4 @@
-# Nomii AI — Phase 3 Plan
+# Shenmay AI — Phase 3 Plan
 ## Self-Serve Tenant Portal (nomii.pontensolutions.com)
 
 *Written: 2026-03-11*
@@ -8,7 +8,7 @@
 
 ## What Phase 3 Is
 
-A complete self-serve tenant onboarding and management portal integrated into **nomii.pontensolutions.com**. A business owner (non-technical) can sign up, configure their Nomii agent, install the widget on their website, upload their customer and product data, and then monitor everything from a professional dashboard — without needing a developer or a single manual step on the Nomii backend.
+A complete self-serve tenant onboarding and management portal integrated into **nomii.pontensolutions.com**. A business owner (non-technical) can sign up, configure their Shenmay agent, install the widget on their website, upload their customer and product data, and then monitor everything from a professional dashboard — without needing a developer or a single manual step on the Shenmay backend.
 
 The portal clearly distinguishes between two user experiences:
 - **Unauthenticated visitors** (on customer websites): branded AI chatbot without authentication — no soul persistence, no memory, provides value through real-time conversation
@@ -20,14 +20,14 @@ The proof of success for Phase 3: **Re-onboard Hope for This Nation entirely thr
 
 ## Architecture Decision
 
-`pontensolutions.com` is built in Lovable (React/Supabase frontend). Rather than fight that, we use it as the UI layer and route all business logic through the existing Nomii API at `api.pontensolutions.com`. Lovable handles pages and UI; our Express backend handles all data.
+`pontensolutions.com` is built in Lovable (React/Supabase frontend). Rather than fight that, we use it as the UI layer and route all business logic through the existing Shenmay API at `api.pontensolutions.com`. Lovable handles pages and UI; our Express backend handles all data.
 
 ```
 pontensolutions.com  (Lovable — React UI)
        │
        │  REST calls
        ▼
-api.pontensolutions.com  (Nomii Express backend)
+api.pontensolutions.com  (Shenmay Express backend)
        │
        ├── /api/onboard/*    NEW — self-serve tenant registration + setup
        ├── /api/portal/*     NEW — tenant dashboard data
@@ -178,7 +178,7 @@ The tenant picks their platform. The UI then shows a tailored guide.
 **Platform guides (in order of prevalence):**
 
 **WordPress (~43% of websites)**
-Best option: Offer a downloadable Nomii WordPress Plugin (.zip).
+Best option: Offer a downloadable Shenmay WordPress Plugin (.zip).
 - Tenant downloads the plugin from pontensolutions.com
 - Installs it in WordPress Admin → Plugins → Add New → Upload
 - Activates it, enters their Widget Key in the plugin settings
@@ -356,4 +356,4 @@ Phase 3 is built in this sequence — each step is shippable:
 
 ## What This Enables
 
-When Phase 3 is done, Nomii AI is a real self-serve SaaS product. Any business can go to `pontensolutions.com`, sign up, add their data, paste one script tag (or install a WordPress plugin), and have a personalized AI agent running on their website within 30 minutes — with a dashboard to monitor it. No manual backend work, no chat sessions with Claude to seed data.
+When Phase 3 is done, Shenmay AI is a real self-serve SaaS product. Any business can go to `pontensolutions.com`, sign up, add their data, paste one script tag (or install a WordPress plugin), and have a personalized AI agent running on their website within 30 minutes — with a dashboard to monitor it. No manual backend work, no chat sessions with Claude to seed data.

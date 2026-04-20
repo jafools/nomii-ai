@@ -145,7 +145,7 @@ async function _sendSlack(url, eventType, data, tenantName) {
   if (tenantName) {
     blocks.push({
       type: 'context',
-      elements: [{ type: 'mrkdwn', text: `Nomii AI · ${tenantName}` }],
+      elements: [{ type: 'mrkdwn', text: `Shenmay AI · ${tenantName}` }],
     });
   }
 
@@ -196,7 +196,7 @@ async function _post(url, payload) {
   try {
     const res = await fetch(url, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Nomii-Notifications/1.0' },
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Shenmay-Notifications/1.0' },
       body:    JSON.stringify(payload),
       signal:  controller.signal,
     });

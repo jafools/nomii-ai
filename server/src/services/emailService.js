@@ -9,7 +9,7 @@
  *   SMTP_SECURE   — "true" for port 465, "false" for 587
  *   SMTP_USER     — your One.com email address
  *   SMTP_PASS     — your One.com email password
- *   SMTP_FROM     — From address, e.g. "Nomii AI <hello@pontensolutions.com>"
+ *   SMTP_FROM     — From address, e.g. "Shenmay AI <hello@pontensolutions.com>"
  *   APP_URL       — Base URL for links, e.g. https://pontensolutions.com
  */
 
@@ -41,7 +41,7 @@ function createTransporter() {
   return getTransporter();
 }
 
-const FROM = process.env.SMTP_FROM || 'Nomii AI <hello@pontensolutions.com>';
+const FROM = process.env.SMTP_FROM || 'Shenmay AI <hello@pontensolutions.com>';
 const APP_URL = (process.env.APP_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
 const SMTP_USER = process.env.SMTP_USER;
 // Derive the public domain from APP_URL for use in email footers
@@ -60,13 +60,13 @@ function tenantReplyTo(tenantEmail) {
   return (tenantEmail && tenantEmail.email_reply_to) || undefined;
 }
 function tenantFooterHtml(tenantEmail) {
-  if (!tenantEmail || !tenantEmail.email_footer) return `Nomii AI &middot; ${APP_DOMAIN}`;
+  if (!tenantEmail || !tenantEmail.email_footer) return `Shenmay AI &middot; ${APP_DOMAIN}`;
   // Escape HTML entities for safety
   const safe = tenantEmail.email_footer.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return safe;
 }
 function tenantFooterText(tenantEmail) {
-  if (!tenantEmail || !tenantEmail.email_footer) return `Nomii AI · ${APP_DOMAIN}`;
+  if (!tenantEmail || !tenantEmail.email_footer) return `Shenmay AI · ${APP_DOMAIN}`;
   return tenantEmail.email_footer;
 }
 
@@ -84,11 +84,11 @@ async function sendVerificationEmail({ to, token, firstName }) {
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
     <h1 style="font-size:22px;color:#1a2332;margin:0 0 12px;">Confirm your email address</h1>
     <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      Hi ${name}, thanks for signing up for Nomii AI. Click the button below to verify your email and get started.
+      Hi ${name}, thanks for signing up for Shenmay AI. Click the button below to verify your email and get started.
     </p>
     <div style="text-align:center;margin:32px 0;">
       <a href="${verifyUrl}"
@@ -97,17 +97,17 @@ async function sendVerificationEmail({ to, token, firstName }) {
       </a>
     </div>
     <p style="color:#718096;font-size:13px;line-height:1.6;margin:0;">
-      This link expires in 24 hours. If you didn't sign up for Nomii AI, you can safely ignore this email.
+      This link expires in 24 hours. If you didn't sign up for Shenmay AI, you can safely ignore this email.
     </p>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI · ${APP_DOMAIN}
+      Shenmay AI · ${APP_DOMAIN}
     </p>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\nThanks for signing up for Nomii AI.\n\nVerify your email address by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours.\n\nNomii AI`;
+  const text = `Hi ${name},\n\nThanks for signing up for Shenmay AI.\n\nVerify your email address by visiting:\n${verifyUrl}\n\nThis link expires in 24 hours.\n\nShenmay AI`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     // Dev mode: log instead of sending
@@ -120,7 +120,7 @@ async function sendVerificationEmail({ to, token, firstName }) {
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: 'Verify your Nomii AI account',
+    subject: 'Verify your Shenmay AI account',
     text,
     html,
   });
@@ -142,9 +142,9 @@ async function sendWelcomeEmail({ to, firstName, companyName }) {
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
-    <h1 style="font-size:22px;color:#1a2332;margin:0 0 12px;">Welcome to Nomii AI, ${name}! 🎉</h1>
+    <h1 style="font-size:22px;color:#1a2332;margin:0 0 12px;">Welcome to Shenmay AI, ${name}! 🎉</h1>
     <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px;">
       Your account for <strong>${companyName}</strong> is ready. Let's get your AI agent set up — it only takes a few minutes.
     </p>
@@ -156,7 +156,7 @@ async function sendWelcomeEmail({ to, firstName, companyName }) {
     </div>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI · ${APP_DOMAIN}
+      Shenmay AI · ${APP_DOMAIN}
     </p>
   </div>
 </body>
@@ -171,8 +171,8 @@ async function sendWelcomeEmail({ to, firstName, companyName }) {
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: `Welcome to Nomii AI — let's set up ${companyName}`,
-    text:    `Hi ${name},\n\nWelcome to Nomii AI! Your account for ${companyName} is ready.\n\nSet up your agent: ${dashboardUrl}\n\nNomii AI`,
+    subject: `Welcome to Shenmay AI — let's set up ${companyName}`,
+    text:    `Hi ${name},\n\nWelcome to Shenmay AI! Your account for ${companyName} is ready.\n\nSet up your agent: ${dashboardUrl}\n\nShenmay AI`,
     html,
   });
 
@@ -193,7 +193,7 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <div style="text-align:center;margin-bottom:32px;">
-      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
     <h1 style="font-size:22px;color:#1a2332;margin:0 0 12px;">Reset your password</h1>
     <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -210,13 +210,13 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
     </p>
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
     <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-      Nomii AI &middot; ${APP_DOMAIN}
+      Shenmay AI &middot; ${APP_DOMAIN}
     </p>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\nWe received a request to reset your Nomii AI password.\n\nReset your password:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.\n\nNomii AI`;
+  const text = `Hi ${name},\n\nWe received a request to reset your Shenmay AI password.\n\nReset your password:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this email.\n\nShenmay AI`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] SMTP not configured — password reset link for ${to}:`);
@@ -228,7 +228,7 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: 'Reset your Nomii AI password',
+    subject: 'Reset your Shenmay AI password',
     text,
     html,
   });
@@ -254,14 +254,14 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
 
     <!-- Header -->
     <div style="background:#1E3A5F;padding:28px 40px;">
-      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
 
     <!-- Body -->
     <div style="padding:36px 40px;">
       <h1 style="font-size:21px;color:#1a2332;margin:0 0 14px;">Your trial has reached its limit</h1>
       <p style="color:#4a5568;font-size:15px;line-height:1.65;margin:0 0 20px;">
-        Hi ${name}, your Nomii AI trial for <strong>${company}</strong> has used up all of its included
+        Hi ${name}, your Shenmay AI trial for <strong>${company}</strong> has used up all of its included
         messages or customers. Your AI agents are currently paused until you upgrade to a paid plan.
       </p>
 
@@ -295,14 +295,14 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:20px 40px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; ${APP_DOMAIN}
+        Shenmay AI &middot; ${APP_DOMAIN}
       </p>
     </div>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi ${name},\n\nYour Nomii AI trial for ${company} has reached its limit (1 customer, 20 messages).\n\nYour AI agents are paused until you upgrade.\n\nView pricing: ${pricingUrl}\nTalk to sales: ${contactUrl}\n\nNomii AI`;
+  const text = `Hi ${name},\n\nYour Shenmay AI trial for ${company} has reached its limit (1 customer, 20 messages).\n\nYour AI agents are paused until you upgrade.\n\nView pricing: ${pricingUrl}\nTalk to sales: ${contactUrl}\n\nShenmay AI`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] SMTP not configured — trial limit email would be sent to ${to}`);
@@ -313,7 +313,7 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: 'Your Nomii AI trial has reached its limit — upgrade to continue',
+    subject: 'Your Shenmay AI trial has reached its limit — upgrade to continue',
     text,
     html,
   });
@@ -337,7 +337,7 @@ async function sendConcernEmail({ to, firstName, customerName, customerEmail, de
 
     <!-- Header -->
     <div style="background:#1E3A5F;padding:28px 40px;">
-      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
 
     <!-- Alert bar -->
@@ -418,7 +418,7 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
 
     <!-- Header -->
     <div style="background:#1E3A5F;padding:28px 40px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
+      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
     </div>
 
     <!-- Body -->
@@ -428,7 +428,7 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
       </h1>
       <p style="color:#4a5568;font-size:15px;line-height:1.65;margin:0 0 24px;">
         ${invited} has invited ${name ? `<strong>${name}</strong>` : 'you'} to join
-        <strong>${tenantName}</strong> as a support agent on Nomii AI — the personalised AI
+        <strong>${tenantName}</strong> as a support agent on Shenmay AI — the personalised AI
         assistant platform.
       </p>
 
@@ -458,14 +458,14 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
     <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
     <div style="padding:20px 40px;">
       <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        Nomii AI &middot; ${APP_DOMAIN}
+        Shenmay AI &middot; ${APP_DOMAIN}
       </p>
     </div>
   </div>
 </body>
 </html>`;
 
-  const text = `Hi${name ? ` ${name}` : ''},\n\n${invited} has invited you to join ${tenantName} as a support agent on Nomii AI.\n\nAccept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\n\nNomii AI`;
+  const text = `Hi${name ? ` ${name}` : ''},\n\n${invited} has invited you to join ${tenantName} as a support agent on Shenmay AI.\n\nAccept your invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.\n\nShenmay AI`;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log(`[Email] SMTP not configured — invite link for ${to}:`);
@@ -477,7 +477,7 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: `You've been invited to join ${tenantName} on Nomii AI`,
+    subject: `You've been invited to join ${tenantName} on Shenmay AI`,
     text,
     html,
   });
@@ -502,8 +502,8 @@ async function sendDocumentEmail({
   disclaimer,
 }) {
   const name       = customerName || 'there';
-  const sender     = agentName    || tenantName || 'Nomii AI';
-  const org        = tenantName   || 'Nomii AI';
+  const sender     = agentName    || tenantName || 'Shenmay AI';
+  const org        = tenantName   || 'Shenmay AI';
   const today      = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // Escape HTML to prevent XSS in email content
@@ -561,7 +561,7 @@ async function sendDocumentEmail({
 
     <!-- Footer -->
     <div style="background:#f8f9fb;padding:18px 36px;text-align:center;border-top:1px solid #eef0f4;">
-      <p style="margin:0;font-size:12px;color:#9ba8b8;">Sent by ${sender} via <strong style="color:#6b7585;">Nomii AI</strong> · ${APP_DOMAIN}</p>
+      <p style="margin:0;font-size:12px;color:#9ba8b8;">Sent by ${sender} via <strong style="color:#6b7585;">Shenmay AI</strong> · ${APP_DOMAIN}</p>
     </div>
   </div>
 </body>
@@ -594,7 +594,7 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <div style="background:#1E3A5F;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:18px;color:#fff;font-weight:700;">Nomii AI</div>
+      <div style="font-size:18px;color:#fff;font-weight:700;">Shenmay AI</div>
       <div style="background:rgba(16,185,129,0.25);color:#10B981;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;">HUMAN MODE</div>
     </div>
     <div style="padding:28px 32px;">
@@ -630,7 +630,7 @@ async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEm
     from:    tenantFrom(tenantEmail),
     replyTo: tenantReplyTo(tenantEmail),
     to,
-    subject: `💬 ${cust} is waiting for your reply — Nomii AI`,
+    subject: `💬 ${cust} is waiting for your reply — Shenmay AI`,
     text,
     html,
   });
@@ -654,10 +654,10 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
 <!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="font-family:sans-serif;background:#f5f5f5;margin:0;padding:32px">
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #e5e7eb">
-  <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;margin-bottom:24px;">Nomii AI</div>
-  <h2 style="margin:0 0 16px;color:#111827">Your Nomii AI License Key</h2>
+  <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;margin-bottom:24px;">Shenmay AI</div>
+  <h2 style="margin:0 0 16px;color:#111827">Your Shenmay AI License Key</h2>
   <p style="margin:0 0 12px;color:#374151">Hi ${firstName},</p>
-  <p style="margin:0 0 12px;color:#374151">Thanks for your Nomii AI self-hosted license. Here is your key:</p>
+  <p style="margin:0 0 12px;color:#374151">Thanks for your Shenmay AI self-hosted license. Here is your key:</p>
   <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:16px;margin:16px 0;text-align:center">
     <code style="font-size:18px;letter-spacing:2px;color:#111827;font-weight:700">${licenseKey}</code>
   </div>
@@ -665,7 +665,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
   ${expiryLine}
   <p style="margin:16px 0 8px;color:#374151"><strong>How to activate (recommended):</strong></p>
   <ol style="margin:0 0 16px;padding-left:20px;color:#374151">
-    <li style="margin-bottom:6px">Log in to your Nomii dashboard.</li>
+    <li style="margin-bottom:6px">Log in to your Shenmay dashboard.</li>
     <li style="margin-bottom:6px">Go to <strong>Plans &amp; Billing</strong> in the sidebar.</li>
     <li style="margin-bottom:6px">Paste your license key above into the activation field and click <strong>Activate</strong>.</li>
   </ol>
@@ -673,7 +673,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
   <details style="margin:0 0 16px;color:#6b7280;font-size:13px">
     <summary style="cursor:pointer;color:#4b5563">Advanced: activate via <code>.env</code> instead</summary>
     <ol style="margin:8px 0 0;padding-left:20px">
-      <li style="margin-bottom:4px">Open the <code>.env</code> file in your Nomii installation directory.</li>
+      <li style="margin-bottom:4px">Open the <code>.env</code> file in your Shenmay installation directory.</li>
       <li style="margin-bottom:4px">Add: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
       <li style="margin-bottom:4px">Recreate the backend: <code>docker compose up -d --force-recreate backend</code></li>
       <li>This path pins the license via environment variable and locks out the dashboard activation UI.</li>
@@ -684,12 +684,12 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
 </div>
 </body></html>`;
 
-  const text = `Your Nomii AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nHow to activate (recommended):\n  1. Log in to your Nomii dashboard.\n  2. Go to Plans & Billing in the sidebar.\n  3. Paste the key above into the activation field and click Activate.\n\nYour plan limits lift instantly — no restart, no SSH, no file editing.\n\nAdvanced (env-var path): add NOMII_LICENSE_KEY=${licenseKey} to your .env file and run \`docker compose up -d --force-recreate backend\`. This pins the license and disables dashboard activation.\n\nKeep this key private.\n`;
+  const text = `Your Shenmay AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nHow to activate (recommended):\n  1. Log in to your Shenmay dashboard.\n  2. Go to Plans & Billing in the sidebar.\n  3. Paste the key above into the activation field and click Activate.\n\nYour plan limits lift instantly — no restart, no SSH, no file editing.\n\nAdvanced (env-var path): add NOMII_LICENSE_KEY=${licenseKey} to your .env file and run \`docker compose up -d --force-recreate backend\`. This pins the license and disables dashboard activation.\n\nKeep this key private.\n`;
 
   await transporter.sendMail({
     from:    FROM,
     to,
-    subject: 'Your Nomii AI License Key',
+    subject: 'Your Shenmay AI License Key',
     html,
     text,
   });

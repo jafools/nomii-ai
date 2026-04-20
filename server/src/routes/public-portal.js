@@ -3,7 +3,7 @@
  *
  * POST /api/public/portal/licenses
  *   Body: { session_token }
- *   Verifies the token with the Lateris Worker, then returns Nomii licenses
+ *   Verifies the token with the Lateris Worker, then returns Shenmay licenses
  *   for the authenticated email.
  *
  * Only active when NOMII_LICENSE_MASTER=true (the cloud instance holds the

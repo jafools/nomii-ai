@@ -8,7 +8,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
--- TENANTS — Companies using Nomii AI platform
+-- TENANTS — Companies using Shenmay AI platform
 -- ============================================================
 CREATE TABLE tenants (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

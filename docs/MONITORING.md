@@ -1,4 +1,4 @@
-# Nomii AI — Uptime Monitoring
+# Shenmay AI — Uptime Monitoring
 
 > Addresses **Finding #14** from [`AUDIT-2026-04-17.md`](AUDIT-2026-04-17.md):
 > No external uptime monitoring on the SaaS. Until this is in place, Austin
@@ -78,7 +78,7 @@ echo "$TS OK" >> "$LOG"
 ```ini
 # /etc/systemd/system/nomii-uptime.service
 [Unit]
-Description=Nomii Hetzner health check
+Description=Shenmay Hetzner health check
 [Service]
 Type=oneshot
 ExecStart=/root/nomii-uptime/check-hetzner.sh

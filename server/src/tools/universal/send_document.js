@@ -131,7 +131,7 @@ async function handler(
 
   const customerName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'there';
   const agentName    = tenant?.agent_name || 'Your Assistant';
-  const tenantName   = tenant?.name       || 'Nomii AI';
+  const tenantName   = tenant?.name       || 'Shenmay AI';
   const today        = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   // 2. Send the email

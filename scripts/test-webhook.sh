@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Nomii AI — Stripe Webhook Simulator (bash version)
+#  Shenmay AI — Stripe Webhook Simulator (bash version)
 #  Simulates a signed checkout.session.completed event
 #  using curl + openssl — no Node.js required.
 #
@@ -45,7 +45,7 @@ esac
 
 echo ""
 echo "=================================================="
-echo "  Nomii AI — Stripe Webhook Simulator"
+echo "  Shenmay AI — Stripe Webhook Simulator"
 echo "  Plan: $PLAN  →  Price ID: $PRICE_ID"
 echo "=================================================="
 echo ""

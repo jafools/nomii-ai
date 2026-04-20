@@ -1,8 +1,8 @@
 {
-  "name": "nomii-ai",
+  "name": "shenmay-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "Nomii AI — Personalized AI retirement planning agents",
+  "description": "Shenmay AI — Personalized customer-facing AI agents for B2B SaaS",
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
     "dev:server": "cd server && npm run dev",

@@ -1,8 +1,13 @@
-# Nomii AI — Session Handoff
+# Shenmay AI — Session Handoff
 *Last updated: 2026-04-10*
 
-> **Brand note:** Product was renamed from **Knomi AI → Nomii AI** on 2026-03-18.
-> Infrastructure (DB name `knomi_ai`, Docker containers `knomi-*`) kept as-is to avoid breaking production.
+> **Brand note:** Product has been renamed twice:
+> - **Knomi AI → Nomii AI** on 2026-03-18 (trademark conflict with Aware Inc.'s Knomi)
+> - **Nomii AI → Shenmay AI** on 2026-04-20 (trademark conflict with glimpse.ai's Nomi)
+>
+> Historical infra names preserved (DB `nomii_ai`, Docker containers `nomii-*`,
+> env vars `NOMII_*`, `/nomii/*` URL paths, `X-Nomii-Signature` header) for
+> backward compatibility — Phase 4 infra rename runs later.
 
 ---
 
@@ -110,7 +115,7 @@ Complete on-prem product model: one company, one install, **trial-first** with a
 
 **First boot:** Backend auto-seeds tenant + pre-verified admin. License service sees no key → starts in trial mode (20 messages/mo, 1 customer). No cloud call needed.
 
-**Operator logs in:** Lands in the Nomii dashboard. No sign-up flow. No multi-tenant UI. Platform admin routes (`/api/platform/*`) return 404.
+**Operator logs in:** Lands in the Shenmay dashboard. No sign-up flow. No multi-tenant UI. Platform admin routes (`/api/platform/*`) return 404.
 
 **Trial limits hit:** `subscription.js` middleware returns 429/403. Dashboard shows trial banner + 3-step upgrade instructions: 1. Purchase at pontensolutions.com/nomii/license, 2. Add key to `.env`, 3. Restart backend.
 
@@ -146,7 +151,7 @@ The complete on-prem system is **built and ready to deploy**. What's outstanding
 
 ### What was built
 
-License key system for self-hosted deployments. Operators must hold a key issued by Nomii; the backend validates it on startup and every 24 hours.
+License key system for self-hosted deployments. Operators must hold a key issued by Shenmay; the backend validates it on startup and every 24 hours.
 
 | File | Purpose |
 |------|---------|
@@ -220,7 +225,7 @@ curl -X PATCH https://api.pontensolutions.com/api/platform/licenses/<id>/revoke 
 
 ### What was built
 
-**Self-hosted package** — allows anyone to run Nomii AI on their own server with a single command.
+**Self-hosted package** — allows anyone to run Shenmay AI on their own server with a single command.
 
 | File | Purpose |
 |------|---------|
@@ -242,16 +247,16 @@ curl -X PATCH https://api.pontensolutions.com/api/platform/licenses/<id>/revoke 
 
 ### Critical gap identified — self-hosted has no license enforcement
 
-**Problem:** The self-hosted `.env` contains the *operator's* `STRIPE_SECRET_KEY`. All subscription revenue from self-hosted deployments flows to the operator, not to Nomii. There is currently zero mechanism to ensure Nomii gets paid for self-hosted installs.
+**Problem:** The self-hosted `.env` contains the *operator's* `STRIPE_SECRET_KEY`. All subscription revenue from self-hosted deployments flows to the operator, not to Shenmay. There is currently zero mechanism to ensure Shenmay gets paid for self-hosted installs.
 
 **Decision:** Implement Option A — License Key System.
 
 **What Option A means:**
-1. Operator purchases a license from Nomii (via a checkout on nomii.ai or similar)
+1. Operator purchases a license from Shenmay (via a checkout on nomii.ai or similar)
 2. They receive a license key
-3. The self-hosted Docker image validates the license key against a Nomii-hosted endpoint on startup and periodically
+3. The self-hosted Docker image validates the license key against a Shenmay-hosted endpoint on startup and periodically
 4. If the license is missing, expired, or invalid → the backend refuses to start (or degrades gracefully)
-5. Nomii controls license issuance and renewal
+5. Shenmay controls license issuance and renewal
 
 **Nothing has been built for this yet.** It is the primary goal of the next session.
 
@@ -259,7 +264,7 @@ curl -X PATCH https://api.pontensolutions.com/api/platform/licenses/<id>/revoke 
 
 Full audit + implementation of **Option A license enforcement** for self-hosted, covering:
 
-1. License validation service (a small endpoint on Nomii's servers — can be a simple Express route or Cloudflare Worker)
+1. License validation service (a small endpoint on Shenmay's servers — can be a simple Express route or Cloudflare Worker)
 2. License check in the self-hosted Docker image (startup + periodic heartbeat)
 3. License issuance flow (how operators purchase and receive a key)
 4. Parity audit: verify on-prem and cloud versions have no hidden gaps (migrations, env vars, auth, email, Stripe, GHCR image freshness)
@@ -393,7 +398,7 @@ Full commercial subscription system built from scratch:
 
 ### Session 7 — Rebrand + Stripe Integration (2026-03-18, this session)
 
-**Rebrand: Knomi AI → Nomii AI**
+**Rebrand: Knomi AI → Nomii AI** (historical — see 2026-04-20 for subsequent Nomii → Shenmay rebrand)
 - All SVG logos updated: `nomiiai_*` (10 files in `Company Logos/`)
 - All frontend files renamed: `Nomii*.jsx`, `pages/nomii/`, `components/nomii/`
 - All code text, routes, localStorage keys, comments updated
@@ -465,8 +470,8 @@ Full commercial subscription system built from scratch:
 - JSON-LD FAQ: added Q&A for human takeover, team accounts, anonymous visitors
 
 **Pitch document:**
-- `nomii_pitch.docx` — 6-page grandma-friendly overview: What Is Nomii, How It Works, Features, Pricing, FAQ
-- Saved to `PontenSolutions/Nomii AI Pitch Document.docx`
+- `nomii_pitch.docx` — 6-page grandma-friendly overview: What Is Shenmay, How It Works, Features, Pricing, FAQ
+- Saved to `PontenSolutions/Shenmay AI Pitch Document.docx`
 - Also copied to `ponten-solutions/public/nomii-ai-overview.docx` for download link
 
 **New / modified files (Session 8):**
@@ -482,7 +487,7 @@ Full commercial subscription system built from scratch:
 - `client/src/lib/nomiiApi.js` — getBadgeCounts, getTeam, inviteAgent, removeAgent, getInviteInfo, acceptInvite
 - `client/src/App.tsx` — NomiiTeam + NomiiAcceptInvite routes
 - `ponten-solutions/src/pages/NomiiAI.tsx` — marketing page refresh
-- `PontenSolutions/Nomii AI Pitch Document.docx` — new pitch doc
+- `PontenSolutions/Shenmay AI Pitch Document.docx` — new pitch doc
 - `ponten-solutions/public/nomii-ai-overview.docx` — pitch doc for download link
 
 **⚠️ Code not yet pushed to GitHub** — git push failed from sandbox (no outbound network). User must run `git push` from local machine, then `docker compose build && docker compose up -d` on server.
@@ -622,13 +627,13 @@ docker exec -it knomi-db psql -U knomi -d knomi_ai -c "
 
 #### Three-Tier Data Model
 
-Established the product's long-term data architecture. Every customer can choose how their data enters Nomii:
+Established the product's long-term data architecture. Every customer can choose how their data enters Shenmay:
 
 | Tier | What it is | Who it's for |
 |------|-----------|-------------|
 | **CSV Upload** | Upload a spreadsheet from the portal. Already existed. | Small businesses, non-technical teams |
 | **Data API** | Push data programmatically via `POST /api/v1/` REST API | Tech-savvy teams, CRM integrations, nightly syncs |
-| **Live Connector** | Nomii calls the tenant's own API at query time. Data never stored in Nomii. | Security-conscious firms, regulated industries, privacy-first |
+| **Live Connector** | Shenmay calls the tenant's own API at query time. Data never stored in Shenmay. | Security-conscious firms, regulated industries, privacy-first |
 
 #### New: External Data API (`/api/v1/`)
 
@@ -734,7 +739,7 @@ Established the product's long-term data architecture. Every customer can choose
 #### Branded Agent Invite Emails
 
 **`server/src/services/emailService.js`** (MODIFIED):
-- New `sendAgentInviteEmail({ to, firstName, inviterName, tenantName, inviteUrl })` with full Nomii-branded HTML email
+- New `sendAgentInviteEmail({ to, firstName, inviterName, tenantName, inviteUrl })` with full Shenmay-branded HTML email
 - Dark blue header, "What you'll be able to do" highlight box, clear CTA button, 7-day expiry notice
 
 **`server/src/routes/portal.js`** (MODIFIED):
@@ -795,15 +800,15 @@ Established the product's long-term data architecture. Every customer can choose
 - ✅ ~~**Document delivery tool**~~ — Done Session 16: `send_document` universal tool emails formatted HTML report; `sendDocumentEmail` added to emailService; registered in tool registry
 - **`send_document` in Covenant Trust tool config** — Add `send_document` to the demo tenant's `enabled_tools` DB array so it works in live demos: `UPDATE tenants SET enabled_tools = enabled_tools || '["send_document"]' WHERE slug = 'covenant-trust';`
 - **Live Connector skeleton** — Tier 3 of the data model. Stubbed-out Redtail/Orion connector configurable per tenant. Enterprise unlock.
-- **Production infrastructure** — Migrate off Proxmox to VPS (Hetzner CX22 ~$6/mo — see `Nomii AI Phase 3 Plan.docx`)
+- **Production infrastructure** — Migrate off Proxmox to VPS (Hetzner CX22 ~$6/mo — see `Shenmay AI Phase 3 Plan.docx`)
 
 ## Future / Strategic
 
 - **SOC 2 Type II** — Required for enterprise financial firm onboarding. 6-12 month process. Start when first enterprise prospect is signed.
 - **BAA (Business Associate Agreement)** — Legal contract required by financial/healthcare firms. Needed alongside SOC 2.
-- **External API connectors** — Connect Nomii to Orion, Envestnet, Redtail, Wealthbox (financial CRMs). Data fetched at query time, not stored. Enterprise tier feature.
-- **On-premise deployment** — Entire Nomii stack runs inside the firm's own infrastructure. Enterprise tier. Architecture is ready; just needs packaging.
-- **Trademark** — "Nomii AI" needs attorney sign-off before commercial launch. Nomii selected over Knomi AI due to Aware Inc. trademark conflict.
+- **External API connectors** — Connect Shenmay to Orion, Envestnet, Redtail, Wealthbox (financial CRMs). Data fetched at query time, not stored. Enterprise tier feature.
+- **On-premise deployment** — Entire Shenmay stack runs inside the firm's own infrastructure. Enterprise tier. Architecture is ready; just needs packaging.
+- **Trademark** — "Shenmay AI" needs attorney sign-off before commercial launch. Shenmay selected over Knomi AI due to Aware Inc. trademark conflict.
 - **GDPR** — Privacy Policy and DPIA needed before scaling to EU customers
 - **Data retention** — Backend cron job for auto-purging old conversations/data
 - **Stripe real purchase test** — Use test card `4242 4242 4242 4242` (any future expiry, any CVC) via pricing table
@@ -1010,9 +1015,9 @@ docker compose up -d --build backend
 
 #### Product Direction Decisions Made
 
-This session established the long-term product architecture for Nomii's AI agent capabilities. Key decisions:
+This session established the long-term product architecture for Shenmay's AI agent capabilities. Key decisions:
 
-- **Nomii is industry-agnostic.** Tools must never be hardcoded for a specific vertical. The same code runs for every tenant; what changes is the *description* of each tool in `tool_configs`.
+- **Shenmay is industry-agnostic.** Tools must never be hardcoded for a specific vertical. The same code runs for every tenant; what changes is the *description* of each tool in `tool_configs`.
 - **Five tool types** cover every industry use case: Lookup, Calculate, Report, Escalate, Connect.
 - **Tools are configuration, not code.** Non-technical customers can "build" tools by filling in a form — the system generates the tool config from their plain-English description.
 - **On-premise deployment** is reserved as an enterprise tier upsell for the most security-sensitive customers (e.g. large financial institutions). Not built yet — keep in backlog.
@@ -1062,9 +1067,9 @@ This session established the long-term product architecture for Nomii's AI agent
 
 #### Covenant Trust Presentation
 
-**File:** `Nomii AI/nomii-advisor-presentation.pptx` (9 slides)
+**File:** `Shenmay AI/nomii-advisor-presentation.pptx` (9 slides)
 
-Professionally designed sales deck targeting financial advisory firms. Navy/teal Nomii brand palette, Georgia headers, Calibri body. All slides passed visual QA.
+Professionally designed sales deck targeting financial advisory firms. Navy/teal Shenmay brand palette, Georgia headers, Calibri body. All slides passed visual QA.
 
 | Slide | Content |
 |-------|---------|
@@ -1103,7 +1108,7 @@ server/src/engine/toolConfigurator.js            NEW — AI-assisted tenant onbo
 server/src/services/llmService.js                MODIFIED — callClaudeWithTools + new exports
 server/src/routes/widget.js                      MODIFIED — tool-aware chat path
 server/src/routes/tenants.js                     MODIFIED — /configure + /tools/registry endpoints
-Nomii AI/nomii-advisor-presentation.pptx         NEW — Covenant Trust sales deck
+Shenmay AI/nomii-advisor-presentation.pptx         NEW — Covenant Trust sales deck
 ponten-solutions/src/pages/NomiiAI.tsx           MODIFIED — compliance language fixes
 ```
 
@@ -1148,7 +1153,7 @@ SESSION_HANDOFF.md             — updated (this file)
 
 #### Key Architectural Decision
 
-Custom tools have priority over universal tools. If a tenant defines a tool with the same name as a universal one, the custom version wins. This lets power users override universal behaviour without needing Nomii support.
+Custom tools have priority over universal tools. If a tenant defines a tool with the same name as a universal one, the custom version wins. This lets power users override universal behaviour without needing Shenmay support.
 
 ---
 
@@ -1465,7 +1470,7 @@ Four major features shipped in this session: anonymous-first widget chat with se
 
 #### Feature 1 — Anonymous Widget + Seamless Auth Handoff
 
-**Business context:** Anonymous (unauthenticated) visitors can now chat freely with the brand AI agent. The moment they authenticate on the company's own site, the widget silently "claims" their session — the conversation continues under their real identity without any page reload or visible interruption. This means Nomii can serve both first-time anonymous visitors *and* known returning customers from the same widget, instantly.
+**Business context:** Anonymous (unauthenticated) visitors can now chat freely with the brand AI agent. The moment they authenticate on the company's own site, the widget silently "claims" their session — the conversation continues under their real identity without any page reload or visible interruption. This means Shenmay can serve both first-time anonymous visitors *and* known returning customers from the same widget, instantly.
 
 **Privacy rule:** An anonymous visitor record is only ever created; no email capture or persistent profile is built unless the customer *already exists* in the tenant's system. After claim, the anon record is soft-deleted.
 
@@ -1629,11 +1634,11 @@ client/src/lib/nomiiApi.js                                    MODIFIED — getNo
 
 #### What Was Built
 
-**Complete Option A license key system for self-hosted deployments** — allows Nomii to monetize on-prem installs while operators start with a free trial that doesn't require a license key.
+**Complete Option A license key system for self-hosted deployments** — allows Shenmay to monetize on-prem installs while operators start with a free trial that doesn't require a license key.
 
 #### Architecture Decision
 
-Single codebase with `NOMII_DEPLOYMENT=selfhosted` runtime flag. No code duplication. Trial-by-default: operators deploy without any license key and have 20 messages/month, 1 customer allowed for 14 days. After trial, they purchase a license key from Nomii and upgrade to a paid plan.
+Single codebase with `NOMII_DEPLOYMENT=selfhosted` runtime flag. No code duplication. Trial-by-default: operators deploy without any license key and have 20 messages/month, 1 customer allowed for 14 days. After trial, they purchase a license key from Shenmay and upgrade to a paid plan.
 
 #### New Files
 
@@ -1729,7 +1734,7 @@ scripts/install.sh                              MODIFIED — Step 2: add company
 - Friendly 6-step wizard layout with progress indicator
 - Clear explanations for each required value
 - Defaults for non-critical fields (e.g., port 465 for SMTP)
-- Cloudflare Tunnel marked optional with explanation: "Gives your Nomii installation a public HTTPS address without opening firewall ports"
+- Cloudflare Tunnel marked optional with explanation: "Gives your Shenmay installation a public HTTPS address without opening firewall ports"
 - Public URL prompt accepts IP address or domain; defaults to `http://localhost` for local testing
 
 #### New / Modified Files (Session 22)
@@ -1767,7 +1772,7 @@ See ROADMAP.md for the exact tasks. Summary:
 | **Enable `send_document` for Covenant Trust** | `UPDATE tenants SET enabled_tools = enabled_tools \|\| '["send_document"]'::jsonb WHERE slug = 'covenant-trust';` | ⏳ Pending |
 | **Verify pending migrations 015b–019 applied** | Check `\dt` in psql — `custom_tools`, `customer_data` (generic schema), `agent_soul_template` column must all exist | ⏳ Pending |
 | **Stripe Portal return URL env var** | Set `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/nomii/dashboard/plans` in server `.env` | ⏳ Pending |
-| **Trademark filing** | Attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged. Required before public commercial launch. | ⏳ Pending |
+| **Trademark filing** | Attorney sign-off on "Shenmay AI" — Aware Inc. conflict flagged. Required before public commercial launch. | ⏳ Pending |
 | **GHCR packages public** | First workflow run will create packages; `make-public` job auto-runs. If it fails, add `PACKAGES_PAT` secret (classic PAT, `write:packages` scope) in repo Settings → Secrets | ⏳ Pending |
 | **Self-hosted parity audit** | End-to-end test of `scripts/install.sh` on a fresh VM; verify migrations, env vars, Stripe, email, auth all work identically to cloud | ⏳ Pending |
 

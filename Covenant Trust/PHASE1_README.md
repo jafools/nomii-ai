@@ -1,4 +1,4 @@
-# Nomii AI — Phase 1 Deliverables
+# Shenmay AI — Phase 1 Deliverables
 
 > Foundation package: database, personas, and agent engine.
 

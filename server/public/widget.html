@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nomii AI Chat</title>
+<title>Shenmay AI Chat</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -550,7 +550,7 @@
     <div id="header-info">
       <div id="agent-avatar">K</div>
       <div>
-        <div id="agent-name">Nomii</div>
+        <div id="agent-name">Shenmay</div>
         <div id="agent-status"><span id="ai-badge">AI</span> ● Online</div>
       </div>
     </div>
@@ -598,7 +598,7 @@
     <div id="nomii-footer-bar">
       <a id="nomii-privacy-link" href="#" target="_blank" rel="noopener" style="display:none;">Privacy Notice</a>
       <span></span>
-      <span>Powered by <strong style="letter-spacing:.3px;">Nomii</strong><strong style="color:var(--primary);letter-spacing:.3px;">AI</strong></span>
+      <span>Powered by <strong style="letter-spacing:.3px;">Shenmay</strong><strong style="color:var(--primary);letter-spacing:.3px;">AI</strong></span>
     </div>
   </div>
 
@@ -637,7 +637,7 @@
   // ── State ──────────────────────────────────────────────────────────────────
   var sessionToken     = null;
   var conversationId   = null;
-  var agentName        = 'Nomii';
+  var agentName        = 'Shenmay';
   var tenantName       = '';
   var customerName     = null;
   var isAnonymous      = false;
@@ -726,7 +726,7 @@
       var data = await resp.json();
       sessionToken      = data.token;
       conversationId    = data.conversation_id;
-      agentName         = data.agent.name || 'Nomii';
+      agentName         = data.agent.name || 'Shenmay';
       tenantName        = (data.tenant && data.tenant.name) || '';
       customerName      = data.customer.customer_name || null;
       isAnonymous       = data.customer.is_anonymous  || false;
@@ -851,7 +851,7 @@
       }
 
     } catch (e) {
-      console.error('[Nomii Widget]', e);
+      console.error('[Shenmay Widget]', e);
       showError(e.message || 'Could not start session.');
     }
   }
@@ -914,7 +914,7 @@
       }
 
     } catch (e) {
-      console.error('[Nomii Widget] set-agent-name error:', e);
+      console.error('[Shenmay Widget] set-agent-name error:', e);
       agentNameSubmitBtn.disabled = false;
       agentNameSubmitBtn.textContent = 'Set Name \u2192';
       // Fail gracefully — skip the screen and move on
@@ -982,7 +982,7 @@
       );
 
     } catch (e) {
-      console.error('[Nomii Widget] set-name error:', e);
+      console.error('[Shenmay Widget] set-name error:', e);
       nameSubmitBtn.disabled = false;
       nameSubmitBtn.textContent = 'Let\u2019s Chat \u2192';
       // Fail gracefully
@@ -1145,7 +1145,7 @@
     } catch (e) {
       showTyping(false);
       addMessage('agent', 'Sorry, I had trouble responding. Please try again in a moment.');
-      console.error('[Nomii Widget] chat error:', e);
+      console.error('[Shenmay Widget] chat error:', e);
     } finally {
       isSending = false;
       sendBtn.disabled = false;
@@ -1272,7 +1272,7 @@
 
     } catch (err) {
       // Fallback: reload the iframe — will re-init as the authenticated user
-      console.warn('[Nomii] Session claim failed, reloading:', err.message);
+      console.warn('[Shenmay] Session claim failed, reloading:', err.message);
       window.location.reload();
     }
   }
@@ -1390,7 +1390,7 @@
       );
       concernBtn.textContent = 'Human support requested \u2713';
     } catch (e) {
-      console.error('[Nomii Widget] flag error:', e);
+      console.error('[Shenmay Widget] flag error:', e);
       concernFired = false;
       concernBtn.disabled = false;
       concernBtn.innerHTML =

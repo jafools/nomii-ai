@@ -84,7 +84,7 @@
 
 ## 3. Critical Assessment
 
-The Nomii AI codebase is **more defensive than average** but **not defensively wasteful**. Every try/catch I inspected serves at least one of these legitimate purposes:
+The Shenmay AI codebase is **more defensive than average** but **not defensively wasteful**. Every try/catch I inspected serves at least one of these legitimate purposes:
 
 1. **Express 4 async wrapping.** The global error middleware at `server/src/index.js:221` depends on routes calling `next(err)` — unwrapped async throws become unhandled rejections that bypass it. All ~120 `catch(err) { next(err); }` are required structural glue, not defensive noise.
 2. **Best-effort side effects.** The product has many fire-and-forget side effects: Slack/Teams/webhook notifications, audit logs, memory updates, soul regeneration, email sends, quota increments. Each is wrapped so that the main transaction (replying to a customer, completing checkout, ending a session) commits and returns even when an ancillary system is down. Explicit comments on many of these confirm the intent ("Never block", "Continue even if ...", "Fire-and-forget"). Removing them would cause user-visible latency spikes and 500s when ancillary systems fail.
@@ -153,4 +153,4 @@ Given the product is "B2B SaaS / self-hosted, live customers imminent", the down
 
 ---
 
-**Bottom line:** Nomii AI's try/catch usage is *consistently purposeful*. The defensive blocks protect the main transaction from ancillary-system failures (Slack/Teams/SMTP/webhook), respect Express 4's async-throw semantics, and contain external-API and untrusted-input risks at boundaries. A single duplicate-log simplification was applied in `middleware/subscription.js` (2 lines, 0 structural change); no other HIGH-confidence removals were identified.
+**Bottom line:** Shenmay AI's try/catch usage is *consistently purposeful*. The defensive blocks protect the main transaction from ancillary-system failures (Slack/Teams/SMTP/webhook), respect Express 4's async-throw semantics, and contain external-API and untrusted-input risks at boundaries. A single duplicate-log simplification was applied in `middleware/subscription.js` (2 lines, 0 structural change); no other HIGH-confidence removals were identified.

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Nomii AI — Migration Runner
+# Shenmay AI — Migration Runner
 # Runs all pending SQL migrations in numeric order.
 # Safe to run multiple times — migrations use IF NOT EXISTS.
 # ============================================================
@@ -22,7 +22,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo ""
-echo "Nomii AI — Migration Runner"
+echo "Shenmay AI — Migration Runner"
 echo "============================"
 echo ""
 

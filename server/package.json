@@ -1,5 +1,5 @@
 {
-  "name": "nomii-ai-server",
+  "name": "shenmay-ai-server",
   "version": "0.1.0",
   "description": "Nomii AI — Personalized retirement planning agent backend",
   "main": "src/index.js",

@@ -1,5 +1,5 @@
 # ============================================================
-# Nomii AI — Continuous Integration
+# Shenmay AI — Continuous Integration
 #
 # Runs on every pull request targeting main, and on direct
 # pushes to main. Jobs must pass before a PR can merge

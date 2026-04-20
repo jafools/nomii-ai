@@ -1,4 +1,4 @@
-# Weak Types Audit — Nomii AI
+# Weak Types Audit — Shenmay AI
 
 **Branch:** `worktree-agent-a93f98e0`
 **Base commit:** `0566e49` (main)

@@ -1,4 +1,4 @@
-# Nomii AI — Product Roadmap
+# Shenmay AI — Product Roadmap
 *Last updated: 2026-04-11*
 
 > Organised by time horizon and priority, not by session. For session-by-session build history see `SESSION_HANDOFF.md`. For current feature inventory see `FEATURES.md`.
@@ -35,7 +35,7 @@ Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the 
 |------|--------|
 | **Enable `send_document` for Covenant Trust** | ✅ Done 2026-04-11 |
 | **Stripe Portal return URL** | ✅ Set in `docker-compose.yml` (derived from `APP_URL`) |
-| **Trademark filing** | ❌ Pending — attorney sign-off on "Nomii AI" — Aware Inc. conflict flagged |
+| **Trademark filing** | ❌ Pending — attorney sign-off on "Shenmay AI" — Aware Inc. conflict flagged |
 | **Widget embed on Hope For This Nation** | ❌ Pending — move script to root `index.html`, add postMessage auth hooks (Lovable prompt provided) |
 
 ---
@@ -78,13 +78,13 @@ When an advisor hands a conversation back to the AI agent, they currently leave 
 ---
 
 ### Custom Email Templates
-All outbound emails (flag alerts, human reply notifications, invite emails, document delivery) use hardcoded Nomii branding. Tenants have no way to customise the sender name, tone, logo, or footer copy.
+All outbound emails (flag alerts, human reply notifications, invite emails, document delivery) use hardcoded Shenmay branding. Tenants have no way to customise the sender name, tone, logo, or footer copy.
 
 - Per-tenant `email_from_name` and `email_reply_to` fields in company settings
 - Optional custom footer text (legal disclaimer, contact info, branding)
 - Preview rendered in settings page before saving
 
-**Why now:** Financial advisory firms are compliance-sensitive about anything that hits their clients' inboxes. A branded email from "Beacon at Covenant Trust" is far more professional than one from "Nomii AI."
+**Why now:** Financial advisory firms are compliance-sensitive about anything that hits their clients' inboxes. A branded email from "Beacon at Covenant Trust" is far more professional than one from "Shenmay AI."
 
 ---
 
@@ -148,17 +148,17 @@ Features that grow the customer base or enable the enterprise tier.
 ### Live Connector (Tier 3 Data Model)
 Already marketed as a feature. Currently only stubbed out.
 
-The agent calls the tenant's own API at query time to fetch live data — nothing stored in Nomii. This is the right architecture for regulated industries (financial firms that can't push client data to third-party clouds).
+The agent calls the tenant's own API at query time to fetch live data — nothing stored in Shenmay. This is the right architecture for regulated industries (financial firms that can't push client data to third-party clouds).
 
 - Config fields: endpoint URL, auth type (bearer/API key), response mapping (field → label)
-- Nomii calls the URL at tool-use time, passes customer `external_id` as a query param
+- Shenmay calls the URL at tool-use time, passes customer `external_id` as a query param
 - Response parsed and injected as tool result
 - Timeout: 3s hard limit, graceful fallback message to customer
 
 ---
 
 ### Zapier / Webhook Consumer
-Currently Nomii only *sends* webhooks (outbound). There's no way for external systems to trigger actions inside Nomii.
+Currently Shenmay only *sends* webhooks (outbound). There's no way for external systems to trigger actions inside Shenmay.
 
 - Inbound webhook endpoint: `POST /api/v1/events`
 - Supported triggers: customer.updated (re-sync), conversation.create (start a conversation from CRM), message.inject (push a message into an existing conversation)
@@ -192,7 +192,7 @@ Still running on Proxmox. The plan is Hetzner CX22 (~$6/mo).
 - Migrate containers to Hetzner CX22 (2 vCPU, 4GB RAM, 40GB SSD — enough for current load)
 - Set up automatic DB backups (Hetzner Volumes or S3-compatible)
 - Point Cloudflare Tunnel to new host — zero downtime cutover
-- Reference doc: `Nomii AI Phase 3 Plan.docx`
+- Reference doc: `Shenmay AI Phase 3 Plan.docx`
 
 ---
 
@@ -203,14 +203,14 @@ These are not next sprints — they're 3–12 month items that depend on revenue
 ### Legal Foundations (Required for EU + Enterprise)
 - **Privacy Policy** — data collected, retention, sub-processors (Anthropic, SMTP host, Hetzner), GDPR rights. Use Termly or hire attorney.
 - **Terms of Service** — acceptable use, liability limits, GLBA clauses for financial tenants
-- **DPA template** — tenants sign as data controllers; Nomii is data processor
+- **DPA template** — tenants sign as data controllers; Shenmay is data processor
 - **Sub-processor DPAs** — get DPAs from Anthropic (they have one), email provider, cloud host
 
 ### SOC 2 Type II
 Required for enterprise financial firm onboarding. 6–12 month process. Start when first enterprise prospect is close to signing. Estimated cost: $15–40k (audit firm + tooling).
 
 ### BAA (Business Associate Agreement)
-Required alongside SOC 2 for any tenant in financial services or healthcare. Nomii must sign individual BAAs per enterprise tenant.
+Required alongside SOC 2 for any tenant in financial services or healthcare. Shenmay must sign individual BAAs per enterprise tenant.
 
 ### External CRM Connectors
 Direct integrations with Orion, Envestnet, Redtail, Wealthbox — the dominant financial CRMs. Data fetched at query time via Live Connector. Enterprise tier unlock.

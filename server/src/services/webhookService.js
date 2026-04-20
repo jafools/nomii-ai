@@ -79,8 +79,8 @@ async function _deliver(hook, payload, isRetry = false) {
       headers: {
         'Content-Type':     'application/json',
         'X-Nomii-Signature': `sha256=${signature}`,
-        'X-Nomii-Event':    JSON.parse(payload).event,
-        'User-Agent':       'Nomii-Webhook/1.0',
+        'X-Shenmay-Event':    JSON.parse(payload).event,
+        'User-Agent':       'Shenmay-Webhook/1.0',
       },
       body:   payload,
       signal: controller.signal,

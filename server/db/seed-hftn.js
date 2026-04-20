@@ -65,7 +65,7 @@ dynamically from your Supabase session (see Lovable prompt below).
 LOVABLE PROMPT (paste this into Lovable):
 
 In the main layout that wraps authenticated pages, after the user
-is confirmed logged in, dynamically inject a Nomii AI chat widget.
+is confirmed logged in, dynamically inject a Shenmay AI chat widget.
 
 Read the current user's email and display name from Supabase using
 supabase.auth.getUser(). Then create a <script> element with these

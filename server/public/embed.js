@@ -42,7 +42,7 @@
   var privacyUrl   = scriptTag.getAttribute('data-privacy-url')  || '';
 
   if (!widgetKey) {
-    console.warn('[Nomii AI] No data-widget-key found — widget not loaded.');
+    console.warn('[Shenmay AI] No data-widget-key found — widget not loaded.');
     return;
   }
 
@@ -112,7 +112,7 @@
 
   var iframe = document.createElement('iframe');
   iframe.id    = 'nomii-iframe';
-  iframe.title = 'Nomii AI Chat';
+  iframe.title = 'Shenmay AI Chat';
   iframe.allow = 'autoplay';
 
   // ── Build widget URL and inject iframe ───────────────────────────────────────

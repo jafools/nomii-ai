@@ -1,4 +1,4 @@
-// ESLint 9 flat config for the Nomii client.
+// ESLint 9 flat config for the Shenmay client.
 //
 // Goal: catch real bugs (undeclared vars, broken hooks rules, dead imports)
 // without forcing a typescript-strict rewrite of the existing loose codebase.

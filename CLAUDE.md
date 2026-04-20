@@ -1,6 +1,6 @@
 # Claude Code Configuration - RuFlo V3
 
-## How we ship Nomii features (READ FIRST — non-negotiable)
+## How we ship Shenmay features (READ FIRST — non-negotiable)
 
 > Set up 2026-04-17. Applies to every change in this repo. Full procedure: `docs/RELEASING.md`.
 
@@ -246,7 +246,7 @@ npx @claude-flow/cli@latest doctor --fix
 - CLI tools handle coordination via Bash: swarm init, memory, hooks, routing
 - NEVER use CLI tools as a substitute for Task tool agents
 
-## Nomii AI — Project Context
+## Shenmay AI — Project Context
 
 ### Architecture
 
@@ -266,7 +266,7 @@ npx @claude-flow/cli@latest doctor --fix
 | DB | Fresh `nomii_ai_staging`, user `nomii`, separate from prod |
 | Stack path | `/root/nomii-staging/` (compose + .env + refresh script) |
 | Public routing | Cloudflare tunnel `knomi-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) → `http://nomii-frontend-staging:80` on shared docker network |
-| Old fallback | The old Proxmox Nomii containers are STOPPED (backup at `/root/backups/knomi_ai_proxmox_final_*.sql`). Lateris and `nomii-cloudflared` are untouched and must stay running. |
+| Old fallback | The old Proxmox Shenmay containers are STOPPED (backup at `/root/backups/knomi_ai_proxmox_final_*.sql`). Lateris and `nomii-cloudflared` are untouched and must stay running. |
 
 Purpose: click through new features at a real prod-shaped URL before cutting
 a release. See `docs/RELEASING.md` for the full pre-release workflow.
