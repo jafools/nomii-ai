@@ -5,7 +5,7 @@
 -- Adds a permanent free tier for new signups:
 -- 10 customers max, 50 messages/month.
 -- Run manually on existing DBs:
---   docker exec -it knomi-db psql -U knomi -d knomi_ai -c "ALTER TYPE subscription_plan ADD VALUE 'free';"
+--   docker exec -it nomii-db psql -U nomii -d nomii_ai -c "ALTER TYPE subscription_plan ADD VALUE 'free';"
 --
 
 DO $$ BEGIN
