@@ -3,7 +3,7 @@ const { defineConfig, devices } = require('@playwright/test');
 require('dotenv').config({ path: './server/.env' });
 
 /**
- * Playwright E2E config for Nomii AI
+ * Playwright E2E config for Shenmay AI
  *
  * Expects the server (PORT=3001) and client (PORT=5173) to be running.
  * Start both with `npm run dev` from the root before running tests.

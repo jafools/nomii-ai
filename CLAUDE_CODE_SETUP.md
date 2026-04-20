@@ -1,12 +1,12 @@
-# Claude Code — Nomii AI Setup & Operations Guide
-*For Claude Code sessions working on the Nomii AI codebase*
+# Claude Code — Shenmay AI Setup & Operations Guide
+*For Claude Code sessions working on the Shenmay AI codebase*
 
 ---
 
 ## Quick Start (Read This First)
 
 You are Claude Code. The user works in Cowork (browser-based). Your job is to:
-1. **Edit code** in the Nomii AI repo
+1. **Edit code** in the Shenmay AI repo
 2. **Run local dev servers** and test changes
 3. **SSH to production** and deploy
 4. **Debug** live issues on the server
@@ -17,7 +17,7 @@ Everything below is context you need to work efficiently.
 
 ## Project Overview
 
-**Nomii AI** is a B2B SaaS platform for deploying personalized AI agents to customer websites.
+**Shenmay AI** is a B2B SaaS platform for deploying personalized AI agents to customer websites.
 
 - **Backend:** Express.js, PostgreSQL 16, Node.js
 - **Frontend:** React + Vite + Tailwind (built in Lovable, synced to GitHub)
@@ -182,7 +182,7 @@ nomii-ai/
 ├── client/                           # React + Vite frontend
 │   ├── src/
 │   │   ├── App.tsx                   # Router, main app shell
-│   │   ├── pages/nomii/              # All Nomii dashboard pages
+│   │   ├── pages/nomii/              # All Shenmay dashboard pages
 │   │   │   ├── NomiiLogin.jsx        # Login page
 │   │   │   ├── NomiiDashboard.jsx    # Main dashboard (routes to subpages)
 │   │   │   └── dashboard/
@@ -194,7 +194,7 @@ nomii-ai/
 │   │   ├── lib/
 │   │   │   └── nomiiApi.js           # API client (BASE_URL = https://api.pontensolutions.com)
 │   │   └── components/
-│   │       └── nomii/                # Nomii-specific components
+│   │       └── nomii/                # Shenmay-specific components
 │   │
 │   ├── Dockerfile                    # Docker image for frontend (nginx)
 │   └── package.json
@@ -247,7 +247,7 @@ MASTER_EMAIL=ajaces@gmail.com
 SMTP_HOST=mail.example.com
 SMTP_USER=noreply@example.com
 SMTP_PASS=...
-SMTP_FROM=Nomii AI <noreply@example.com>
+SMTP_FROM=Shenmay AI <noreply@example.com>
 NODE_ENV=production
 DB_PASSWORD=knomi_dev_2026                             # Default, keep it
 CLOUDFLARE_TUNNEL_TOKEN=eyJh...

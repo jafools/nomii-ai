@@ -1,4 +1,4 @@
-# Nomii AI — Sprint Handoff Notes
+# Shenmay AI — Sprint Handoff Notes
 **Last updated:** 2026-03-27
 **Status:** Sprints 1–3 complete, ready to push/pull/rebuild
 
