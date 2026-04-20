@@ -210,6 +210,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Deployment config — consumed by the frontend to toggle SaaS vs self-hosted UI
+// and to select Stripe test vs live keys without rebuilding the bundle.
 app.get('/api/config', (req, res) => {
   const selfHosted = isSelfHosted();
   res.json({
@@ -219,6 +220,10 @@ app.get('/api/config', (req, res) => {
       managedAI:         !selfHosted,  // BYOK only on self-hosted
       stripeBilling:     !selfHosted,  // use license key billing instead
       licenseManagement:  selfHosted,  // show license status + upgrade prompt
+    },
+    stripe: {
+      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY  || null,
+      pricingTableId: process.env.STRIPE_PRICING_TABLE_ID || null,
     },
   });
 });
