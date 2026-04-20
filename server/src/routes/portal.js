@@ -101,6 +101,7 @@ router.get('/me', async (req, res, next) => {
          t.chat_bubble_name,
          t.onboarding_steps, t.widget_verified_at, t.is_active,
          t.llm_api_key_last4, t.llm_api_key_validated,
+         t.pii_tokenization_enabled,
          a.id AS admin_id, a.email, a.first_name, a.last_name, a.role
        FROM tenants t
        JOIN tenant_admins a ON a.tenant_id = t.id
@@ -132,6 +133,7 @@ router.get('/me', async (req, res, next) => {
         widget_verified:     r.widget_verified_at !== null,
         llm_api_key_last4:   r.llm_api_key_last4 || null,
         llm_api_key_validated: r.llm_api_key_validated || false,
+        pii_tokenization_enabled: r.pii_tokenization_enabled !== false,
       },
       admin: {
         id:         r.admin_id,
@@ -209,6 +211,45 @@ router.put('/admin/password', async (req, res, next) => {
     const newHash = await bcrypt.hash(new_password, 10);
     await db.query('UPDATE tenant_admins SET password_hash = $1 WHERE id = $2', [newHash, req.portal.admin_id]);
     res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// PUT /api/portal/settings/privacy  — owner-only PII tokenization toggle
+// Body: { pii_tokenization_enabled: boolean }
+//
+// The PII tokenizer rewrites regulated identifiers in every outbound Anthropic
+// call (chat, CSV import, products extraction). It is ON by default for every
+// tenant (see migration 031). Only the original onboarding owner can disable
+// it — we don't want a team member to accidentally weaken the safety control.
+router.put('/settings/privacy', async (req, res, next) => {
+  try {
+    if (req.portal.role !== 'owner') {
+      return res.status(403).json({ error: 'Only the account owner can change privacy settings.' });
+    }
+    const { pii_tokenization_enabled } = req.body || {};
+    if (typeof pii_tokenization_enabled !== 'boolean') {
+      return res.status(400).json({ error: 'pii_tokenization_enabled (boolean) is required.' });
+    }
+
+    await db.query(
+      `UPDATE tenants SET pii_tokenization_enabled = $1, updated_at = NOW() WHERE id = $2`,
+      [pii_tokenization_enabled, req.portal.tenant_id]
+    );
+
+    writeAuditLog({
+      actorType   : 'admin',
+      actorId     : req.portal.admin_id,
+      actorEmail  : req.portal.email,
+      tenantId    : req.portal.tenant_id,
+      eventType   : 'privacy.pii_tokenization.toggle',
+      resourceType: 'tenant',
+      resourceId  : req.portal.tenant_id,
+      description : `Owner ${pii_tokenization_enabled ? 'enabled' : 'DISABLED'} PII tokenization for outbound Anthropic calls`,
+      req,
+      success     : true,
+    });
+
+    res.json({ ok: true, pii_tokenization_enabled });
   } catch (err) { next(err); }
 });
 

@@ -194,6 +194,15 @@ export const getMe = () => apiRequest("GET", "/api/portal/me");
 export const updateProfile = (data) => apiRequest("PUT", "/api/portal/admin/profile", data);
 export const updatePassword = (data) => apiRequest("PUT", "/api/portal/admin/password", data);
 export const updateCompany = (data) => apiRequest("PUT", "/api/portal/company", data);
+
+/**
+ * Toggle the per-tenant PII tokenization safety control.
+ * Owner-only on the server (HTTP 403 for member/agent roles).
+ * @param {boolean} enabled
+ * @returns {Promise<{ok: true, pii_tokenization_enabled: boolean}>}
+ */
+export const updatePrivacySettings = (enabled) =>
+  apiRequest("PUT", "/api/portal/settings/privacy", { pii_tokenization_enabled: enabled });
 export const getProducts = () => apiRequest("GET", "/api/portal/products");
 export const addProduct = (data) => apiRequest("POST", "/api/portal/products", data);
 export const updateProduct = (id, data) => apiRequest("PUT", `/api/portal/products/${id}`, data);

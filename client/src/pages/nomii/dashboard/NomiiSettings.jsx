@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useNomiiAuth } from "@/contexts/NomiiAuthContext";
-import { getMe, updateCompany, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams, getEmailTemplates, updateEmailTemplates } from "@/lib/nomiiApi";
+import { getMe, updateCompany, updatePrivacySettings, getProducts, addProduct, updateProduct, deleteProduct, getDataApiKey, generateDataApiKey, revokeDataApiKey, getAgentSoul, generateSoul, getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook, getLabels, createLabel, updateLabel, deleteLabel, getConnectors, updateConnectors, testSlack, testTeams, getEmailTemplates, updateEmailTemplates } from "@/lib/nomiiApi";
 import { toast } from "@/hooks/use-toast";
 import { Copy, Check, Plus, Trash2, Pencil, X, ChevronUp, Key, AlertTriangle, RefreshCw, Eye, EyeOff, Brain, Sparkles, Shield, MessageSquare, Webhook, ToggleLeft, ToggleRight, Send, ChevronDown, Tag, Plug2, Zap, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -1649,6 +1649,106 @@ const EmailTemplatesSection = () => {
   );
 };
 
+/* ---------- Privacy (owner-only) ---------- */
+// PII tokenization is the safety control that rewrites SSNs, cards, emails,
+// phones, and other regulated identifiers into opaque tokens before any
+// outbound Anthropic call (chat, CSV import, AI product extraction). Default
+// ON for every tenant. Only the original onboarding owner can disable it —
+// the backend enforces this with a 403 for member/agent roles, and we hide
+// the section client-side so other team members never see the option at all.
+const PrivacySection = () => {
+  const [loading, setLoading] = useState(true);
+  const [role, setRole]       = useState(null);
+  const [enabled, setEnabled] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [saved, setSaved]     = useState(false);
+
+  useEffect(() => {
+    getMe()
+      .then((data) => {
+        setRole(data.admin?.role || null);
+        setEnabled(data.tenant?.pii_tokenization_enabled !== false);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Hide the whole section for non-owners. Server still enforces — this is UX.
+  if (loading || role !== 'owner') return null;
+
+  const onToggle = async (next) => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      const r = await updatePrivacySettings(next);
+      setEnabled(r.pii_tokenization_enabled);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      toast({
+        title: 'Could not update privacy setting',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="rounded-2xl p-5 sm:p-6" style={card}>
+      <div className="flex items-center gap-2 mb-1">
+        <Shield size={16} style={{ color: 'rgba(201,168,76,0.85)' }} />
+        <h3 className="text-base font-semibold text-white/85">Privacy &amp; PII Protection</h3>
+      </div>
+      <p className="text-xs text-white/40 mb-4">
+        Owner-only. Controls whether regulated personal identifiers are tokenized before reaching Anthropic.
+      </p>
+
+      <div className="flex items-start justify-between gap-4 p-4 rounded-xl"
+           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-white/80 mb-1">Tokenize PII before sending to Anthropic</div>
+          <p className="text-xs text-white/50 leading-relaxed">
+            When ON, SSNs, payment cards, IBANs, emails, phone numbers, dates of birth, postcodes, and
+            account numbers are replaced with opaque placeholders (<code style={{ color: 'rgba(201,168,76,0.85)' }}>[SSN_1]</code>,
+            <code style={{ color: 'rgba(201,168,76,0.85)' }}> [EMAIL_1]</code>, …) before every outbound Claude call. A second-pass
+            breach detector blocks any request that still contains unredacted PII. Disable only if you have a
+            specific compliance reason — most tenants should leave this ON.
+          </p>
+          {!enabled && (
+            <div className="mt-3 flex items-start gap-2 text-xs p-2 rounded-lg"
+                 style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5' }}>
+              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+              <span>
+                Tokenization is OFF. Customer SSNs, cards, and other regulated identifiers will be sent to
+                Anthropic in the clear. This change is recorded in your audit log.
+              </span>
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => onToggle(!enabled)}
+          className="flex-shrink-0 transition-opacity hover:opacity-80 disabled:opacity-50"
+          aria-label={enabled ? 'Disable PII tokenization' : 'Enable PII tokenization'}
+          style={{ color: enabled ? '#4ADE80' : 'rgba(255,255,255,0.4)' }}
+        >
+          {enabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+        </button>
+      </div>
+
+      {saved && (
+        <div className="mt-3 flex items-center gap-1.5 text-sm font-medium" style={{ color: '#4ADE80' }}>
+          <Check size={14} /> Saved
+        </div>
+      )}
+    </section>
+  );
+};
+
+
 /* ---------- Main ---------- */
 const NomiiSettings = () => (
   <div className="space-y-6">
@@ -1665,6 +1765,7 @@ const NomiiSettings = () => (
     <ProductsSection />
     <LabelsSection />
     <ConnectorsSection />
+    <PrivacySection />
   </div>
 );
 
