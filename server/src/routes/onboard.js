@@ -197,10 +197,10 @@ router.post('/register', async (req, res, next) => {
       );
       console.log(`[Onboard] MASTER account created for ${email}`);
     } else {
-      // Trial: extremely limited to encourage upgrade (1 customer, 20 messages)
+      // Trial: extremely limited to encourage upgrade (1 customer, 20 messages, 1 agent seat)
       await db.query(
-        `INSERT INTO subscriptions (tenant_id, plan, status, max_customers, max_messages_month, managed_ai_enabled)
-         VALUES ($1, 'trial', 'active', 1, 20, false)`,
+        `INSERT INTO subscriptions (tenant_id, plan, status, max_customers, max_messages_month, managed_ai_enabled, max_agents)
+         VALUES ($1, 'trial', 'active', 1, 20, false, 1)`,
         [tenant.id]
       );
     }
