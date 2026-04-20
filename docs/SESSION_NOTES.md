@@ -5,7 +5,73 @@
 
 ---
 
-## Last updated: 2026-04-20 (v1.1.3 live — PII coverage closed + audit cleanup; Hetzner on `:1.1.3`)
+## Last updated: 2026-04-20 afternoon (v1.1.6 live — Stripe test mode + Managed-AI-Enterprise-only + logo link; Hetzner on `:1.1.6`)
+
+This entry covers the afternoon session on 2026-04-20. **Three patch tags shipped** end-to-end, plus **two marketing-site commits Published via Lovable**, plus one clean Stripe **test-mode E2E** (signup → checkout with card `4242` → webhook → DB flip) — unblocking a launch-blocker that had been sitting open for weeks. Full vault writeup at `[[projects/nomii/stripe-test-mode-plus-managed-ai-rewrite-apr20-2026]]`.
+
+### Production state at session end
+
+| | |
+|---|---|
+| Hetzner SaaS | https://nomii.pontensolutions.com |
+| Image | `ghcr.io/jafools/nomii-backend:1.1.6` + frontend `:1.1.6` |
+| Git HEAD | `v1.1.6` (commit `65439a1`) |
+| Marketing site | `pontensolutions.com` serving bundle `index-DN5Z4JIF.js` (both Lovable commits Published + verified) |
+
+### What shipped
+
+**v1.1.4 — Stripe env-driven + Plans UX + bug fixes**
+- [PR #28](https://github.com/jafools/nomii-ai/pull/28) — `/api/config` emits `stripe.{publishableKey,pricingTableId}` from env vars; [NomiiPlans.jsx](client/src/pages/nomii/dashboard/NomiiPlans.jsx) reads them at runtime with hardcoded live keys as fallback. Staging can now run test mode from the same GHCR image as prod — preserves the byte-identical-build rule.
+- [PR #29](https://github.com/jafools/nomii-ai/pull/29) — "Current plan + next upgrade" nudge card above the Stripe pricing table on `/nomii/dashboard/plans`.
+- [PR #30](https://github.com/jafools/nomii-ai/pull/30) — Fixed two UI bugs: "Covenant Trust" (a real customer name) leaked into Settings → Email Templates placeholders (swapped to Acme Co); Team page said "0 / 3 agents on trial plan" for starter tenants because of a flat `|| 3` fallback + missing `max_agents` on onboard register INSERT. Server now falls back to `PLAN_LIMITS[plan].max_agents` when the DB column is NULL.
+
+**v1.1.5 — Managed AI is Enterprise-only**
+- [PR #31](https://github.com/jafools/nomii-ai/pull/31) — Flipped Growth + Professional `managed_ai: false` in [server/src/config/plans.js](server/src/config/plans.js), [server/src/routes/portal.js](server/src/routes/portal.js) `/api/portal/plans` + admin set-plan defaults, and updated the UpgradeNudge delta copy. Paired with marketing commit [ponten-solutions@82ab2b7](https://github.com/jafools/ponten-solutions/commit/82ab2b7) dropping "Managed AI included/available" from Growth + Professional cards on `/nomii/license` and `/products/nomii-ai`. Existing Growth/Pro tenants with `managed_ai_enabled=true` keep it until their next plan flip — no silent mid-period downgrade.
+
+**v1.1.6 — Logo → marketing-site link**
+- [PR #32](https://github.com/jafools/nomii-ai/pull/32) — Wraps the NomiiAI + "by Pontén Solutions" logo stack on the 3 pre-auth pages (signup / login / reset-password) in an anchor to `pontensolutions.com`. Users now have a way back; post-auth dashboards already have their own nav.
+
+**Marketing site (ponten-solutions) — pushed + Lovable-Published**
+- Commit `82ab2b7` — Self-Hosted pricing CTAs on `/nomii/license` redirect to `/nomii/self-hosted` (installer page) instead of opening a Stripe checkout modal, so trial-first funnel. Also drops Managed AI from Growth + Pro marketing cards (matches the backend change above).
+
+### Stripe test mode on staging (launch-blocker #1 CLOSED)
+
+All 5 `STRIPE_*` env vars are now live on staging's `/root/nomii-staging/.env` (test mode: `sk_test_…`, `pk_test_…`, `whsec_hOkX…`, `prctbl_1TODCv…`, `price_1TODAr…` Starter). The staging compose file `docker-compose.staging.yml` was updated to forward the 3 new env vars (was previously only forwarding `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`). Prod keeps its live keys via the hardcoded fallback in NomiiPlans.jsx — zero prod env changes needed. End-to-end test with card `4242 4242 4242 4242` verified: signup → JWT → plans page → subscribe → Stripe-hosted checkout → webhook fires → `subscriptions` row flipped to `plan=starter, status=active, max_customers=50, max_messages_month=1000`. Test tenant deleted post-run; Stripe test subscription canceled.
+
+### Gotchas learned this session
+
+1. **Staging `.env` was inheriting prod's LIVE `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`** before this session — replaced with test-mode values and backed up at `.env.backup-20260420-pre-test-mode`. Worth auditing other secret env vars on staging to check for similar drift.
+2. **`docker-compose.staging.yml` only forwards env vars explicitly named in the backend service's `environment:` block.** Adding to `.env` alone is silent no-op. Check both when wiring new vars.
+3. **MCP Chrome tool `form_input` doesn't trigger React's synthetic `onChange`** — React state stays empty even though the DOM value is set. Use `javascript_tool` to invoke `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, value)` + dispatch `input` + `change` events to make React notice.
+4. **MCP blocks all interactions with `checkout.stripe.com`** (live AND test). User has to fill the card form themselves — unavoidable for SaaS checkout E2E.
+5. **Stripe pricing-table web component is a shadow-DOM iframe from `js.stripe.com`** — coordinate clicks work, but `ref`-based clicks through the MCP often don't reach the iframe.
+
+### What's NOT done (deliberately deferred)
+
+| Item | Why deferred |
+|---|---|
+| Force-migrate existing Growth tenants from `managed_ai_enabled=true` → `false` | Would silently downgrade paying customers mid-period. They keep what they bought; next plan flip resets. |
+| Add Growth + Professional test products in Stripe test mode | Austin: "if this works the others should work right?" — same code path, trust the pattern. |
+| Split `portal.js` (still 3,750+ LOC) | Same reasoning as prior session — real refactor risk, separate slot. |
+| Playwright against staging | Same reasoning. Local Playwright still auth-fails (no TEST_ADMIN seed in dev DB). |
+| Rotate the `sk_test_` key pasted in chat | Austin task — takes 10 sec in Stripe dashboard → test/apikeys → Roll key. |
+
+### Launch blockers (remaining)
+
+1. ~~Stripe test mode on staging~~ **CLOSED this session ✓**
+2. Live stranger walkthrough — SaaS signup
+3. Live stranger walkthrough — self-hosted install on a fresh VM
+4. UptimeRobot signup (closes audit #14)
+5. Off-host backup destination (Hetzner Storage Box)
+6. Published docs site at `docs.pontensolutions.com`
+
+### Memory housekeeping this session
+
+- Nothing added/removed. Existing memories still accurate. One candidate for a new memory: the "form_input doesn't fire React onChange" finding — saving as `feedback_chrome_mcp_react_events.md`.
+
+---
+
+## Previous: 2026-04-20 (v1.1.3 live — PII coverage closed + audit cleanup; Hetzner on `:1.1.3`)
 
 This entry covers the long session that opened 2026-04-19 evening (right after the v1.1.0 black-box E2E) and rolled into 2026-04-20 early morning. Three patch tags shipped end-to-end through the release flow with zero rollbacks. Full vault writeup at `[[projects/nomii/pii-completion-and-audit-cleanup-apr19-20-2026]]`.
 
