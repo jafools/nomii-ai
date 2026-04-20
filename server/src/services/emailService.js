@@ -486,108 +486,6 @@ async function sendAgentInviteEmail({ to, firstName, inviterName, tenantName, in
 }
 
 
-// ── Send flag notification email (to advisor when agent raises a flag) ───────
-
-async function sendFlagNotificationEmail({
-  to, advisorName, customerName, flagType, severity, description,
-  conversationId, tenantName, dashboardUrl: customDashboardUrl, tenantEmail,
-}) {
-  const name        = advisorName || 'Advisor';
-  const cust        = customerName || 'A customer';
-  const type        = (flagType || 'general').replace(/_/g, ' ');
-  const dashUrl     = customDashboardUrl || `${APP_URL}/nomii/dashboard/conversations`;
-
-  const severityColors = {
-    critical: { bg: '#FEF2F2', border: '#FECACA', text: '#DC2626', badge: '#EF4444' },
-    high:     { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', badge: '#F97316' },
-    medium:   { bg: '#FFFBEB', border: '#FDE68A', text: '#B45309', badge: '#F59E0B' },
-    low:      { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534', badge: '#22C55E' },
-  };
-  const sc = severityColors[severity] || severityColors.medium;
-  const sevLabel = (severity || 'medium').charAt(0).toUpperCase() + (severity || 'medium').slice(1);
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-    <!-- Header -->
-    <div style="background:#1E3A5F;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Nomii AI</div>
-      <div style="background:${sc.badge};color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">
-        ${sevLabel} Alert
-      </div>
-    </div>
-
-    <div style="padding:32px;">
-      <h1 style="font-size:20px;color:#1a2332;margin:0 0 8px;">Flag Raised During Conversation</h1>
-      <p style="color:#4a5568;font-size:14px;line-height:1.6;margin:0 0 24px;">
-        Hi ${name}, your AI agent flagged a conversation that needs your attention.
-      </p>
-
-      <!-- Flag details card -->
-      <div style="background:${sc.bg};border:1px solid ${sc.border};border-radius:8px;padding:20px;margin-bottom:24px;">
-        <table style="width:100%;border-collapse:collapse;">
-          <tr>
-            <td style="color:#718096;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:0 0 12px;width:110px;vertical-align:top;">Customer</td>
-            <td style="color:#1a2332;font-size:14px;font-weight:600;padding:0 0 12px;">${cust}</td>
-          </tr>
-          <tr>
-            <td style="color:#718096;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:0 0 12px;vertical-align:top;">Flag Type</td>
-            <td style="color:${sc.text};font-size:14px;font-weight:600;padding:0 0 12px;text-transform:capitalize;">${type}</td>
-          </tr>
-          <tr>
-            <td style="color:#718096;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:0;vertical-align:top;">Details</td>
-            <td style="color:#4a5568;font-size:14px;line-height:1.5;padding:0;">${description}</td>
-          </tr>
-        </table>
-      </div>
-
-      <!-- CTA -->
-      <div style="text-align:center;margin:28px 0 8px;">
-        <a href="${dashUrl}"
-           style="display:inline-block;background:#1E3A5F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
-          Review Conversation
-        </a>
-      </div>
-
-      <p style="color:#718096;font-size:13px;line-height:1.6;margin:16px 0 0;text-align:center;">
-        This is an automated alert from ${tenantName || 'your Nomii AI agent'}. Review and resolve this flag in your dashboard.
-      </p>
-    </div>
-
-    <hr style="border:none;border-top:1px solid #e4e7ed;margin:0;">
-    <div style="padding:16px 32px;">
-      <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
-        ${tenantFooterHtml(tenantEmail)}
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
-
-  const text = `Hi ${name},\n\nYour AI agent raised a ${sevLabel} flag for customer ${cust}.\n\nType: ${type}\nDetails: ${description}\n\nReview the conversation: ${dashUrl}\n\n${tenantFooterText(tenantEmail)}`;
-
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[Email] Flag notification (SMTP not configured) — ${sevLabel} flag for ${cust} → ${to}`);
-    return;
-  }
-
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from:    tenantFrom(tenantEmail),
-    replyTo: tenantReplyTo(tenantEmail),
-    to,
-    subject: `[${sevLabel}] Flag raised for ${cust} — ${tenantName || 'Nomii AI'}`,
-    text,
-    html,
-  });
-
-  console.log(`[Email] Flag notification sent to ${to} (${sevLabel} — ${cust})`);
-}
-
-
 // ── Send document / report email ───────────────────────────────────────────
 // Called by the send_document universal tool.
 // Formats the agent-assembled report as a clean branded HTML email.
@@ -804,7 +702,6 @@ module.exports = {
   sendTrialLimitEmail,
   sendConcernEmail,
   sendAgentInviteEmail,
-  sendFlagNotificationEmail,
   sendDocumentEmail,
   sendHumanModeReplyEmail,
   sendLicenseKeyEmail,

@@ -541,6 +541,59 @@ test('TokenMap.stats() returns type breakdown', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// 7c. PRODUCTS AI-SUGGEST — shape of the payload /api/portal/products/ai-suggest
+//     sends. Scraped website / free-text description must have staff PII
+//     tokenized before it reaches Anthropic.
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nProducts ai-suggest payload');
+
+test('Scraped website text has staff PII tokenized before send', () => {
+  const t = new Tokenizer();
+  // Mirror the portal.js route: arbitrary scraped/stripped HTML body becomes
+  // the userPrompt sourceText. A real site's "Contact Us" page routinely
+  // leaks staff emails, phone numbers, and postcodes into the body text.
+  const scraped = [
+    'Acme Financial Services offers three plans:',
+    'Starter at $29/mo, Growth at $99/mo, Enterprise custom pricing.',
+    'Contact us at support@acme.com or 212-555-0199.',
+    'Visit our office at 123 Main St, 10001 New York.',
+    'Your advisor Diana Thornton (diana.thornton@acme.com) can help.',
+  ].join(' ');
+  const userPrompt = `Extract products and services from this company's website as a JSON array:\n\n${scraped}`;
+  const { text } = t.tokenize(userPrompt);
+
+  // Staff contact data must be gone from outbound.
+  assertNotContains(text, 'support@acme.com');
+  assertNotContains(text, 'diana.thornton@acme.com');
+  assertNotContains(text, '212-555-0199');
+
+  // Product names are not PII and must survive — otherwise Claude can't
+  // do its job.
+  assertContains(text, 'Starter');
+  assertContains(text, 'Growth');
+  assertContains(text, 'Enterprise');
+  assertContains(text, '$29/mo');
+  assertContains(text, '$99/mo');
+
+  // Breach audit clean on the tokenized payload.
+  t.auditOutbound('', [{ role: 'user', content: text }]);
+});
+
+test('Free-text description with staff email still passes breach audit after tokenization', () => {
+  const t = new Tokenizer();
+  const description = 'We are a legal firm. Reach us at info@example.com or +1 555-123-4567 for a consultation.';
+  const userPrompt = `Extract products and services from this company's description as a JSON array:\n\n${description}`;
+  const { text } = t.tokenize(userPrompt);
+  assertNotContains(text, 'info@example.com');
+  assertNotContains(text, '555-123-4567');
+  // Substantive business text is preserved.
+  assertContains(text, 'legal firm');
+  assertContains(text, 'consultation');
+  t.auditOutbound('', [{ role: 'user', content: text }]);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Summary
 // ═══════════════════════════════════════════════════════════════════════════
 

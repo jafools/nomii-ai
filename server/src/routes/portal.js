@@ -488,9 +488,6 @@ router.delete('/products/:id', async (req, res, next) => {
 // Returns proposed products array — NOT saved yet.  Frontend shows a preview.
 router.post('/products/ai-suggest', async (req, res, next) => {
   try {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client    = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY });
-
     let sourceText = '';
     let sourceLabel = '';
 
@@ -541,6 +538,30 @@ router.post('/products/ai-suggest', async (req, res, next) => {
       return res.status(400).json({ error: 'Provide either a url or a description.' });
     }
 
+    // Load tenant for tokenizer + API key resolution. Scraped website HTML
+    // can carry staff emails, phone numbers, physical addresses; a free-text
+    // description can too. Route the call through the same tokenize-before-
+    // Anthropic guarantee the chat and CSV-import paths use.
+    const { rows: tenantRows } = await db.query(
+      `SELECT t.id, t.pii_tokenization_enabled, t.llm_api_key_encrypted, t.llm_api_key_iv,
+              t.llm_api_key_validated, t.llm_provider,
+              COALESCE(s.managed_ai_enabled, false) AS managed_ai_enabled
+         FROM tenants t
+         LEFT JOIN subscriptions s ON s.tenant_id = t.id
+         WHERE t.id = $1
+         LIMIT 1`,
+      [req.portal.tenant_id]
+    );
+    const tenant = tenantRows[0];
+    if (!tenant) return res.status(404).json({ error: 'tenant not found' });
+
+    const apiKey = resolveApiKey(tenant);
+    if (!apiKey) {
+      return res.status(503).json({ error: 'No AI key configured for this tenant. Add one in Settings and retry.' });
+    }
+
+    const tokenizer = buildTokenizer({ tenant });
+
     // ── Claude extraction ────────────────────────────────────────────────────
     const systemPrompt = `You are a data extraction assistant. Extract products and services from company content.
 You must respond with ONLY a raw JSON array. No markdown. No code fences. No explanation. No text before or after.
@@ -551,20 +572,44 @@ Each element must have exactly these string fields (use "" if unknown):
   "category"    - one of: Product, Service, Plan, Package, Course, Membership, Other
   "price_info"  - any pricing mentioned, or ""
   "notes"       - any other useful detail, or ""
-Extract up to 20 items. If no products or services are identifiable, respond with exactly: []`;
+Extract up to 20 items. If no products or services are identifiable, respond with exactly: [].
+
+The source content may contain opaque tokens like [EMAIL_N], [PHONE_N], [POSTCODE_N]
+where a staff email, phone, or postcode was redacted before send. Treat those
+tokens as non-product text — never copy them into product names, descriptions,
+or notes. They are not data to extract.`;
 
     const userPrompt = `Extract products and services from this company's ${sourceLabel} as a JSON array:\n\n${sourceText}`;
 
-    const message = await client.messages.create({
-      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: userPrompt }],
-    });
+    let rawText;
+    try {
+      rawText = await callClaude(
+        systemPrompt,
+        [{ role: 'user', content: userPrompt }],
+        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        2048,
+        apiKey,
+        {
+          tokenizer,
+          breachCtx: {
+            tenantId: req.portal.tenant_id,
+            callSite: 'products_ai_suggest',
+          },
+        }
+      );
+    } catch (err) {
+      if (err instanceof BreachError) {
+        return res.status(422).json({
+          error: 'The content had unredacted personal data that our safety check blocked. Try pasting a shorter description without staff contact details, or pick a different page.',
+          blocked_by_pii_guard: true,
+        });
+      }
+      throw err;
+    }
 
     let proposed = [];
     try {
-      let raw = message.content[0].text.trim();
+      let raw = rawText.trim();
 
       // Strip markdown code fences if the model wrapped its output anyway
       raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -589,7 +634,7 @@ Extract up to 20 items. If no products or services are identifiable, respond wit
 
     } catch {
       // Log the raw output to help debug future issues
-      console.error('[ai-suggest] JSON parse failed. Raw output:', message.content[0]?.text?.slice(0, 500));
+      console.error('[ai-suggest] JSON parse failed. Raw output:', rawText?.slice(0, 500));
       return res.status(500).json({ error: 'AI returned an unexpected format. Try again or use the manual/CSV method.' });
     }
 

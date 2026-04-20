@@ -67,16 +67,4 @@ function getToolDefinitions(enabledTools = [], toolConfigs = {}) {
     });
 }
 
-/**
- * List all registered tools (for UI / onboarding configurator).
- */
-function listAllTools() {
-  return Object.values(REGISTRY).map(t => ({
-    name:               t.name,
-    defaultDescription: t.defaultDescription,
-    category:           t.category,
-    inputSchema:        t.inputSchema,
-  }));
-}
-
-module.exports = { REGISTRY, getToolDefinitions, listAllTools };
+module.exports = { REGISTRY, getToolDefinitions };
