@@ -5,7 +5,76 @@
 
 ---
 
-## Last updated: 2026-04-19 evening (PII tokenizer SHIPPED + E2E verified on prod — v1.1.0 live)
+## Last updated: 2026-04-20 (v1.1.3 live — PII coverage closed + audit cleanup; Hetzner on `:1.1.3`)
+
+This entry covers the long session that opened 2026-04-19 evening (right after the v1.1.0 black-box E2E) and rolled into 2026-04-20 early morning. Three patch tags shipped end-to-end through the release flow with zero rollbacks. Full vault writeup at `[[projects/nomii/pii-completion-and-audit-cleanup-apr19-20-2026]]`.
+
+### Production state at session end
+
+| | |
+|---|---|
+| Hetzner SaaS | https://nomii.pontensolutions.com |
+| Image | `ghcr.io/jafools/nomii-backend:1.1.3` |
+| Git HEAD | `v1.1.3` (commit `9d35046` + the v1.1.3 tag) |
+| `:stable` on GHCR | now points at v1.1.3 |
+| `pii_tokenization_enabled` | TRUE for all tenants (default from migration 031, owner can toggle in `Settings → Privacy`) |
+| Migration row cleanup | verified — `015b_*` row scrubbed from `schema_migrations`, `032_*` recorded |
+
+### What shipped
+
+**v1.1.1 — close CSV-import leak + delete zombie routes**
+- [PR #20](https://github.com/jafools/nomii-ai/pull/20) — tokenize CSV-import sample rows + Privacy Policy §6.1 update. Two new regression tests for the JSON.stringify(headers + sample_rows) payload shape.
+- [PR #21](https://github.com/jafools/nomii-ai/pull/21) — remove 7 pre-portal route files (chat, conversations, customers, advisors, flags, tenants, customTools) + their mounts. **−1,647 LOC.** Gated on a 7-day Hetzner log grep (zero hits across both backend + frontend nginx logs).
+
+**v1.1.2 — PII closure + owner toggle UI**
+- [PR #22](https://github.com/jafools/nomii-ai/pull/22) — prune 4 helpers orphaned by the v1.1.1 delete: `engine/toolConfigurator.js` (whole file), `requireCustomerOwnership`, `sendFlagNotificationEmail`, `listAllTools`. **−321 LOC.**
+- [PR #23](https://github.com/jafools/nomii-ai/pull/23) — tokenize the second remaining bare-Anthropic call: `/api/portal/products/ai-suggest` (scrapes website HTML or eats free-text description). Two more regression tests (now 46/46 unit suite).
+- [PR #24](https://github.com/jafools/nomii-ai/pull/24) — owner-only PII toggle UI on the existing tenant Settings page. New backend route `PUT /api/portal/settings/privacy` (owner-role-gated, audit-logged on every flip). UI section hidden client-side for non-owners. Default ON (matches migration 031).
+
+**v1.1.3 — audit cleanup**
+- [PR #25](https://github.com/jafools/nomii-ai/pull/25) — rename migration `015b_*` → `032_*` to fit `NNN_*.sql` convention. The new file's first statement is `DELETE FROM schema_migrations WHERE filename = '015b_seed_covenant_trust_tools.sql'` so Hetzner's orphan row gets cleaned on first run. Idempotent on fresh DBs. **Verified end-to-end on prod** — `015b_*` row gone, `032_*` recorded.
+- [PR #26](https://github.com/jafools/nomii-ai/pull/26) — finish knomi → nomii rename in self-hosted compose + helper scripts (`docker-compose.selfhosted.yml`, `scripts/migrate.sh`, `scripts/backup.sh`). Safe because there are no live on-prem customers running the legacy `knomi` DB right now. Cloudflare tunnel `knomi-ai` and Proxmox docker network `knomi-ai_default` intentionally NOT touched (real infra, also serve Lateris).
+
+### Audit progress
+
+The `docs/AUDIT-2026-04-17.md` open list was 3 actionable items at session start (#5, #7, #15). All three closed. Remaining items are:
+- **#14 LOW** — UptimeRobot signup (Austin task, ~5 min in dashboard)
+- **#16 LOW/INFO** — `:latest` pinning, "no fix needed"
+- **3 INFO items** — positive observations, no action
+
+### What's NOT done (deliberately deferred for next session)
+
+| Item | Why deferred |
+|---|---|
+| `portal.js` split (3,750+ LOC) | Pure tech debt, real refactor risk. Needs a focused session with an architectural call signed off (split by URL prefix vs feature domain). |
+| Playwright wired into CI | Local Playwright suite has 6 auth-related failures because dev DB lacks `TEST_ADMIN_*` seed rows. CI passes the same suite cleanly. Wiring into CI may surface fresh issues — needs its own debug slot. See `[[feedback_playwright_local_env]]` memory. |
+
+### Launch blockers (your court — unchanged)
+
+1. Stripe test mode on staging (~10 min in Stripe dashboard)
+2. Live stranger walkthrough — SaaS signup
+3. Live stranger walkthrough — self-hosted install on a fresh VM
+4. UptimeRobot signup (closes audit #14)
+5. Off-host backup destination (Hetzner Storage Box)
+6. Published docs site at `docs.pontensolutions.com`
+
+### Carried forward (still true)
+
+- Hetzner backup cron runs 03:00 daily, log at `~/nomii-backup.log`
+- Log rotation: 10MB × 5 = 50MB cap per container
+- Staging auto-refresh every 5 min via `nomii-staging-refresh.timer` on Proxmox
+- SaaS + on-prem byte-identical (both pull GHCR images)
+- 48 tokenizer unit tests (was 42 at the start of v1.1.0) — `npm run test:unit`
+
+### Memory housekeeping this session
+
+- **Removed:** `project_pre_portal_routes_zombie.md` — obsolete after PR #21 delete
+- **Added:** `feedback_playwright_local_env.md` — don't debug local Playwright auth failures unless explicitly asked
+- **Added:** `reference_no_super_admin_ui.md` — there's no platform-admin UI in client; tenant controls go on NomiiSettings.jsx gated by `role='owner'`
+
+---
+
+## Previous: 2026-04-19 evening (PII tokenizer SHIPPED + E2E verified on prod — v1.1.0 live)
 
 ### Live E2E verification — PASSED
 
