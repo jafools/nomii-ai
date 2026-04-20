@@ -30,8 +30,8 @@ const STRIPE_PORTAL_LINK           = "https://billing.stripe.com/p/login/28EbJ0c
 const UPGRADE_MAP = {
   free:    { next: "starter", delta: "50 customers (vs 1) · 1,000 messages/mo (vs 20) · Keep your own API key" },
   trial:   { next: "starter", delta: "50 customers (vs 1) · 1,000 messages/mo (vs 20) · Keep your own API key" },
-  starter: { next: "growth",  delta: "250 customers (vs 50) · 5,000 messages/mo (vs 1,000) · Managed AI unlocked" },
-  growth:  { next: "professional", delta: "1,000 customers (vs 250) · 25,000 messages/mo (vs 5,000) · Priority support" },
+  starter: { next: "growth",  delta: "250 customers (vs 50) · 5,000 messages/mo (vs 1,000) · 25 agent seats · Priority support" },
+  growth:  { next: "professional", delta: "1,000 customers (vs 250) · 25,000 messages/mo (vs 5,000) · 100 agent seats · Dedicated support" },
 };
 
 function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReached }) {
