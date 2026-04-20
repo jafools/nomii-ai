@@ -53,3 +53,6 @@ ruvector.db
 
 # User-local Claude Code settings (never commit)
 .claude/settings.local.json
+
+# Runtime lock for Claude Code scheduled tasks
+.claude/scheduled_tasks.lock
