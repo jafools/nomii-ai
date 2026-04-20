@@ -1,4 +1,4 @@
-# Nomii AI — Feature Inventory
+# Shenmay AI — Feature Inventory
 *Last updated: 2026-03-27 (Session 20)*
 
 > Living document. Update this whenever a feature ships or changes.
@@ -91,11 +91,11 @@ Every chat exchange triggers three background operations — none block the resp
 ## Customer Data Infrastructure
 
 ### Three-Tier Data Model
-| Tier | How data enters Nomii | Best for |
+| Tier | How data enters Shenmay | Best for |
 |------|-----------------------|----------|
 | **CSV Upload** | Spreadsheet upload from the portal | Small teams, non-technical |
 | **Data API** | Push via REST API (`POST /api/v1/`) | CRM integrations, nightly syncs, developers |
-| **Live Connector** | Nomii calls the tenant's own API at query time — data never stored | Regulated industries, privacy-first firms |
+| **Live Connector** | Shenmay calls the tenant's own API at query time — data never stored | Regulated industries, privacy-first firms |
 
 ### CSV Upload
 - Drag-and-drop upload in portal
@@ -192,7 +192,7 @@ Every chat exchange triggers three background operations — none block the resp
 - Tenants configure outbound webhooks from the Settings page
 - Each webhook has: label, target URL, subscribed events (multi-select), enable/disable toggle
 - Supported events: `session.started`, `session.ended`, `customer.created`, `flag.created`, `concern.raised`
-- HMAC-SHA256 signing: every POST carries `X-Nomii-Signature` header for payload verification
+- HMAC-SHA256 signing: every POST carries `X-Shenmay-Signature` header for payload verification
 - Secret shown once on creation (never retrievable again) — advisory banner prompts tenant to save it
 - Test ping button: fires a sample payload and shows HTTP status + response snippet inline
 - Consecutive failure counter shown per hook — helps diagnose dead endpoints
@@ -308,7 +308,7 @@ Every chat exchange triggers three background operations — none block the resp
 | In-app notification bell | ✅ Done | Bell + dropdown in dashboard; 15s poll; flags + human_reply types; migration 022 — Session 20 |
 | Tool test sandbox (all types) | ✅ Done | Test modal on all active tools; sandbox + real customer modes; escalate always simulated — Session 20 |
 | Privacy Policy + ToS + DPA docs | Planned | Legal documents — requires attorney review before EU tenant onboarding |
-| Live Connector skeleton | Planned | Tier 3 data model — Nomii calls tenant's own API at query time, data never stored |
+| Live Connector skeleton | Planned | Tier 3 data model — Shenmay calls tenant's own API at query time, data never stored |
 | Production infrastructure migration | Planned | Move from Proxmox to Hetzner CX22 (~$6/mo) |
 | Per-agent read tracking | Backlog | Currently `unread` is per-conversation global |
 | SOC 2 Type II | Backlog | Required for enterprise financial firms. 6–12 month process |

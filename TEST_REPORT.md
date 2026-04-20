@@ -1,4 +1,4 @@
-# Nomii AI — Test Report
+# Shenmay AI — Test Report
 **Date:** 2026-03-12
 **Tester:** Claude (automated, while user was in meeting)
 **Scope:** Post-build-sprint testing of all changes from Prompts 12a–18
@@ -68,7 +68,7 @@ SMTP_PORT=465
 SMTP_SECURE=true
 SMTP_USER=hello@pontensolutions.com
 SMTP_PASS=<your one.com password>
-SMTP_FROM=Nomii AI <hello@pontensolutions.com>
+SMTP_FROM=Shenmay AI <hello@pontensolutions.com>
 APP_URL=https://pontensolutions.com
 JWT_SECRET=<choose a strong random secret>
 ```
