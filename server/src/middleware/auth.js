@@ -5,7 +5,6 @@
  *   - requireAuth()  — Validates JWT, attaches req.user
  *   - requireRole()  — Checks user role (customer, advisor, admin, etc.)
  *   - requireTenantScope() — Ensures requests only access own tenant data
- *   - requireCustomerOwnership() — Customers can only access their own records
  */
 
 const { validateToken } = require('../services/authService');
@@ -94,37 +93,8 @@ function requireTenantScope() {
   };
 }
 
-/**
- * Ensure customers can only access their own records.
- * Advisors and admins bypass this check.
- *
- * Checks req.params.id or req.params.customerId against req.user.user_id.
- * Must be used AFTER requireAuth().
- */
-function requireCustomerOwnership() {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Advisors and admins can access any customer in their tenant
-    if (req.user.user_type === 'advisor') {
-      return next();
-    }
-
-    // Customers can only access their own data
-    const paramId = req.params.id || req.params.customerId;
-    if (paramId && paramId !== req.user.user_id) {
-      return res.status(403).json({ error: 'Can only access your own data' });
-    }
-
-    next();
-  };
-}
-
 module.exports = {
   requireAuth,
   requireRole,
   requireTenantScope,
-  requireCustomerOwnership,
 };
