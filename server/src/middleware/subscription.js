@@ -69,7 +69,7 @@ function getBlockReason(sub) {
 
   switch (sub.status) {
     case 'trialing':
-      return { code: 'trial_expired', message: 'Your free trial has ended. Upgrade to keep using NomiiAI.' };
+      return { code: 'trial_expired', message: 'Your free trial has ended. Upgrade to keep using Shenmay AI.' };
     case 'past_due':
       return { code: 'payment_past_due', message: 'Payment is past due. Please update your billing info.' };
     case 'canceled':
