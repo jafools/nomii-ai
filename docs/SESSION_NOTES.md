@@ -5,7 +5,86 @@
 
 ---
 
-## Last updated: 2026-04-21 morning (v2.0.0 live — Shenmay AI rebrand shipped to customers; Hetzner on `:2.0.0`)
+## Last updated: 2026-04-21 afternoon (v2.1.0 live — `shenmay.ai` canonical, Full (Strict) SSL, marketing redesign shipped)
+
+Phase 3 of the Shenmay rebrand shipped end-to-end in one sitting. Full writeup at `[[projects/nomii/shenmay-phase3-domain-and-redesign-apr21-2026]]`.
+
+### Production state at session end
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** |
+| Legacy SaaS URL | https://nomii.pontensolutions.com (selective 301, see below) |
+| Hetzner image | `ghcr.io/jafools/nomii-{backend,frontend}:2.1.0` (via `:stable` alias) |
+| Git HEAD on Hetzner | `v2.1.0` (commit `bad9986`) |
+| Cloudflare SSL mode | **Full (Strict)** on `shenmay.ai` zone |
+| Origin CA cert | `/etc/ssl/shenmay/origin.{pem,key}` — `*.shenmay.ai` + `shenmay.ai`, 15yr (Apr 2026 → Apr 2041) |
+| Marketing site | pontensolutions.com redesigned for Shenmay product pages (bundle `index-DEbNZkQ7.js`) |
+
+### What shipped
+
+**nomii-ai [PR #40](https://github.com/jafools/nomii-ai/pull/40)** → squash `bad9986` → `git tag v2.1.0` → deployed to Hetzner.
+- `config/nginx/prod.conf` — 5 server blocks: `:80 default_server _` unchanged; `:443 shenmay.ai` canonical (new cert); `:443 www.shenmay.ai` → 301 to apex; `:443 nomii.pontensolutions.com` SELECTIVE 301 (dashboard paths redirect, `/api/*` + `/embed.js` + `/widget.html` + `/downloads/*` keep serving to protect existing customer widget embeds, Stripe webhooks, WordPress plugin callbacks); `:443 default_server _` safety net.
+- `docker-compose.prod.override.yml` — added `/etc/ssl/shenmay:/etc/ssl/shenmay:ro` bind mount on frontend.
+- `server/src/middleware/security.js` — `https://shenmay.ai` + `https://www.shenmay.ai` added to `ALLOWED_ORIGINS`.
+
+**Cloudflare (via Chrome MCP):**
+- A records for `shenmay.ai` + `www.shenmay.ai` → `204.168.232.24`, proxied (orange cloud)
+- "Always Use HTTPS" enabled
+- Origin CA cert issued for `*.shenmay.ai` + `shenmay.ai`, RSA 2048, 15-year validity
+- SSL/TLS = **Full (Strict)** — **flipped AFTER the deploy** because Strict rejects SAN mismatch, so it had to wait until nginx was serving the right cert for SNI=shenmay.ai.
+
+**Hetzner:**
+- `/etc/ssl/shenmay/` created, cert + private key pasted directly by Austin via `sudo tee` heredoc (Claude never saw the key material)
+- Cert sanity check via `openssl x509 -noout -subject -ext subjectAltName` confirmed SANs + validity
+- `.env` updated: `APP_URL` + `FRONTEND_URL` + `PORTAL_URL` + `STRIPE_PORTAL_RETURN_URL` → `https://shenmay.ai` (STRIPE return URL keeps `/nomii/dashboard/plans` path — Phase 4 renames paths)
+- `git checkout v2.1.0 && IMAGE_TAG=2.1.0 docker compose pull backend frontend && docker compose up -d backend frontend` — clean recreate with new volume mount
+
+**ponten-solutions [PR #1](https://github.com/jafools/ponten-solutions/pull/1) (redesign) + [PR #2](https://github.com/jafools/ponten-solutions/pull/2) (wordmark + navbar fix)** → both merged, both Published via Lovable, both verified via bundle-hash grep.
+- New `.shenmay-scope` utility class + `--shenmay-*` CSS tokens in `index.css`. Corp LOCKED tokens untouched — follows LaterisAI pattern for product-specific palettes.
+- **Aesthetic:** Scandinavian restraint — Inter 500 (not bold), warm paper `#FAFAF6` bg, teal `#0F5F5C` dot as the signature mark (used as literal punctuation: "AI that knows your customers·"), hairline dividers, zero gradients / orbs / drop-shadows, generous whitespace, Swedish "känn mej" story in the copy.
+- `NomiiAI.tsx` (10 sections → 7, 1048 LoC → ~500), `BuyNomiiLicense.tsx` (all Stripe checkout + modal logic preserved verbatim), `SelfHostedNomii.tsx` (`INSTALL_CMD` + clipboard handler preserved). FAQ JSON-LD schema refreshed with Shenmay copy.
+- `Navbar.tsx` fixed: renamed internal flag `isNomiiPage` → `isShenmayPage`, added `/nomii/license` to the match (was missing), badge now renders `shenmay-icon.svg` + "Shenmay·" text with teal dot.
+- `App.tsx` `APP_URL` constant flipped to `https://shenmay.ai` so the `/nomii/*` catch-all redirect forwards to the new apex.
+
+### Verification (all live)
+
+```
+https://shenmay.ai                                  200
+https://www.shenmay.ai                              301 → https://shenmay.ai/
+https://nomii.pontensolutions.com/                  301 → https://shenmay.ai/
+https://nomii.pontensolutions.com/nomii/dashboard   301 → https://shenmay.ai/nomii/dashboard (path preserved)
+https://nomii.pontensolutions.com/embed.js          200 (preserved for widget embeds)
+https://nomii.pontensolutions.com/api/health        200 (preserved for webhooks)
+https://shenmay.ai/api/health                       200
+```
+
+### Secondary findings
+
+- **GH PAT leaked in `ponten-solutions`'s git remote URL on pontenprox.** Remote URL stripped mid-session (`git remote set-url`) but the token itself is still live at github.com/settings/tokens — Austin deferred revocation.
+- **Pre-existing Stripe config bug** — Hetzner `.env` had `STRIPE_PORTAL_RETURN_URL=https://app.pontensolutions.com/...` (a stale subdomain that 301s at Cloudflare but is not a real origin for us). Fixed mid-session to `https://shenmay.ai/nomii/dashboard/plans`.
+- **`shenmay-full-dark.svg` vs `shenmay-full-light.svg`** — the suffix refers to the CONTEXT it's designed for, NOT the wordmark colour. `-dark.svg` = white text for dark bg. `-light.svg` = dark text for paper bg. Caught when the hero wordmark rendered invisible on paper; fixed with 3-line import swap.
+- **Minor `IMAGE_TAG` drift** — Austin's backend bounce after the env update picked up `:stable` (currently `== :2.1.0`, fine today). The canonical release runbook pins `IMAGE_TAG=X.Y.Z` explicitly; worth enforcing if this drifts again.
+
+### Austin's explicit follow-up priorities for next session
+
+1. **More hunting for Nomii names** across the codebase. Phase 1's 145-file sweep was thorough but keep finding leftovers (marketing STRIPE_PORTAL_RETURN_URL this session, Stripe product display names flagged last session).
+2. **Full E2E test pass on both SaaS and on-prem** under the new shenmay.ai domain. Playwright suite at `tests/e2e/` likely still hardcodes `nomii.pontensolutions.com`.
+3. **Pontensolutions corp site redesign** via claude.ai/design (Austin driving, out of scope for Claude here).
+4. **GH PAT revocation** (deferred from this session).
+
+### Still open from earlier sessions (unchanged)
+
+- Live stranger walkthrough — SaaS signup
+- Live stranger walkthrough — self-hosted install on a fresh VM
+- UptimeRobot signup (closes audit #14)
+- Off-host backup destination (Hetzner Storage Box)
+- Published docs site at `docs.pontensolutions.com`
+- Stripe product-name rebrand in Stripe dashboard (flagged Apr 21 morning, still TODO)
+
+---
+
+## 2026-04-21 morning (v2.0.0 live — Shenmay AI rebrand shipped to customers; Hetzner on `:2.0.0`)
 
 This entry covers the morning session on 2026-04-21. **v2.0.0 shipped end-to-end.** Nomii AI → Shenmay AI is now live to customers on Hetzner SaaS, and `:stable` + `:latest` both pin to `v2.0.0` so on-prem customers pull the rebranded build on their next `docker compose pull`. Full vault writeup at `[[projects/nomii/shenmay-phase2-v2-release-apr21-2026]]`.
 
