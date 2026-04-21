@@ -5,7 +5,98 @@
 
 ---
 
-## Last updated: 2026-04-20 afternoon (v1.1.6 live — Stripe test mode + Managed-AI-Enterprise-only + logo link; Hetzner on `:1.1.6`)
+## Last updated: 2026-04-21 morning (v2.0.0 live — Shenmay AI rebrand shipped to customers; Hetzner on `:2.0.0`)
+
+This entry covers the morning session on 2026-04-21. **v2.0.0 shipped end-to-end.** Nomii AI → Shenmay AI is now live to customers on Hetzner SaaS, and `:stable` + `:latest` both pin to `v2.0.0` so on-prem customers pull the rebranded build on their next `docker compose pull`. Full vault writeup at `[[projects/nomii/shenmay-phase2-v2-release-apr21-2026]]`.
+
+### Production state at session end
+
+| | |
+|---|---|
+| Hetzner SaaS | https://nomii.pontensolutions.com |
+| Image | `ghcr.io/jafools/nomii-backend:2.0.0` + frontend `:2.0.0` |
+| Git HEAD | `v2.0.0` (commit `73f5cc1`) |
+| Title | `<title>Shenmay AI</title>` + OG meta both Shenmay AI |
+| Widget | `<title>Shenmay AI Chat</title>` + `Powered by Shenmay AI` styled footer on both the in-chat + wait-screen |
+| Backend startup log | `🧠 Shenmay AI server running on http://localhost:3001` |
+
+### What shipped
+
+**PR #35 — migration plan rewrite**
+- [PR #35](https://github.com/jafools/nomii-ai/pull/35) — [docs/SHENMAY_MIGRATION_PLAN.md](docs/SHENMAY_MIGRATION_PLAN.md) rewritten to reflect Phase 1 shipped + Phases 2-9 forward roadmap.
+
+**PR #36 — 3 user-visible Nomii strings missed by Phase 1**
+- [PR #36](https://github.com/jafools/nomii-ai/pull/36) — [server/public/widget.html:520](server/public/widget.html:520) "Powered by NomiiAI" on the support-at-capacity wait screen (in-chat footer was already correct, wait-screen wasn't); [server/src/middleware/subscription.js:72](server/src/middleware/subscription.js:72) trial-expired blocker `'Upgrade to keep using NomiiAI.'`; [server/package.json:4](server/package.json:4) description `"Nomii AI — Personalized retirement planning agent backend"` (stale on both brand AND pitch).
+
+**PR #37 — light-theme wordmark SVG**
+- [PR #37](https://github.com/jafools/nomii-ai/pull/37) — Phase 1 shipped only `shenmay-full-dark.svg` (white text for dark bg). Two pages on `#FAFAFA` light bg imported it → white-on-white invisible wordmark, user saw `← [nothing] •`. New [client/src/assets/shenmay-full-light.svg](client/src/assets/shenmay-full-light.svg) with dark text `#111118` + Stockholm fjord teal `#0F5F5C`, matching `Company Logos/shenmay_wordmark_light.svg`. [ShenmayTerms.jsx](client/src/pages/shenmay/ShenmayTerms.jsx) + [ShenmayVerifyEmail.jsx](client/src/pages/shenmay/ShenmayVerifyEmail.jsx) switched to the new variant.
+
+**PR #38 — webhook endpoint placeholder**
+- [PR #38](https://github.com/jafools/nomii-ai/pull/38) — [ShenmaySettings.jsx:937](client/src/pages/shenmay/dashboard/ShenmaySettings.jsx:937) Settings → Webhooks → Add webhook Endpoint URL placeholder still read `https://your-server.com/hooks/nomii`, spreading the old brand as a suggested hook-path convention to new customers setting up webhook receivers on their own servers. Renamed to `/hooks/shenmay`.
+
+### Full dashboard walkthrough on staging (authenticated)
+
+Signed up a throwaway test tenant (`shenmay-phase2-e2e-20260421@nomii.local`) on staging, pulled the `email_verification_token` from `tenant_admins` via SSH + psql, navigated `/nomii/verify/<token>` to JWT-auth, then walked every dashboard page. All 9 menu pages + onboarding wizard + accept-invite verified clean. Live invite-email send tested (SMTP off on staging by design; URL generation verified in backend log).
+
+Test tenant cleaned up at end of session: `BEGIN; DELETE FROM subscriptions WHERE ...; DELETE FROM tenant_admins WHERE ...; DELETE FROM tenants WHERE ...; COMMIT;` — 1 sub + 2 admins + 1 tenant row removed.
+
+### What's still on Nomii by design (Phase 4-8 back-compat)
+
+Grep-verified to not fix these until their planned phase:
+- `/nomii/*` URL routes (Phase 4)
+- `X-Nomii-Signature` HMAC header (Phase 5 — customer receivers verify this exact name)
+- `nomii-{db,backend,frontend}` Docker container names (Phase 6)
+- `nomii_ai` Postgres DB + `nomii` DB user (Phase 7)
+- `NOMII_*` env vars (Phase 4 add shim, Phase 8 remove)
+- `nomii_da_` API key prefix (Phase 5)
+- `@visitor.nomii` anon email domain (Phase 5)
+- `nomii_portal_token` localStorage (Phase 5)
+- `nomii-wordpress-plugin.zip` URL (Phase 5 redirect)
+- `nomii.pontensolutions.com` subdomain (primary until Phase 3 `shenmay.ai` switchover)
+- `service: "nomii-ai"` in `/api/health` (customer receivers may parse)
+- Cloudflare tunnel `knomi-ai` (shared with Lateris, untouchable)
+
+Webhook outbound is **already Shenmay-branded**: `User-Agent: Shenmay-Webhook/1.0`, `User-Agent: Shenmay-Notifications/1.0`, new `X-Shenmay-Event` header alongside preserved `X-Nomii-Signature`.
+
+### Open for Austin (config, not code)
+
+1. **Stripe product display names** — rename `Nomii AI Starter` → `Shenmay AI Starter` in Stripe **test mode** dashboard (verified stale on staging's Plans & Billing page). Then review Stripe **live mode** for every tier (Starter / Growth / Professional / Enterprise) and rename any that read "Nomii AI". ~10 min in Stripe dashboard.
+
+### Launch blockers (remaining)
+
+1. ~~Stripe test mode on staging~~ **CLOSED Apr 20 afternoon**
+2. Live stranger walkthrough — SaaS signup
+3. Live stranger walkthrough — self-hosted install on a fresh VM
+4. UptimeRobot signup (closes audit #14)
+5. Off-host backup destination (Hetzner Storage Box)
+6. Published docs site at `docs.pontensolutions.com`
+7. Stripe product-name rebrand in Stripe dashboard (new, this session)
+
+### Next session candidate: Phase 3 — canonical domain switchover to `shenmay.ai`
+
+Plan at `docs/SHENMAY_MIGRATION_PLAN.md` Phase 3. ~1 week:
+1. Cloudflare DNS: A `shenmay.ai` → `204.168.232.24`, proxied
+2. Cloudflare Origin CA cert for `*.shenmay.ai` + `shenmay.ai` on Hetzner `/etc/ssl/shenmay/`
+3. nginx `server_name` block for `shenmay.ai` alongside the existing `nomii.pontensolutions.com` block
+4. Update `APP_URL=https://shenmay.ai` on Hetzner `.env`, restart backend so email links use the new domain
+5. 301 redirect the old subdomain
+6. Marketing site (`ponten-solutions` repo, Lovable-managed): rename path `/products/nomii-ai` → `/products/shenmay-ai`, commit + **Austin clicks Publish in Lovable** (manual step, verify via bundle-hash grep per [[wiki/concepts/lovable-deploy-pipeline]])
+
+### Gotchas captured this session
+
+1. **Chrome MCP screenshot fails on chrome-extension:// URLs.** Happens transiently right after a navigation — next action usually succeeds. Don't retry the screenshot in a loop.
+2. **Staging DB pluck is the fast signup-walkthrough path.** Staging has SMTP intentionally disabled. Sign up → query `tenant_admins.email_verification_token` → `/nomii/verify/<token>` gets JWT. Clean up tenant rows after via `DELETE FROM subscriptions/tenant_admins/tenants`.
+3. **Trial subscription hard-caps `max_agents = 1`.** Invite-Agent button disabled on any fresh trial tenant until `UPDATE subscriptions SET max_agents = 3 WHERE tenant_id = ...`. Worth remembering for future authenticated E2Es.
+4. **Phase 1 shipped only the dark-theme logo SVG.** The light-bg page bug (#37) was a Phase 1 gap — a file-contents sweep PR didn't do theme-contrast visual verification. Lesson for future big-sweep PRs: sweep file contents + also click through at least one page on each background theme.
+
+### Memory housekeeping this session
+
+- **Updated:** `project_shenmay_rebrand.md` — moved from "in flight" → "Phase 1+2 LIVE, Phase 3 next". Updated back-compat list + added shipped artifacts.
+- **No new memories needed** — the gotchas are session-local and already captured in the vault writeup.
+
+---
+
+## Previous: 2026-04-20 afternoon (v1.1.6 live — Stripe test mode + Managed-AI-Enterprise-only + logo link; Hetzner on `:1.1.6`)
 
 This entry covers the afternoon session on 2026-04-20. **Three patch tags shipped** end-to-end, plus **two marketing-site commits Published via Lovable**, plus one clean Stripe **test-mode E2E** (signup → checkout with card `4242` → webhook → DB flip) — unblocking a launch-blocker that had been sitting open for weeks. Full vault writeup at `[[projects/nomii/stripe-test-mode-plus-managed-ai-rewrite-apr20-2026]]`.
 
