@@ -934,7 +934,7 @@ const WebhooksSection = () => {
               <label className="block text-[11px] font-medium text-white/30 mb-1">Endpoint URL <span style={{ color: "#C9A84C" }}>*</span></label>
               <input
                 type="url"
-                placeholder="https://your-server.com/hooks/nomii"
+                placeholder="https://your-server.com/hooks/shenmay"
                 value={form.url}
                 onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
                 className={inputClass}
