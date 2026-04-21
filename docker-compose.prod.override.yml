@@ -28,10 +28,19 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # Cloudflare Origin CA cert + key. Lives outside docker — managed
-      # by Austin, rotates before Cloudflare's 15-year expiry. See
-      # CLAUDE.md for the cert path.
+      # Legacy Cloudflare Origin CA cert (issued against the
+      # pontensolutions.com zone, covers nomii.pontensolutions.com).
+      # Still mounted so the legacy-domain + default-server blocks in
+      # prod.conf keep serving — phased out in Phase 8 of the Shenmay
+      # migration after legacy traffic drops to zero.
       - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
+      # Shenmay Cloudflare Origin CA cert (issued against the shenmay.ai
+      # zone, covers shenmay.ai + www.shenmay.ai). Added 2026-04-21 for
+      # the Phase 3 domain switchover — see docs/SHENMAY_MIGRATION_PLAN.md.
+      # Austin places origin.pem + origin.key under /etc/ssl/shenmay/ on
+      # the Hetzner host BEFORE cutting the release that ships this file,
+      # otherwise nginx fails to start (cert path missing).
+      - /etc/ssl/shenmay:/etc/ssl/shenmay:ro
       # Replace the image-baked nginx config with the :80+:443 prod one.
       # The image ships only :80 (on-prem customers don't need :443 —
       # they sit behind their own TLS terminator or Cloudflare Tunnel).
