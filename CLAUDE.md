@@ -27,7 +27,7 @@
    ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout vX.Y.Z && IMAGE_TAG=X.Y.Z docker compose pull backend frontend && IMAGE_TAG=X.Y.Z docker compose up -d backend frontend"
        │
        ▼
-   SaaS live on Hetzner at https://nomii.pontensolutions.com
+   SaaS live on Hetzner at https://shenmay.ai  (legacy https://nomii.pontensolutions.com → 301)
 ```
 
 **Three rules that make this work:**
@@ -40,7 +40,7 @@
 | | URL | Image tag | Host |
 |---|---|---|---|
 | Staging | https://nomii-staging.pontensolutions.com | `:edge` (auto-refresh 5 min) | Proxmox (`ssh pontenprox`) |
-| Prod SaaS | https://nomii.pontensolutions.com | `:vX.Y.Z` pulled from GHCR | Hetzner (`ssh nomii@204.168.232.24`) |
+| Prod SaaS | **https://shenmay.ai** (canonical since 2026-04-21; legacy https://nomii.pontensolutions.com selective 301) | `:vX.Y.Z` pulled from GHCR | Hetzner (`ssh nomii@204.168.232.24`) |
 | Prod on-prem | customer's server | `:stable` from GHCR | customer hardware |
 
 If a user asks "just push this to prod" — the answer is still branch + PR + CI + merge. They're asking about **reaching prod**, not bypassing the flow. The correct outcome is the tag + Hetzner deploy, not a `git push origin main`.
