@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { verifyEmail, resendVerification } from "@/lib/shenmayApi";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
+import shenmayLogo from "@/assets/shenmay-full-light.svg";
 import { CheckCircle, XCircle, Loader2, Send } from "lucide-react";
 
 const ShenmayVerifyEmail = () => {

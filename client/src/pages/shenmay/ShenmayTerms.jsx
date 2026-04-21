@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
+import shenmayLogo from "@/assets/shenmay-full-light.svg";
 import { ArrowLeft } from "lucide-react";
 
 const Section = ({ number, title, children }) => (
