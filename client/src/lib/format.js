@@ -1,6 +1,6 @@
 // Shared date/time formatters for the Shenmay dashboard.
 //
-// These were previously inlined inside pages/nomii/dashboard/*.jsx. Each
+// These were previously inlined inside pages/shenmay/dashboard/*.jsx. Each
 // variant is kept exactly as it was to preserve existing UI labels — we
 // only deduped the identical implementations.
 

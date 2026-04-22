@@ -243,7 +243,7 @@ const ShenmayConversationDetail = () => {
       {/* ── Header ── */}
       <div className="flex items-center gap-4 flex-wrap">
         <button
-          onClick={() => navigate("/nomii/dashboard/conversations")}
+          onClick={() => navigate("/shenmay/dashboard/conversations")}
           className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
           style={{ color: "rgba(255,255,255,0.35)" }}
         >

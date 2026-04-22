@@ -3,7 +3,7 @@ import { isLoggedIn } from "@/lib/shenmayApi";
 
 const ShenmayProtectedRoute = ({ children }) => {
   if (!isLoggedIn()) {
-    return <Navigate to="/nomii/login" replace />;
+    return <Navigate to="/shenmay/login" replace />;
   }
   return children;
 };

@@ -115,7 +115,7 @@ export default function SubscriptionGate({ subscription, children }) {
         {loading ? "Loading..." : "View Plans & Upgrade"}
       </button>
 
-      <a href="/nomii/dashboard/plans" className="text-xs underline" style={{ color: "rgba(255,255,255,0.30)" }}>
+      <a href="/shenmay/dashboard/plans" className="text-xs underline" style={{ color: "rgba(255,255,255,0.30)" }}>
         Compare plans
       </a>
     </div>

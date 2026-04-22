@@ -150,7 +150,7 @@ const ShenmayCustomers = () => {
             return (
               <button
                 key={c.id}
-                onClick={() => navigate(`/nomii/dashboard/customers/${c.id}`)}
+                onClick={() => navigate(`/shenmay/dashboard/customers/${c.id}`)}
                 className="rounded-2xl p-6 text-left transition-all duration-200 hover:scale-[1.01] group"
                 style={{
                   background: "rgba(255,255,255,0.03)",

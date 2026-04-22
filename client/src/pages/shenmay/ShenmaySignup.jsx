@@ -116,7 +116,7 @@ const CheckEmailState = ({ email }) => {
           {resent ? "✓ Sent!" : resending ? "Sending…" : "Resend verification email"}
         </button>
         <div>
-          <Link to="/nomii/login" className="inline-flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <Link to="/shenmay/login" className="inline-flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
             <ArrowLeft size={14} /> Back to login
           </Link>
         </div>
@@ -144,7 +144,7 @@ const ShenmaySignup = () => {
     fetch("/api/config")
       .then((r) => r.json())
       .then((d) => {
-        if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/nomii/login", { replace: true });
+        if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/shenmay/login", { replace: true });
       })
       .catch(() => {});
   }, [navigate]);
@@ -174,7 +174,7 @@ const ShenmaySignup = () => {
         setPendingEmail(data.email || t.email);
       } else if (data.token) {
         setToken(data.token);
-        navigate("/nomii/onboarding");
+        navigate("/shenmay/onboarding");
       }
     } catch (err) {
       const msg = err.message || "Registration failed.";
@@ -291,7 +291,7 @@ const ShenmaySignup = () => {
                     <input type="checkbox" checked={form.tosAccepted} onChange={(e) => setForm(f => ({ ...f, tosAccepted: e.target.checked }))} className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-[#C9A84C]" style={{ borderColor: "rgba(255,255,255,0.20)" }} />
                     <span className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
                       I agree to the{" "}
-                      <a href="/nomii/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>Shenmay AI Terms of Service</a>{" "}
+                      <a href="/shenmay/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>Shenmay AI Terms of Service</a>{" "}
                       (opens in new tab).
                     </span>
                   </label>
@@ -332,7 +332,7 @@ const ShenmaySignup = () => {
 
               <p className="text-center text-sm mt-6" style={{ color: "rgba(255,255,255,0.35)" }}>
                 Already have an account?{" "}
-                <Link to="/nomii/login" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
+                <Link to="/shenmay/login" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
                   Sign in →
                 </Link>
               </p>

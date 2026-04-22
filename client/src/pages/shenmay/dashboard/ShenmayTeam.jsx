@@ -172,7 +172,7 @@ const ShenmayTeam = () => {
         </div>
         {atLimit && (
           <p className="text-[11px] mt-2" style={{ color: "#F87171" }}>
-            Agent limit reached. <a href="/nomii/dashboard/plans" className="underline hover:opacity-80">Upgrade your plan</a> to add more agents.
+            Agent limit reached. <a href="/shenmay/dashboard/plans" className="underline hover:opacity-80">Upgrade your plan</a> to add more agents.
           </p>
         )}
       </div>

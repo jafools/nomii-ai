@@ -13,6 +13,7 @@
 const express = require('express');
 const https   = require('https');
 const db      = require('../db');
+const { envVar } = require('../utils/env');
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ function verifyPortalSession(sessionToken) {
 
 router.post('/licenses', async (req, res) => {
   // Gate: only the license master has the licenses table
-  if (process.env.NOMII_LICENSE_MASTER !== 'true') {
+  if (envVar('LICENSE_MASTER') !== 'true') {
     return res.status(404).json({ error: 'not_available' });
   }
 

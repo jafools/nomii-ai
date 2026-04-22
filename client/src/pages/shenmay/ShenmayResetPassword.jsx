@@ -83,7 +83,7 @@ const ShenmayResetPassword = () => {
                 </p>
               </div>
               <Link
-                to="/nomii/login"
+                to="/shenmay/login"
                 className="w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
               >
@@ -119,7 +119,7 @@ const ShenmayResetPassword = () => {
                       <div>
                         <p>{error}</p>
                         {error.toLowerCase().includes("expired") || error.toLowerCase().includes("invalid") ? (
-                          <Link to="/nomii/login" className="inline-flex items-center gap-1 mt-2 text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.60)" }}>
+                          <Link to="/shenmay/login" className="inline-flex items-center gap-1 mt-2 text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.60)" }}>
                             Request a new link →
                           </Link>
                         ) : null}
@@ -134,7 +134,7 @@ const ShenmayResetPassword = () => {
               </form>
 
               <p className="text-center text-sm mt-8">
-                <Link to="/nomii/login" className="flex items-center justify-center gap-1.5 font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.45)" }}>
+                <Link to="/shenmay/login" className="flex items-center justify-center gap-1.5 font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.45)" }}>
                   <ArrowLeft size={15} /> Back to login
                 </Link>
               </p>

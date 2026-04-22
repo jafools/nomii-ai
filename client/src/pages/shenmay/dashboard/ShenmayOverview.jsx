@@ -85,7 +85,7 @@ const ShenmayOverview = () => {
       gradient: "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%)",
       iconColor: "#60A5FA",
       borderColor: "rgba(59,130,246,0.15)",
-      link: "/nomii/dashboard/conversations",
+      link: "/shenmay/dashboard/conversations",
     },
     {
       label: "Customers (30 days)",
@@ -94,7 +94,7 @@ const ShenmayOverview = () => {
       gradient: "linear-gradient(135deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%)",
       iconColor: "#4ADE80",
       borderColor: "rgba(34,197,94,0.15)",
-      link: "/nomii/dashboard/customers",
+      link: "/shenmay/dashboard/customers",
     },
     {
       label: "Total Customers",
@@ -103,7 +103,7 @@ const ShenmayOverview = () => {
       gradient: "linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%)",
       iconColor: "#C9A84C",
       borderColor: "rgba(201,168,76,0.15)",
-      link: "/nomii/dashboard/customers",
+      link: "/shenmay/dashboard/customers",
     },
     {
       label: "Anonymous Visitors",
@@ -121,7 +121,7 @@ const ShenmayOverview = () => {
       gradient: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(139,92,246,0.05) 100%)",
       iconColor: "#A78BFA",
       borderColor: "rgba(139,92,246,0.15)",
-      link: "/nomii/dashboard/conversations",
+      link: "/shenmay/dashboard/conversations",
     },
     {
       label: "Open Concerns",
@@ -132,7 +132,7 @@ const ShenmayOverview = () => {
         : "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
       iconColor: (s.open_concerns ?? 0) > 0 ? "#F87171" : "rgba(255,255,255,0.3)",
       borderColor: (s.open_concerns ?? 0) > 0 ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)",
-      link: "/nomii/dashboard/concerns",
+      link: "/shenmay/dashboard/concerns",
     },
   ];
 
@@ -192,7 +192,7 @@ const ShenmayOverview = () => {
             </p>
           </div>
           <Link
-            to="/nomii/onboarding"
+            to="/shenmay/onboarding"
             className="text-sm font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
             style={{ color: "#C9A84C" }}
           >
@@ -212,7 +212,7 @@ const ShenmayOverview = () => {
               New visitors couldn't connect — your customer limit ({subUsage.customers_limit}) has been reached.
             </p>
           </div>
-          <Link to="/nomii/dashboard/plans" className="text-sm font-semibold flex items-center gap-1 whitespace-nowrap hover:opacity-80 transition-opacity ml-4 shrink-0" style={{ color: "#F87171" }}>
+          <Link to="/shenmay/dashboard/plans" className="text-sm font-semibold flex items-center gap-1 whitespace-nowrap hover:opacity-80 transition-opacity ml-4 shrink-0" style={{ color: "#F87171" }}>
             Upgrade plan <ArrowUpRight size={14} />
           </Link>
         </div>
@@ -254,7 +254,7 @@ const ShenmayOverview = () => {
           <h2 className="text-sm font-semibold text-white/70">Recent Conversations</h2>
           {conversations.length > 0 && (
             <Link
-              to="/nomii/dashboard/conversations"
+              to="/shenmay/dashboard/conversations"
               className="text-xs font-medium flex items-center gap-1 transition-opacity hover:opacity-80"
               style={{ color: "#C9A84C" }}
             >
@@ -280,7 +280,7 @@ const ShenmayOverview = () => {
               return (
                 <div
                   key={id}
-                  onClick={() => navigate(`/nomii/dashboard/conversations/${id}`)}
+                  onClick={() => navigate(`/shenmay/dashboard/conversations/${id}`)}
                   className="flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-all duration-150 hover:bg-white/[0.02]"
                   style={i < conversations.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.03)" } : {}}
                 >

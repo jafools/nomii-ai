@@ -20,7 +20,7 @@
 
 const db = require('../db');
 
-const PORTAL_URL  = (process.env.PORTAL_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
+const PORTAL_URL  = (process.env.PORTAL_URL || 'https://shenmay.ai').replace(/\/$/, '');
 const TIMEOUT_MS  = 8_000;
 const BRAND_COLOR = 'C9A84C';
 
@@ -211,8 +211,8 @@ async function _post(url, payload) {
 
 function _portalConvUrl(conversationId) {
   return conversationId
-    ? `${PORTAL_URL}/nomii/dashboard/conversations/${conversationId}`
-    : `${PORTAL_URL}/nomii/dashboard/conversations`;
+    ? `${PORTAL_URL}/shenmay/dashboard/conversations/${conversationId}`
+    : `${PORTAL_URL}/shenmay/dashboard/conversations`;
 }
 
 module.exports = { fireNotifications };

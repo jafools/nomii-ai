@@ -399,7 +399,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
           </div>
           <div>
             {convo?.customer_id && !convo?.is_anonymous ? (
-              <Link to={`/nomii/dashboard/customers/${convo.customer_id}`}
+              <Link to={`/shenmay/dashboard/customers/${convo.customer_id}`}
                 className="text-[14px] font-semibold text-white/80 hover:text-[#C9A84C] transition-colors flex items-center gap-1">
                 {name}<ExternalLink className="h-3 w-3 opacity-40" />
               </Link>
@@ -426,7 +426,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
             </button>
           )}
           {conversationId && (
-            <Link to={`/nomii/dashboard/conversations/${conversationId}`}
+            <Link to={`/shenmay/dashboard/conversations/${conversationId}`}
               title="Open full conversation"
               className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
               style={{ color: "rgba(255,255,255,0.20)" }}>

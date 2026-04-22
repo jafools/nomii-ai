@@ -136,7 +136,7 @@ router.post('/complete', requireSelfHosted, async (req, res, next) => {
 
     console.log(`[Setup] ✓ Self-hosted setup complete — ${cleanCompany} (${cleanEmail})`);
     const appUrl = (process.env.APP_URL || '').replace(/\/$/, '');
-    console.log(`[Setup]   Trial: ${limits.max_messages_month} msg/mo, ${limits.max_customers} customer. Upgrade: ${appUrl}/nomii/license`);
+    console.log(`[Setup]   Trial: ${limits.max_messages_month} msg/mo, ${limits.max_customers} customer. Upgrade: ${appUrl}/shenmay/license`);
 
     res.status(201).json({ token, tenant: { id: tenantId, name: cleanCompany } });
   } catch (err) {

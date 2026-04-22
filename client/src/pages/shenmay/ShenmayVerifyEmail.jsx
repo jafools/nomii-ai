@@ -9,7 +9,7 @@ const ShenmayVerifyEmail = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  // Support token from URL path (/nomii/verify/:token) or query string (?token=...)
+  // Support token from URL path (/shenmay/verify/:token) or query string (?token=...)
   const token = params.token || searchParams.get("token");
 
   const [status, setStatus] = useState(token ? "loading" : "no-token");
@@ -29,7 +29,7 @@ const ShenmayVerifyEmail = () => {
         if (cancelled) return;
         // Token is stored by verifyEmail — navigate immediately
         setStatus("success");
-        setTimeout(() => navigate("/nomii/onboarding", { replace: true }), 1500);
+        setTimeout(() => navigate("/shenmay/onboarding", { replace: true }), 1500);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -81,7 +81,7 @@ const ShenmayVerifyEmail = () => {
             <p className="text-gray-500 text-sm">
               This verification link has expired or is invalid. Please request a new one.
             </p>
-            <Link to="/nomii/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
+            <Link to="/shenmay/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
               ← Back to login
             </Link>
           </div>
@@ -140,7 +140,7 @@ const ShenmayVerifyEmail = () => {
               </form>
             )}
 
-            <Link to="/nomii/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
+            <Link to="/shenmay/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
               ← Back to login
             </Link>
           </div>
