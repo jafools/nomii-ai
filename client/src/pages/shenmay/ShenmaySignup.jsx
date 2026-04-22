@@ -2,84 +2,45 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register as apiRegister, setToken, resendVerification } from "@/lib/shenmayApi";
 import { DEPLOYMENT_MODES } from "@/lib/constants";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
-import { Check, ArrowRight, Brain, Shield, Sparkles, Mail, ArrowLeft } from "lucide-react";
+import { ArrowRight, Mail, ArrowLeft, CheckCircle } from "lucide-react";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import ShenmaySeal from "@/components/shenmay/ShenmaySeal";
+import {
+  TOKENS as T,
+  Kicker,
+  Display,
+  Lede,
+  Field,
+  Input,
+  Select,
+  Button,
+  Notice,
+  PageShell,
+} from "@/components/shenmay/ui/ShenmayUI";
 
 const INDUSTRIES = [
-  { value: "financial", label: "Financial" },
+  { value: "financial",  label: "Financial" },
   { value: "retirement", label: "Retirement" },
-  { value: "ministry", label: "Ministry" },
+  { value: "ministry",   label: "Ministry" },
   { value: "healthcare", label: "Healthcare" },
-  { value: "insurance", label: "Insurance" },
-  { value: "education", label: "Education" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "other", label: "Other" },
+  { value: "insurance",  label: "Insurance" },
+  { value: "education",  label: "Education" },
+  { value: "ecommerce",  label: "E-commerce" },
+  { value: "other",      label: "Other" },
 ];
 
 const getStrength = (pw) => {
-  if (pw.length < 8) return { text: "Min. 8 characters", color: "#F87171", pct: 15 };
+  if (pw.length === 0) return null;
+  if (pw.length < 8) return { text: "Min. 8 characters", color: T.danger, pct: 20 };
   let s = 0;
   if (/[A-Z]/.test(pw)) s++;
   if (/[0-9]/.test(pw)) s++;
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   if (pw.length >= 12) s++;
-  if (s <= 1) return { text: "Weak — try adding symbols", color: "#FBBF24", pct: 40 };
-  if (s <= 2) return { text: "Getting stronger", color: "#C9A84C", pct: 70 };
-  return { text: "Strong password", color: "#4ADE80", pct: 100 };
+  if (s <= 1) return { text: "Weak — try symbols", color: T.warning, pct: 40 };
+  if (s <= 2) return { text: "Getting stronger",   color: T.teal,    pct: 70 };
+  return                  { text: "Strong password",   color: T.tealDark,pct: 100 };
 };
-
-const PERKS = [
-  { icon: Brain, text: "AI agent that remembers every customer interaction" },
-  { icon: Sparkles, text: "Adapts tone and personality per customer" },
-  { icon: Shield, text: "Human-in-the-loop oversight & escalation" },
-];
-
-// Dark-themed shared input styles
-const inp = "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20 focus:border-[#C9A84C]/50";
-const inpStyle = { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.10)" };
-
-const BrandingPanel = () => (
-  <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden flex-col justify-between p-12 xl:p-16" style={{ background: "linear-gradient(160deg, #1E3A5F 0%, #15294a 50%, #0f1e38 100%)" }}>
-    <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.08]" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
-    <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #5B9BD5, transparent 70%)" }} />
-    <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-    <div className="relative z-10">
-      <a href="https://pontensolutions.com" className="inline-block hover:opacity-80 transition-opacity" title="Back to Pontén Solutions">
-        <img src={shenmayLogo} alt="Shenmay AI" className="h-8 brightness-0 invert mb-2" />
-        <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
-      </a>
-    </div>
-
-    <div className="relative z-10 space-y-8">
-      <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight">
-        Deploy an AI agent that actually{" "}
-        <span style={{ color: "#C9A84C" }}>knows</span> your customers
-      </h2>
-      <div className="space-y-6">
-        {PERKS.map((p) => (
-          <div key={p.text} className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,168,76,0.12)" }}>
-              <p.icon size={20} style={{ color: "#C9A84C" }} />
-            </div>
-            <p className="text-white/70 text-sm leading-relaxed">{p.text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="relative z-10 flex items-center gap-3">
-      <div className="flex -space-x-1.5">
-        {["#3B82F6", "#22C55E", "#C9A84C"].map((c) => (
-          <div key={c} className="w-7 h-7 rounded-full border-2 border-[#1E3A5F] flex items-center justify-center" style={{ background: c }}>
-            <Check size={11} className="text-white" />
-          </div>
-        ))}
-      </div>
-      <p className="text-white/40 text-xs">Trusted by teams in finance, healthcare & education</p>
-    </div>
-  </div>
-);
 
 const CheckEmailState = ({ email }) => {
   const [resending, setResending] = useState(false);
@@ -87,39 +48,27 @@ const CheckEmailState = ({ email }) => {
 
   const handleResend = async () => {
     setResending(true);
-    try {
-      await resendVerification(email);
-      setResent(true);
-      setTimeout(() => setResent(false), 4000);
-    } catch {}
-    finally { setResending(false); }
+    try { await resendVerification(email); setResent(true); setTimeout(() => setResent(false), 4000); }
+    catch {} finally { setResending(false); }
   };
 
   return (
-    <div className="text-center space-y-6">
-      <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
-        <Mail size={36} style={{ color: "#C9A84C" }} />
+    <div style={{ textAlign: "center" }}>
+      <div style={{ width: 84, height: 84, borderRadius: "50%", background: T.paperDeep, border: `1px solid ${T.paperEdge}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 28px" }}>
+        <Mail size={34} color={T.teal} />
       </div>
-      <div>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: "rgba(255,255,255,0.90)" }}>Check your email</h1>
-        <p className="text-sm leading-relaxed max-w-sm mx-auto" style={{ color: "rgba(255,255,255,0.45)" }}>
-          We've sent a verification link to <strong style={{ color: "rgba(255,255,255,0.70)" }}>{email}</strong>. Click the link in the email to activate your account.
-        </p>
-      </div>
-      <div className="space-y-3">
-        <button
-          onClick={handleResend}
-          disabled={resending || resent}
-          className="text-sm font-semibold hover:opacity-70 transition-opacity disabled:opacity-50"
-          style={{ color: "#C9A84C" }}
-        >
-          {resent ? "✓ Sent!" : resending ? "Sending…" : "Resend verification email"}
-        </button>
-        <div>
-          <Link to="/shenmay/login" className="inline-flex items-center gap-1.5 text-sm hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
-            <ArrowLeft size={14} /> Back to login
-          </Link>
-        </div>
+      <Kicker>Check your inbox</Kicker>
+      <Display size={32} italic style={{ marginTop: 10 }}>One more step.</Display>
+      <Lede style={{ marginTop: 12, maxWidth: 400, marginLeft: "auto", marginRight: "auto" }}>
+        We've sent a verification link to <strong style={{ color: T.ink }}>{email}</strong>. Click it to activate your account.
+      </Lede>
+      <div style={{ marginTop: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+        <Button variant="linky" onClick={handleResend} disabled={resending || resent}>
+          {resent ? "Sent — check your inbox" : resending ? "Sending…" : "Resend verification email"}
+        </Button>
+        <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+          <ArrowLeft size={14} /> Back to sign in
+        </Link>
       </div>
     </div>
   );
@@ -138,14 +87,10 @@ const ShenmaySignup = () => {
   const [confirmTouched, setConfirmTouched] = useState(false);
   const navigate = useNavigate();
 
-  // Self-hosted installs are single-tenant and registration is disabled server-side.
-  // Redirect to the login page so operators don't fill out a form that will 403.
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/shenmay/login", { replace: true });
-      })
+      .then((d) => { if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/shenmay/login", { replace: true }); })
       .catch(() => {});
   }, [navigate]);
 
@@ -155,14 +100,12 @@ const ShenmaySignup = () => {
     if (k === "confirmPassword" && !confirmTouched) setConfirmTouched(true);
   };
   const strength = getStrength(form.password);
-  const passwordTooShort = form.password.length > 0 && form.password.length < 8;
   const passwordsMismatch = confirmTouched && form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
-  const canSubmit = !loading && form.password.length >= 8 && form.confirmPassword.length > 0 && form.password === form.confirmPassword;
+  const canSubmit = !loading && form.password.length >= 8 && form.confirmPassword.length > 0 && form.password === form.confirmPassword && form.tosAccepted && form.dataRightsConfirmed;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setCompanyError("");
+    setError(""); setCompanyError("");
     const t = { firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(), password: form.password, companyName: form.companyName.trim(), vertical: form.vertical };
     if (!t.firstName || !t.lastName || !t.email || !t.password || !t.companyName || !t.vertical) { setError("Please fill in all fields."); return; }
     if (t.password.length < 8) { setError("Password must be at least 8 characters."); return; }
@@ -170,177 +113,185 @@ const ShenmaySignup = () => {
     setLoading(true);
     try {
       const data = await apiRegister(t.email, t.password, t.firstName, t.lastName, t.companyName, t.vertical, true, form.newsletterOptIn);
-      if (data.pending_verification) {
-        setPendingEmail(data.email || t.email);
-      } else if (data.token) {
-        setToken(data.token);
-        navigate("/shenmay/onboarding");
-      }
+      if (data.pending_verification) setPendingEmail(data.email || t.email);
+      else if (data.token) { setToken(data.token); navigate("/shenmay/onboarding"); }
     } catch (err) {
       const msg = err.message || "Registration failed.";
-      if (msg.toLowerCase().includes("company") && msg.toLowerCase().includes("taken") || err.code === "company_name_taken") {
+      if ((msg.toLowerCase().includes("company") && msg.toLowerCase().includes("taken")) || err.code === "company_name_taken") {
         setCompanyError("This company name is already registered. Please use a different name.");
       } else {
         setError(msg);
       }
-    }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex">
-      <BrandingPanel />
-
-      {/* Right — form (dark-themed) */}
-      <div className="flex-1 flex items-center justify-center px-6 py-10 overflow-y-auto" style={{ background: "#0B1222" }}>
-        <div className="w-full max-w-lg">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex flex-col items-center mb-6">
-            <img src={shenmayLogo} alt="Shenmay AI" className="h-7 mb-3 brightness-0 invert" />
+    <PageShell style={{ display: "flex" }}>
+      {/* ── LEFT editorial panel ───────────────────────────── */}
+      <aside
+        className="shenmay-signup-aside"
+        style={{
+          display: "none",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          width: "42%",
+          background: T.paperDeep,
+          borderRight: `1px solid ${T.paperEdge}`,
+          padding: "52px 56px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div>
+          <a href="https://pontensolutions.com" style={{ textDecoration: "none", display: "inline-block" }}>
+            <ShenmayWordmark size={28} />
+          </a>
+          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: T.mute, marginTop: 10 }}>
+            by Pontén Solutions
           </div>
+        </div>
+
+        <div style={{ maxWidth: 480 }}>
+          <Kicker style={{ marginBottom: 20 }}>Figure 01 · What you're about to deploy</Kicker>
+          <Display size={40} italic>An agent that knows your</Display>
+          <Display size={40} italic={false} style={{ fontWeight: 500 }}>customers — one by one.</Display>
+          <Lede style={{ fontSize: 16, marginTop: 20, maxWidth: 440 }}>
+            Not a generic chatbot. A persistent agent with Soul (personality + policy) and Memory (every interaction kept) — deployed to your site in minutes.
+          </Lede>
+          <div style={{ marginTop: 28, fontFamily: T.mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: T.mute }}>
+            /ʃɛn.meɪ/ &nbsp;·&nbsp; Känn mig &nbsp;·&nbsp; Know me
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24, borderTop: `1px solid ${T.paperEdge}`, paddingTop: 20 }}>
+          {[
+            { k: "Soul",    v: "Personality + policy" },
+            { k: "Memory",  v: "Every interaction kept" },
+            { k: "Control", v: "Human-in-the-loop" },
+          ].map((o) => (
+            <div key={o.k}>
+              <Kicker style={{ fontSize: 10, letterSpacing: "0.18em" }}>{o.k}</Kicker>
+              <div style={{ fontSize: 13, color: T.inkSoft, marginTop: 4 }}>{o.v}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ position: "absolute", top: 40, right: 40, opacity: 0.9 }}>
+          <ShenmaySeal size={90} paper={T.paperDeep} />
+        </div>
+      </aside>
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .shenmay-signup-aside { display: flex !important; }
+        }
+      `}</style>
+
+      {/* ── RIGHT form ────────────────────────────────────── */}
+      <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "52px 24px 64px", overflowY: "auto" }}>
+        <div style={{ width: "100%", maxWidth: 560 }}>
+          {/* mobile wordmark */}
+          <div className="shenmay-signup-mobile-mark" style={{ marginBottom: 32, display: "flex", justifyContent: "center" }}>
+            <ShenmayWordmark size={24} />
+          </div>
+          <style>{`@media (min-width: 1024px) { .shenmay-signup-mobile-mark { display: none !important; } }`}</style>
 
           {pendingEmail ? (
             <CheckEmailState email={pendingEmail} />
           ) : (
             <>
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Create your account</h1>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>Get your AI agent live in under 5 minutes — no credit card needed.</p>
-              </div>
+              <Kicker>Create your account</Kicker>
+              <Display size={36} italic style={{ marginTop: 14 }}>Get your agent live.</Display>
+              <Lede>Under five minutes. No credit card.</Lede>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left column */}
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(255,255,255,0.25)" }}>Your details</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="firstName" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>First name</label>
-                        <input id="firstName" type="text" required maxLength={100} value={form.firstName} onChange={set("firstName")} placeholder="Jane" className={inp} style={inpStyle} />
-                      </div>
-                      <div>
-                        <label htmlFor="lastName" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Last name</label>
-                        <input id="lastName" type="text" required maxLength={100} value={form.lastName} onChange={set("lastName")} placeholder="Smith" className={inp} style={inpStyle} />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Work email</label>
-                      <input id="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={set("email")} placeholder="jane@yourcompany.com" className={inp} style={inpStyle} />
-                    </div>
-                    <div>
-                      <label htmlFor="password" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Password</label>
-                      <input id="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={form.password} onChange={set("password")} placeholder="Min. 8 characters" className={inp} style={inpStyle} />
-                      {form.password.length > 0 && (
-                        <div className="mt-1.5 space-y-0.5">
-                          <div className="flex gap-1">
-                            {[25, 50, 75, 100].map((t) => (
-                              <div key={t} className="h-1 flex-1 rounded-full transition-all duration-300" style={{ backgroundColor: strength.pct >= t ? strength.color : "rgba(255,255,255,0.10)" }} />
-                            ))}
-                          </div>
-                          <p className="text-[11px] font-medium" style={{ color: strength.color }}>{strength.text}</p>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Confirm password</label>
-                      <input
-                        id="confirmPassword" type="password" autoComplete="new-password" required
-                        maxLength={128} value={form.confirmPassword} onChange={set("confirmPassword")}
-                        placeholder="Re-enter your password"
-                        className={inp + (passwordsMismatch ? " border-red-500/50 focus:ring-red-500/20 focus:border-red-500/50" : "")}
-                        style={inpStyle}
-                      />
-                      {passwordsMismatch && (
-                        <p className="text-[11px] mt-1 font-medium" style={{ color: "#F87171" }}>Passwords don't match</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right column */}
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: "rgba(255,255,255,0.25)" }}>Company info</p>
-                    <div>
-                      <label htmlFor="companyName" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Company name</label>
-                      <input
-                        id="companyName" type="text" required maxLength={200}
-                        value={form.companyName} onChange={set("companyName")}
-                        placeholder="Acme Financial"
-                        className={inp + (companyError ? " border-red-500/50 focus:ring-red-500/20 focus:border-red-500/50" : "")}
-                        style={inpStyle}
-                      />
-                      {companyError ? (
-                        <p className="text-[11px] mt-1 font-medium" style={{ color: "#F87171" }}>{companyError}</p>
-                      ) : (
-                        <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>Shown to customers in the chat widget.</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="vertical" className="block text-xs font-semibold mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>Industry</label>
-                      <select id="vertical" required value={form.vertical} onChange={set("vertical")} className={inp + " cursor-pointer"} style={inpStyle}>
-                        <option value="" disabled style={{ background: "#0F1A2E" }}>Select your industry…</option>
-                        {INDUSTRIES.map((v) => <option key={v.value} value={v.value} style={{ background: "#0F1A2E" }}>{v.label}</option>)}
-                      </select>
-                      <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>Tailors your agent's default tone.</p>
-                    </div>
+              <form onSubmit={handleSubmit} style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 20 }}>
+                {/* Your details */}
+                <div>
+                  <Kicker color={T.mute} style={{ fontSize: 10, letterSpacing: "0.18em", display: "block", marginBottom: 14 }}>Your details</Kicker>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <Field id="firstName" label="First name">
+                      <Input id="firstName" type="text" required maxLength={100} value={form.firstName} onChange={set("firstName")} placeholder="Jane" />
+                    </Field>
+                    <Field id="lastName" label="Last name">
+                      <Input id="lastName" type="text" required maxLength={100} value={form.lastName} onChange={set("lastName")} placeholder="Smith" />
+                    </Field>
                   </div>
                 </div>
 
-                {/* Consent checkboxes */}
-                <div className="space-y-2.5 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" checked={form.tosAccepted} onChange={(e) => setForm(f => ({ ...f, tosAccepted: e.target.checked }))} className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-[#C9A84C]" style={{ borderColor: "rgba(255,255,255,0.20)" }} />
-                    <span className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
-                      I agree to the{" "}
-                      <a href="/shenmay/terms" target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>Shenmay AI Terms of Service</a>{" "}
-                      (opens in new tab).
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" checked={form.dataRightsConfirmed} onChange={(e) => setForm(f => ({ ...f, dataRightsConfirmed: e.target.checked }))} className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-[#C9A84C]" style={{ borderColor: "rgba(255,255,255,0.20)" }} />
-                    <span className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
-                      I confirm that I have obtained the necessary rights and consents to upload my customers' personal data to Shenmay AI, and that my use complies with applicable privacy laws (GDPR, CCPA, etc.).
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" checked={form.newsletterOptIn} onChange={(e) => setForm(f => ({ ...f, newsletterOptIn: e.target.checked }))} className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-[#C9A84C]" style={{ borderColor: "rgba(255,255,255,0.20)" }} />
-                    <span className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.50)" }}>
-                      I'd like to receive product updates and occasional tips from Shenmay AI.
-                    </span>
-                  </label>
-                </div>
+                <Field id="email" label="Work email">
+                  <Input id="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={set("email")} placeholder="jane@yourcompany.com" />
+                </Field>
 
-                {error && (
-                  <div className="rounded-lg px-4 py-3 text-sm font-medium" style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 disabled:opacity-50 hover:shadow-lg hover:shadow-[#C9A84C]/20 flex items-center justify-center gap-2 group"
-                  style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
-                >
-                  {loading ? "Creating your account…" : (
-                    <>
-                      Create account & set up agent
-                      <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-                    </>
+                <Field id="password" label="Password">
+                  <Input id="password" type="password" autoComplete="new-password" required minLength={8} maxLength={128} value={form.password} onChange={set("password")} placeholder="Min. 8 characters" />
+                  {strength && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                        {[25, 50, 75, 100].map((p) => (
+                          <div key={p} style={{ flex: 1, height: 3, borderRadius: 2, background: strength.pct >= p ? strength.color : T.paperEdge, transition: "background 200ms ease" }} />
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 11, color: strength.color, fontFamily: T.mono, letterSpacing: "0.08em", textTransform: "uppercase" }}>{strength.text}</div>
+                    </div>
                   )}
-                </button>
+                </Field>
+
+                <Field id="confirmPassword" label="Confirm password">
+                  <Input id="confirmPassword" type="password" autoComplete="new-password" required maxLength={128} value={form.confirmPassword} onChange={set("confirmPassword")} placeholder="Re-enter your password" style={passwordsMismatch ? { borderColor: T.danger } : undefined} />
+                  {passwordsMismatch && <div style={{ fontSize: 11, color: T.danger, marginTop: 6, fontFamily: T.mono, letterSpacing: "0.08em", textTransform: "uppercase" }}>Passwords don't match</div>}
+                </Field>
+
+                {/* Company info */}
+                <div style={{ paddingTop: 12, borderTop: `1px solid ${T.paperEdge}`, marginTop: 8 }}>
+                  <Kicker color={T.mute} style={{ fontSize: 10, letterSpacing: "0.18em", display: "block", margin: "14px 0" }}>Company info</Kicker>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <Field id="companyName" label="Company" hint={companyError ? undefined : "Shown to customers in the chat widget."}>
+                      <Input id="companyName" type="text" required maxLength={200} value={form.companyName} onChange={set("companyName")} placeholder="Acme Financial" style={companyError ? { borderColor: T.danger } : undefined} />
+                      {companyError && <div style={{ fontSize: 12, color: T.danger, marginTop: 6 }}>{companyError}</div>}
+                    </Field>
+                    <Field id="vertical" label="Industry" hint="Tailors your agent's default tone.">
+                      <Select id="vertical" required value={form.vertical} onChange={set("vertical")}>
+                        <option value="" disabled>Select your industry…</option>
+                        {INDUSTRIES.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
+                      </Select>
+                    </Field>
+                  </div>
+                </div>
+
+                {/* Consent */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 16, borderTop: `1px solid ${T.paperEdge}` }}>
+                  {[
+                    { key: "tosAccepted", node: (
+                      <>I agree to the <a href="/shenmay/terms" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, borderBottom: `1px solid ${T.teal}40`, textDecoration: "none" }}>Shenmay AI Terms of Service</a> (opens in new tab).</>
+                    )},
+                    { key: "dataRightsConfirmed", node: <>I confirm that I have obtained the necessary rights and consents to upload my customers' personal data to Shenmay AI, and that my use complies with applicable privacy laws (GDPR, CCPA, etc.).</> },
+                    { key: "newsletterOptIn",   node: <>I'd like to receive occasional product updates from Shenmay AI.</> },
+                  ].map((c) => (
+                    <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontSize: 13, color: T.inkSoft, lineHeight: 1.5 }}>
+                      <input type="checkbox" checked={form[c.key]} onChange={(e) => setForm(f => ({ ...f, [c.key]: e.target.checked }))} style={{ marginTop: 3, accentColor: T.teal }} />
+                      <span>{c.node}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {error && <Notice tone="danger">{error}</Notice>}
+
+                <Button type="submit" variant="primary" size="lg" disabled={!canSubmit}>
+                  {loading ? "Creating your account…" : (<>Create account &nbsp;<ArrowRight size={16} /></>)}
+                </Button>
               </form>
 
-              <p className="text-center text-sm mt-6" style={{ color: "rgba(255,255,255,0.35)" }}>
-                Already have an account?{" "}
-                <Link to="/shenmay/login" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
+              <p style={{ textAlign: "center", fontSize: 14, color: T.mute, marginTop: 32 }}>
+                Already have an account?&nbsp;{" "}
+                <Link to="/shenmay/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
                   Sign in →
                 </Link>
               </p>
             </>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </PageShell>
   );
 };
 
