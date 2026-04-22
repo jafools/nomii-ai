@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCustomers } from "@/lib/shenmayApi";
 import { RefreshCw, AlertTriangle, Users, Search, X } from "lucide-react";
+import { TOKENS as T, Kicker, Display, Lede, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const PER_PAGE = 25;
 
 const statusPill = {
-  complete: { bg: "rgba(45,106,79,0.12)", color: "#2D6A4F", label: "Complete" },
-  in_progress: { bg: "rgba(245,158,11,0.12)", color: "#A6660E", label: "In Progress" },
-  pending: { bg: "#EDE7D7", color: "#6B6B64", label: "Pending" },
+  complete:    { color: T.success, label: "Complete" },
+  in_progress: { color: T.warning, label: "In progress" },
+  pending:     { color: T.mute,    label: "Pending" },
 };
 
 const idleText = (mins) => {
@@ -32,12 +33,11 @@ const ShenmayCustomers = () => {
   const intervalRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Debounce search input — wait 350ms after typing stops before fetching
   useEffect(() => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search.trim());
-      setPage(1); // reset to page 1 on new search
+      setPage(1);
     }, 350);
     return () => clearTimeout(debounceRef.current);
   }, [search]);
@@ -45,76 +45,65 @@ const ShenmayCustomers = () => {
   const fetchData = useCallback(async (bg = false) => {
     if (!bg) setLoading(true);
     setError(null);
-    try {
-      const res = await getCustomers(page, PER_PAGE, debouncedSearch);
-      setData(res);
-    } catch (e) {
-      if (!bg) setError(e.message);
-    } finally {
-      if (!bg) setLoading(false);
-    }
+    try { const res = await getCustomers(page, PER_PAGE, debouncedSearch); setData(res); }
+    catch (e) { if (!bg) setError(e.message); }
+    finally { if (!bg) setLoading(false); }
   }, [page, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
-    // Only auto-refresh when not searching (avoids flicker mid-search)
-    if (!debouncedSearch) {
-      intervalRef.current = setInterval(() => fetchData(true), 30000);
-    }
+    if (!debouncedSearch) intervalRef.current = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(intervalRef.current);
   }, [fetchData, debouncedSearch]);
 
   const customers = data?.customers || [];
   const total = data?.total || 0;
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  const filtered = customers; // server-side search now handles filtering
 
   if (error && customers.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(122,31,26,0.1)" }}>
-          <AlertTriangle size={24} style={{ color: "#7A1F1A" }} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "72px 0", textAlign: "center" }}>
+        <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <AlertTriangle size={24} color={T.danger} />
         </div>
-        <p className="text-sm text-[#6B6B64]">{error}</p>
-        <button onClick={() => fetchData()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-          <RefreshCw size={14} /> Retry
-        </button>
+        <Lede style={{ marginTop: 0 }}>{error}</Lede>
+        <Button variant="primary" onClick={() => fetchData()}><RefreshCw size={14} /> Retry</Button>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Header row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      {/* Header */}
+      <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20 }}>
         <div>
-          <h2 className="text-xl font-bold text-[#1A1D1A] mb-0.5">Customers</h2>
-          <p className="text-sm text-[#6B6B64]">
-            {total} total customer{total !== 1 ? "s" : ""}
-          </p>
+          <Kicker>Figure 01 · Who you know</Kicker>
+          <Display size={38} italic style={{ marginTop: 12 }}>Customers.</Display>
+          <Lede>
+            {total} total customer{total !== 1 ? "s" : ""}.
+          </Lede>
         </div>
 
         {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#6B6B64" }} />
+        <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
+          <Search size={14} color={T.mute} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
           <input
             type="text"
             placeholder="Search by name or email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 rounded-xl text-[13px] placeholder:text-[#6B6B64] focus:outline-none focus:ring-1"
             style={{
-              background: "#EDE7D7",
-              border: "1px solid #EDE7D7",
-              color: "#1A1D1A",
+              width: "100%", padding: "10px 36px 10px 38px",
+              fontFamily: T.sans, fontSize: 14, color: T.ink,
+              background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 6,
+              outline: "none", transition: "border-color 180ms",
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = T.ink; e.currentTarget.style.boxShadow = `0 0 0 3px ${T.teal}1F`; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = T.paperEdge; e.currentTarget.style.boxShadow = "none"; }}
           />
           {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
-            >
-              <X size={13} style={{ color: "#6B6B64" }} />
+            <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+              <X size={13} />
             </button>
           )}
         </div>
@@ -122,25 +111,26 @@ const ShenmayCustomers = () => {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-2xl p-6 animate-pulse" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-14 w-14 rounded-full" style={{ background: "#EDE7D7" }} />
-                <div className="h-3.5 w-28 rounded" style={{ background: "#EDE7D7" }} />
-                <div className="h-2.5 w-36 rounded" style={{ background: "#EDE7D7" }} />
+            <div key={i} style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 24, animation: "pulse 1.8s ease-in-out infinite" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 54, height: 54, borderRadius: "50%", background: T.paperDeep }} />
+                <div style={{ height: 14, width: 112, borderRadius: 3, background: T.paperEdge }} />
+                <div style={{ height: 12, width: 140, borderRadius: 3, background: T.paperEdge }} />
               </div>
             </div>
           ))}
+          <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }`}</style>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Users className="h-10 w-10 mb-3" style={{ color: "#EDE7D7" }} />
-          <p className="text-sm text-[#6B6B64]">{debouncedSearch ? `No customers matching "${debouncedSearch}"` : "No customers yet"}</p>
+      ) : customers.length === 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0", gap: 12 }}>
+          <Users size={32} color={T.paperEdge} />
+          <Lede style={{ marginTop: 0 }}>{debouncedSearch ? `No customers matching "${debouncedSearch}"` : "No customers yet."}</Lede>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((c) => {
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          {customers.map((c) => {
             const name = c.display_name || c.email || "Unknown";
             const initial = name[0]?.toUpperCase() || "?";
             const email = c.email || "";
@@ -151,51 +141,35 @@ const ShenmayCustomers = () => {
               <button
                 key={c.id}
                 onClick={() => navigate(`/shenmay/dashboard/customers/${c.id}`)}
-                className="rounded-2xl p-6 text-left transition-all duration-200 hover:scale-[1.01] group"
                 style={{
-                  background: "#EDE7D7",
-                  border: "1px solid #EDE7D7",
+                  background: "#FFFFFF",
+                  border: `1px solid ${T.paperEdge}`,
+                  borderRadius: 10,
+                  padding: 24,
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontFamily: T.sans,
+                  transition: "border-color 180ms, transform 180ms, background 180ms",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(15,95,92,0.06)";
-                  e.currentTarget.style.borderColor = "rgba(15,95,92,0.15)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#EDE7D7";
-                  e.currentTarget.style.borderColor = "#EDE7D7";
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.ink; e.currentTarget.style.background = T.paper; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.paperEdge; e.currentTarget.style.background = "#FFFFFF"; }}
               >
-                <div className="flex flex-col items-center text-center">
-                  {/* Avatar */}
-                  <div
-                    className="h-14 w-14 rounded-full flex items-center justify-center text-lg font-bold mb-3"
-                    style={{ background: "rgba(15,95,92,0.15)", color: "#0F5F5C" }}
-                  >
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                  <div style={{ width: 54, height: 54, borderRadius: "50%", background: `${T.teal}12`, color: T.teal, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 500, marginBottom: 14 }}>
                     {initial}
                   </div>
-
-                  {/* Name */}
-                  <p className="text-[14px] font-semibold text-[#1A1D1A] truncate max-w-full">{name}</p>
-
-                  {/* Email */}
+                  <div style={{ fontSize: 14, fontWeight: 500, color: T.ink, letterSpacing: "-0.005em", maxWidth: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {name}
+                  </div>
                   {email && email !== name && (
-                    <p className="text-[12px] text-[#6B6B64] truncate max-w-full mt-0.5">{email}</p>
+                    <div style={{ fontSize: 12, color: T.mute, marginTop: 2, maxWidth: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {email}
+                    </div>
                   )}
-
-                  {/* Status pill */}
-                  <span
-                    className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold mt-3"
-                    style={{ background: st.bg, color: st.color }}
-                  >
+                  <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 3, background: `${st.color}18`, color: st.color, marginTop: 14 }}>
                     {st.label}
                   </span>
-
-                  {/* Idle time */}
-                  {idle && (
-                    <p className="text-[11px] mt-2" style={{ color: "#6B6B64" }}>
-                      {idle}
-                    </p>
-                  )}
+                  {idle && <div style={{ fontSize: 11, color: T.mute, marginTop: 10 }}>{idle}</div>}
                 </div>
               </button>
             );
@@ -205,27 +179,13 @@ const ShenmayCustomers = () => {
 
       {/* Pagination */}
       {!loading && total > PER_PAGE && (
-        <div className="flex items-center justify-between mt-6">
-          <span className="text-[11px] text-[#6B6B64]">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 28 }}>
+          <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", color: T.mute, textTransform: "uppercase" }}>
             Page {page} of {totalPages}
           </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 rounded-lg text-[12px] font-medium disabled:opacity-30 transition-colors"
-              style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-lg text-[12px] font-medium disabled:opacity-30 transition-colors"
-              style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}
-            >
-              Next
-            </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+            <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
           </div>
         </div>
       )}

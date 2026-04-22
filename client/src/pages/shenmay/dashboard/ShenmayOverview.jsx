@@ -5,30 +5,40 @@ import { relativeTime, relativeDay } from "@/lib/format";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
 import ShenmayAnalyticsCharts from "./ShenmayAnalyticsCharts";
 import { MessageSquare, Users, AlertTriangle, RefreshCw, TrendingUp, ArrowUpRight, Mail, UserX, ChevronDown, ChevronUp, UserMinus } from "lucide-react";
-
-const cardStyle = {
-  background: "#EDE7D7",
-  border: "1px solid #EDE7D7",
-  backdropFilter: "blur(12px)",
-};
+import { TOKENS as T, Kicker, Display, Lede, Notice, Divider, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const SkeletonCard = () => (
-  <div className="rounded-2xl p-5 animate-pulse" style={cardStyle}>
-    <div className="h-4 w-20 rounded-lg mb-4" style={{ background: "#EDE7D7" }} />
-    <div className="h-8 w-14 rounded-lg" style={{ background: "#EDE7D7" }} />
+  <div style={{ background: T.paperDeep, border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 20, height: 96, animation: "pulse 1.8s ease-in-out infinite" }}>
+    <div style={{ height: 10, width: 80, borderRadius: 3, background: T.paperEdge, marginBottom: 14 }} />
+    <div style={{ height: 28, width: 56, borderRadius: 3, background: T.paperEdge }} />
+    <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }`}</style>
   </div>
 );
 
-const SkeletonTable = () => (
-  <div className="rounded-2xl p-5 animate-pulse space-y-3" style={cardStyle}>
+const SkeletonRow = () => (
+  <div style={{ background: T.paperDeep, border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 20, animation: "pulse 1.8s ease-in-out infinite" }}>
     {[...Array(5)].map((_, i) => (
-      <div key={i} className="flex gap-4">
-        <div className="h-4 w-32 rounded-lg" style={{ background: "#EDE7D7" }} />
-        <div className="h-4 flex-1 rounded-lg" style={{ background: "#EDE7D7" }} />
-        <div className="h-4 w-16 rounded-lg" style={{ background: "#EDE7D7" }} />
+      <div key={i} style={{ display: "flex", gap: 16, marginBottom: i === 4 ? 0 : 10 }}>
+        <div style={{ height: 14, width: 120, borderRadius: 3, background: T.paperEdge }} />
+        <div style={{ height: 14, flex: 1, borderRadius: 3, background: T.paperEdge }} />
+        <div style={{ height: 14, width: 56, borderRadius: 3, background: T.paperEdge }} />
       </div>
     ))}
   </div>
+);
+
+const SectionHeader = ({ kicker, title, action }) => (
+  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, padding: "20px 24px", borderBottom: `1px solid ${T.paperEdge}` }}>
+    <div>
+      <Kicker color={T.mute} style={{ display: "block", marginBottom: 4 }}>{kicker}</Kicker>
+      <h3 style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 17, letterSpacing: "-0.015em", color: T.ink, margin: 0 }}>{title}</h3>
+    </div>
+    {action}
+  </div>
+);
+
+const Card = ({ children, style }) => (
+  <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, overflow: "hidden", ...style }}>{children}</div>
 );
 
 const ShenmayOverview = () => {
@@ -40,7 +50,6 @@ const ShenmayOverview = () => {
   const [subUsage, setSubUsage] = useState(null);
   const intervalRef = useRef(null);
 
-  // Anonymous visitors
   const [visitors, setVisitors] = useState([]);
   const [visitorsOpen, setVisitorsOpen] = useState(false);
   const [visitorsLoading, setVisitorsLoading] = useState(false);
@@ -65,75 +74,21 @@ const ShenmayOverview = () => {
     return () => clearInterval(intervalRef.current);
   }, [fetchData]);
 
-  // Fetch visitors when section is opened
   useEffect(() => {
     if (!visitorsOpen) return;
     setVisitorsLoading(true);
-    getVisitors()
-      .then((res) => setVisitors(res.visitors || res || []))
-      .catch(() => {})
-      .finally(() => setVisitorsLoading(false));
+    getVisitors().then((res) => setVisitors(res.visitors || res || [])).catch(() => {}).finally(() => setVisitorsLoading(false));
   }, [visitorsOpen]);
 
   const s = data?.stats || {};
 
   const stats = [
-    {
-      label: "Total Conversations",
-      value: s.total_conversations ?? 0,
-      icon: MessageSquare,
-      gradient: "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%)",
-      iconColor: "#60A5FA",
-      borderColor: "rgba(59,130,246,0.15)",
-      link: "/shenmay/dashboard/conversations",
-    },
-    {
-      label: "Customers (30 days)",
-      value: s.active_customers_30d ?? 0,
-      icon: TrendingUp,
-      gradient: "linear-gradient(135deg, rgba(45,106,79,0.15) 0%, rgba(45,106,79,0.05) 100%)",
-      iconColor: "#2D6A4F",
-      borderColor: "rgba(45,106,79,0.15)",
-      link: "/shenmay/dashboard/customers",
-    },
-    {
-      label: "Total Customers",
-      value: s.total_customers ?? 0,
-      icon: Users,
-      gradient: "linear-gradient(135deg, rgba(15,95,92,0.15) 0%, rgba(15,95,92,0.05) 100%)",
-      iconColor: "#0F5F5C",
-      borderColor: "rgba(15,95,92,0.15)",
-      link: "/shenmay/dashboard/customers",
-    },
-    {
-      label: "Anonymous Visitors",
-      value: s.anonymous_visitors ?? 0,
-      icon: UserX,
-      gradient: "linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%)",
-      iconColor: "#C084FC",
-      borderColor: "rgba(168,85,247,0.15)",
-      link: null,
-    },
-    {
-      label: "Total Messages",
-      value: s.total_messages ?? 0,
-      icon: Mail,
-      gradient: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(139,92,246,0.05) 100%)",
-      iconColor: "#A78BFA",
-      borderColor: "rgba(139,92,246,0.15)",
-      link: "/shenmay/dashboard/conversations",
-    },
-    {
-      label: "Open Concerns",
-      value: s.open_concerns ?? 0,
-      icon: AlertTriangle,
-      gradient: (s.open_concerns ?? 0) > 0
-        ? "linear-gradient(135deg, rgba(122,31,26,0.15) 0%, rgba(122,31,26,0.05) 100%)"
-        : "linear-gradient(135deg, #EDE7D7 0%, #EDE7D7 100%)",
-      iconColor: (s.open_concerns ?? 0) > 0 ? "#7A1F1A" : "#6B6B64",
-      borderColor: (s.open_concerns ?? 0) > 0 ? "rgba(122,31,26,0.15)" : "#EDE7D7",
-      link: "/shenmay/dashboard/concerns",
-    },
+    { label: "Conversations",        value: s.total_conversations ?? 0,    icon: MessageSquare, link: "/shenmay/dashboard/conversations" },
+    { label: "Customers · 30 days",  value: s.active_customers_30d ?? 0,   icon: TrendingUp,    link: "/shenmay/dashboard/customers" },
+    { label: "Total customers",      value: s.total_customers ?? 0,        icon: Users,         link: "/shenmay/dashboard/customers" },
+    { label: "Anonymous visitors",   value: s.anonymous_visitors ?? 0,     icon: UserX,         link: null },
+    { label: "Total messages",       value: s.total_messages ?? 0,         icon: Mail,          link: "/shenmay/dashboard/conversations" },
+    { label: "Open concerns",        value: s.open_concerns ?? 0,          icon: AlertTriangle, link: "/shenmay/dashboard/concerns", emphasis: (s.open_concerns ?? 0) > 0 },
   ];
 
   const conversations = (data?.recent_conversations ?? []).slice(0, 10);
@@ -141,256 +96,264 @@ const ShenmayOverview = () => {
   if (loading) {
     return (
       <div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div style={{ marginBottom: 40 }}>
+          <Kicker>Today at a glance</Kicker>
+          <Display size={40} italic style={{ marginTop: 10 }}>Loading your dashboard…</Display>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 32 }}>
           {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
-        <SkeletonTable />
+        <SkeletonRow />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(122,31,26,0.1)" }}>
-          <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "96px 0", textAlign: "center", gap: 16 }}>
+        <div style={{ width: 58, height: 58, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <AlertTriangle size={26} color={T.danger} />
         </div>
-        <p className="text-[#1A1D1A] font-medium mb-1">Something went wrong</p>
-        <p className="text-sm text-[#6B6B64] mb-5 max-w-sm">{error}</p>
-        <button
-          onClick={() => fetchData()}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
-        >
-          <RefreshCw className="h-4 w-4" /> Try again
-        </button>
+        <Kicker color={T.danger}>Something went wrong</Kicker>
+        <Display size={28} italic>We couldn't load your dashboard.</Display>
+        <Lede style={{ marginTop: 0, maxWidth: 420 }}>{error}</Lede>
+        <Button variant="primary" onClick={() => fetchData()}><RefreshCw size={14} /> Try again</Button>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Welcome */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
-          Welcome back{shenmayUser?.first_name ? (
-            <span style={{ color: "#0F5F5C" }}>{`, ${shenmayUser.first_name}`}</span>
-          ) : ""}
-        </h2>
-        <p className="text-sm" style={{ color: "#6B6B64" }}>Here's what's happening with your AI agent.</p>
+      {/* ── Page header ───────────────────────────────────── */}
+      <div style={{ marginBottom: 36 }}>
+        <Kicker>Today at a glance</Kicker>
+        <Display size={40} italic style={{ marginTop: 12 }}>
+          {shenmayUser?.first_name ? <>Welcome back, {shenmayUser.first_name}.</> : <>Welcome back.</>}
+        </Display>
+        <Lede>Here's what's happening with your agent.</Lede>
       </div>
 
-      {/* Widget warning */}
+      {/* ── Alerts ────────────────────────────────────────── */}
       {shenmayTenant && !shenmayTenant.widget_verified && (
-        <div className="rounded-2xl px-5 py-4 mb-6 flex items-center justify-between" style={{ background: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.15)" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(15,95,92,0.15)" }}>
-              <AlertTriangle size={16} style={{ color: "#0F5F5C" }} />
+        <div style={{ marginBottom: 20 }}>
+          <Notice tone="teal" icon={AlertTriangle} style={{ paddingRight: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
+              <div><strong style={{ color: T.ink }}>Your widget hasn't been detected yet.</strong>{" "}Finish onboarding to activate your agent.</div>
+              <Link to="/shenmay/onboarding" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.teal, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.teal}40` }}>
+                Complete setup <ArrowUpRight size={13} />
+              </Link>
             </div>
-            <p className="text-sm font-medium" style={{ color: "#0F5F5C" }}>
-              Your widget hasn't been detected yet
-            </p>
-          </div>
-          <Link
-            to="/shenmay/onboarding"
-            className="text-sm font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
-            style={{ color: "#0F5F5C" }}
-          >
-            Complete setup <ArrowUpRight size={14} />
-          </Link>
+          </Notice>
         </div>
       )}
 
-      {/* Blocked customer notification */}
       {subUsage?.customer_limit_reached && (
-        <div className="rounded-2xl px-5 py-4 mb-6 flex items-center justify-between" style={{ background: "rgba(122,31,26,0.07)", border: "1px solid rgba(122,31,26,0.15)" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(122,31,26,0.12)" }}>
-              <UserMinus size={16} style={{ color: "#7A1F1A" }} />
+        <div style={{ marginBottom: 20 }}>
+          <Notice tone="danger" icon={UserMinus} style={{ paddingRight: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
+              <div>New visitors couldn't connect — your customer limit ({subUsage.customers_limit}) has been reached.</div>
+              <Link to="/shenmay/dashboard/plans" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.danger, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.danger}40` }}>
+                Upgrade plan <ArrowUpRight size={13} />
+              </Link>
             </div>
-            <p className="text-sm font-medium" style={{ color: "#7A1F1A" }}>
-              New visitors couldn't connect — your customer limit ({subUsage.customers_limit}) has been reached.
-            </p>
-          </div>
-          <Link to="/shenmay/dashboard/plans" className="text-sm font-semibold flex items-center gap-1 whitespace-nowrap hover:opacity-80 transition-opacity ml-4 shrink-0" style={{ color: "#7A1F1A" }}>
-            Upgrade plan <ArrowUpRight size={14} />
-          </Link>
+          </Notice>
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      {/* ── Stats grid ────────────────────────────────────── */}
+      <Kicker color={T.mute} style={{ display: "block", margin: "0 0 14px" }}>Figure 01 · Signals</Kicker>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 40 }}>
         {stats.map((st) => {
           const Icon = st.icon;
-          const CardEl = st.link ? Link : "div";
+          const Wrap = st.link ? Link : "div";
+          const wrapProps = st.link ? { to: st.link } : {};
+          const emphasis = st.emphasis;
           return (
-            <CardEl
+            <Wrap
               key={st.label}
-              to={st.link || undefined}
-              className={`rounded-2xl p-5 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg${st.link ? " cursor-pointer" : ""}`}
-              style={{ background: st.gradient, border: `1px solid ${st.borderColor}`, boxShadow: "0 2px 12px rgba(0,0,0,0.20)" }}
+              {...wrapProps}
+              style={{
+                background: "#FFFFFF",
+                border: emphasis ? `1px solid ${T.danger}40` : `1px solid ${T.paperEdge}`,
+                borderRadius: 10,
+                padding: "18px 20px",
+                cursor: st.link ? "pointer" : "default",
+                textDecoration: "none",
+                transition: "border-color 180ms, transform 180ms",
+                display: "block",
+              }}
+              onMouseEnter={st.link ? (e) => { e.currentTarget.style.borderColor = T.ink; } : undefined}
+              onMouseLeave={st.link ? (e) => { e.currentTarget.style.borderColor = emphasis ? `${T.danger}40` : T.paperEdge; } : undefined}
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#6B6B64" }}>{st.label}</span>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${st.iconColor}18` }}>
-                  <Icon className="h-4 w-4" style={{ color: st.iconColor }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <Kicker color={emphasis ? T.danger : T.mute}>{st.label}</Kicker>
+                <div style={{ width: 26, height: 26, borderRadius: 6, background: emphasis ? `${T.danger}12` : `${T.teal}10`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={13} color={emphasis ? T.danger : T.teal} />
                 </div>
               </div>
-              <div className="flex items-end justify-between">
-                <p className="text-3xl font-bold tabular-nums" style={{ color: "#1A1D1A" }}>{st.value}</p>
-                {st.link && <ArrowUpRight className="h-3.5 w-3.5 mb-1" style={{ color: "#D8D0BD" }} />}
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+                <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 32, letterSpacing: "-0.025em", color: T.ink, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                  {st.value.toLocaleString()}
+                </span>
+                {st.link && <ArrowUpRight size={14} color={T.mute} style={{ marginBottom: 2 }} />}
               </div>
-            </CardEl>
+            </Wrap>
           );
         })}
       </div>
 
-      {/* Analytics charts */}
+      {/* ── Analytics (unchanged, own component) ──────────── */}
       <ShenmayAnalyticsCharts />
 
-      {/* Recent Conversations */}
-      <div className="rounded-2xl overflow-hidden mt-8 mb-6" style={cardStyle}>
-        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #EDE7D7" }}>
-          <h2 className="text-sm font-semibold text-[#3A3D39]">Recent Conversations</h2>
-          {conversations.length > 0 && (
-            <Link
-              to="/shenmay/dashboard/conversations"
-              className="text-xs font-medium flex items-center gap-1 transition-opacity hover:opacity-80"
-              style={{ color: "#0F5F5C" }}
-            >
-              View all <ArrowUpRight size={12} />
-            </Link>
-          )}
-        </div>
+      {/* ── Recent conversations ──────────────────────────── */}
+      <div style={{ marginTop: 40, marginBottom: 20 }}>
+        <Card>
+          <SectionHeader
+            kicker="Figure 02 · Last seen"
+            title="Recent conversations"
+            action={conversations.length > 0 && (
+              <Link to="/shenmay/dashboard/conversations" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 500, color: T.teal, textDecoration: "none", fontFamily: T.mono, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${T.teal}40`, paddingBottom: 1 }}>
+                View all <ArrowUpRight size={12} />
+              </Link>
+            )}
+          />
 
-        {conversations.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <MessageSquare className="h-8 w-8 mx-auto mb-3" style={{ color: "#D8D0BD" }} />
-            <p className="text-sm text-[#6B6B64]">No conversations yet</p>
-            <p className="text-xs text-[#D8D0BD] mt-1">They'll appear here once customers start chatting</p>
-          </div>
-        ) : (
-          <div>
-            {conversations.map((c, i) => {
+          {conversations.length === 0 ? (
+            <div style={{ padding: "72px 24px", textAlign: "center" }}>
+              <MessageSquare size={28} color={T.paperEdge} style={{ margin: "0 auto 12px", display: "block" }} />
+              <p style={{ fontSize: 14, color: T.inkSoft, margin: 0 }}>No conversations yet.</p>
+              <p style={{ fontSize: 12, color: T.mute, margin: "6px 0 0" }}>They'll appear here once customers start chatting.</p>
+            </div>
+          ) : (
+            conversations.map((c, i) => {
               const id = c._id || c.id;
-              const name = c.is_anonymous ? "Anonymous Visitor" : (c.customer_display_name || c.email || "Unknown");
+              const name = c.is_anonymous ? "Anonymous visitor" : (c.customer_display_name || c.email || "Unknown");
               const msg = c.last_message || "";
               const time = c.last_message_at || "";
-              const statusColor = c.status === "active" ? "#2D6A4F" : c.status === "closed" ? "#6B6B64" : "#0F5F5C";
+              const statusColor = c.status === "active" ? T.success : c.status === "closed" ? T.mute : T.teal;
               return (
                 <div
                   key={id}
                   onClick={() => navigate(`/shenmay/dashboard/conversations/${id}`)}
-                  className="flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-all duration-150 hover:bg-[#F5F1E8]"
-                  style={i < conversations.length - 1 ? { borderBottom: "1px solid #EDE7D7" } : {}}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 24px",
+                    cursor: "pointer",
+                    borderBottom: i < conversations.length - 1 ? `1px solid ${T.paperEdge}` : "none",
+                    transition: "background 150ms ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = T.paper)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                    style={
-                      c.is_anonymous
-                        ? { background: "rgba(168,85,247,0.12)", color: "#C084FC" }
-                        : { background: "#EDE7D7", color: "#6B6B64" }
-                    }
-                  >
-                    {c.is_anonymous ? <UserX className="h-3.5 w-3.5" /> : (name[0]?.toUpperCase() || "?")}
+                  <div style={{
+                    width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                    background: c.is_anonymous ? `${T.tealLight}33` : T.paperDeep,
+                    color: c.is_anonymous ? T.teal : T.ink,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 500,
+                  }}>
+                    {c.is_anonymous ? <UserX size={13} /> : (name[0]?.toUpperCase() || "?")}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-medium text-[#3A3D39]">{name}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: T.ink, letterSpacing: "-0.005em" }}>{name}</span>
                       {c.is_anonymous && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(168,85,247,0.12)", color: "#C084FC" }}>
-                          anonymous
-                        </span>
+                        <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, background: `${T.tealLight}33`, color: T.teal }}>Anonymous</span>
                       )}
                       {c.status && !c.is_anonymous && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${statusColor}15`, color: statusColor }}>
-                          {c.status}
-                        </span>
+                        <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, background: `${statusColor}15`, color: statusColor }}>{c.status}</span>
                       )}
                       {c.message_count != null && (
-                        <span className="text-[10px] text-[#6B6B64]">{c.message_count} msgs</span>
+                        <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: T.mute }}>{c.message_count} msgs</span>
                       )}
                     </div>
-                    <p className="text-xs text-[#6B6B64] truncate">{msg.length > 60 ? msg.slice(0, 60) + "…" : msg}</p>
+                    <p style={{ fontSize: 12, color: T.mute, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {msg.length > 60 ? msg.slice(0, 60) + "…" : msg}
+                    </p>
                   </div>
-                  <span className="text-[11px] text-[#6B6B64] whitespace-nowrap shrink-0">{relativeTime(time)}</span>
+                  <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.08em", color: T.mute, whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {relativeTime(time)}
+                  </span>
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </Card>
       </div>
 
-      {/* Anonymous Visitors — collapsible */}
-      <div className="rounded-2xl overflow-hidden" style={cardStyle}>
+      {/* ── Anonymous sessions (collapsible) ──────────────── */}
+      <Card>
         <button
           onClick={() => setVisitorsOpen((v) => !v)}
-          className="w-full px-6 py-4 flex items-center justify-between text-left transition-colors hover:bg-white/[0.01]"
+          style={{
+            width: "100%", padding: "16px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", textAlign: "left",
+            background: "transparent", border: "none", cursor: "pointer", fontFamily: T.sans,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = T.paper)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          <div className="flex items-center gap-3">
-            <UserX className="h-4 w-4" style={{ color: "#C084FC" }} />
-            <span className="text-sm font-semibold text-[#3A3D39]">Anonymous Sessions</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <UserX size={14} color={T.teal} />
+            <Kicker color={T.mute}>Anonymous sessions</Kicker>
             {(s.anonymous_visitors ?? 0) > 0 && (
-              <span
-                className="text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5"
-                style={{ background: "rgba(168,85,247,0.15)", color: "#C084FC" }}
-              >
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, padding: "2px 6px", borderRadius: 3, background: `${T.teal}15`, color: T.teal, letterSpacing: "0.02em" }}>
                 {s.anonymous_visitors}
               </span>
             )}
           </div>
-          {visitorsOpen ? (
-            <ChevronUp className="h-4 w-4" style={{ color: "#6B6B64" }} />
-          ) : (
-            <ChevronDown className="h-4 w-4" style={{ color: "#6B6B64" }} />
-          )}
+          {visitorsOpen ? <ChevronUp size={15} color={T.mute} /> : <ChevronDown size={15} color={T.mute} />}
         </button>
 
         {visitorsOpen && (
-          <div style={{ borderTop: "1px solid #EDE7D7" }}>
+          <div style={{ borderTop: `1px solid ${T.paperEdge}` }}>
             {visitorsLoading ? (
-              <div className="p-6 space-y-3 animate-pulse">
+              <div style={{ padding: 24, animation: "pulse 1.8s ease-in-out infinite" }}>
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="h-4 w-28 rounded" style={{ background: "#EDE7D7" }} />
-                    <div className="h-4 flex-1 rounded" style={{ background: "#EDE7D7" }} />
-                    <div className="h-4 w-16 rounded" style={{ background: "#EDE7D7" }} />
+                  <div key={i} style={{ display: "flex", gap: 16, marginBottom: 10 }}>
+                    <div style={{ height: 14, width: 112, borderRadius: 3, background: T.paperEdge }} />
+                    <div style={{ height: 14, flex: 1, borderRadius: 3, background: T.paperEdge }} />
+                    <div style={{ height: 14, width: 56, borderRadius: 3, background: T.paperEdge }} />
                   </div>
                 ))}
               </div>
             ) : visitors.length === 0 ? (
-              <div className="px-6 py-10 text-center">
-                <p className="text-xs text-[#6B6B64]">No anonymous sessions recorded</p>
+              <div style={{ padding: "36px 24px", textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: T.mute, margin: 0 }}>No anonymous sessions recorded.</p>
               </div>
             ) : (
               <>
-                {/* Header */}
-                <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 px-6 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#D8D0BD]">
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, padding: "12px 24px", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mute, borderBottom: `1px solid ${T.paperEdge}` }}>
                   <span>Visitor</span>
                   <span>Session</span>
-                  <span className="text-right">Messages</span>
+                  <span style={{ textAlign: "right" }}>Messages</span>
                 </div>
                 {visitors.map((v, i) => (
                   <div
                     key={v._id || v.id || i}
-                    className="grid grid-cols-[2fr_1fr_1fr] gap-4 items-center px-6 py-3 transition-colors hover:bg-white/[0.01]"
-                    style={i < visitors.length - 1 ? { borderBottom: "1px solid #EDE7D7" } : {}}
+                    style={{
+                      display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, alignItems: "center",
+                      padding: "10px 24px",
+                      borderBottom: i < visitors.length - 1 ? `1px solid ${T.paperEdge}` : "none",
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(168,85,247,0.1)" }}>
-                        <UserX className="h-3 w-3" style={{ color: "#C084FC" }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: `${T.tealLight}33`, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <UserX size={11} color={T.teal} />
                       </div>
-                      <span className="text-[13px] text-[#6B6B64]">Anonymous Visitor</span>
+                      <span style={{ fontSize: 13, color: T.inkSoft }}>Anonymous visitor</span>
                     </div>
-                    <span className="text-[12px] text-[#6B6B64]">{relativeDay(v.last_interaction_at)}</span>
-                    <span className="text-[12px] text-[#6B6B64] text-right tabular-nums">{v.message_count ?? 0}</span>
+                    <span style={{ fontSize: 12, color: T.mute }}>{relativeDay(v.last_interaction_at)}</span>
+                    <span style={{ fontSize: 12, color: T.inkSoft, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{v.message_count ?? 0}</span>
                   </div>
                 ))}
               </>
             )}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
