@@ -5,7 +5,174 @@
 
 ---
 
-## Last updated: 2026-04-21 afternoon (v2.1.0 live — `shenmay.ai` canonical, Full (Strict) SSL, marketing redesign shipped)
+## Last updated: 2026-04-22 late-evening (**v2.3.0 LIVE** — Phase 4 URL canon + Direction B visual port deployed to Hetzner)
+
+Single huge session that landed both the Phase 4 migration and the full SaaS-app visual rebrand to match the Direction B marketing design. Merged, tagged, and deployed.
+
+### What shipped
+
+| PR | Commit | Title |
+|---|---|---|
+| [#42](https://github.com/jafools/nomii-ai/pull/42) | `408ef1e` | `feat(shenmay): Phase 4 — /shenmay/* route canon + SHENMAY_* env shim` |
+| [#43](https://github.com/jafools/nomii-ai/pull/43) | `a1d400a` | `feat(shenmay): Direction B design system — tokens + Login reference page` (7 squashed commits, ~3.5k LOC changed) |
+
+Tag: `v2.3.0` → GHCR rebuilt `:2.3.0` / `:stable` / `:latest` → Hetzner deployed via `IMAGE_TAG=2.3.0 docker compose pull … up -d`.
+
+### Production state at session end
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (200) |
+| Hetzner image | `ghcr.io/jafools/nomii-{backend,frontend}:2.3.0` |
+| Git HEAD on Hetzner | `v2.3.0` (`a1d400a`) |
+| `/shenmay/login` | 200 — new canonical |
+| `/nomii/login` | 200 — client-side redirect to `/shenmay/login` (backward-compat) |
+| `/api/health` | 200 |
+
+### Phase 4 — what landed
+
+- **Client routing:** canonical `/shenmay/*`, single backward-compat catch-all `<Route path="/nomii/*" element={<NomiiToShenmayRedirect />}/>` that rewrites deep path + query + hash
+- **Server env shim:** `server/src/utils/env.js` with `envVar(suffix, fallback)` — `SHENMAY_<SUFFIX>` primary, `NOMII_<SUFFIX>` fallback + one-time deprecation warn. All 10 `process.env.NOMII_*` refs across 5 files migrated
+- **Magic-link URLs:** flipped `/nomii/*` → `/shenmay/*` in `emailService` (6 templates), `licenseService`, `notificationService`, `license-checkout`, `portal`, `setup`, `seedSelfHostedTenant`
+- **Default fallback URLs:** `nomii.pontensolutions.com` → `shenmay.ai` in 4 files; `middleware/security.js` keeps the legacy origin in `ALLOWED_ORIGINS` intentionally until Phase 8 sunset
+- **Docker compose:** both `SHENMAY_*` + `NOMII_*` env vars exposed in `docker-compose.yml` + `docker-compose.selfhosted.yml`; `.env.example` updated with a documented SHENMAY section
+- **Preserved on purpose:** `pontensolutions.com/nomii/license` external refs, Stripe product names (Austin UI task), Phase 5–7 identifiers (`X-Nomii-Signature`, `nomii_da_*`, container names, DB, filenames)
+
+### Direction B visual port — what landed
+
+**Tokens + primitives:**
+- `client/src/styles/shenmay-tokens.css` — palette (ink `#1A1D1A` / paper `#F5F1E8` / teal `#0F5F5C` / mute / paper-deep / paper-edge), type scale (tight display tracking -0.045em, mono kickers 0.16em), surfaces (6px buttons/inputs, 12px cards, soft paper-edge borders)
+- `client/src/components/shenmay/ui/ShenmayUI.jsx` — Kicker, Display, Lede, Field, Input, Select, Textarea, Button (primary/teal/ghost/linky/danger), Card, Notice (teal/success/warning/danger), Divider, PageShell
+- `client/src/components/shenmay/ShenmayWordmark.tsx` — split "Shen · may AI" wordmark ported pixel-identical from the marketing handoff
+- `client/src/components/shenmay/ShenmaySeal.tsx` — circular editorial stamp ("SHENMAY AI · KÄNN MIG · KNOW ME")
+- New favicon at `client/public/favicon.svg` (S·m monogram)
+
+**Auth pages (7 surfaces — full rewrites):**
+- Login: two-column with wordmark + seal + italic pull quote "An agent that remembers. / One customer at a time." + Soul/Memory/Control rhythm strip
+- Signup: two-column with 2-col form grid, 4-bar mono password-strength meter, consent-checkbox trio; CheckEmail state polished
+- VerifyEmail: centered paper with 4 states (loading / no-token / success / error)
+- ResetPassword: two-column with Figure 02 "Choose a strong password." panel
+- AcceptInvite: single-column featured card
+- LicenseSuccess: ink install-command block + copy button + two-case next-steps
+- Terms: editorial long-form, mono section numbers, italic "contract between us." heading
+
+**Wizard shells:**
+- Onboarding: paper sidebar with progress bar, step rail, user pill, mobile overlay, completion screen
+- Setup (self-hosted first-boot): three-step editorial panel + stepped form
+
+**Dashboard layout rewrite:**
+- Paper-deep sidebar with ShenmayWordmark header, tenant pill (ink avatar + teal plan chip + usage meters with kicker labels), editorial nav with inset teal accent on active row, mono-uppercase badge chips
+- Sticky blurred header, bell panel with kicker notifications, mobile menu
+- Ink trial-limit banner
+
+**12 dashboard pages polished:**
+- Full rewrites: Overview, Plans, Concerns, Profile, Team, Customers
+- Header + chat-bubble + chrome rewrites: Conversations, ConversationDetail, CustomerDetail
+- Kicker-header polish: Tools, Settings, AnalyticsCharts
+
+**6 onboarding step components:**
+- StepApiKey: full Direction B rewrite
+- Step1-4 + StepTools: kicker + italic display heading
+
+**Other:**
+- All dashboard page interiors + onboarding step internals tonally palette-flipped via sed pass (hex + rgba + tailwind tokens) before structural polish — no more dark-theme leftovers
+
+### Deploy
+
+```
+git tag v2.3.0 → push → GHCR build (~6 min) →
+ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v2.3.0 &&
+  IMAGE_TAG=2.3.0 docker compose pull backend frontend &&
+  IMAGE_TAG=2.3.0 docker compose up -d backend frontend"
+```
+
+All verified live.
+
+### Austin's next-session priorities (queued)
+
+1. **Stripe product-name rebrand in Stripe dashboard** — still Austin-only UI task
+2. **GH PAT revocation** (deferred since Apr 21)
+3. **E2E Playwright under shenmay.ai domain** — suite likely still hardcodes `nomii.pontensolutions.com`
+4. **Phase 5** — backend identifier rename: `X-Nomii-Signature` dual-emit, `nomii_da_*` API key prefix, `nomii_portal_token` localStorage, `@visitor.nomii` anon domain, `[nomii_widget]` WP shortcode, `nomii-wordpress-plugin.zip` → `shenmay-wordpress-plugin.zip`. Customer comms email required BEFORE merge. Plan: `docs/SHENMAY_MIGRATION_PLAN.md`
+5. **Phase 6** — Docker / GHCR / compose rename (coordinated with on-prem customers)
+6. **`package-lock.json` sync commit on ponten-solutions** — stashed during PR #3, still to pop
+
+### Still open from earlier sessions (unchanged)
+
+- Live stranger walkthrough — SaaS signup
+- Live stranger walkthrough — self-hosted install on a fresh VM
+- UptimeRobot signup (closes audit #14)
+- Off-host backup destination (Hetzner Storage Box)
+- Published docs site at `docs.pontensolutions.com`
+
+Full vault writeup: `[[projects/nomii/shenmay-phase4-and-direction-b-port-apr22-2026]]`.
+
+---
+
+## 2026-04-22 evening (marketing Direction B redesign + Nomii-string cleanup on ponten-solutions — nomii-ai code unchanged)
+
+**Today's session was 100% on the `ponten-solutions` marketing repo** (the Lovable-managed sibling). No changes to the `nomii-ai` repo, no backend changes, no Hetzner touches, no staging refresh required. Production nomii-ai / shenmay.ai SaaS is still on `v2.1.0` (`bad9986`) — unchanged.
+
+### What shipped (ponten-solutions)
+
+| PR | Commit | Title |
+|---|---|---|
+| [#3](https://github.com/jafools/ponten-solutions/pull/3) | `34552a8` | **Closed unmerged** — hero-only swap, superseded by #4 once we saw the full Direction B design in claude.ai/design |
+| [#4](https://github.com/jafools/ponten-solutions/pull/4) | `19fbe4a` | `feat(shenmay): full Direction B editorial redesign of product page` — all 6 chapters, +1188/−485 |
+| [#5](https://github.com/jafools/ponten-solutions/pull/5) | `aca4eae` | `fix(shenmay): rename visible Nomii strings on rest-of-site pages` — Products/Index/About/Contact/Footer, +10/−10 |
+| [#6](https://github.com/jafools/ponten-solutions/pull/6) | `f07d386` | `fix(shenmay): rebrand remaining visible Nomii text on /buy, portal, widget` — widget persona renamed "Nomii" → "Shenmay", +15/−15 |
+
+3 Lovable Publishes. Final bundle-hash verify on `https://pontensolutions.com/products/nomii-ai` (bundle `/assets/index-DY7BofG8.js`): `NomiiAI: 0`, `Shenmay AI: 6`, `Powered by NomiiAI: 0`.
+
+Full vault writeup: `[[projects/nomii/shenmay-marketing-direction-b-apr22-2026]]`.
+
+### What's on Nomii by design (still preserved, Phase 4 renames)
+
+Unchanged from Apr 21 + today:
+- `/nomii/*` URL routes (dashboard + signup + license)
+- `/products/nomii-ai` route URL on ponten-solutions (marketing)
+- `NomiiAI.tsx`, `NomiiChatWidget.tsx`, `NomiiDashboardLayout.jsx`, `NomiiAuthContext.jsx` etc. filenames + component names
+- `X-Nomii-Signature` webhook HMAC header
+- `nomii-db` / `nomii-backend` / `nomii-frontend` container names
+- `nomii_ai` Postgres DB + `nomii` user
+- `NOMII_*` env vars (Phase 4 shim, Phase 8 remove)
+- `nomii_da_` API key prefix
+- `@visitor.nomii` anon email domain
+- `nomii-wordpress-plugin.zip` download URL
+- `ghcr.io/jafools/nomii-*` image names
+- `nomiiai-icon.svg` + `nomiiai-full-dark.svg` assets on disk (imports now point at `shenmay-*` equivalents, but old files stay for Phase 4 removal)
+- Cloudflare tunnel `knomi-ai` (shared with Lateris, untouchable)
+
+### Production state (unchanged today)
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (200) |
+| Legacy SaaS URL | https://nomii.pontensolutions.com (selective 301) |
+| Hetzner image | `ghcr.io/jafools/nomii-{backend,frontend}:2.1.0` (`:stable` alias) |
+| Git HEAD on Hetzner | `v2.1.0` (`bad9986`) |
+| Marketing site | `pontensolutions.com` — now on bundle `index-DY7BofG8.js` (Direction B + zero NomiiAI) |
+
+### Austin's next-session priorities (continuing)
+
+1. **Phase 4 of Shenmay migration** — URL route renames `/products/nomii-ai` → `/products/shenmay-ai` + `/nomii/*` → `/shenmay/*` (dual-mount), `NomiiAI.tsx` → `ShenmayAI.tsx`, env var shims (`SHENMAY_*` preferred, `NOMII_*` deprecated fallback), Stripe return URL + email template updates. ~3 days per `docs/SHENMAY_MIGRATION_PLAN.md`
+2. **GH PAT revocation** (deferred since Apr 21)
+3. **E2E test pass under shenmay.ai domain** — Playwright suite likely still hardcodes `nomii.pontensolutions.com`
+4. **Stripe product-name rebrand in Stripe dashboard** — flagged Apr 20/21, still TODO
+5. **`package-lock.json` sync commit on ponten-solutions** — stashed locally during PR #3 to keep that diff clean; Austin can pop the stash and commit separately (`cd ~/Documents/Work/ponten-solutions && git stash pop && git add package-lock.json && commit -m "chore(deps): sync package-lock with package.json"`)
+6. **Corp site redesign via claude.ai/design** — still Austin-driven, out of scope for Claude here
+
+### Still open from earlier sessions (unchanged)
+
+- Live stranger walkthrough — SaaS signup
+- Live stranger walkthrough — self-hosted install on a fresh VM
+- UptimeRobot signup (closes audit #14)
+- Off-host backup destination (Hetzner Storage Box)
+- Published docs site at `docs.pontensolutions.com`
+
+---
+
+## 2026-04-21 afternoon (v2.1.0 live — `shenmay.ai` canonical, Full (Strict) SSL, marketing redesign shipped)
 
 Phase 3 of the Shenmay rebrand shipped end-to-end in one sitting. Full writeup at `[[projects/nomii/shenmay-phase3-domain-and-redesign-apr21-2026]]`.
 
