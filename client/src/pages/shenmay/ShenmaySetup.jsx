@@ -1,8 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { completeSetup, setToken } from "@/lib/shenmayApi";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
 import { Building2, User, Key, Eye, EyeOff, ArrowRight, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import ShenmaySeal from "@/components/shenmay/ShenmaySeal";
+import {
+  TOKENS as T,
+  Kicker,
+  Display,
+  Lede,
+  Field,
+  Input,
+  Button,
+  Notice,
+  PageShell,
+} from "@/components/shenmay/ui/ShenmayUI";
 
 const STEPS = [
   { id: 1, label: "Your company",   icon: Building2 },
@@ -10,372 +22,245 @@ const STEPS = [
   { id: 3, label: "Connect AI",     icon: Key },
 ];
 
-const inp      = "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20 focus:border-[#C9A84C]/50";
-const inpStyle = { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.10)" };
-const labelCls = "block text-xs font-semibold mb-1.5 tracking-wide uppercase";
-const labelStyle = { color: "rgba(255,255,255,0.45)" };
-
 const ShenmaySetup = () => {
   const navigate = useNavigate();
-  const [step, setStep]               = useState(1);
+  const [step, setStep] = useState(1);
   const [companyName, setCompanyName] = useState("");
-  const [email, setEmail]             = useState("");
-  const [password, setPassword]       = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [apiKey, setApiKey]           = useState("");
-  const [showPassword, setShowPassword]       = useState(false);
-  const [showConfirm, setShowConfirm]         = useState(false);
-  const [showApiKey, setShowApiKey]           = useState(false);
-  const [error, setError]   = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const next = () => {
     setError("");
-    if (step === 1) {
-      if (!companyName.trim()) { setError("Please enter your company name."); return; }
-    }
+    if (step === 1 && !companyName.trim()) { setError("Please enter your company name."); return; }
     if (step === 2) {
-      if (!email.trim())    { setError("Please enter your email address."); return; }
+      if (!email.trim()) { setError("Please enter your email address."); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address."); return; }
       if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
       if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     }
-    setStep(s => s + 1);
+    setStep((s) => s + 1);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!apiKey.trim().startsWith("sk-ant-")) {
-      setError("Please enter a valid Anthropic API key. It starts with sk-ant-");
-      return;
-    }
+    if (!apiKey.trim().startsWith("sk-ant-")) { setError("Please enter a valid Anthropic API key. It starts with sk-ant-"); return; }
     setLoading(true);
     try {
-      const data = await completeSetup({
-        companyName: companyName.trim(),
-        email:       email.trim(),
-        password,
-        anthropicApiKey: apiKey.trim(),
-      });
+      const data = await completeSetup({ companyName: companyName.trim(), email: email.trim(), password, anthropicApiKey: apiKey.trim() });
       setToken(data.token);
-      // Self-hosted first-run: land on widget-install step of onboarding
+      // Self-hosted first-run lands on widget-install step of onboarding
       // (products/customers/api_key/tools are pre-marked complete server-side,
       // so /shenmay/onboarding resumes at install_widget — fixes SH-1/SH-2).
       navigate("/shenmay/onboarding", { replace: true });
     } catch (err) {
       setError(err.message || "Setup failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex">
-
-      {/* ── Left branding panel ─────────────────────────────────────────────── */}
-      <div
-        className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-center items-center p-12 xl:p-16"
-        style={{ background: "linear-gradient(160deg, #1E3A5F 0%, #15294a 50%, #0f1e38 100%)" }}
+    <PageShell style={{ display: "flex" }}>
+      {/* ── LEFT editorial panel ───────────────────────────── */}
+      <aside className="shenmay-setup-aside"
+        style={{
+          display: "none",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          width: "45%",
+          background: T.paperDeep,
+          borderRight: `1px solid ${T.paperEdge}`,
+          padding: "56px 64px",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
-        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.08]"
-          style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
-        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.06]"
-          style={{ background: "radial-gradient(circle, #5B9BD5, transparent 70%)" }} />
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        <style>{`@media (min-width: 1024px) { .shenmay-setup-aside { display: flex !important; } }`}</style>
 
-        <div className="relative z-10 max-w-sm space-y-10">
-          <div>
-            <img src={shenmayLogo} alt="Shenmay AI" className="h-8 brightness-0 invert mb-2" />
-            <p className="text-white/40 text-xs font-medium tracking-widest uppercase">Self-Hosted Setup</p>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight">
-              Welcome to your{" "}
-              <span style={{ color: "#C9A84C" }}>AI workspace</span>
-            </h2>
-            <p className="text-white/50 text-sm leading-relaxed">
-              You're just a few steps away from having Shenmay AI running on your own server. This wizard sets everything up — it only takes a minute.
-            </p>
-          </div>
-
-          {/* Step indicators */}
-          <div className="space-y-4">
-            {STEPS.map(s => {
-              const done    = step > s.id;
-              const current = step === s.id;
-              return (
-                <div key={s.id} className="flex items-center gap-4">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-                    style={{
-                      background: done ? "#C9A84C" : current ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.05)",
-                      border: done ? "none" : current ? "1px solid rgba(201,168,76,0.5)" : "1px solid rgba(255,255,255,0.10)",
-                    }}
-                  >
-                    {done
-                      ? <CheckCircle size={16} style={{ color: "#0f1e38" }} />
-                      : <s.icon size={15} style={{ color: current ? "#C9A84C" : "rgba(255,255,255,0.30)" }} />
-                    }
-                  </div>
-                  <span
-                    className="text-sm font-medium transition-colors duration-300"
-                    style={{ color: done ? "rgba(255,255,255,0.80)" : current ? "#C9A84C" : "rgba(255,255,255,0.30)" }}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
+        <div>
+          <ShenmayWordmark size={26} />
+          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: T.mute, marginTop: 10 }}>
+            Self-hosted setup
           </div>
         </div>
-      </div>
 
-      {/* ── Right form panel ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#0B1222" }}>
-        <div className="w-full max-w-md">
+        <div style={{ maxWidth: 440 }}>
+          <Kicker style={{ marginBottom: 18 }}>Figure 03 · First boot</Kicker>
+          <Display size={40} italic>Your agent.</Display>
+          <Display size={40} italic={false} style={{ fontWeight: 500 }}>Your server.</Display>
+          <Lede style={{ fontSize: 16, marginTop: 18 }}>
+            Three steps to get Shenmay AI running locally. Everything stays on your infrastructure — we don't touch it.
+          </Lede>
+        </div>
 
-          {/* Mobile logo */}
-          <div className="lg:hidden flex flex-col items-center mb-8">
-            <img src={shenmayLogo} alt="Shenmay AI" className="h-7 mb-1 brightness-0 invert" />
-            <p className="text-white/30 text-xs tracking-widest uppercase">Self-Hosted Setup</p>
+        {/* Step rail */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {STEPS.map((s) => {
+            const done    = step > s.id;
+            const current = step === s.id;
+            const bg     = done ? T.teal : current ? T.ink : T.paperEdge;
+            const color  = done || current ? T.paper : T.mute;
+            return (
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 6, flexShrink: 0,
+                  background: bg, color, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  transition: "background 200ms, color 200ms",
+                }}>
+                  {done ? <CheckCircle size={16} /> : <s.icon size={15} />}
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 500, color: done ? T.ink : current ? T.ink : T.mute, letterSpacing: "-0.005em" }}>
+                  {s.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ position: "absolute", top: 40, right: 40, opacity: 0.9 }}>
+          <ShenmaySeal size={88} paper={T.paperDeep} />
+        </div>
+      </aside>
+
+      {/* ── RIGHT form ────────────────────────────────────── */}
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "56px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 440 }}>
+          {/* Mobile wordmark + step dots */}
+          <div className="shenmay-setup-mobile"
+            style={{ marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <ShenmayWordmark size={22} />
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: T.mute }}>
+              Self-hosted setup
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              {STEPS.map((s) => (
+                <div key={s.id}
+                  style={{
+                    width: step === s.id ? 24 : 8, height: 6, borderRadius: 3,
+                    background: step >= s.id ? T.teal : T.paperEdge, transition: "width 200ms, background 200ms",
+                  }}
+                />
+              ))}
+            </div>
           </div>
+          <style>{`@media (min-width: 1024px) { .shenmay-setup-mobile { display: none !important; } }`}</style>
 
-          {/* Mobile step dots */}
-          <div className="lg:hidden flex justify-center gap-2 mb-8">
-            {STEPS.map(s => (
-              <div
-                key={s.id}
-                className="transition-all duration-300 rounded-full"
-                style={{
-                  width: step === s.id ? 20 : 8,
-                  height: 8,
-                  background: step > s.id ? "#C9A84C" : step === s.id ? "#C9A84C" : "rgba(255,255,255,0.15)",
-                }}
-              />
-            ))}
-          </div>
-
-          {/* ── Step 1: Company name ─────────────────────────────────────────── */}
           {step === 1 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#C9A84C" }}>Step 1 of 3</p>
-              <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>What's your company called?</h1>
-              <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.40)" }}>This will be the name of your Shenmay AI workspace.</p>
+            <>
+              <Kicker>Step 1 of 3</Kicker>
+              <Display size={32} italic style={{ marginTop: 12 }}>What's your company?</Display>
+              <Lede>This is what your Shenmay workspace will be called.</Lede>
 
-              <form onSubmit={(e) => { e.preventDefault(); next(); }} className="space-y-5">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Company name</label>
-                  <input
-                    className={inp}
-                    style={inpStyle}
-                    type="text"
-                    placeholder="Acme Corp"
-                    value={companyName}
-                    onChange={e => setCompanyName(e.target.value)}
-                    autoFocus
-                  />
-                </div>
+              <form onSubmit={(e) => { e.preventDefault(); next(); }} style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
+                <Field id="companyName" label="Company name">
+                  <Input id="companyName" type="text" placeholder="Acme Corp" value={companyName} onChange={(e) => setCompanyName(e.target.value)} autoFocus />
+                </Field>
 
-                {error && (
-                  <p className="text-sm px-3 py-2 rounded-lg" style={{ background: "rgba(239,68,68,0.10)", color: "rgba(252,165,165,0.90)", border: "1px solid rgba(239,68,68,0.20)" }}>
-                    {error}
-                  </p>
-                )}
+                {error && <Notice tone="danger">{error}</Notice>}
 
-                <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #C9A84C, #b8943d)", color: "#0B1222" }}
-                >
-                  Continue <ArrowRight size={16} />
-                </button>
+                <Button type="submit" variant="primary" size="lg">
+                  Continue <ArrowRight size={15} />
+                </Button>
               </form>
-            </div>
+            </>
           )}
 
-          {/* ── Step 2: Admin account ─────────────────────────────────────────── */}
           {step === 2 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#C9A84C" }}>Step 2 of 3</p>
-              <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Create your admin account</h1>
-              <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.40)" }}>You'll use these credentials to log in to your Shenmay dashboard.</p>
+            <>
+              <Kicker>Step 2 of 3</Kicker>
+              <Display size={32} italic style={{ marginTop: 12 }}>Create admin access.</Display>
+              <Lede>The credentials you'll use to sign in to your Shenmay dashboard.</Lede>
 
-              <form onSubmit={(e) => { e.preventDefault(); next(); }} className="space-y-5">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Email address</label>
-                  <input
-                    className={inp}
-                    style={inpStyle}
-                    type="email"
-                    placeholder="you@yourcompany.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    autoFocus
-                  />
-                </div>
+              <form onSubmit={(e) => { e.preventDefault(); next(); }} style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
+                <Field id="email" label="Email">
+                  <Input id="email" type="email" placeholder="you@yourcompany.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
+                </Field>
 
-                <div>
-                  <label className={labelCls} style={labelStyle}>Password</label>
-                  <div className="relative">
-                    <input
-                      className={inp}
-                      style={{ ...inpStyle, paddingRight: "2.75rem" }}
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Min 8 characters"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-                      style={{ color: "rgba(255,255,255,0.35)" }}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                <Field id="password" label="Password">
+                  <div style={{ position: "relative" }}>
+                    <Input id="password" type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} style={{ paddingRight: 40 }} />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                </div>
+                </Field>
 
-                <div>
-                  <label className={labelCls} style={labelStyle}>Confirm password</label>
-                  <div className="relative">
-                    <input
-                      className={inp}
-                      style={{ ...inpStyle, paddingRight: "2.75rem" }}
-                      type={showConfirm ? "text" : "password"}
-                      placeholder="Repeat your password"
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-                      style={{ color: "rgba(255,255,255,0.35)" }}
-                    >
-                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                <Field id="confirmPassword" label="Confirm password">
+                  <div style={{ position: "relative" }}>
+                    <Input id="confirmPassword" type={showConfirm ? "text" : "password"} placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} style={{ paddingRight: 40 }} />
+                    <button type="button" onClick={() => setShowConfirm((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+                      {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                </div>
+                </Field>
 
-                {error && (
-                  <p className="text-sm px-3 py-2 rounded-lg" style={{ background: "rgba(239,68,68,0.10)", color: "rgba(252,165,165,0.90)", border: "1px solid rgba(239,68,68,0.20)" }}>
-                    {error}
-                  </p>
-                )}
+                {error && <Notice tone="danger">{error}</Notice>}
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => { setError(""); setStep(1); }}
-                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-70"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.60)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-2 flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #C9A84C, #b8943d)", color: "#0B1222" }}
-                  >
-                    Continue <ArrowRight size={16} />
-                  </button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <Button type="button" variant="ghost" style={{ flex: 1 }} onClick={() => { setError(""); setStep(1); }}>Back</Button>
+                  <Button type="submit" variant="primary" style={{ flex: 1 }}>Continue <ArrowRight size={15} /></Button>
                 </div>
               </form>
-            </div>
+            </>
           )}
 
-          {/* ── Step 3: Anthropic API key ─────────────────────────────────────── */}
           {step === 3 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#C9A84C" }}>Step 3 of 3</p>
-              <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Connect your AI</h1>
-              <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.40)" }}>
-                Shenmay AI uses Claude by Anthropic. Paste your API key below — it's encrypted and stored securely on your server.
-              </p>
+            <>
+              <Kicker>Step 3 of 3</Kicker>
+              <Display size={32} italic style={{ marginTop: 12 }}>Connect your AI.</Display>
+              <Lede>Shenmay uses Claude by Anthropic. Paste your API key — it's encrypted with AES-256 and stays on your server.</Lede>
 
-              {/* Get a key link */}
-              <a
-                href="https://console.anthropic.com/settings/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-xs font-semibold mb-6 w-fit transition-opacity hover:opacity-70"
-                style={{ color: "#C9A84C" }}
-              >
-                <ExternalLink size={13} />
-                Get an API key at console.anthropic.com
+              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 20, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+                <ExternalLink size={12} /> Get an API key at console.anthropic.com
               </a>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className={labelCls} style={labelStyle}>Anthropic API key</label>
-                  <div className="relative">
-                    <input
-                      className={inp}
-                      style={{ ...inpStyle, paddingRight: "2.75rem", fontFamily: showApiKey ? "inherit" : "monospace", letterSpacing: showApiKey ? "normal" : "0.05em" }}
+              <form onSubmit={handleSubmit} style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 20 }}>
+                <Field id="apiKey" label="Anthropic API key" hint="Your key never leaves your server.">
+                  <div style={{ position: "relative" }}>
+                    <Input
+                      id="apiKey"
                       type={showApiKey ? "text" : "password"}
                       placeholder="sk-ant-..."
                       value={apiKey}
-                      onChange={e => setApiKey(e.target.value)}
+                      onChange={(e) => setApiKey(e.target.value)}
                       autoFocus
+                      style={{ paddingRight: 40, fontFamily: showApiKey ? T.sans : T.mono, letterSpacing: showApiKey ? "-0.01em" : "0.05em" }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-                      style={{ color: "rgba(255,255,255,0.35)" }}
-                    >
-                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    <button type="button" onClick={() => setShowApiKey((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+                      {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
-                    Your key never leaves your server. It is encrypted with AES-256.
-                  </p>
-                </div>
+                </Field>
 
-                {error && (
-                  <p className="text-sm px-3 py-2 rounded-lg" style={{ background: "rgba(239,68,68,0.10)", color: "rgba(252,165,165,0.90)", border: "1px solid rgba(239,68,68,0.20)" }}>
-                    {error}
-                  </p>
-                )}
+                {error && <Notice tone="danger">{error}</Notice>}
 
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => { setError(""); setStep(2); }}
-                    disabled={loading}
-                    className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-70 disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.60)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90 disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #C9A84C, #b8943d)", color: "#0B1222" }}
-                  >
-                    {loading ? <><Loader2 size={16} className="animate-spin" /> Setting up…</> : <>Finish setup <ArrowRight size={16} /></>}
-                  </button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <Button type="button" variant="ghost" style={{ flex: 1 }} disabled={loading} onClick={() => { setError(""); setStep(2); }}>Back</Button>
+                  <Button type="submit" variant="primary" style={{ flex: 1 }} disabled={loading}>
+                    {loading ? (<><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Setting up…</>) : (<>Finish setup <ArrowRight size={15} /></>)}
+                  </Button>
                 </div>
               </form>
 
-              {/* Trial note */}
-              <p className="text-xs mt-6 text-center" style={{ color: "rgba(255,255,255,0.25)" }}>
-                Starting on the free trial — 20 messages/mo, 1 customer.{" "}
-                <a href="https://pontensolutions.com/nomii/license" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: "rgba(201,168,76,0.60)" }}>
+              <p style={{ textAlign: "center", fontSize: 12, marginTop: 28, color: T.mute, lineHeight: 1.6 }}>
+                Starting on the free trial — 20 messages/mo, 1 customer.&nbsp;{" "}
+                <a href="https://pontensolutions.com/nomii/license" target="_blank" rel="noopener noreferrer"
+                  style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
                   Upgrade anytime
                 </a>
               </p>
-            </div>
+            </>
           )}
-
         </div>
-      </div>
-    </div>
+      </main>
+    </PageShell>
   );
 };
 

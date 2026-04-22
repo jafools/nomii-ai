@@ -42,8 +42,8 @@ export default function SubscriptionGate({ subscription, children }) {
         {/* Trial banner */}
         {trialing && trialDays <= 7 && (
           <div className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between text-sm"
-            style={{ background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.20)" }}>
-            <span className="flex items-center gap-2" style={{ color: "#C9A84C" }}>
+            style={{ background: "rgba(15,95,92,0.10)", border: "1px solid rgba(15,95,92,0.20)" }}>
+            <span className="flex items-center gap-2" style={{ color: "#0F5F5C" }}>
               <Clock size={14} />
               {trialDays === 0
                 ? "Your trial ends today!"
@@ -59,7 +59,7 @@ export default function SubscriptionGate({ subscription, children }) {
                 setLoading(false);
               }}
               className="px-3 py-1 rounded-lg text-xs font-semibold"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+              style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
               disabled={loading}
             >
               {loading ? "Loading..." : "Upgrade Now"}
@@ -85,15 +85,15 @@ export default function SubscriptionGate({ subscription, children }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-6">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-        style={{ background: "rgba(201,168,76,0.12)" }}>
-        <Lock size={28} style={{ color: "#C9A84C" }} />
+        style={{ background: "rgba(15,95,92,0.12)" }}>
+        <Lock size={28} style={{ color: "#0F5F5C" }} />
       </div>
 
       <div className="text-center max-w-md">
-        <h2 className="text-xl font-bold mb-2" style={{ color: "rgba(255,255,255,0.90)" }}>
+        <h2 className="text-xl font-bold mb-2" style={{ color: "#1A1D1A" }}>
           Subscription Required
         </h2>
-        <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.40)" }}>
+        <p className="text-sm mb-6" style={{ color: "#6B6B64" }}>
           {reason} Upgrade to a paid plan to unlock your dashboard, widget, and all ShenmayAI features.
         </p>
       </div>
@@ -108,14 +108,14 @@ export default function SubscriptionGate({ subscription, children }) {
           setLoading(false);
         }}
         className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all"
-        style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+        style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
         disabled={loading}
       >
         <Zap size={16} />
         {loading ? "Loading..." : "View Plans & Upgrade"}
       </button>
 
-      <a href="/shenmay/dashboard/plans" className="text-xs underline" style={{ color: "rgba(255,255,255,0.30)" }}>
+      <a href="/shenmay/dashboard/plans" className="text-xs underline" style={{ color: "#6B6B64" }}>
         Compare plans
       </a>
     </div>

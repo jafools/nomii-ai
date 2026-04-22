@@ -1,8 +1,20 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { resetPassword } from "@/lib/shenmayApi";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
 import { ArrowRight, CheckCircle, AlertTriangle, ArrowLeft, Lock } from "lucide-react";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import ShenmaySeal from "@/components/shenmay/ShenmaySeal";
+import {
+  TOKENS as T,
+  Kicker,
+  Display,
+  Lede,
+  Field,
+  Input,
+  Button,
+  Notice,
+  PageShell,
+} from "@/components/shenmay/ui/ShenmayUI";
 
 const ShenmayResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -22,127 +34,134 @@ const ShenmayResetPassword = () => {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
     if (!token) { setError("Missing reset token. Please use the link from your email."); return; }
-
     setLoading(true);
-    try {
-      await resetPassword(token, password);
-      setSuccess(true);
-    } catch (err) {
-      setError(err.message || "Reset failed. The link may have expired.");
-    } finally {
-      setLoading(false);
-    }
+    try { await resetPassword(token, password); setSuccess(true); }
+    catch (err) { setError(err.message || "Reset failed. The link may have expired."); }
+    finally { setLoading(false); }
   };
 
-  const inp = "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20 focus:border-[#C9A84C]/50";
-  const inpStyle = { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.10)" };
+  const expiredHint = /expired|invalid/i.test(error);
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left — branding panel */}
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-center items-center p-12 xl:p-16" style={{ background: "linear-gradient(160deg, #1E3A5F 0%, #15294a 50%, #0f1e38 100%)" }}>
-        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.08]" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
-        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #5B9BD5, transparent 70%)" }} />
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-        <div className="relative z-10 max-w-sm space-y-10">
-          <div>
-            <a href="https://pontensolutions.com" className="inline-block hover:opacity-80 transition-opacity" title="Back to Pontén Solutions">
-              <img src={shenmayLogo} alt="Shenmay AI" className="h-8 brightness-0 invert mb-2" />
-              <p className="text-white/40 text-xs font-medium tracking-widest uppercase">by Pontén Solutions</p>
-            </a>
-          </div>
-
-          <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight">
-            Set a new{" "}
-            <span style={{ color: "#C9A84C" }}>password</span>
-          </h2>
-
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(201,168,76,0.12)" }}>
-              <Lock size={20} style={{ color: "#C9A84C" }} />
-            </div>
-            <p className="text-white/70 text-sm leading-relaxed">Choose a strong password to keep your account secure.</p>
+    <PageShell style={{ display: "flex" }}>
+      {/* ── LEFT editorial panel ───────────────────────────── */}
+      <aside
+        className="shenmay-reset-aside"
+        style={{
+          display: "none",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          width: "45%",
+          background: T.paperDeep,
+          borderRight: `1px solid ${T.paperEdge}`,
+          padding: "56px 64px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div>
+          <ShenmayWordmark size={28} />
+          <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: T.mute, marginTop: 10 }}>
+            by Pontén Solutions
           </div>
         </div>
-      </div>
+        <div style={{ maxWidth: 440 }}>
+          <Kicker style={{ marginBottom: 20 }}>Figure 02 · Reset access</Kicker>
+          <Display size={42} italic>Choose a strong password.</Display>
+          <Lede style={{ fontSize: 16, marginTop: 16 }}>
+            Eight characters minimum. Mix cases, numbers, and a symbol if you can — your agent's memory deserves it.
+          </Lede>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, borderTop: `1px solid ${T.paperEdge}`, paddingTop: 20 }}>
+          <Lock size={16} color={T.teal} />
+          <span style={{ fontSize: 13, color: T.inkSoft }}>End-to-end encryption. Nobody — including us — sees your password.</span>
+        </div>
+        <div style={{ position: "absolute", top: 40, right: 40, opacity: 0.9 }}>
+          <ShenmaySeal size={90} paper={T.paperDeep} />
+        </div>
+      </aside>
 
-      {/* Right — form (dark-themed) */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12" style={{ background: "#0B1222" }}>
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex flex-col items-center mb-8">
-            <img src={shenmayLogo} alt="Shenmay AI" className="h-7 mb-3 brightness-0 invert" />
+      <style>{`@media (min-width: 1024px) { .shenmay-reset-aside { display: flex !important; } }`}</style>
+
+      {/* ── RIGHT form ───────────────────────────────────── */}
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "56px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 420 }}>
+          <div className="shenmay-reset-mobile-mark" style={{ marginBottom: 40, display: "flex", justifyContent: "center" }}>
+            <ShenmayWordmark size={24} />
           </div>
+          <style>{`@media (min-width: 1024px) { .shenmay-reset-mobile-mark { display: none !important; } }`}</style>
 
           {success ? (
-            <div className="space-y-6">
-              <div className="rounded-lg px-4 py-4 flex items-start gap-3" style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.25)" }}>
-                <CheckCircle size={18} className="shrink-0 mt-0.5" style={{ color: "#4ADE80" }} />
-                <p className="text-sm leading-relaxed" style={{ color: "rgba(74,222,128,0.90)" }}>
-                  Your password has been reset! You can now sign in with your new password.
-                </p>
+            <>
+              <Kicker color={T.success}>Reset complete</Kicker>
+              <Display size={34} italic style={{ marginTop: 14 }}>You're all set.</Display>
+              <Lede style={{ marginTop: 12 }}>Your password has been updated. Sign in with your new password below.</Lede>
+              <div style={{ marginTop: 28 }}>
+                <Notice tone="success" icon={CheckCircle}>
+                  Password reset — ready to sign in.
+                </Notice>
               </div>
-              <Link
-                to="/shenmay/login"
-                className="w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
-              >
-                Go to Login <ArrowRight size={16} />
-              </Link>
-            </div>
+              <div style={{ marginTop: 24 }}>
+                <Link to="/shenmay/login" style={{ width: "100%", textDecoration: "none" }}>
+                  <Button variant="primary" size="lg" style={{ width: "100%" }}>
+                    Go to sign in <ArrowRight size={15} />
+                  </Button>
+                </Link>
+              </div>
+            </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Reset your password</h1>
-              <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.40)" }}>Enter your new password below.</p>
+              <Kicker>Reset your password</Kicker>
+              <Display size={34} italic style={{ marginTop: 14 }}>Pick a new one.</Display>
+              <Lede>Choose something you haven't used before.</Lede>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="new-password" className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>New Password</label>
-                  <input id="new-password" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={inp} style={inpStyle} />
+              <form onSubmit={handleSubmit} style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
+                <Field id="new-password" label="New password">
+                  <Input id="new-password" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
                   {password.length > 0 && password.length < 8 && (
-                    <p className="text-xs mt-1" style={{ color: "#F87171" }}>Must be at least 8 characters</p>
+                    <div style={{ fontSize: 11, color: T.danger, marginTop: 6, fontFamily: T.mono, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      Must be at least 8 characters
+                    </div>
                   )}
-                </div>
+                </Field>
 
-                <div>
-                  <label htmlFor="confirm-password" className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>Confirm Password</label>
-                  <input id="confirm-password" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter your password" className={inp} style={inpStyle} />
+                <Field id="confirm-password" label="Confirm password">
+                  <Input id="confirm-password" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter your password" style={confirm.length > 0 && password !== confirm ? { borderColor: T.danger } : undefined} />
                   {confirm.length > 0 && password !== confirm && (
-                    <p className="text-xs mt-1" style={{ color: "#F87171" }}>Passwords do not match</p>
+                    <div style={{ fontSize: 11, color: T.danger, marginTop: 6, fontFamily: T.mono, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      Passwords don't match
+                    </div>
                   )}
-                </div>
+                </Field>
 
                 {error && (
-                  <div className="rounded-lg px-4 py-3 text-sm font-medium" style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                      <div>
-                        <p>{error}</p>
-                        {error.toLowerCase().includes("expired") || error.toLowerCase().includes("invalid") ? (
-                          <Link to="/shenmay/login" className="inline-flex items-center gap-1 mt-2 text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.60)" }}>
-                            Request a new link →
-                          </Link>
-                        ) : null}
+                  <Notice tone="danger" icon={AlertTriangle}>
+                    <div>{error}</div>
+                    {expiredHint && (
+                      <div style={{ marginTop: 8 }}>
+                        <Link to="/shenmay/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+                          Request a new link →
+                        </Link>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </Notice>
                 )}
 
-                <button type="submit" disabled={loading || !valid} className="w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 disabled:opacity-50 hover:shadow-lg hover:shadow-[#C9A84C]/20 flex items-center justify-center gap-2" style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}>
-                  {loading ? "Resetting…" : "Reset Password"}
-                </button>
+                <Button type="submit" variant="primary" size="lg" disabled={loading || !valid}>
+                  {loading ? "Resetting…" : "Reset password"}
+                </Button>
               </form>
 
-              <p className="text-center text-sm mt-8">
-                <Link to="/shenmay/login" className="flex items-center justify-center gap-1.5 font-semibold hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  <ArrowLeft size={15} /> Back to login
+              <div style={{ marginTop: 28, textAlign: "center" }}>
+                <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+                  <ArrowLeft size={14} /> Back to sign in
                 </Link>
-              </p>
+              </div>
             </>
           )}
         </div>
-      </div>
-    </div>
+      </main>
+    </PageShell>
   );
 };
 

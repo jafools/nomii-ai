@@ -24,7 +24,7 @@ const TOOL_ONBOARDING = {
     config_key: "data_category",
     config_placeholder: "e.g. accounts, investments, orders, cases",
     config_help: "This tells your AI which part of your records to look at.",
-    color: "#3B82F6",
+    color: "#0F5F5C",
     bg: "rgba(59,130,246,0.08)",
     border: "rgba(59,130,246,0.20)",
   },
@@ -52,9 +52,9 @@ const TOOL_ONBOARDING = {
     default_trigger: "Use when the client asks for a summary, report, or written overview of their situation.",
     config_hint: null,
     config_key: null,
-    color: "#C9A84C",
-    bg: "rgba(201,168,76,0.08)",
-    border: "rgba(201,168,76,0.20)",
+    color: "#0F5F5C",
+    bg: "rgba(15,95,92,0.08)",
+    border: "rgba(15,95,92,0.20)",
   },
   escalate: {
     emoji:   "🙋",
@@ -65,7 +65,7 @@ const TOOL_ONBOARDING = {
     default_trigger: "Use when the client needs personal attention, asks for a meeting, or has a complex question that requires human expertise.",
     config_hint: null,
     config_key: null,
-    color: "#F87171",
+    color: "#7A1F1A",
     bg: "rgba(248,113,113,0.08)",
     border: "rgba(248,113,113,0.20)",
   },
@@ -80,8 +80,8 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
     <div
       className="rounded-xl overflow-hidden transition-all duration-200"
       style={{
-        border: `1px solid ${enabled ? border : "rgba(255,255,255,0.08)"}`,
-        background: enabled ? bg : "rgba(255,255,255,0.02)",
+        border: `1px solid ${enabled ? border : "#EDE7D7"}`,
+        background: enabled ? bg : "#EDE7D7",
       }}
     >
       {/* Card header — always visible */}
@@ -92,13 +92,13 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
         <div className="text-2xl shrink-0 mt-0.5">{emoji}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-semibold" style={{ color: enabled ? "#fff" : "rgba(255,255,255,0.70)" }}>
+            <span className="text-sm font-semibold" style={{ color: enabled ? "#fff" : "#3A3D39" }}>
               {heading}
             </span>
             {/* Toggle pill */}
             <div
               className="h-6 w-11 rounded-full shrink-0 flex items-center transition-all duration-200 px-0.5"
-              style={{ background: enabled ? color : "rgba(255,255,255,0.10)" }}
+              style={{ background: enabled ? color : "#D8D0BD" }}
             >
               <div
                 className="h-5 w-5 rounded-full transition-all duration-200"
@@ -110,7 +110,7 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
               />
             </div>
           </div>
-          <p className="text-[12px] mt-1 leading-relaxed" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <p className="text-[12px] mt-1 leading-relaxed" style={{ color: "#6B6B64" }}>
             {body}
           </p>
         </div>
@@ -122,7 +122,7 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
           {/* Trigger description */}
           <div className="mb-4">
             <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-              style={{ color: "rgba(255,255,255,0.35)" }}>
+              style={{ color: "#6B6B64" }}>
               {question}
             </label>
             <textarea
@@ -134,10 +134,10 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
               style={{
                 background: "rgba(0,0,0,0.20)",
                 border: `1px solid ${border}`,
-                color: "rgba(255,255,255,0.85)",
+                color: "#1A1D1A",
               }}
             />
-            <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+            <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
               Write this in plain English — your AI reads it to decide when to act.
             </p>
           </div>
@@ -146,7 +146,7 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
           {config_hint && config_key && (
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-                style={{ color: "rgba(255,255,255,0.35)" }}>
+                style={{ color: "#6B6B64" }}>
                 {config_hint}
               </label>
               <input
@@ -158,11 +158,11 @@ function ToolCard({ toolType, toolInfo, enabled, onToggle, trigger, onTriggerCha
                 style={{
                   background: "rgba(0,0,0,0.20)",
                   border: `1px solid ${border}`,
-                  color: "rgba(255,255,255,0.85)",
+                  color: "#1A1D1A",
                 }}
               />
               {config_help && (
-                <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>{config_help}</p>
+                <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>{config_help}</p>
               )}
             </div>
           )}
@@ -262,13 +262,10 @@ export default function StepTools({ shenmayTenant, advance, stepIndex, onSkip })
   return (
     <div>
       {/* Heading */}
-      <div className="mb-7">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: "rgba(255,255,255,0.92)" }}>
-          Give your AI superpowers 🚀
-        </h2>
-        <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-          Right now your AI can chat — but it's working from memory. Toggle on the abilities you want it to have. You don't need to be technical — just switch on what sounds useful.
-        </p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 05 · Capabilities</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Give your agent tools.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>Right now your agent can chat — but it's working from memory. Toggle on any abilities you want it to have.</p>
       </div>
 
       {/* Tool cards */}
@@ -291,8 +288,8 @@ export default function StepTools({ shenmayTenant, advance, stepIndex, onSkip })
       {/* Error */}
       {error && (
         <div className="mb-4 p-4 rounded-xl flex items-start gap-3"
-          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
-          <p className="text-sm" style={{ color: "#F87171" }}>{error}</p>
+          style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.20)" }}>
+          <p className="text-sm" style={{ color: "#7A1F1A" }}>{error}</p>
         </div>
       )}
 
@@ -301,7 +298,7 @@ export default function StepTools({ shenmayTenant, advance, stepIndex, onSkip })
         onClick={handleSave}
         disabled={saving}
         className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+        style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
       >
         {saving ? (
           <><Loader2 size={16} className="animate-spin" /> Saving your tools…</>
@@ -317,7 +314,7 @@ export default function StepTools({ shenmayTenant, advance, stepIndex, onSkip })
         <button
           onClick={onSkip}
           className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: "rgba(255,255,255,0.30)" }}
+          style={{ color: "#6B6B64" }}
         >
           <SkipForward size={13} />
           Skip for now — I'll set this up later from the dashboard

@@ -3,25 +3,28 @@ import { getMe, updateProfile, updatePassword } from "@/lib/shenmayApi";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Check, Eye, EyeOff } from "lucide-react";
-
-const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" };
-const inputClass = "w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(201,168,76,0.3)]";
-const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.8)" };
-const readOnlyStyle = { ...inputStyle, background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.4)", cursor: "default" };
+import { TOKENS as T, Kicker, Display, Lede, Field, Input, Button, Notice } from "@/components/shenmay/ui/ShenmayUI";
 
 const getStrength = (pw) => {
-  if (!pw || pw.length < 8) return { text: "Min. 8 characters", color: "#F87171", pct: 15 };
+  if (!pw || pw.length < 8) return { text: "Min. 8 characters", color: T.danger, pct: 15 };
   let s = 0;
   if (/[A-Z]/.test(pw)) s++;
   if (/[0-9]/.test(pw)) s++;
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   if (pw.length >= 12) s++;
-  if (s <= 1) return { text: "Weak", color: "#FBBF24", pct: 40 };
-  if (s <= 2) return { text: "Getting stronger", color: "#C9A84C", pct: 70 };
-  return { text: "Strong", color: "#4ADE80", pct: 100 };
+  if (s <= 1) return { text: "Weak", color: T.warning, pct: 40 };
+  if (s <= 2) return { text: "Getting stronger", color: T.teal, pct: 70 };
+  return { text: "Strong", color: T.success, pct: 100 };
 };
 
-/* ---------- Personal Info ---------- */
+const SectionCard = ({ kicker, title, children, style }) => (
+  <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 28, ...style }}>
+    <Kicker color={T.mute}>{kicker}</Kicker>
+    <h3 style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 18, letterSpacing: "-0.015em", color: T.ink, margin: "10px 0 22px" }}>{title}</h3>
+    {children}
+  </div>
+);
+
 const PersonalInfo = ({ admin, onUpdated }) => {
   const [form, setForm] = useState({ first_name: "", last_name: "" });
   const [saving, setSaving] = useState(false);
@@ -36,10 +39,7 @@ const PersonalInfo = ({ admin, onUpdated }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.first_name.trim() || !form.last_name.trim()) {
-      toast({ title: "Please fill in both name fields.", variant: "destructive" });
-      return;
-    }
+    if (!form.first_name.trim() || !form.last_name.trim()) { toast({ title: "Please fill in both name fields.", variant: "destructive" }); return; }
     setSaving(true);
     try {
       await updateProfile({ first_name: form.first_name.trim(), last_name: form.last_name.trim() });
@@ -48,58 +48,53 @@ const PersonalInfo = ({ admin, onUpdated }) => {
       toast({ title: "Profile updated" });
     } catch (err) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const role = admin?.role || "admin";
   const roleBadge = {
-    admin: { bg: "rgba(201,168,76,0.12)", color: "#C9A84C", label: "Admin" },
-    owner: { bg: "rgba(139,92,246,0.12)", color: "#A78BFA", label: "Owner" },
+    admin: { color: T.teal,    label: "Admin" },
+    owner: { color: T.tealDark, label: "Owner" },
+    agent: { color: T.mute,    label: "Agent" },
   };
-  const badge = roleBadge[role] || { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", label: role };
+  const badge = roleBadge[role] || { color: T.mute, label: role };
 
   return (
-    <form onSubmit={handleSave} className="rounded-2xl p-6 space-y-5" style={card}>
-      <h3 className="text-sm font-semibold text-white/70">Personal Information</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">First Name</label>
-          <input type="text" required maxLength={100} value={form.first_name} onChange={set("first_name")} className={inputClass} style={inputStyle} />
+    <SectionCard kicker="Figure 01 · Who you are" title="Personal information">
+      <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          <Field id="first_name" label="First name">
+            <Input id="first_name" type="text" required maxLength={100} value={form.first_name} onChange={set("first_name")} />
+          </Field>
+          <Field id="last_name" label="Last name">
+            <Input id="last_name" type="text" required maxLength={100} value={form.last_name} onChange={set("last_name")} />
+          </Field>
+          <Field id="email" label="Email">
+            <Input id="email" type="email" readOnly value={admin?.email || ""} style={{ background: T.paperDeep, color: T.mute, cursor: "default" }} tabIndex={-1} />
+          </Field>
+          <Field id="role" label="Role">
+            <div style={{ paddingTop: 6 }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 3, background: `${badge.color}18`, color: badge.color }}>
+                {badge.label}
+              </span>
+            </div>
+          </Field>
         </div>
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Last Name</label>
-          <input type="text" required maxLength={100} value={form.last_name} onChange={set("last_name")} className={inputClass} style={inputStyle} />
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Email</label>
-          <input type="email" readOnly value={admin?.email || ""} className={inputClass} style={readOnlyStyle} tabIndex={-1} />
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Role</label>
-          <div className="pt-1">
-            <span className="inline-block px-3 py-1 rounded-full text-[12px] font-semibold" style={{ background: badge.bg, color: badge.color }}>
-              {badge.label}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 4 }}>
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+          {saved && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: T.success }}>
+              <Check size={13} /> Saved
             </span>
-          </div>
+          )}
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
-          {saving ? "Saving…" : "Save changes"}
-        </button>
-        {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#4ADE80" }}>
-            <Check size={14} /> Saved ✓
-          </span>
-        )}
-      </div>
-    </form>
+      </form>
+    </SectionCard>
   );
 };
 
-/* ---------- Change Password ---------- */
 const ChangePassword = () => {
   const [form, setForm] = useState({ current_password: "", new_password: "", confirm: "" });
   const [saving, setSaving] = useState(false);
@@ -124,73 +119,66 @@ const ChangePassword = () => {
       toast({ title: "Password updated" });
     } catch (err) {
       setError(err.message || "Failed to update password.");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   return (
-    <form onSubmit={handleSave} className="rounded-2xl p-6 space-y-5" style={card}>
-      <h3 className="text-sm font-semibold text-white/70">Change Password</h3>
-      <div className="space-y-4 max-w-md">
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Current Password</label>
-          <div className="relative">
-            <input type={showCurrent ? "text" : "password"} required value={form.current_password} onChange={set("current_password")} className={inputClass + " pr-10"} style={inputStyle} />
-            <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+    <SectionCard kicker="Figure 02 · Secure access" title="Change password">
+      <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 520 }}>
+        <Field id="current_password" label="Current password">
+          <div style={{ position: "relative" }}>
+            <Input id="current_password" type={showCurrent ? "text" : "password"} required value={form.current_password} onChange={set("current_password")} style={{ paddingRight: 40 }} />
+            <button type="button" onClick={() => setShowCurrent((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+              {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">New Password</label>
-          <div className="relative">
-            <input type={showNew ? "text" : "password"} required minLength={8} value={form.new_password} onChange={set("new_password")} className={inputClass + " pr-10"} style={inputStyle} />
-            <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+        </Field>
+
+        <Field id="new_password" label="New password">
+          <div style={{ position: "relative" }}>
+            <Input id="new_password" type={showNew ? "text" : "password"} required minLength={8} value={form.new_password} onChange={set("new_password")} style={{ paddingRight: 40 }} />
+            <button type="button" onClick={() => setShowNew((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
+              {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
           {form.new_password.length > 0 && (
-            <div className="mt-2 space-y-1">
-              <div className="flex gap-1">
-                {[25, 50, 75, 100].map((t) => (
-                  <div key={t} className="h-1 flex-1 rounded-full transition-all duration-300" style={{ backgroundColor: strength.pct >= t ? strength.color : "rgba(255,255,255,0.06)" }} />
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                {[25, 50, 75, 100].map((p) => (
+                  <div key={p} style={{ flex: 1, height: 3, borderRadius: 2, background: strength.pct >= p ? strength.color : T.paperEdge, transition: "background 200ms ease" }} />
                 ))}
               </div>
-              <p className="text-[11px] font-medium" style={{ color: strength.color }}>{strength.text}</p>
+              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: strength.color }}>{strength.text}</div>
             </div>
           )}
-        </div>
-        <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Confirm New Password</label>
-          <input type="password" required value={form.confirm} onChange={set("confirm")} className={inputClass} style={inputStyle} />
+        </Field>
+
+        <Field id="confirm" label="Confirm new password">
+          <Input id="confirm" type="password" required value={form.confirm} onChange={set("confirm")} style={form.confirm && form.new_password && form.confirm !== form.new_password ? { borderColor: T.danger } : undefined} />
           {form.confirm && form.new_password && form.confirm !== form.new_password && (
-            <p className="text-[11px] mt-1.5 font-medium" style={{ color: "#F87171" }}>Passwords do not match.</p>
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: T.danger, marginTop: 6 }}>
+              Passwords don't match
+            </div>
+          )}
+        </Field>
+
+        {error && <Notice tone="danger">{error}</Notice>}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Updating…" : "Update password"}
+          </Button>
+          {saved && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: T.success }}>
+              <Check size={13} /> Password updated
+            </span>
           )}
         </div>
-      </div>
-
-      {error && (
-        <div className="rounded-xl px-4 py-3 text-sm font-medium" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "#F87171" }}>
-          {error}
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
-          {saving ? "Updating…" : "Update password"}
-        </button>
-        {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#4ADE80" }}>
-            <Check size={14} /> Password updated ✓
-          </span>
-        )}
-      </div>
-    </form>
+      </form>
+    </SectionCard>
   );
 };
 
-/* ---------- Main ---------- */
 const ShenmayProfile = () => {
   const { setShenmayUser } = useShenmayAuth();
   const [admin, setAdmin] = useState(null);
@@ -201,33 +189,40 @@ const ShenmayProfile = () => {
       const data = await getMe();
       setAdmin(data.admin || null);
       if (data.admin) setShenmayUser(data.admin);
-    } catch {}
-    finally { setLoading(false); }
+    } catch {} finally { setLoading(false); }
   };
 
   useEffect(() => { fetchMe(); }, []);
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="rounded-2xl p-6 animate-pulse space-y-4" style={card}>
-          <div className="h-4 w-40 rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
-          <div className="grid grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />)}
+      <div>
+        <div style={{ marginBottom: 32 }}>
+          <Kicker>Your account</Kicker>
+          <Display size={38} italic style={{ marginTop: 12 }}>Profile.</Display>
+        </div>
+        <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 28, animation: "pulse 1.8s ease-in-out infinite" }}>
+          <div style={{ height: 14, width: 180, borderRadius: 3, background: T.paperEdge, marginBottom: 20 }} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            {[...Array(4)].map((_, i) => <div key={i} style={{ height: 42, borderRadius: 6, background: T.paperEdge }} />)}
           </div>
+          <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }`}</style>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-2">
-        <h2 className="text-xl font-bold text-white/90 mb-1">Profile</h2>
-        <p className="text-sm text-white/30">Manage your personal information and password.</p>
+    <div>
+      <div style={{ marginBottom: 32 }}>
+        <Kicker>Your account</Kicker>
+        <Display size={38} italic style={{ marginTop: 12 }}>Profile.</Display>
+        <Lede>Manage your personal information and password.</Lede>
       </div>
-      <PersonalInfo admin={admin} onUpdated={fetchMe} />
-      <ChangePassword />
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <PersonalInfo admin={admin} onUpdated={fetchMe} />
+        <ChangePassword />
+      </div>
     </div>
   );
 };

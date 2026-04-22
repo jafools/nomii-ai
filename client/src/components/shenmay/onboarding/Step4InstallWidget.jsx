@@ -87,60 +87,63 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Add Shenmay AI to your website</h2>
-      <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.40)" }}>Follow the instructions below to install the Shenmay AI widget. It only takes a minute.</p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 06 · Go live</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Drop the widget on your site.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>One snippet. About a minute. Follow the instructions below.</p>
+      </div>
 
       {/* Two-mode explainer */}
-      <div className="rounded-xl p-5 mb-8" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
-        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#C9A84C" }}>Two experiences, one widget</p>
+      <div className="rounded-xl p-5 mb-8" style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.15)" }}>
+        <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#0F5F5C" }}>Two experiences, one widget</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Unauthenticated */}
-          <div className="rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-lg p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 text-sm" style={{ background: "rgba(255,255,255,0.08)" }}>👤</div>
-              <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.80)" }}>Guest visitor</p>
+              <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 text-sm" style={{ background: "#EDE7D7" }}>👤</div>
+              <p className="text-sm font-semibold" style={{ color: "#1A1D1A" }}>Guest visitor</p>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.40)" }}>
-              Any visitor who isn't logged in gets a <strong style={{ color: "rgba(255,255,255,0.60)" }}>branded AI chatbot</strong> — knowledgeable about your business and products, always on, no signup required.
+            <p className="text-xs leading-relaxed" style={{ color: "#6B6B64" }}>
+              Any visitor who isn't logged in gets a <strong style={{ color: "#3A3D39" }}>branded AI chatbot</strong> — knowledgeable about your business and products, always on, no signup required.
             </p>
-            <p className="text-[11px] mt-2 font-mono px-2 py-1 rounded" style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.30)" }}>data-user-email omitted</p>
+            <p className="text-[11px] mt-2 font-mono px-2 py-1 rounded" style={{ background: "#EDE7D7", color: "#6B6B64" }}>data-user-email omitted</p>
           </div>
           {/* Authenticated */}
-          <div className="rounded-lg p-4" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.15)" }}>
+          <div className="rounded-lg p-4" style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.15)" }}>
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 text-sm" style={{ background: "rgba(201,168,76,0.15)" }}>⭐</div>
-              <p className="text-sm font-semibold" style={{ color: "#C9A84C" }}>Logged-in user</p>
+              <div className="h-6 w-6 rounded-md flex items-center justify-center shrink-0 text-sm" style={{ background: "rgba(15,95,92,0.15)" }}>⭐</div>
+              <p className="text-sm font-semibold" style={{ color: "#0F5F5C" }}>Logged-in user</p>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.40)" }}>
-              When a user is signed in on your site, the widget becomes their <strong style={{ color: "rgba(255,255,255,0.60)" }}>personal AI</strong> — it remembers their name, history, preferences, and picks up every conversation where they left off.
+            <p className="text-xs leading-relaxed" style={{ color: "#6B6B64" }}>
+              When a user is signed in on your site, the widget becomes their <strong style={{ color: "#3A3D39" }}>personal AI</strong> — it remembers their name, history, preferences, and picks up every conversation where they left off.
             </p>
-            <p className="text-[11px] mt-2 font-mono px-2 py-1 rounded" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(201,168,76,0.60)" }}>data-user-email="their@email.com"</p>
+            <p className="text-[11px] mt-2 font-mono px-2 py-1 rounded" style={{ background: "rgba(15,95,92,0.08)", color: "rgba(15,95,92,0.60)" }}>data-user-email="their@email.com"</p>
           </div>
         </div>
-        <p className="text-xs mt-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+        <p className="text-xs mt-3" style={{ color: "#6B6B64" }}>
           The same script tag handles both automatically — pass the user's email when they're logged in, omit it when they're not.
         </p>
       </div>
 
       {/* Widget Key */}
-      <div className="rounded-xl p-4 mb-8 flex items-center justify-between" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="rounded-xl p-4 mb-8 flex items-center justify-between" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <div>
-          <p className="text-[11px] font-semibold mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Your Widget Key</p>
-          <code className="text-sm font-mono font-semibold" style={{ color: "#C9A84C" }}>{widgetKey}</code>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: "#6B6B64" }}>Your Widget Key</p>
+          <code className="text-sm font-mono font-semibold" style={{ color: "#0F5F5C" }}>{widgetKey}</code>
         </div>
         <button
           onClick={copyKey}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 hover:bg-white/[0.05]"
-          style={{ borderColor: "rgba(201,168,76,0.30)", color: "#C9A84C" }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 hover:bg-[#EDE7D7]"
+          style={{ borderColor: "rgba(15,95,92,0.30)", color: "#0F5F5C" }}
         >
-          {copied ? <Check className="h-3 w-3" style={{ color: "#4ADE80" }} /> : <Copy className="h-3 w-3" />}
+          {copied ? <Check className="h-3 w-3" style={{ color: "#2D6A4F" }} /> : <Copy className="h-3 w-3" />}
           {copied ? "Copied!" : "Copy key"}
         </button>
       </div>
 
       {/* Platform tabs */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>Select your platform</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "#6B6B64" }}>Select your platform</p>
         <div className="flex flex-wrap gap-2 mb-6">
           {PLATFORMS.map((p) => (
             <button
@@ -149,8 +152,8 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
               className="px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all duration-200"
               style={
                 platform === p.key
-                  ? { background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", borderColor: "#C9A84C", color: "#0B1222" }
-                  : { borderColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.50)", backgroundColor: "rgba(255,255,255,0.03)" }
+                  ? { background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", borderColor: "#0F5F5C", color: "#F5F1E8" }
+                  : { borderColor: "#D8D0BD", color: "#6B6B64", backgroundColor: "#EDE7D7" }
               }
             >
               {p.label}
@@ -160,20 +163,20 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
       </div>
 
       {/* Instructions */}
-      <div className="rounded-xl p-6 mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.70)" }}>{info.description}</p>
+      <div className="rounded-xl p-6 mb-6" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+        <p className="text-sm mb-4" style={{ color: "#3A3D39" }}>{info.description}</p>
 
         {info.showDownload && (
           <>
             <a
               href={`${API_ORIGIN}/downloads/nomii-wordpress-plugin.zip`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mb-4 transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20"
-              style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mb-4 transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20"
+              style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
               download
             >
               <Download className="h-4 w-4" /> Download Plugin
             </a>
-            <ol className="list-decimal list-inside text-sm space-y-2 mb-4" style={{ color: "rgba(255,255,255,0.50)" }}>
+            <ol className="list-decimal list-inside text-sm space-y-2 mb-4" style={{ color: "#6B6B64" }}>
               {info.steps.map((s, i) => <li key={i}>{s}</li>)}
             </ol>
           </>
@@ -185,7 +188,7 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
             <button
               onClick={() => copySnippet(info.snippet)}
               className="absolute top-2 right-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors hover:opacity-80"
-              style={{ backgroundColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.70)" }}
+              style={{ backgroundColor: "#D8D0BD", color: "#3A3D39" }}
             >
               Copy
             </button>
@@ -193,8 +196,8 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
         )}
 
         {platform !== "wordpress" && platform !== "react" && (
-          <p className="text-xs mt-3" style={{ color: "rgba(255,255,255,0.30)" }}>
-            When a user is signed in on your site, add <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>data-user-email</code> and <code className="font-mono px-1 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.60)" }}>data-user-name</code> attributes with that user's details to activate Personal AI mode.
+          <p className="text-xs mt-3" style={{ color: "#6B6B64" }}>
+            When a user is signed in on your site, add <code className="font-mono px-1 py-0.5 rounded" style={{ background: "#EDE7D7", color: "#3A3D39" }}>data-user-email</code> and <code className="font-mono px-1 py-0.5 rounded" style={{ background: "#EDE7D7", color: "#3A3D39" }}>data-user-name</code> attributes with that user's details to activate Personal AI mode.
           </p>
         )}
       </div>
@@ -202,25 +205,25 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
       {/* Verification */}
       <div className="rounded-xl p-5 flex items-center gap-4 transition-all duration-300" style={
         verified
-          ? { background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)" }
-          : { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }
+          ? { background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }
+          : { background: "#EDE7D7", border: "1px solid #EDE7D7" }
       }>
         {verified ? (
           <>
-            <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(34,197,94,0.20)", border: "1px solid rgba(34,197,94,0.30)" }}>
-              <Check className="h-5 w-5" style={{ color: "#4ADE80" }} />
+            <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(45,106,79,0.20)", border: "1px solid rgba(45,106,79,0.30)" }}>
+              <Check className="h-5 w-5" style={{ color: "#2D6A4F" }} />
             </div>
             <div>
-              <p className="text-sm font-semibold" style={{ color: "#4ADE80" }}>Widget connected!</p>
-              <p className="text-xs" style={{ color: "rgba(74,222,128,0.65)" }}>Your agent is live on your website.</p>
+              <p className="text-sm font-semibold" style={{ color: "#2D6A4F" }}>Widget connected!</p>
+              <p className="text-xs" style={{ color: "rgba(45,106,79,0.65)" }}>Your agent is live on your website.</p>
             </div>
           </>
         ) : (
           <>
-            <div className="h-10 w-10 rounded-full animate-pulse shrink-0" style={{ background: "rgba(255,255,255,0.10)" }} />
+            <div className="h-10 w-10 rounded-full animate-pulse shrink-0" style={{ background: "#D8D0BD" }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>Waiting to detect your widget…</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.30)" }}>Load any page on your website after installing. We'll auto-detect it.</p>
+              <p className="text-sm font-semibold" style={{ color: "#3A3D39" }}>Waiting to detect your widget…</p>
+              <p className="text-xs" style={{ color: "#6B6B64" }}>Load any page on your website after installing. We'll auto-detect it.</p>
             </div>
           </>
         )}

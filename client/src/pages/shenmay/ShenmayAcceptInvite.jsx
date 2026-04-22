@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { getInviteInfo, acceptInvite, setToken } from "@/lib/shenmayApi";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
-import { Eye, EyeOff, CheckCircle, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, AlertTriangle, ArrowRight } from "lucide-react";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import {
+  TOKENS as T,
+  Kicker,
+  Display,
+  Lede,
+  Field,
+  Input,
+  Button,
+  Notice,
+  Card,
+  PageShell,
+} from "@/components/shenmay/ui/ShenmayUI";
 
 const ShenmayAcceptInvite = () => {
   const navigate = useNavigate();
@@ -29,9 +41,8 @@ const ShenmayAcceptInvite = () => {
     }
     getInviteInfo(token)
       .then((data) => {
-        if (data.error) {
-          setInfoError(data.error);
-        } else {
+        if (data.error) setInfoError(data.error);
+        else {
           setInviteInfo(data);
           setFirstName(data.first_name || "");
           setLastName(data.last_name || "");
@@ -43,159 +54,92 @@ const ShenmayAcceptInvite = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      setSubmitError("Passwords don't match");
-      return;
-    }
-    if (password.length < 8) {
-      setSubmitError("Password must be at least 8 characters");
-      return;
-    }
+    if (password !== confirmPassword) { setSubmitError("Passwords don't match"); return; }
+    if (password.length < 8) { setSubmitError("Password must be at least 8 characters"); return; }
     setSubmitting(true);
     setSubmitError(null);
     try {
       const data = await acceptInvite(token, password, firstName, lastName);
-      if (data.error) {
-        setSubmitError(data.error);
-        return;
-      }
-      if (data.token) {
-        setToken(data.token);
-        navigate("/shenmay/dashboard", { replace: true });
-      }
+      if (data.error) { setSubmitError(data.error); return; }
+      if (data.token) { setToken(data.token); navigate("/shenmay/dashboard", { replace: true }); }
     } catch (err) {
       setSubmitError(err.message || "Failed to accept invitation. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const inputStyle = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    color: "rgba(255,255,255,0.85)",
-    outline: "none",
+    } finally { setSubmitting(false); }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "linear-gradient(180deg, #0F1A2E 0%, #0B1222 100%)" }}>
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <img src={shenmayLogo} alt="Shenmay AI" className="h-6 brightness-0 invert opacity-80" />
+    <PageShell style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "56px 24px" }}>
+      <div style={{ width: "100%", maxWidth: 480 }}>
+        <div style={{ marginBottom: 28, display: "flex", justifyContent: "center" }}>
+          <ShenmayWordmark size={24} />
         </div>
 
-        <div className="rounded-2xl p-8" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <Card featured style={{ padding: 32 }}>
           {loadingInfo ? (
-            <div className="flex flex-col items-center py-8 gap-3">
-              <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C9A84C" }} />
-              <p className="text-sm text-white/30">Loading invitation…</p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", gap: 14 }}>
+              <div style={{ width: 28, height: 28, border: `2px solid ${T.teal}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <Kicker color={T.mute}>Loading invitation…</Kicker>
             </div>
           ) : infoError ? (
-            <div className="flex flex-col items-center py-8 gap-4 text-center">
-              <AlertTriangle size={28} style={{ color: "#F87171" }} />
-              <p className="text-sm text-white/50">{infoError}</p>
-              <Link to="/shenmay/login" className="text-sm underline" style={{ color: "#C9A84C" }}>
-                Go to login
-              </Link>
+            <div style={{ textAlign: "center", padding: "8px 0" }}>
+              <AlertTriangle size={26} color={T.danger} style={{ margin: "0 auto 14px" }} />
+              <Lede style={{ marginTop: 0 }}>{infoError}</Lede>
+              <div style={{ marginTop: 24 }}>
+                <Link to="/shenmay/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+                  Go to sign in →
+                </Link>
+              </div>
             </div>
           ) : (
             <>
-              <div className="mb-6">
-                <p className="text-[13px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#C9A84C" }}>
-                  You're invited
-                </p>
-                <h1 className="text-xl font-bold text-white/90">Join {inviteInfo?.company_name}</h1>
-                <p className="text-sm text-white/35 mt-1">
-                  Set up your account for <span className="text-white/55">{inviteInfo?.email}</span>
-                </p>
-              </div>
+              <Kicker>You're invited</Kicker>
+              <Display size={28} italic style={{ marginTop: 12 }}>Join {inviteInfo?.company_name}.</Display>
+              <Lede style={{ marginTop: 10 }}>
+                Setting up access for <strong style={{ color: T.ink }}>{inviteInfo?.email}</strong>.
+              </Lede>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] text-white/30 mb-1.5">First Name</label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Jane"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm"
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-white/30 mb-1.5">Last Name</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Smith"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm"
-                      style={inputStyle}
-                    />
-                  </div>
+              <form onSubmit={handleSubmit} style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Field id="firstName" label="First name">
+                    <Input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jane" />
+                  </Field>
+                  <Field id="lastName" label="Last name">
+                    <Input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" />
+                  </Field>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] text-white/30 mb-1.5">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Choose a password (min. 8 characters)"
-                      className="w-full px-3 py-2.5 rounded-xl text-sm pr-10"
-                      style={inputStyle}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: "rgba(255,255,255,0.25)" }}
-                    >
+                <Field id="password" label="Password">
+                  <div style={{ position: "relative" }}>
+                    <Input id="password" type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" style={{ paddingRight: 40 }} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-[11px] text-white/30 mb-1.5">Confirm Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter your password"
-                    className="w-full px-3 py-2.5 rounded-xl text-sm"
-                    style={inputStyle}
-                  />
-                </div>
+                <Field id="confirmPassword" label="Confirm password">
+                  <Input id="confirmPassword" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" />
+                </Field>
 
-                {submitError && (
-                  <p className="text-sm" style={{ color: "#F87171" }}>{submitError}</p>
-                )}
+                {submitError && <Notice tone="danger" icon={AlertTriangle}>{submitError}</Notice>}
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
-                >
-                  {submitting ? "Setting up your account…" : "Accept Invitation & Sign In"}
-                </button>
+                <Button type="submit" variant="primary" size="lg" disabled={submitting}>
+                  {submitting ? "Setting up your account…" : (<>Accept &amp; sign in <ArrowRight size={15} /></>)}
+                </Button>
               </form>
             </>
           )}
-        </div>
+        </Card>
 
-        <p className="text-center text-xs mt-6" style={{ color: "rgba(255,255,255,0.2)" }}>
-          Already have an account?{" "}
-          <Link to="/shenmay/login" style={{ color: "#C9A84C" }} className="hover:underline">Sign in</Link>
+        <p style={{ textAlign: "center", fontSize: 13, color: T.mute, marginTop: 24 }}>
+          Already have an account?&nbsp;{" "}
+          <Link to="/shenmay/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+            Sign in
+          </Link>
         </p>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getConcerns, resolveConcern } from "@/lib/shenmayApi";
 import { toast } from "@/hooks/use-toast";
-import { RefreshCw, AlertTriangle, CheckCircle, ExternalLink, MessageSquarePlus, CheckCheck } from "lucide-react";
+import { RefreshCw, AlertTriangle, CheckCircle, MessageSquarePlus, CheckCheck } from "lucide-react";
+import { TOKENS as T, Kicker, Display, Lede, Notice, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
 const truncate = (s, n) => s && s.length > n ? s.slice(0, n) + "…" : s || "";
-
-const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" };
 
 const ShenmayConcerns = () => {
   const navigate = useNavigate();
@@ -40,155 +39,137 @@ const ShenmayConcerns = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(239,68,68,0.1)" }}>
-          <AlertTriangle size={24} style={{ color: "#F87171" }} />
-        </div>
-        <p className="text-sm text-white/30">{error}</p>
-        <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
-          <RefreshCw size={14} /> Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-12 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
-        <div className="rounded-2xl overflow-hidden animate-pulse" style={card}>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex gap-4 px-6 py-3.5" style={i < 4 ? { borderBottom: "1px solid rgba(255,255,255,0.03)" } : {}}>
-              {[...Array(3)].map((_, j) => (
-                <div key={j} className="h-4 rounded-lg flex-1" style={{ background: "rgba(255,255,255,0.03)" }} />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (concerns.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "rgba(34,197,94,0.1)" }}>
-          <CheckCircle size={28} style={{ color: "#4ADE80" }} />
-        </div>
-        <p className="text-lg font-semibold text-white/80">No open concerns</p>
-        <p className="text-sm text-white/25">Everything looks good — your agent is handling things well.</p>
-      </div>
-    );
-  }
-
   const unreadCount = concerns.filter((c) => c.unread).length;
 
   return (
-    <div className="space-y-4">
-      {/* Alert banner */}
-      <div className="flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)" }}>
-        <div className="flex items-center gap-3">
-          <AlertTriangle size={16} style={{ color: "#F87171" }} />
-          <span className="text-sm font-semibold" style={{ color: "#F87171" }}>
-            {concerns.length} open concern{concerns.length !== 1 ? "s" : ""} need{concerns.length === 1 ? "s" : ""} attention
-          </span>
-          {unreadCount > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(239,68,68,0.3)", color: "#F87171" }}>
-              {unreadCount} new
-            </span>
-          )}
-        </div>
-        <button
-          onClick={fetchData}
-          className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
-          style={{ color: "rgba(255,255,255,0.3)" }}
-          title="Refresh"
-        >
-          <RefreshCw size={13} />
-        </button>
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: 28 }}>
+        <Kicker>Human-in-the-loop</Kicker>
+        <Display size={38} italic style={{ marginTop: 12 }}>
+          {loading ? "Loading concerns…" : error ? "Something went wrong." : concerns.length === 0 ? "All clear." : `${concerns.length} open concern${concerns.length === 1 ? "" : "s"}.`}
+        </Display>
+        <Lede>
+          Conversations your agent escalated and are waiting for you. Jump in, reply, or resolve.
+        </Lede>
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl overflow-hidden" style={card}>
-        <div className="grid grid-cols-[1.5fr_3fr_1fr_auto] gap-4 px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/20" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-          <span>Customer</span>
-          <span>Last Message</span>
-          <span>Escalated</span>
-          <span className="w-24 text-right">Action</span>
+      {error ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "72px 0", textAlign: "center" }}>
+          <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <AlertTriangle size={24} color={T.danger} />
+          </div>
+          <Lede style={{ marginTop: 0 }}>{error}</Lede>
+          <Button variant="primary" onClick={fetchData}><RefreshCw size={14} /> Retry</Button>
         </div>
-        {concerns.map((c, i) => {
-          const customerName = c.customer_name || `${c.first_name || ""} ${c.last_name || ""}`.trim() || "Unknown";
-          const isUnread = c.unread;
-          const convId = c.conversation_id || c.id;
-          return (
-            <div
-              key={c.id || convId}
-              className="grid grid-cols-[1.5fr_3fr_1fr_auto] gap-4 items-center px-6 py-3.5 transition-all duration-150 hover:bg-white/[0.02]"
-              style={{
-                ...(i < concerns.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.03)" } : {}),
-                ...(isUnread ? { background: "rgba(239,68,68,0.03)" } : {}),
-              }}
-            >
-              {/* Customer */}
-              <div className="min-w-0 flex items-center gap-2">
-                {isUnread && (
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: "#EF4444" }} title="New message" />
-                )}
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium truncate" style={{ color: isUnread ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.7)" }}>
-                    {customerName}
-                  </p>
-                  {c.email && <p className="text-[11px] text-white/20 truncate">{c.email}</p>}
+      ) : loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ height: 56, borderRadius: 10, background: T.paperDeep, animation: "pulse 1.8s ease-in-out infinite" }} />
+          <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, overflow: "hidden", animation: "pulse 1.8s ease-in-out infinite" }}>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: 16, padding: "14px 24px", borderBottom: i < 4 ? `1px solid ${T.paperEdge}` : "none" }}>
+                {[...Array(3)].map((_, j) => <div key={j} style={{ height: 14, flex: 1, borderRadius: 3, background: T.paperEdge }} />)}
+              </div>
+            ))}
+          </div>
+          <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.6 } }`}</style>
+        </div>
+      ) : concerns.length === 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "72px 0", textAlign: "center" }}>
+          <div style={{ width: 62, height: 62, borderRadius: "50%", background: "#EBF1E9", border: `1px solid #CDDCCA`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CheckCircle size={28} color={T.success} />
+          </div>
+          <Kicker color={T.success}>No open concerns</Kicker>
+          <Lede style={{ marginTop: 0, maxWidth: 400 }}>
+            Everything looks good — your agent is handling things well.
+          </Lede>
+        </div>
+      ) : (
+        <>
+          {/* Alert summary */}
+          <div style={{ marginBottom: 20 }}>
+            <Notice tone="danger" icon={AlertTriangle}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
+                <div>
+                  <strong style={{ color: T.danger }}>
+                    {concerns.length} open concern{concerns.length !== 1 ? "s" : ""}
+                  </strong>
+                  {unreadCount > 0 && (
+                    <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", padding: "2px 8px", borderRadius: 3, background: `${T.danger}22`, color: T.danger, marginLeft: 10 }}>
+                      {unreadCount} new
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              {/* Last message */}
-              <p className="text-[13px] truncate" style={{ color: isUnread ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.25)" }}>
-                {truncate(c.last_message || c.message, 90)}
-              </p>
-
-              {/* Date */}
-              <span className="text-[13px] text-white/20">{fmtDate(c.escalated_at || c.created_at)}</span>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => navigate(`/shenmay/dashboard/conversations/${convId}`)}
-                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: isUnread ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)", color: isUnread ? "#F87171" : "rgba(255,255,255,0.5)", border: isUnread ? "1px solid rgba(239,68,68,0.2)" : "1px solid rgba(255,255,255,0.08)" }}
-                  title="Open conversation"
-                >
-                  <MessageSquarePlus size={12} />
-                  {isUnread ? "Jump In" : "View"}
+                <button onClick={fetchData} style={{ background: "none", border: "none", padding: 4, color: T.mute, cursor: "pointer" }} title="Refresh">
+                  <RefreshCw size={13} />
                 </button>
-                <button
-                  onClick={() => handleResolve(convId)}
-                  disabled={resolving[convId]}
-                  className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90 disabled:opacity-40"
-                  style={{ background: "rgba(34,197,94,0.1)", color: "#4ADE80", border: "1px solid rgba(34,197,94,0.2)" }}
-                  title="Mark as resolved"
-                >
-                  <CheckCheck size={12} />
-                  {resolving[convId] ? "…" : "Resolve"}
-                </button>
-                {c.customer_id && (
-                  <Link
-                    to={`/shenmay/dashboard/customers/${c.customer_id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    title="View customer profile"
-                    className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-                    style={{ color: "rgba(255,255,255,0.2)" }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
-                )}
               </div>
+            </Notice>
+          </div>
+
+          {/* Table */}
+          <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 3fr 1fr auto", gap: 16, padding: "12px 24px", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mute, borderBottom: `1px solid ${T.paperEdge}` }}>
+              <span>Customer</span>
+              <span>Last message</span>
+              <span>Escalated</span>
+              <span style={{ width: 200, textAlign: "right" }}>Action</span>
             </div>
-          );
-        })}
-      </div>
+            {concerns.map((c, i) => {
+              const customerName = c.customer_name || `${c.first_name || ""} ${c.last_name || ""}`.trim() || "Unknown";
+              const isUnread = c.unread;
+              const convId = c.conversation_id || c.id;
+              return (
+                <div
+                  key={c.id || convId}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.5fr 3fr 1fr auto",
+                    gap: 16,
+                    alignItems: "center",
+                    padding: "14px 24px",
+                    borderBottom: i < concerns.length - 1 ? `1px solid ${T.paperEdge}` : "none",
+                    background: isUnread ? `${T.danger}06` : "transparent",
+                    transition: "background 150ms ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = isUnread ? `${T.danger}0A` : T.paper)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = isUnread ? `${T.danger}06` : "transparent")}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    {isUnread && <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.danger, flexShrink: 0 }} title="New message" />}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: isUnread ? T.ink : T.inkSoft, letterSpacing: "-0.005em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {customerName}
+                      </div>
+                      {c.email && (
+                        <div style={{ fontSize: 11, color: T.mute, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {c.email}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, color: T.inkSoft, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {truncate(c.last_message || c.message, 90)}
+                  </div>
+                  <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.06em", color: T.mute }}>
+                    {fmtDate(c.escalated_at || c.created_at)}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <Button variant={isUnread ? "primary" : "ghost"} size="sm" onClick={() => navigate(`/shenmay/dashboard/conversations/${convId}`)}>
+                      <MessageSquarePlus size={12} />
+                      {isUnread ? "Jump in" : "View"}
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={resolving[convId]} onClick={() => handleResolve(convId)}>
+                      <CheckCheck size={12} />
+                      {resolving[convId] ? "…" : "Resolve"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };

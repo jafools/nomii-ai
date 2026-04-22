@@ -13,7 +13,7 @@ const FIELD_OPTIONS = [
 ];
 
 // Dark-themed shared input styles
-const inpStyle = { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.10)" };
+const inpStyle = { backgroundColor: "#EDE7D7", color: "#1A1D1A", borderColor: "#D8D0BD" };
 
 const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
   const alreadyDone = !!shenmayTenant?.onboarding_steps?.customers;
@@ -95,22 +95,23 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
   if (showSavedSummary) {
     return (
       <div>
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Customer Data</h2>
-        <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)" }}>
-          <CheckCircle2 size={20} style={{ color: "#4ADE80" }} />
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C", marginBottom: 8 }}>Figure 03 · Who you know</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 28, letterSpacing: "-0.04em", color: "#1A1D1A", margin: "0 0 12px" }}>Customers.</h2>
+        <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }}>
+          <CheckCircle2 size={20} style={{ color: "#2D6A4F" }} />
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#4ADE80" }}>✓ Customers imported</p>
-            <p className="text-xs" style={{ color: "rgba(74,222,128,0.70)" }}>Your customer data is already uploaded.</p>
+            <p className="text-sm font-semibold" style={{ color: "#2D6A4F" }}>✓ Customers imported</p>
+            <p className="text-xs" style={{ color: "rgba(45,106,79,0.70)" }}>Your customer data is already uploaded.</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => setShowSavedSummary(false)} className="text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color: "#C9A84C" }}>
+          <button onClick={() => setShowSavedSummary(false)} className="text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color: "#0F5F5C" }}>
             Import more →
           </button>
           <button
             onClick={() => advance(stepIndex)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 group"
-            style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20 group"
+            style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
           >
             Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </button>
@@ -121,15 +122,16 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Import your customers</h2>
-      <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.40)" }}>
-        Upload any customer list you already have — a spreadsheet export, CRM dump, or email list. We'll figure out the columns automatically.
-      </p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 03 · Who you know</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Bring your customers in.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>Upload any list you have — spreadsheet, CRM dump, email export. We'll map the columns automatically.</p>
+      </div>
 
       {/* Legal warning */}
-      <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-6" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.18)" }}>
-        <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "#C9A84C" }} />
-        <p className="text-xs leading-relaxed" style={{ color: "rgba(201,168,76,0.85)" }}>
+      <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-6" style={{ background: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.18)" }}>
+        <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "#0F5F5C" }} />
+        <p className="text-xs leading-relaxed" style={{ color: "rgba(15,95,92,0.85)" }}>
           <strong>Only upload data you have the right to share.</strong> By uploading customer data you confirmed during sign-up that you have obtained the necessary consents. Do not upload sensitive information such as passwords, social security numbers, financial account numbers, or medical records.
         </p>
       </div>
@@ -137,15 +139,15 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
       {/* Stage 1 — File drop */}
       {stage === 1 && !analysing && (
         <>
-          <div className="rounded-xl p-8 text-center mb-6" style={{ border: "2px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}>
-            <Upload size={32} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.25)" }} />
-            <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.40)" }}>Drop your CSV here or click to browse</p>
-            <label className="inline-block px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20" style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}>
+          <div className="rounded-xl p-8 text-center mb-6" style={{ border: "2px dashed #D8D0BD", background: "#EDE7D7" }}>
+            <Upload size={32} className="mx-auto mb-3" style={{ color: "#6B6B64" }} />
+            <p className="text-sm mb-3" style={{ color: "#6B6B64" }}>Drop your CSV here or click to browse</p>
+            <label className="inline-block px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20" style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}>
               Choose CSV File
               <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
             </label>
           </div>
-          <button onClick={() => advance(stepIndex)} className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <button onClick={() => advance(stepIndex)} className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: "#6B6B64" }}>
             Skip for now →
           </button>
         </>
@@ -153,26 +155,26 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
 
       {/* Analysing spinner */}
       {analysing && (
-        <div className="rounded-xl p-8 text-center mb-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: "#C9A84C" }} />
-          <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>Analysing your file...</p>
-          <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>{fileName}</p>
+        <div className="rounded-xl p-8 text-center mb-6" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+          <Loader2 size={28} className="mx-auto mb-3 animate-spin" style={{ color: "#0F5F5C" }} />
+          <p className="text-sm font-medium" style={{ color: "#1A1D1A" }}>Analysing your file...</p>
+          <p className="text-xs mt-1" style={{ color: "#6B6B64" }}>{fileName}</p>
         </div>
       )}
 
       {/* Stage 2 — Mapping review */}
       {stage === 2 && (
         <>
-          <h3 className="text-lg font-semibold mb-1" style={{ color: "rgba(255,255,255,0.85)" }}>Here's how we'll map your columns.</h3>
-          <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.40)" }}>Adjust anything that looks wrong.</p>
+          <h3 className="text-lg font-semibold mb-1" style={{ color: "#1A1D1A" }}>Here's how we'll map your columns.</h3>
+          <p className="text-sm mb-4" style={{ color: "#6B6B64" }}>Adjust anything that looks wrong.</p>
 
-          <div className="rounded-xl overflow-hidden mb-4" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-xl overflow-hidden mb-4" style={{ border: "1px solid #EDE7D7" }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Your column</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Sample data</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Maps to</th>
+                <tr style={{ background: "#EDE7D7", borderBottom: "1px solid #EDE7D7" }}>
+                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "#6B6B64" }}>Your column</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "#6B6B64" }}>Sample data</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-xs" style={{ color: "#6B6B64" }}>Maps to</th>
                 </tr>
               </thead>
               <tbody>
@@ -181,20 +183,20 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
                   const sample = sampleRows[0]?.[i] || "—";
                   return (
                     <tr key={h} style={{
-                      borderBottom: "1px solid rgba(255,255,255,0.05)",
-                      background: isEmail ? "rgba(201,168,76,0.06)" : "transparent",
+                      borderBottom: "1px solid #EDE7D7",
+                      background: isEmail ? "rgba(15,95,92,0.06)" : "transparent",
                     }}>
-                      <td className="px-4 py-2.5 font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>{h}</td>
-                      <td className="px-4 py-2.5" style={{ color: "rgba(255,255,255,0.40)" }}>{sample}</td>
+                      <td className="px-4 py-2.5 font-medium" style={{ color: "#1A1D1A" }}>{h}</td>
+                      <td className="px-4 py-2.5" style={{ color: "#6B6B64" }}>{sample}</td>
                       <td className="px-4 py-2.5">
                         <select
                           value={mapping[h] || "skip"}
                           onChange={(e) => setMapping((prev) => ({ ...prev, [h]: e.target.value }))}
-                          className="w-full px-3 py-1.5 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20"
-                          style={{ borderColor: "rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.80)", backgroundColor: "rgba(255,255,255,0.05)" }}
+                          className="w-full px-3 py-1.5 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-[#0F5F5C]/20"
+                          style={{ borderColor: "#D8D0BD", color: "#1A1D1A", backgroundColor: "#EDE7D7" }}
                         >
                           {FIELD_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} style={{ background: "#0F1A2E" }}>{opt.label}</option>
+                            <option key={opt.value} value={opt.value} style={{ background: "#EDE7D7" }}>{opt.label}</option>
                           ))}
                         </select>
                       </td>
@@ -206,7 +208,7 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
           </div>
 
           {!hasEmail && (
-            <p className="text-xs mb-4 px-3 py-2 rounded-lg" style={{ background: "rgba(239,68,68,0.12)", color: "#F87171", border: "1px solid rgba(239,68,68,0.20)" }}>
+            <p className="text-xs mb-4 px-3 py-2 rounded-lg" style={{ background: "rgba(122,31,26,0.12)", color: "#7A1F1A", border: "1px solid rgba(122,31,26,0.20)" }}>
               ⚠️ You must map at least one column to <strong>Email</strong> to continue.
             </p>
           )}
@@ -215,8 +217,8 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
             <button
               onClick={handleImport}
               disabled={!hasEmail || importing}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20"
-              style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20"
+              style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
             >
               {importing ? (
                 <><Loader2 size={16} className="animate-spin" /> Importing...</>
@@ -227,10 +229,10 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
           </div>
 
           <div className="flex items-center gap-4 mt-3">
-            <button onClick={resetToStage1} className="text-xs font-medium hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.50)" }}>
+            <button onClick={resetToStage1} className="text-xs font-medium hover:opacity-70 transition-opacity" style={{ color: "#6B6B64" }}>
               ← Choose a different file
             </button>
-            <button onClick={() => advance(stepIndex)} className="text-xs font-medium hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
+            <button onClick={() => advance(stepIndex)} className="text-xs font-medium hover:opacity-70 transition-opacity" style={{ color: "#6B6B64" }}>
               Skip for now →
             </button>
           </div>
@@ -240,19 +242,19 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
       {/* Stage 3 — Success */}
       {stage === 3 && result && (
         <>
-          <div className="rounded-xl p-6 text-center mb-6" style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)" }}>
-            <CheckCircle size={36} className="mx-auto mb-3" style={{ color: "#4ADE80" }} />
-            <p className="text-lg font-semibold" style={{ color: "#4ADE80" }}>
+          <div className="rounded-xl p-6 text-center mb-6" style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }}>
+            <CheckCircle size={36} className="mx-auto mb-3" style={{ color: "#2D6A4F" }} />
+            <p className="text-lg font-semibold" style={{ color: "#2D6A4F" }}>
               {result.inserted || 0} customers imported{result.updated ? ` (${result.updated} updated)` : ""}.
             </p>
           </div>
 
           {result.errors?.length > 0 && (
-            <details className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <summary className="px-4 py-2.5 text-sm font-medium cursor-pointer" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(201,168,76,0.85)" }}>
+            <details className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #EDE7D7" }}>
+              <summary className="px-4 py-2.5 text-sm font-medium cursor-pointer" style={{ background: "rgba(15,95,92,0.08)", color: "rgba(15,95,92,0.85)" }}>
                 Show issues ({result.errors.length})
               </summary>
-              <ul className="px-4 py-3 text-xs space-y-1" style={{ color: "rgba(255,255,255,0.40)" }}>
+              <ul className="px-4 py-3 text-xs space-y-1" style={{ color: "#6B6B64" }}>
                 {result.errors.map((err, i) => (
                   <li key={i}>Row {err.row || i + 1}: {err.message || String(err)}</li>
                 ))}
@@ -261,13 +263,13 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
           )}
 
           <div className="flex items-center gap-4">
-            <button onClick={resetToStage1} className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-white/[0.04]" style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.65)" }}>
+            <button onClick={resetToStage1} className="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-[#F5F1E8]" style={{ border: "1px solid #D8D0BD", color: "#3A3D39" }}>
               Import another file
             </button>
             <button
               onClick={() => advance(stepIndex)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 group"
-              style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20 group"
+              style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
             >
               Continue
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />

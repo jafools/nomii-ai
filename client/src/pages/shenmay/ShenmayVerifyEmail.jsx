@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { verifyEmail, resendVerification } from "@/lib/shenmayApi";
-import shenmayLogo from "@/assets/shenmay-full-light.svg";
-import { CheckCircle, XCircle, Loader2, Send } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Send, ArrowLeft } from "lucide-react";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import {
+  TOKENS as T,
+  Kicker,
+  Display,
+  Lede,
+  Field,
+  Input,
+  Button,
+  Notice,
+  PageShell,
+} from "@/components/shenmay/ui/ShenmayUI";
 
 const ShenmayVerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +26,6 @@ const ShenmayVerifyEmail = () => {
   const [status, setStatus] = useState(token ? "loading" : "no-token");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Resend state
   const [resendEmail, setResendEmail] = useState("");
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
@@ -23,23 +33,17 @@ const ShenmayVerifyEmail = () => {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
-
     verifyEmail(token)
-      .then((data) => {
+      .then(() => {
         if (cancelled) return;
-        // Token is stored by verifyEmail — navigate immediately
         setStatus("success");
         setTimeout(() => navigate("/shenmay/onboarding", { replace: true }), 1500);
       })
       .catch((err) => {
         if (cancelled) return;
         setStatus("error");
-        setErrorMsg(
-          err?.message ||
-          "This verification link has expired or is invalid. Please request a new one."
-        );
+        setErrorMsg(err?.message || "This verification link has expired or is invalid. Please request a new one.");
       });
-
     return () => { cancelled = true; };
   }, [token, navigate]);
 
@@ -47,106 +51,94 @@ const ShenmayVerifyEmail = () => {
     e.preventDefault();
     if (!resendEmail.trim()) return;
     setResending(true);
-    try {
-      await resendVerification(resendEmail.trim());
-      setResent(true);
-    } catch {
-      /* silently handled */
-    } finally {
-      setResending(false);
-    }
+    try { await resendVerification(resendEmail.trim()); setResent(true); }
+    catch {}
+    finally { setResending(false); }
   };
 
-  const inp =
-    "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border border-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/25 focus:border-[#1E3A5F]";
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-6">
-      <div className="w-full max-w-md text-center space-y-6">
-        <img src={shenmayLogo} alt="Shenmay AI" className="h-7 mx-auto mb-8" />
+    <PageShell style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "56px 24px" }}>
+      <div style={{ width: "100%", maxWidth: 440, textAlign: "center" }}>
+        <div style={{ marginBottom: 36, display: "flex", justifyContent: "center" }}>
+          <ShenmayWordmark size={24} />
+        </div>
 
         {status === "loading" && (
-          <div className="space-y-4">
-            <Loader2 size={48} className="mx-auto animate-spin" style={{ color: "#1E3A5F" }} />
-            <p className="text-gray-500 text-sm">Verifying your email…</p>
-          </div>
+          <>
+            <Loader2 size={42} color={T.teal} style={{ margin: "0 auto", animation: "spin 1.2s linear infinite" }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <Lede style={{ marginTop: 20 }}>Verifying your email…</Lede>
+          </>
         )}
 
         {status === "no-token" && (
-          <div className="space-y-4">
-            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center" style={{ background: "#FEF2F2" }}>
-              <XCircle size={32} style={{ color: "#DC2626" }} />
+          <>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+              <XCircle size={30} color={T.danger} />
             </div>
-            <h1 className="text-xl font-bold" style={{ color: "#1E3A5F" }}>Invalid verification link</h1>
-            <p className="text-gray-500 text-sm">
+            <Kicker color={T.danger}>Invalid link</Kicker>
+            <Display size={30} italic style={{ marginTop: 12 }}>Something's off.</Display>
+            <Lede style={{ marginTop: 12 }}>
               This verification link has expired or is invalid. Please request a new one.
-            </p>
-            <Link to="/shenmay/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
-              ← Back to login
-            </Link>
-          </div>
+            </Lede>
+            <div style={{ marginTop: 28 }}>
+              <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500 }}>
+                <ArrowLeft size={14} /> Back to sign in
+              </Link>
+            </div>
+          </>
         )}
 
         {status === "success" && (
-          <div className="space-y-4">
-            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center" style={{ background: "#F0FDF4" }}>
-              <CheckCircle size={32} style={{ color: "#22C55E" }} />
+          <>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#EBF1E9", border: `1px solid #CDDCCA`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+              <CheckCircle size={30} color={T.success} />
             </div>
-            <h1 className="text-xl font-bold" style={{ color: "#1E3A5F" }}>Email verified!</h1>
-            <p className="text-gray-500 text-sm">Your account is ready. Let's set up your AI agent.</p>
-            <p className="text-xs text-gray-400">Redirecting to onboarding…</p>
-          </div>
+            <Kicker color={T.success}>Verified</Kicker>
+            <Display size={32} italic style={{ marginTop: 12 }}>Your email is confirmed.</Display>
+            <Lede style={{ marginTop: 12 }}>Your account is ready. Let's set up your agent.</Lede>
+            <div style={{ marginTop: 20, fontSize: 12, color: T.mute, fontFamily: T.mono, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+              Redirecting to onboarding…
+            </div>
+          </>
         )}
 
         {status === "error" && (
-          <div className="space-y-6">
-            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center" style={{ background: "#FEF2F2" }}>
-              <XCircle size={32} style={{ color: "#DC2626" }} />
+          <>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+              <XCircle size={30} color={T.danger} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold mb-2" style={{ color: "#1E3A5F" }}>Verification failed</h1>
-              <p className="text-gray-500 text-sm">{errorMsg}</p>
-            </div>
+            <Kicker color={T.danger}>Verification failed</Kicker>
+            <Display size={30} italic style={{ marginTop: 12 }}>Link didn't work.</Display>
+            <Lede style={{ marginTop: 12 }}>{errorMsg}</Lede>
 
             {resent ? (
-              <div
-                className="rounded-lg px-4 py-3 text-sm font-medium"
-                style={{ background: "#F0FDF4", color: "#16A34A", border: "1px solid #BBF7D0" }}
-              >
-                ✓ A new verification link has been sent. Check your inbox.
+              <div style={{ marginTop: 28 }}>
+                <Notice tone="success" icon={CheckCircle}>
+                  A new verification link has been sent. Check your inbox.
+                </Notice>
               </div>
             ) : (
-              <form onSubmit={handleResend} className="space-y-3 text-left">
-                <p className="text-xs font-semibold text-gray-500 text-center">
-                  Enter your email to receive a new link:
-                </p>
-                <input
-                  type="email"
-                  required
-                  value={resendEmail}
-                  onChange={(e) => setResendEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className={inp}
-                  style={{ backgroundColor: "#ffffff", color: "#111827" }}
-                />
-                <button
-                  type="submit"
-                  disabled={resending}
-                  className="w-full py-2.5 rounded-lg text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #1E3A5F 0%, #2a4f7a 100%)" }}
-                >
-                  {resending ? "Sending…" : <><Send size={14} /> Send new link</>}
-                </button>
+              <form onSubmit={handleResend} style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 16, textAlign: "left" }}>
+                <div style={{ textAlign: "center" }}>
+                  <Kicker color={T.mute}>Enter your email for a new link</Kicker>
+                </div>
+                <Input type="email" required value={resendEmail} onChange={(e) => setResendEmail(e.target.value)} placeholder="you@company.com" />
+                <Button type="submit" variant="primary" size="lg" disabled={resending}>
+                  {resending ? "Sending…" : (<><Send size={14} /> Send new link</>)}
+                </Button>
               </form>
             )}
 
-            <Link to="/shenmay/login" className="inline-block text-sm font-semibold hover:underline" style={{ color: "#C9A84C" }}>
-              ← Back to login
-            </Link>
-          </div>
+            <div style={{ marginTop: 28 }}>
+              <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+                <ArrowLeft size={14} /> Back to sign in
+              </Link>
+            </div>
+          </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 };
 
