@@ -1,129 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0d0d14"/>
-      <stop offset="100%" style="stop-color:#111118"/>
-    </linearGradient>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6C63FF"/>
-      <stop offset="100%" style="stop-color:#00D4AA"/>
-    </linearGradient>
-    <linearGradient id="gradFade" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.4"/>
-      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.4"/>
-    </linearGradient>
-    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.12"/>
-      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.06"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="softglow">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Shenmay — Growth plan">
+  <!-- Direction B editorial product card · paper / ink / teal · featured tier -->
 
-  <!-- Background -->
-  <rect width="800" height="500" fill="url(#bg)"/>
+  <!-- Paper background -->
+  <rect width="800" height="500" fill="#F5F1E8"/>
 
-  <!-- Glow blob behind graph (adds warmth to this tier) -->
-  <ellipse cx="580" cy="240" rx="200" ry="180" fill="#6C63FF" opacity="0.04" filter="url(#softglow)"/>
+  <!-- Featured accent strip (top edge, teal) -->
+  <rect x="0" y="0" width="800" height="3" fill="#0F5F5C"/>
 
-  <!-- Subtle grid lines -->
-  <g opacity="0.05" stroke="#6C63FF" stroke-width="1">
-    <line x1="0" y1="100" x2="800" y2="100"/>
-    <line x1="0" y1="200" x2="800" y2="200"/>
-    <line x1="0" y1="300" x2="800" y2="300"/>
-    <line x1="0" y1="400" x2="800" y2="400"/>
-    <line x1="160" y1="0" x2="160" y2="500"/>
-    <line x1="320" y1="0" x2="320" y2="500"/>
-    <line x1="480" y1="0" x2="480" y2="500"/>
-    <line x1="640" y1="0" x2="640" y2="500"/>
+  <!-- Top strip: wordmark + plate caption -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif">
+    <text x="48" y="46" font-size="24" font-weight="500" fill="#1A1D1A" letter-spacing="-0.5">Shenmay</text>
+    <circle cx="158" cy="40" r="2.8" fill="#0F5F5C"/>
+    <text x="752" y="44" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="400" fill="#6B6B64" letter-spacing="2.2" text-anchor="end">PRICING · 2026</text>
   </g>
 
-  <!-- Top accent bar (full gradient, brighter for mid-tier) -->
-  <rect x="0" y="0" width="800" height="5" fill="url(#grad)"/>
+  <!-- Thin rule under top strip -->
+  <line x1="48" y1="74" x2="752" y2="74" stroke="#D8D0BD" stroke-width="1"/>
 
-  <!-- Subtle highlight panel on left -->
-  <rect x="0" y="0" width="460" height="500" fill="url(#highlight)"/>
-
-  <!-- Logo mark (top left) -->
-  <g transform="translate(48, 36)" filter="url(#glow)">
-    <line x1="8" y1="6" x2="8" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="8" y1="22" x2="28" y2="6" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="8" y1="22" x2="28" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="28" y1="6" x2="38" y2="11" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
-    <line x1="28" y1="38" x2="38" y2="33" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
-    <circle cx="8" cy="6" r="3.5" fill="url(#grad)"/>
-    <circle cx="8" cy="22" r="4" fill="url(#grad)"/>
-    <circle cx="8" cy="38" r="3.5" fill="url(#grad)"/>
-    <circle cx="28" cy="6" r="3.5" fill="url(#grad)"/>
-    <circle cx="28" cy="38" r="3.5" fill="url(#grad)"/>
-    <circle cx="38" cy="11" r="2" fill="#00D4AA" opacity="0.8"/>
-    <circle cx="38" cy="33" r="2" fill="#6C63FF" opacity="0.8"/>
+  <!-- Kicker + FEATURED mark -->
+  <g font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="500" letter-spacing="1.8">
+    <text x="48" y="130" fill="#0F5F5C">PLAN 02 · MANAGED AI</text>
+    <rect x="648" y="114" width="104" height="22" fill="#0F5F5C"/>
+    <text x="700" y="130" fill="#F5F1E8" text-anchor="middle" letter-spacing="2.2">FEATURED</text>
   </g>
-  <text x="100" y="65" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Shenmay<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
-
-  <!-- "Most Popular" badge -->
-  <rect x="48" y="104" width="116" height="28" rx="14" fill="url(#grad)"/>
-  <text x="106" y="123" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="700" fill="#FFFFFF" letter-spacing="1">★ GROWTH</text>
 
   <!-- Main heading -->
-  <text x="48" y="200" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="#FFFFFF" letter-spacing="-2">Scale your</text>
-  <text x="48" y="255" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="url(#grad)" letter-spacing="-2">customer base.</text>
-
-  <!-- Price -->
-  <text x="48" y="320" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400" fill="#888899">Most popular plan</text>
-  <text x="48" y="370" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="58" font-weight="700" fill="#FFFFFF" letter-spacing="-2">$149<tspan font-size="22" font-weight="400" fill="#888899">/mo</tspan></text>
-
-  <!-- Features list -->
-  <g transform="translate(48, 415)">
-    <circle cx="6" cy="6" r="4" fill="url(#grad)"/>
-    <text x="20" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">250 customers</text>
-    <circle cx="166" cy="6" r="4" fill="url(#grad)"/>
-    <text x="180" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">5,000 messages/mo</text>
-    <circle cx="366" cy="6" r="4" fill="url(#grad)"/>
-    <text x="380" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">Managed AI</text>
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif" fill="#1A1D1A">
+    <text x="48" y="212" font-size="68" font-weight="600" letter-spacing="-2.4">Scale with ease.</text>
+    <text x="48" y="262" font-size="22" font-weight="400" fill="#3A3D39" letter-spacing="-0.3">Where most growing teams land.</text>
   </g>
 
-  <!-- Right side: larger, denser node graph -->
-  <g transform="translate(460, 40)" opacity="0.7" filter="url(#glow)">
-    <!-- Connecting lines -->
-    <line x1="150" y1="210" x2="230" y2="120" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="150" y1="210" x2="250" y2="260" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="150" y1="210" x2="70" y2="300" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="150" y1="210" x2="100" y2="120" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="230" y1="120" x2="300" y2="160" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="250" y1="260" x2="300" y2="160" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="70" y1="300" x2="130" y2="370" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="100" y1="120" x2="60" y2="60" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="230" y1="120" x2="260" y2="60" stroke="url(#gradFade)" stroke-width="1"/>
-    <!-- Main node -->
-    <circle cx="150" cy="210" r="20" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="150" cy="210" r="12" fill="url(#grad)"/>
-    <!-- Secondary nodes -->
-    <circle cx="230" cy="120" r="12" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="230" cy="120" r="7" fill="url(#grad)" opacity="0.9"/>
-    <circle cx="250" cy="260" r="12" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="250" cy="260" r="7" fill="url(#grad)" opacity="0.9"/>
-    <circle cx="70" cy="300" r="10" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="70" cy="300" r="6" fill="url(#grad)" opacity="0.8"/>
-    <circle cx="100" cy="120" r="10" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="100" cy="120" r="6" fill="url(#grad)" opacity="0.8"/>
-    <!-- Tertiary nodes -->
-    <circle cx="300" cy="160" r="7" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="300" cy="160" r="4" fill="#00D4AA" opacity="0.7"/>
-    <circle cx="130" cy="370" r="7" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="130" cy="370" r="4" fill="#6C63FF" opacity="0.7"/>
-    <circle cx="60" cy="60" r="6" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="60" cy="60" r="3" fill="#00D4AA" opacity="0.6"/>
-    <circle cx="260" cy="60" r="6" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="260" cy="60" r="3" fill="#6C63FF" opacity="0.6"/>
+  <!-- Price block -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif">
+    <text x="48" y="336" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="500" fill="#6B6B64" letter-spacing="2.2">SAAS · MONTHLY</text>
+    <text x="48" y="394" font-size="58" font-weight="600" fill="#1A1D1A" letter-spacing="-2">$149<tspan font-size="22" font-weight="400" fill="#6B6B64" letter-spacing="0"> / mo</tspan></text>
   </g>
 
-  <!-- Bottom border -->
-  <rect x="0" y="495" width="800" height="5" fill="url(#grad)"/>
+  <!-- Rule above features -->
+  <line x1="48" y1="430" x2="752" y2="430" stroke="#D8D0BD" stroke-width="1"/>
+
+  <!-- Feature row -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#3A3D39">
+    <circle cx="54" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="66" y="466" letter-spacing="-0.1">250 customers</text>
+
+    <circle cx="220" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="232" y="466" letter-spacing="-0.1">5,000 messages / month</text>
+
+    <circle cx="450" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="462" y="466" letter-spacing="-0.1">Managed AI included</text>
+  </g>
+
+  <!-- Footer domain -->
+  <text x="752" y="480" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="400" fill="#6B6B64" letter-spacing="1.4" text-anchor="end">shenmay.ai</text>
 </svg>

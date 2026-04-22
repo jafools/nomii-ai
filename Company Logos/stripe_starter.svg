@@ -1,109 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0d0d14"/>
-      <stop offset="100%" style="stop-color:#111118"/>
-    </linearGradient>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6C63FF"/>
-      <stop offset="100%" style="stop-color:#00D4AA"/>
-    </linearGradient>
-    <linearGradient id="gradFade" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6C63FF;stop-opacity:0.4"/>
-      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:0.4"/>
-    </linearGradient>
-    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a2e"/>
-      <stop offset="100%" style="stop-color:#16162a"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="Shenmay — Starter plan">
+  <!-- Direction B editorial product card · paper / ink / teal -->
+  <!-- Palette locked to client/src/components/shenmay/ui/ShenmayUI.jsx TOKENS -->
 
-  <!-- Background -->
-  <rect width="800" height="500" fill="url(#bg)"/>
+  <!-- Paper background -->
+  <rect width="800" height="500" fill="#F5F1E8"/>
 
-  <!-- Subtle grid lines -->
-  <g opacity="0.04" stroke="#6C63FF" stroke-width="1">
-    <line x1="0" y1="100" x2="800" y2="100"/>
-    <line x1="0" y1="200" x2="800" y2="200"/>
-    <line x1="0" y1="300" x2="800" y2="300"/>
-    <line x1="0" y1="400" x2="800" y2="400"/>
-    <line x1="160" y1="0" x2="160" y2="500"/>
-    <line x1="320" y1="0" x2="320" y2="500"/>
-    <line x1="480" y1="0" x2="480" y2="500"/>
-    <line x1="640" y1="0" x2="640" y2="500"/>
+  <!-- Top strip: wordmark + plate caption -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif">
+    <text x="48" y="44" font-size="24" font-weight="500" fill="#1A1D1A" letter-spacing="-0.5">Shenmay</text>
+    <circle cx="158" cy="38" r="2.8" fill="#0F5F5C"/>
+    <text x="752" y="42" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="400" fill="#6B6B64" letter-spacing="2.2" text-anchor="end">PRICING · 2026</text>
   </g>
 
-  <!-- Top accent bar -->
-  <rect x="0" y="0" width="800" height="4" fill="url(#grad)"/>
+  <!-- Thin rule under top strip -->
+  <line x1="48" y1="72" x2="752" y2="72" stroke="#D8D0BD" stroke-width="1"/>
 
-  <!-- Logo mark (top left) -->
-  <g transform="translate(48, 36)" filter="url(#glow)">
-    <line x1="8" y1="6" x2="8" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="8" y1="22" x2="28" y2="6" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="8" y1="22" x2="28" y2="38" stroke="url(#grad)" stroke-width="3" stroke-linecap="round"/>
-    <line x1="28" y1="6" x2="38" y2="11" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
-    <line x1="28" y1="38" x2="38" y2="33" stroke="url(#gradFade)" stroke-width="1.5" stroke-dasharray="2,2"/>
-    <circle cx="8" cy="6" r="3.5" fill="url(#grad)"/>
-    <circle cx="8" cy="22" r="4" fill="url(#grad)"/>
-    <circle cx="8" cy="38" r="3.5" fill="url(#grad)"/>
-    <circle cx="28" cy="6" r="3.5" fill="url(#grad)"/>
-    <circle cx="28" cy="38" r="3.5" fill="url(#grad)"/>
-    <circle cx="38" cy="11" r="2" fill="#00D4AA" opacity="0.8"/>
-    <circle cx="38" cy="33" r="2" fill="#6C63FF" opacity="0.8"/>
-  </g>
-  <text x="100" y="65" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Shenmay<tspan font-weight="300" fill="url(#grad)">AI</tspan></text>
-
-  <!-- Plan label pill -->
-  <rect x="48" y="110" width="90" height="28" rx="14" fill="url(#grad)" opacity="0.15"/>
-  <rect x="48" y="110" width="90" height="28" rx="14" fill="none" stroke="url(#grad)" stroke-width="1" opacity="0.5"/>
-  <text x="93" y="129" text-anchor="middle" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="600" fill="#00D4AA" letter-spacing="1.5">STARTER</text>
+  <!-- Kicker -->
+  <text x="48" y="128" font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="500" fill="#0F5F5C" letter-spacing="1.8" text-transform="uppercase">PLAN 01 · SELF-SERVE</text>
 
   <!-- Main heading -->
-  <text x="48" y="200" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="#FFFFFF" letter-spacing="-2">Get started</text>
-  <text x="48" y="255" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="52" font-weight="700" fill="#FFFFFF" letter-spacing="-2">with AI.</text>
-
-  <!-- Price -->
-  <text x="48" y="320" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400" fill="#888899">Starting from</text>
-  <text x="48" y="370" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="58" font-weight="700" fill="#FFFFFF" letter-spacing="-2">$49<tspan font-size="22" font-weight="400" fill="#888899">/mo</tspan></text>
-
-  <!-- Features list -->
-  <g transform="translate(48, 415)">
-    <circle cx="6" cy="6" r="4" fill="url(#grad)"/>
-    <text x="20" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">50 customers</text>
-    <circle cx="156" cy="6" r="4" fill="url(#grad)"/>
-    <text x="170" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">1,000 messages/mo</text>
-    <circle cx="340" cy="6" r="4" fill="url(#grad)"/>
-    <text x="354" y="11" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" fill="#BBBBCC">BYOK API key</text>
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif" fill="#1A1D1A">
+    <text x="48" y="210" font-size="68" font-weight="600" letter-spacing="-2.4">Get started.</text>
+    <text x="48" y="260" font-size="22" font-weight="400" fill="#3A3D39" letter-spacing="-0.3">Know your customers from day one.</text>
   </g>
 
-  <!-- Right side decorative node graph -->
-  <g transform="translate(500, 80)" opacity="0.6" filter="url(#glow)">
-    <!-- Connecting lines -->
-    <line x1="130" y1="180" x2="200" y2="100" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="130" y1="180" x2="220" y2="220" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="130" y1="180" x2="80" y2="280" stroke="url(#gradFade)" stroke-width="1.5"/>
-    <line x1="200" y1="100" x2="270" y2="140" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="220" y1="220" x2="270" y2="140" stroke="url(#gradFade)" stroke-width="1"/>
-    <line x1="80" y1="280" x2="160" y2="340" stroke="url(#gradFade)" stroke-width="1"/>
-    <!-- Nodes -->
-    <circle cx="130" cy="180" r="14" fill="#6C63FF" opacity="0.25"/>
-    <circle cx="130" cy="180" r="8" fill="url(#grad)"/>
-    <circle cx="200" cy="100" r="10" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="200" cy="100" r="5" fill="url(#grad)" opacity="0.8"/>
-    <circle cx="220" cy="220" r="10" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="220" cy="220" r="5" fill="url(#grad)" opacity="0.8"/>
-    <circle cx="80" cy="280" r="8" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="80" cy="280" r="4" fill="url(#grad)" opacity="0.7"/>
-    <circle cx="270" cy="140" r="6" fill="#00D4AA" opacity="0.2"/>
-    <circle cx="270" cy="140" r="3" fill="#00D4AA" opacity="0.6"/>
-    <circle cx="160" cy="340" r="6" fill="#6C63FF" opacity="0.2"/>
-    <circle cx="160" cy="340" r="3" fill="#6C63FF" opacity="0.6"/>
+  <!-- Price block -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif">
+    <text x="48" y="336" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="500" fill="#6B6B64" letter-spacing="2.2">SAAS · MONTHLY</text>
+    <text x="48" y="394" font-size="58" font-weight="600" fill="#1A1D1A" letter-spacing="-2">$49<tspan font-size="22" font-weight="400" fill="#6B6B64" letter-spacing="0"> / mo</tspan></text>
   </g>
 
-  <!-- Bottom border -->
-  <rect x="0" y="496" width="800" height="4" fill="url(#grad)" opacity="0.3"/>
+  <!-- Rule above features -->
+  <line x1="48" y1="430" x2="752" y2="430" stroke="#D8D0BD" stroke-width="1"/>
+
+  <!-- Feature row -->
+  <g font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="400" fill="#3A3D39">
+    <circle cx="54" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="66" y="466" letter-spacing="-0.1">50 customers</text>
+
+    <circle cx="220" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="232" y="466" letter-spacing="-0.1">1,000 messages / month</text>
+
+    <circle cx="450" cy="462" r="3" fill="#0F5F5C"/>
+    <text x="462" y="466" letter-spacing="-0.1">BYOK API key</text>
+  </g>
+
+  <!-- Footer domain -->
+  <text x="752" y="480" font-family="ui-monospace, Menlo, monospace" font-size="10" font-weight="400" fill="#6B6B64" letter-spacing="1.4" text-anchor="end">shenmay.ai</text>
 </svg>
