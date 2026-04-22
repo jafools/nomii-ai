@@ -95,7 +95,8 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
   if (showSavedSummary) {
     return (
       <div>
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Customer Data</h2>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C", marginBottom: 8 }}>Figure 03 · Who you know</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 28, letterSpacing: "-0.04em", color: "#1A1D1A", margin: "0 0 12px" }}>Customers.</h2>
         <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }}>
           <CheckCircle2 size={20} style={{ color: "#2D6A4F" }} />
           <div>
@@ -121,10 +122,11 @@ const Step3Customers = ({ advance, stepIndex, shenmayTenant }) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Import your customers</h2>
-      <p className="text-sm mb-6" style={{ color: "#6B6B64" }}>
-        Upload any customer list you already have — a spreadsheet export, CRM dump, or email list. We'll figure out the columns automatically.
-      </p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 03 · Who you know</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Bring your customers in.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>Upload any list you have — spreadsheet, CRM dump, email export. We'll map the columns automatically.</p>
+      </div>
 
       {/* Legal warning */}
       <div className="flex items-start gap-3 rounded-lg px-4 py-3 mb-6" style={{ background: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.18)" }}>

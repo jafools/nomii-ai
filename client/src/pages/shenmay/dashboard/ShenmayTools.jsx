@@ -23,6 +23,7 @@ import {
   Zap, HelpCircle, Play, ToggleLeft, ToggleRight, ChevronDown,
   FlaskConical, TriangleAlert, ChevronUp,
 } from "lucide-react";
+import { TOKENS as T, Kicker, Display, Lede, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 // ── Colour + icon map ─────────────────────────────────────────────────────────
 const TYPE_STYLE = {
@@ -1016,30 +1017,21 @@ export default function ShenmayTools() {
   const pausedTools = tools.filter(t => t.is_active === false);
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div style={{ maxWidth: 720, margin: "0 auto" }}>
       {/* Page header */}
-      <div className="flex items-start justify-between mb-6">
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 16 }}>
         <div>
-          <h1 className="text-xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
-            AI Tools
-          </h1>
-          <p className="text-sm" style={{ color: "#6B6B64" }}>
-            Give your AI agent real abilities — beyond just chatting.
-            {activeTools.length > 0 && (
-              <span style={{ color: "#6B6B64" }}>
-                {" "}· {activeTools.length} active
-              </span>
-            )}
-          </p>
+          <Kicker>Capabilities</Kicker>
+          <Display size={38} italic style={{ marginTop: 12 }}>AI tools.</Display>
+          <Lede>
+            Give your agent real abilities — beyond just chatting.
+            {activeTools.length > 0 && <span style={{ color: T.mute }}> · {activeTools.length} active</span>}
+          </Lede>
         </div>
         {tools.length > 0 && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0 transition-all hover:shadow-lg hover:shadow-[#0F5F5C]/15"
-            style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
-          >
-            <Plus size={14} /> New Tool
-          </button>
+          <Button variant="primary" size="md" onClick={() => setShowCreate(true)}>
+            <Plus size={14} /> New tool
+          </Button>
         )}
       </div>
 

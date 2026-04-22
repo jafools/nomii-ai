@@ -5,6 +5,7 @@ import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, RefreshCw, AlertTriangle, User, MessageSquare, Trash2, Brain, BookOpen, Database, Plus, X, ChevronDown, ChevronRight, Tag, Target, Zap, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TOKENS as T, Kicker, Display, Lede, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const statusStyle = {
   completed: { bg: "rgba(45,106,79,0.12)", color: "#2D6A4F", label: "Completed" },
@@ -70,14 +71,12 @@ const ShenmayCustomerDetail = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(122,31,26,0.1)" }}>
-          <AlertTriangle size={24} style={{ color: "#7A1F1A" }} />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "72px 0", textAlign: "center" }}>
+        <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <AlertTriangle size={24} color={T.danger} />
         </div>
-        <p className="text-sm text-[#6B6B64]">{error}</p>
-        <button onClick={fetch} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-          <RefreshCw size={14} /> Retry
-        </button>
+        <Lede style={{ marginTop: 0 }}>{error}</Lede>
+        <Button variant="primary" onClick={fetch}><RefreshCw size={14} /> Retry</Button>
       </div>
     );
   }
@@ -90,36 +89,43 @@ const ShenmayCustomerDetail = () => {
   const initials = `${(customer.first_name?.[0] || "").toUpperCase()}${(customer.last_name?.[0] || "").toUpperCase()}`;
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Back + refresh indicator */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate("/shenmay/dashboard/customers")} className="flex items-center gap-1.5 text-sm transition-colors" style={{ color: "#6B6B64" }}>
-          <ArrowLeft size={16} /> All customers
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <button onClick={() => navigate("/shenmay/dashboard/customers")} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: T.sans }}>
+          <ArrowLeft size={15} /> All customers
         </button>
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {lastRefreshed && (
-            <span className="text-[11px]" style={{ color: "#D8D0BD" }}>
+            <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", color: T.mute, textTransform: "uppercase" }}>
               Updated {lastRefreshed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
-          <button onClick={fetch} title="Refresh now" className="p-1.5 rounded-lg transition-colors hover:opacity-80" style={{ color: "#6B6B64" }}>
+          <button onClick={fetch} title="Refresh now" style={{ padding: 6, borderRadius: 4, background: "none", border: "none", color: T.mute, cursor: "pointer" }}>
             <RefreshCw size={13} />
           </button>
         </div>
       </div>
 
       {/* Header Card */}
-      <div className="rounded-2xl p-6 flex items-center gap-5" style={card}>
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: "rgba(15,95,92,0.15)", color: "#0F5F5C" }}>
-          {initials || <User size={24} />}
+      <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 24, display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ width: 54, height: 54, borderRadius: "50%", background: `${T.teal}15`, color: T.teal, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 500, flexShrink: 0 }}>
+          {initials || <User size={22} />}
         </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-[#1A1D1A]">{customer.first_name} {customer.last_name}</h2>
-          <p className="text-sm text-[#6B6B64]">{customer.email}</p>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Kicker color={T.mute}>Customer</Kicker>
+          <div style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 18, letterSpacing: "-0.015em", color: T.ink, margin: "4px 0 2px" }}>
+            {customer.first_name} {customer.last_name}
+          </div>
+          <div style={{ fontSize: 13, color: T.mute }}>{customer.email}</div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>{st.label}</span>
-          <span className="text-[11px] text-[#6B6B64]">Last interaction: {fmtDate(customer.last_interaction)}</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 3, background: `${st.color}18`, color: st.color }}>
+            {st.label}
+          </span>
+          <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: T.mute, textTransform: "uppercase" }}>
+            Last seen {fmtDate(customer.last_interaction)}
+          </span>
         </div>
       </div>
 

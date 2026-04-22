@@ -87,8 +87,11 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Add Shenmay AI to your website</h2>
-      <p className="text-sm mb-6" style={{ color: "#6B6B64" }}>Follow the instructions below to install the Shenmay AI widget. It only takes a minute.</p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 06 · Go live</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Drop the widget on your site.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>One snippet. About a minute. Follow the instructions below.</p>
+      </div>
 
       {/* Two-mode explainer */}
       <div className="rounded-xl p-5 mb-8" style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.15)" }}>

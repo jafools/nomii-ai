@@ -4,6 +4,7 @@ import { getConversation, takeoverConversation, handbackConversation, replyToCon
 import { fmtTime } from "@/lib/format";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
 import { ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, UserCheck, Bot, Send, Download, Tag, Plus, X, ThumbsUp, ThumbsDown, Star } from "lucide-react";
+import { TOKENS as T, Kicker, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const statusStyle = {
   active:    { bg: "rgba(45,106,79,0.12)",    color: "#2D6A4F",  label: "Active" },
@@ -219,9 +220,9 @@ const ShenmayConversationDetail = () => {
           <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
         </div>
         <p className="text-sm text-[#6B6B64] mb-4">{error}</p>
-        <button onClick={() => fetchData()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-          <RefreshCw className="h-4 w-4" /> Retry
-        </button>
+        <Button variant="primary" onClick={() => fetchData()}>
+          <RefreshCw size={14} /> Retry
+        </Button>
       </div>
     );
   }
@@ -269,45 +270,21 @@ const ShenmayConversationDetail = () => {
         {/* ── Action buttons (right-aligned) ── */}
         <div className="ml-auto flex items-center gap-2">
           {isActive && !isHuman && (
-            <button
-              onClick={handleTakeover}
-              disabled={takingOver}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#fff" }}
-            >
-              <UserCheck className="h-4 w-4" />
-              {takingOver ? "Taking over…" : "Take Over Session"}
-            </button>
+            <Button variant="teal" size="md" onClick={handleTakeover} disabled={takingOver}>
+              <UserCheck size={14} /> {takingOver ? "Taking over…" : "Take over"}
+            </Button>
           )}
           {isActive && isHuman && (
-            <button
-              onClick={handleHandback}
-              disabled={handingBack}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #60A5FA, #0F5F5C)", color: "#fff" }}
-            >
-              <Bot className="h-4 w-4" />
-              {handingBack ? "Handing back…" : "Hand Back to AI"}
-            </button>
+            <Button variant="primary" size="md" onClick={handleHandback} disabled={handingBack}>
+              <Bot size={14} /> {handingBack ? "Handing back…" : "Hand back to AI"}
+            </Button>
           )}
-          <button
-            onClick={handleDownloadTranscript}
-            disabled={downloading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors hover:opacity-80 disabled:opacity-50"
-            title="Download transcript"
-            style={{ color: "#6B6B64", border: "1px solid #EDE7D7" }}
-          >
-            <Download className="h-3.5 w-3.5" />
-            {downloading ? "Downloading…" : "Transcript"}
-          </button>
-          <button
-            onClick={() => fetchData(false)}
-            className="p-2 rounded-xl transition-colors hover:opacity-80"
-            title="Refresh"
-            style={{ color: "#6B6B64", border: "1px solid #EDE7D7" }}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+          <Button variant="ghost" size="sm" onClick={handleDownloadTranscript} disabled={downloading} title="Download transcript">
+            <Download size={13} /> {downloading ? "Downloading…" : "Transcript"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => fetchData(false)} title="Refresh">
+            <RefreshCw size={13} />
+          </Button>
         </div>
       </div>
 
@@ -461,36 +438,38 @@ const ShenmayConversationDetail = () => {
       )}
 
       {/* ── Chat thread ── */}
-      <div className="rounded-2xl" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
-        <div className="p-6 space-y-3 max-h-[55vh] overflow-y-auto pr-2" style={{ scrollBehavior: "smooth" }}>
+      <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10 }}>
+        <div style={{ padding: 24, maxHeight: "55vh", overflowY: "auto", scrollBehavior: "smooth" }}>
           {messages.length === 0 && (
-            <div className="text-center py-10">
-              <MessageSquare className="h-8 w-8 mx-auto mb-3" style={{ color: "#D8D0BD" }} />
-              <p className="text-sm" style={{ color: "#6B6B64" }}>No messages in this conversation.</p>
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <MessageSquare size={28} color={T.paperEdge} style={{ margin: "0 auto 12px", display: "block" }} />
+              <p style={{ fontSize: 13, color: T.mute, margin: 0 }}>No messages in this conversation.</p>
             </div>
           )}
           {messages.map((msg, i) => {
             const role    = (msg.role || msg.sender || "").toLowerCase();
             const isAgent = role === "agent" || role === "assistant";
             return (
-              <div key={msg.id || i} className={`flex ${isAgent ? "justify-start" : "justify-end"}`}>
-                <div
-                  className="max-w-[70%] rounded-2xl px-4 py-3"
-                  style={
-                    isAgent
-                      ? { background: "#EDE7D7", border: "1px solid #EDE7D7" }
-                      : { background: "linear-gradient(135deg, rgba(15,95,92,0.2), rgba(15,95,92,0.08))", border: "1px solid rgba(15,95,92,0.15)" }
-                  }
-                >
-                  <p className="text-[11px] font-semibold mb-1" style={{ color: isAgent ? "#6B6B64" : "#0F5F5C" }}>
+              <div key={msg.id || i} style={{ display: "flex", justifyContent: isAgent ? "flex-start" : "flex-end", marginBottom: 12 }}>
+                <div style={{
+                  maxWidth: "70%",
+                  borderRadius: 14,
+                  padding: "12px 14px",
+                  background: isAgent ? T.ink : T.paperDeep,
+                  color: isAgent ? T.paper : T.ink,
+                  border: isAgent ? `1px solid ${T.ink}` : `1px solid ${T.paperEdge}`,
+                  borderBottomLeftRadius: isAgent ? 4 : 14,
+                  borderBottomRightRadius: isAgent ? 14 : 4,
+                }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: isAgent ? `${T.paper}88` : T.mute, marginBottom: 4 }}>
                     {isAgent ? agentName : name}
-                  </p>
-                  <p className="text-[13px] whitespace-pre-wrap" style={{ color: "#3A3D39" }}>
+                  </div>
+                  <p style={{ fontSize: 14, whiteSpace: "pre-wrap", color: isAgent ? T.paper : T.ink, margin: 0, lineHeight: 1.55 }}>
                     {msg.content || msg.text || msg.message || ""}
                   </p>
-                  <p className="text-[10px] mt-1.5" style={{ color: "#D8D0BD" }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: "0.1em", color: isAgent ? `${T.paper}55` : T.mute, marginTop: 6 }}>
                     {fmtTime(msg.createdAt || msg.created_at || msg.timestamp)}
-                  </p>
+                  </div>
                 </div>
               </div>
             );
@@ -500,33 +479,37 @@ const ShenmayConversationDetail = () => {
 
         {/* ── Human reply input (only when in human mode and conversation active) ── */}
         {isActive && isHuman && (
-          <div className="px-6 pb-6 pt-0">
-            <div className="rounded-2xl p-1 flex items-end gap-2" style={{ background: "#EDE7D7", border: "1px solid rgba(16,185,129,0.25)" }}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <div style={{ borderRadius: 8, padding: 4, display: "flex", alignItems: "flex-end", gap: 8, background: T.paperDeep, border: `1px solid ${T.paperEdge}` }}>
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 onKeyDown={handleReplyKeyDown}
                 placeholder="Type your reply to the customer… (Enter to send)"
                 rows={2}
-                className="flex-1 bg-transparent resize-none outline-none text-sm px-3 py-2"
                 style={{
-                  color: "#3A3D39",
-                  fontFamily: "inherit",
-                  maxHeight: 120,
+                  flex: 1, background: "transparent", resize: "none", outline: "none",
+                  fontSize: 14, color: T.ink, fontFamily: T.sans, padding: "8px 12px", border: "none", maxHeight: 120, lineHeight: 1.5,
                 }}
                 maxLength={2000}
               />
               <button
                 onClick={handleReply}
                 disabled={!replyText.trim() || sending}
-                className="mb-1 mr-1 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:opacity-90 disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#fff", flexShrink: 0 }}
+                style={{
+                  width: 36, height: 36, borderRadius: 6, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  background: T.ink, color: T.paper, border: "none", cursor: !replyText.trim() || sending ? "not-allowed" : "pointer",
+                  opacity: !replyText.trim() || sending ? 0.4 : 1, flexShrink: 0, margin: "0 4px 4px 0",
+                  transition: "background 180ms",
+                }}
+                onMouseEnter={(e) => { if (replyText.trim() && !sending) e.currentTarget.style.background = T.tealDark; }}
+                onMouseLeave={(e) => { if (replyText.trim() && !sending) e.currentTarget.style.background = T.ink; }}
               >
-                <Send className="h-4 w-4" />
+                <Send size={14} />
               </button>
             </div>
-            <p className="text-[11px] mt-2" style={{ color: "#6B6B64" }}>
-              Press Enter to send · Shift+Enter for new line · Auto-refreshing every 3s
+            <p style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: T.mute, margin: "8px 0 0", textTransform: "uppercase" }}>
+              Enter to send · Shift+Enter for new line · Auto-refresh 3s
             </p>
           </div>
         )}

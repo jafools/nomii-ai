@@ -262,13 +262,10 @@ export default function StepTools({ shenmayTenant, advance, stepIndex, onSkip })
   return (
     <div>
       {/* Heading */}
-      <div className="mb-7">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: "#1A1D1A" }}>
-          Give your AI superpowers 🚀
-        </h2>
-        <p className="text-sm leading-relaxed" style={{ color: "#6B6B64" }}>
-          Right now your AI can chat — but it's working from memory. Toggle on the abilities you want it to have. You don't need to be technical — just switch on what sounds useful.
-        </p>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 05 · Capabilities</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Give your agent tools.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>Right now your agent can chat — but it's working from memory. Toggle on any abilities you want it to have.</p>
       </div>
 
       {/* Tool cards */}

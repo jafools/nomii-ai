@@ -8,6 +8,7 @@ import {
   Users, Search, X, Circle, ThumbsUp, ThumbsDown, Square, CheckSquare,
   CheckCheck, Tag, ChevronDown, UserCheck,
 } from "lucide-react";
+import { TOKENS as T, Kicker, Display, Lede, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 const statusStyle = {
@@ -338,13 +339,12 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
   }, [convo?.messages]);
 
   if (!conversationId) return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "#EDE7D7" }}>
-        <MessageSquare className="h-7 w-7" style={{ color: "#EDE7D7" }} />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: 32 }}>
+      <div style={{ width: 62, height: 62, borderRadius: "50%", background: T.paperDeep, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+        <MessageSquare size={24} color={T.paperEdge} />
       </div>
-      <p className="text-sm font-medium" style={{ color: "#6B6B64" }}>No conversation selected</p>
-      <p className="text-xs mt-1" style={{ color: "#D8D0BD" }}>Pick one from the list</p>
+      <Kicker color={T.mute}>No thread selected</Kicker>
+      <p style={{ fontSize: 13, color: T.mute, margin: "8px 0 0" }}>Pick a conversation from the list.</p>
     </div>
   );
 
@@ -365,17 +365,12 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
   );
 
   if (error) return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "rgba(122,31,26,0.1)" }}>
-        <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", padding: 32, gap: 14 }}>
+      <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <AlertTriangle size={22} color={T.danger} />
       </div>
-      <p className="text-sm text-[#6B6B64] mb-4">{error}</p>
-      <button onClick={fetchThread}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-        style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-        <RefreshCw className="h-4 w-4" /> Retry
-      </button>
+      <p style={{ fontSize: 13, color: T.mute, margin: 0 }}>{error}</p>
+      <Button variant="primary" onClick={fetchThread}><RefreshCw size={13} /> Retry</Button>
     </div>
   );
 
@@ -415,15 +410,10 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
           <span className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
             style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
           {isActive && !isHuman && (
-            <button
-              onClick={handleTakeover}
-              disabled={takingOver}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #10B981, #059669)", color: "#fff" }}
-            >
-              <UserCheck className="h-3 w-3" />
-              {takingOver ? "Taking over…" : "Take Over"}
-            </button>
+            <Button variant="teal" size="sm" onClick={handleTakeover} disabled={takingOver}>
+              <UserCheck size={12} />
+              {takingOver ? "Taking over…" : "Take over"}
+            </Button>
           )}
           {conversationId && (
             <Link to={`/shenmay/dashboard/conversations/${conversationId}`}
@@ -462,15 +452,15 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
               <div className="max-w-[70%]">
                 <div className="rounded-2xl px-4 py-2.5"
                   style={isAgent ? {
-                    background: "linear-gradient(135deg, rgba(15,95,92,0.22), rgba(15,95,92,0.10))",
-                    border: "1px solid rgba(15,95,92,0.15)",
+                    background: T.ink,
+                    color: T.paper,
                     borderBottomRightRadius: "6px",
                   } : {
-                    background: "#EDE7D7",
-                    border: "1px solid #EDE7D7",
+                    background: T.paperDeep,
+                    border: `1px solid ${T.paperEdge}`,
                     borderBottomLeftRadius: "6px",
                   }}>
-                  <p className="text-[13px] whitespace-pre-wrap" style={{ color: "#3A3D39" }}>
+                  <p className="text-[13px] whitespace-pre-wrap" style={{ color: isAgent ? T.paper : T.ink, margin: 0, lineHeight: 1.5 }}>
                     {content}
                   </p>
                 </div>
@@ -584,26 +574,29 @@ const ShenmayConversations = () => {
   }, [fetchList]);
 
   if (error && conversations.length === 0) return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "rgba(122,31,26,0.1)" }}>
-        <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "72px 0", textAlign: "center" }}>
+      <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <AlertTriangle size={24} color={T.danger} />
       </div>
-      <p className="text-sm text-[#6B6B64] mb-4">{error}</p>
-      <button onClick={() => fetchList()}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-        style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-        <RefreshCw className="h-4 w-4" /> Retry
-      </button>
+      <Lede style={{ marginTop: 0 }}>{error}</Lede>
+      <Button variant="primary" onClick={() => fetchList()}><RefreshCw size={14} /> Retry</Button>
     </div>
   );
 
   return (
-    <div className="flex rounded-2xl overflow-hidden"
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 4rem)" }}>
+      <div style={{ padding: "24px 24px 16px" }}>
+        <Kicker>Live</Kicker>
+        <Display size={32} italic style={{ marginTop: 10 }}>Conversations.</Display>
+      </div>
+      <div className="flex rounded-t-none overflow-hidden"
       style={{
-        background: "#EDE7D7",
-        border: "1px solid #EDE7D7",
-        height: "calc(100vh - 7.5rem)",
+        background: "#FFFFFF",
+        border: `1px solid ${T.paperEdge}`,
+        borderRadius: 10,
+        margin: "0 24px 24px",
+        flex: 1,
+        minHeight: 0,
       }}>
       {/* Left panel */}
       <div className="w-[310px] shrink-0 flex flex-col"
@@ -630,7 +623,7 @@ const ShenmayConversations = () => {
                   </button>
                   {bulkLabelOpen && (
                     <div className="absolute left-0 top-8 z-20 rounded-xl shadow-2xl overflow-hidden min-w-[140px]"
-                      style={{ background: "#141c2e", border: "1px solid #EDE7D7" }}>
+                      style={{ background: "#FFFFFF", border: "1px solid #D8D0BD", boxShadow: "0 12px 32px -12px rgba(26,29,26,0.18)" }}>
                       {allLabels.map(l => (
                         <button key={l.id} onClick={() => handleBulkLabel(l.id)}
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px] hover:bg-white/5 transition-colors">
@@ -682,6 +675,7 @@ const ShenmayConversations = () => {
           conversationId={selectedId}
           shenmayTenant={shenmayTenant}
         />
+      </div>
       </div>
     </div>
   );

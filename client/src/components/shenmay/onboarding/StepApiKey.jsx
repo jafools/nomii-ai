@@ -5,162 +5,100 @@
  *   1. BYOK: paste your own Anthropic API key (validated in real-time)
  *   2. Managed AI: skip key entry, uses platform key (higher plan required)
  */
-
 import { useState } from "react";
 import { Key, ExternalLink, CheckCircle, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { saveApiKey } from "@/lib/shenmayApi";
-
-const inp = "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-[#6B6B64] focus:outline-none focus:ring-2 focus:ring-[#0F5F5C]/20 focus:border-[#0F5F5C]/50";
-const inpStyle = { backgroundColor: "#EDE7D7", color: "#1A1D1A", borderColor: "#D8D0BD" };
+import { TOKENS as T, Kicker, Display, Lede, Field, Input, Button, Notice } from "@/components/shenmay/ui/ShenmayUI";
 
 const StepApiKey = ({ onComplete, tenant }) => {
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null); // { ok, error }
-  const [useManaged, setUseManaged] = useState(false);
+  const [result, setResult] = useState(null);
 
-  // Treat managed_ai_enabled as configured — self-hosted installs use the server's
-  // ANTHROPIC_API_KEY env var rather than a per-tenant key.
   const alreadyValidated = tenant?.llm_api_key_validated || tenant?.managed_ai_enabled;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!apiKey.trim()) return;
-
     setSaving(true);
     setResult(null);
-
     try {
       await saveApiKey(apiKey.trim(), "anthropic");
       setResult({ ok: true });
       setTimeout(() => onComplete?.(), 1200);
     } catch (err) {
       setResult({ ok: false, error: err.message || "Could not validate API key." });
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
-  const handleSkip = () => {
-    onComplete?.();
-  };
+  const handleSkip = () => onComplete?.();
 
   if (alreadyValidated) {
     return (
-      <div className="max-w-xl mx-auto space-y-6">
-        <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(45,106,79,0.10)" }}>
-            <CheckCircle size={28} style={{ color: "#2D6A4F" }} />
-          </div>
-          <h2 className="text-xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
-            API Key Configured
-          </h2>
-          <p className="text-sm" style={{ color: "#6B6B64" }}>
-            {tenant?.llm_api_key_last4
-              ? <>Your API key ending in <span className="font-mono" style={{ color: "#0F5F5C" }}>...{tenant.llm_api_key_last4}</span> is active and validated.</>
-              : <>Your AI provider is configured at the server level — no additional setup needed.</>
-            }
-          </p>
+      <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#EBF1E9", border: `1px solid #CDDCCA`, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <CheckCircle size={28} color={T.success} />
         </div>
-        <button onClick={handleSkip}
-          className="w-full py-2.5 rounded-xl text-sm font-bold"
-          style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
-          Continue
-        </button>
+        <Kicker color={T.success}>API key configured</Kicker>
+        <Display size={32} italic style={{ marginTop: 12 }}>You're connected.</Display>
+        <Lede>
+          {tenant?.llm_api_key_last4
+            ? <>Your API key ending in <span style={{ fontFamily: T.mono, color: T.teal }}>…{tenant.llm_api_key_last4}</span> is active and validated.</>
+            : <>Your AI provider is configured at the server level — no additional setup needed.</>}
+        </Lede>
+        <div style={{ marginTop: 28 }}>
+          <Button variant="primary" size="lg" onClick={handleSkip} style={{ width: "100%" }}>Continue</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: "rgba(15,95,92,0.10)" }}>
-          <Key size={28} style={{ color: "#0F5F5C" }} />
+    <div style={{ maxWidth: 520, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${T.teal}15`, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <Key size={26} color={T.teal} />
         </div>
-        <h2 className="text-xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
-          Connect Your AI
-        </h2>
-        <p className="text-sm" style={{ color: "#6B6B64" }}>
-          Your agent needs an AI provider to generate responses. Enter your own API key, or skip to use our managed service.
-        </p>
+        <Kicker>Figure 04 · Connect AI</Kicker>
+        <Display size={32} italic style={{ marginTop: 12 }}>Your agent needs a brain.</Display>
+        <Lede style={{ maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>
+          Paste your Anthropic API key — it's encrypted with AES-256 and never logged.
+        </Lede>
       </div>
 
-      {/* BYOK Form */}
-      {!useManaged && (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded-xl p-5 space-y-4"
-            style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: "#6B6B64" }}>
-                Anthropic API Key
-              </label>
-              <input
-                type="password"
-                className={inp}
-                style={inpStyle}
-                value={apiKey}
-                onChange={(e) => { setApiKey(e.target.value); setResult(null); }}
-                placeholder="sk-ant-api03-..."
-                autoComplete="off"
-              />
-              <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>
-                Get your key from{" "}
-                <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer"
-                  className="underline inline-flex items-center gap-0.5" style={{ color: "#0F5F5C" }}>
-                  console.anthropic.com <ExternalLink size={10} />
-                </a>
-              </p>
-            </div>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
+          <Field id="apiKey" label="Anthropic API key" hint={
+            <>Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40`, display: "inline-flex", alignItems: "center", gap: 4 }}>console.anthropic.com <ExternalLink size={10} /></a></>
+          }>
+            <Input id="apiKey" type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setResult(null); }} placeholder="sk-ant-api03-…" autoComplete="off" style={{ fontFamily: T.mono, letterSpacing: "0.04em" }} />
+          </Field>
 
-            <div className="flex items-start gap-2 text-[11px] p-3 rounded-lg"
-              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
-              <ShieldCheck size={14} className="shrink-0 mt-0.5" style={{ color: "#6B6B64" }} />
-              <span style={{ color: "#6B6B64" }}>
-                Your key is encrypted with AES-256 and never stored in plaintext. It's used only to power your agent's responses.
-              </span>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", background: T.paperDeep, borderRadius: 6 }}>
+            <ShieldCheck size={14} color={T.mute} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 12, color: T.mute, lineHeight: 1.55 }}>
+              Your key is encrypted with AES-256 and never stored in plaintext. It's only used to power your agent's responses.
             </div>
           </div>
-
-          {/* Result feedback */}
-          {result && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
-              style={result.ok
-                ? { background: "rgba(45,106,79,0.10)", color: "#2D6A4F", border: "1px solid rgba(45,106,79,0.20)" }
-                : { background: "rgba(122,31,26,0.10)", color: "#7A1F1A", border: "1px solid rgba(122,31,26,0.20)" }
-              }>
-              {result.ok ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-              {result.ok ? "API key validated and saved!" : result.error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={!apiKey.trim() || saving}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
-          >
-            {saving ? <><Loader2 size={16} className="animate-spin" /> Validating...</> : "Validate & Save Key"}
-          </button>
-        </form>
-      )}
-
-      {/* Managed AI option */}
-      {!useManaged && (
-        <div className="text-center">
-          <p className="text-xs mb-2" style={{ color: "#6B6B64" }}>
-            Don't have an API key?
-          </p>
-          <button
-            onClick={handleSkip}
-            className="text-xs underline" style={{ color: "#6B6B64" }}
-          >
-            Skip for now — you can add one later in Settings
-          </button>
         </div>
-      )}
+
+        {result && (
+          result.ok
+            ? <Notice tone="success" icon={CheckCircle}>API key validated and saved!</Notice>
+            : <Notice tone="danger" icon={AlertCircle}>{result.error}</Notice>
+        )}
+
+        <Button type="submit" variant="primary" size="lg" disabled={!apiKey.trim() || saving}>
+          {saving ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> Validating…</> : "Validate & save key"}
+        </Button>
+      </form>
+
+      <div style={{ textAlign: "center", marginTop: 24 }}>
+        <p style={{ fontSize: 12, color: T.mute, margin: "0 0 8px" }}>Don't have an API key?</p>
+        <button onClick={handleSkip} style={{ fontSize: 12, color: T.teal, background: "none", border: "none", padding: 0, cursor: "pointer", borderBottom: `1px solid ${T.teal}40`, fontFamily: T.sans }}>
+          Skip for now — add one later in Settings
+        </button>
+      </div>
     </div>
   );
 };

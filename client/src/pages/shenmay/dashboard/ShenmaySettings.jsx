@@ -5,6 +5,7 @@ import { getMe, updateCompany, updatePrivacySettings, getProducts, addProduct, u
 import { toast } from "@/hooks/use-toast";
 import { Copy, Check, Plus, Trash2, Pencil, X, ChevronUp, Key, AlertTriangle, RefreshCw, Eye, EyeOff, Brain, Sparkles, Shield, MessageSquare, Webhook, ToggleLeft, ToggleRight, Send, ChevronDown, Tag, Plug2, Zap, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TOKENS as T, Kicker, Display, Lede } from "@/components/shenmay/ui/ShenmayUI";
 
 const INDUSTRIES = [
   { value: "financial", label: "Financial" },
@@ -1751,10 +1752,11 @@ const PrivacySection = () => {
 
 /* ---------- Main ---------- */
 const ShenmaySettings = () => (
-  <div className="space-y-6">
-    <div className="mb-2">
-      <h2 className="text-xl font-bold text-[#1A1D1A] mb-1">Settings</h2>
-      <p className="text-sm text-[#6B6B64]">Manage your company profile, widget, and products.</p>
+  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ marginBottom: 4 }}>
+      <Kicker>Configuration</Kicker>
+      <Display size={38} italic style={{ marginTop: 12 }}>Settings.</Display>
+      <Lede>Manage your company, agent, widget, webhooks, and data access.</Lede>
     </div>
     <CompanyProfile />
     <AgentSoulSection />

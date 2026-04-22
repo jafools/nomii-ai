@@ -49,8 +49,11 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Company Profile</h2>
-      <p className="text-sm mb-8" style={{ color: "#6B6B64" }}>Tell us about your company so your AI agent can represent you accurately.</p>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 01 · Your company</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>Tell us about your business.</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>So your AI agent can represent you accurately.</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>

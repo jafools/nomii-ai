@@ -215,7 +215,8 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
   if (showSavedSummary) {
     return (
       <div>
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Products & Services</h2>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C", marginBottom: 8 }}>Figure 02 · What you offer</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 28, letterSpacing: "-0.04em", color: "#1A1D1A", margin: "0 0 12px" }}>Products &amp; services.</h2>
         <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }}>
           <CheckCircle2 size={20} style={{ color: "#2D6A4F" }} />
           <div>
@@ -245,12 +246,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
-        What does your company offer?
-      </h2>
-      <p className="text-sm mb-8" style={{ color: "#6B6B64" }}>
-        Your AI agent will use this to answer customer questions about your products and services.
-      </p>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11, fontWeight: 400, letterSpacing: "0.16em", textTransform: "uppercase", color: "#0F5F5C" }}>Figure 02 · What you offer</div>
+        <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 300, fontStyle: "italic", fontSize: 32, letterSpacing: "-0.04em", color: "#1A1D1A", lineHeight: 1.05, margin: "12px 0 0" }}>What does your company do?</h2>
+        <p style={{ fontSize: 15, color: "#6B6B64", marginTop: 12, lineHeight: 1.55 }}>Your agent uses this to answer product questions.</p>
+      </div>
 
       {/* ─── Section 1 — AI Import ─── */}
       {!proposed ? (
