@@ -42,6 +42,7 @@ const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const { fireWebhooks }               = require('../services/webhookService');
 const { fireNotifications }          = require('../services/notificationService');
 const { UNRESTRICTED_PLANS, NOTIFICATION_TYPES } = require('../config/plans');
+const { ANON_EMAIL_DOMAIN, anonEmailNotLikeGuard } = require('../constants/anonDomains');
 
 // ── In-app notification helper ─────────────────────────────────────────────
 // Fire-and-forget. Errors are swallowed so they never interrupt the request.
@@ -130,7 +131,7 @@ router.post('/session', async (req, res, next) => {
       // ── Anonymous visitor ────────────────────────────────────────────────────
       // Generate a unique anon identifier for this session (not persistent across visits)
       const anonId    = crypto.randomBytes(8).toString('hex');
-      const anonEmail = `anon_${anonId}@visitor.nomii`;
+      const anonEmail = `anon_${anonId}${ANON_EMAIL_DOMAIN}`;
 
       const { rows: newRows } = await db.query(
         `INSERT INTO customers (tenant_id, email, first_name, last_name, onboarding_status)
@@ -162,7 +163,7 @@ router.post('/session', async (req, res, next) => {
           const { rows: countRows } = await db.query(
             `SELECT COUNT(*) FROM customers
              WHERE tenant_id = $1 AND deleted_at IS NULL
-               AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+               AND ${anonEmailNotLikeGuard()}`,
             [tenant.id]
           );
           const currentCount = parseInt(countRows[0].count);
@@ -447,7 +448,7 @@ router.post('/session/claim', async (req, res, next) => {
         const { rows: countRows } = await db.query(
           `SELECT COUNT(*) FROM customers
            WHERE tenant_id = $1 AND deleted_at IS NULL
-             AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+             AND ${anonEmailNotLikeGuard()}`,
           [tenant.id]
         );
         const currentCount = parseInt(countRows[0].count);

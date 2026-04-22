@@ -16,8 +16,12 @@ Generate a key in the dashboard → Settings → Data API. The full key is shown
 hash, so the key is not recoverable if lost.
 
 ```
-Authorization: Bearer nomii_da_<your-key>
+Authorization: Bearer shenmay_da_<your-key>
 ```
+
+Existing `nomii_da_`-prefixed keys issued before the Shenmay rebrand
+continue to authenticate until 2026-10-20. Both prefixes map to the same
+bcrypt-verified tenant key; no customer action required.
 
 All requests without a valid key return `401 Unauthorized`.
 
@@ -135,7 +139,7 @@ Same as above, scoped to one category.
 # nightly-sync.sh — push today's updated customers to Shenmay
 set -euo pipefail
 
-API_KEY="nomii_da_pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+API_KEY="shenmay_da_pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 BASE="https://api.pontensolutions.com"
 
 # For each customer updated today in our CRM:
