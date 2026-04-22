@@ -6,12 +6,12 @@ import {
   AlertTriangle, Clock, Crown, Shield, User,
 } from "lucide-react";
 
-const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" };
+const card = { background: "#EDE7D7", border: "1px solid #EDE7D7" };
 
 const ROLE_INFO = {
-  owner:  { label: "Owner",  icon: Crown,  color: "#C9A84C" },
+  owner:  { label: "Owner",  icon: Crown,  color: "#0F5F5C" },
   member: { label: "Admin",  icon: Shield, color: "#6366F1" },
-  agent:  { label: "Agent",  icon: User,   color: "#3B82F6" },
+  agent:  { label: "Agent",  icon: User,   color: "#0F5F5C" },
 };
 
 const PLAN_LIMITS = {
@@ -108,7 +108,7 @@ const ShenmayTeam = () => {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+          <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: "#EDE7D7" }} />
         ))}
       </div>
     );
@@ -117,9 +117,9 @@ const ShenmayTeam = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <AlertTriangle size={28} style={{ color: "#F87171" }} />
-        <p className="text-sm text-white/30">{error}</p>
-        <button onClick={fetchTeam} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        <AlertTriangle size={28} style={{ color: "#7A1F1A" }} />
+        <p className="text-sm text-[#6B6B64]">{error}</p>
+        <button onClick={fetchTeam} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
           <RefreshCw size={14} /> Retry
         </button>
       </div>
@@ -131,8 +131,8 @@ const ShenmayTeam = () => {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white/80">Team Members</h2>
-          <p className="text-sm text-white/30 mt-0.5">
+          <h2 className="text-lg font-semibold text-[#1A1D1A]">Team Members</h2>
+          <p className="text-sm text-[#6B6B64] mt-0.5">
             {agents.length} / {maxAgents} agents on {plan} plan
           </p>
         </div>
@@ -142,8 +142,8 @@ const ShenmayTeam = () => {
             disabled={atLimit}
             className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
             style={atLimit
-              ? { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed" }
-              : { background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }
+              ? { background: "#EDE7D7", color: "#6B6B64", cursor: "not-allowed" }
+              : { background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }
             }
             title={atLimit ? `Agent limit reached (${maxAgents}). Upgrade to add more.` : "Invite a new agent"}
           >
@@ -156,22 +156,22 @@ const ShenmayTeam = () => {
       {/* Capacity bar */}
       <div className="rounded-2xl p-4" style={card}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[12px] text-white/40">Agent seats used</span>
-          <span className="text-[12px] font-semibold" style={{ color: atLimit ? "#EF4444" : "rgba(255,255,255,0.5)" }}>
+          <span className="text-[12px] text-[#6B6B64]">Agent seats used</span>
+          <span className="text-[12px] font-semibold" style={{ color: atLimit ? "#7A1F1A" : "#6B6B64" }}>
             {agents.length} / {maxAgents}
           </span>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#EDE7D7" }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${Math.min(100, (agents.length / maxAgents) * 100)}%`,
-              background: atLimit ? "#EF4444" : agents.length / maxAgents >= 0.8 ? "#F59E0B" : "#C9A84C",
+              background: atLimit ? "#7A1F1A" : agents.length / maxAgents >= 0.8 ? "#A6660E" : "#0F5F5C",
             }}
           />
         </div>
         {atLimit && (
-          <p className="text-[11px] mt-2" style={{ color: "#F87171" }}>
+          <p className="text-[11px] mt-2" style={{ color: "#7A1F1A" }}>
             Agent limit reached. <a href="/shenmay/dashboard/plans" className="underline hover:opacity-80">Upgrade your plan</a> to add more agents.
           </p>
         )}
@@ -179,9 +179,9 @@ const ShenmayTeam = () => {
 
       {/* Success message */}
       {inviteSuccess && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.15)" }}>
-          <CheckCircle size={15} style={{ color: "#4ADE80" }} />
-          <span className="text-sm text-white/70">{inviteSuccess}</span>
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(45,106,79,0.08)", border: "1px solid rgba(45,106,79,0.15)" }}>
+          <CheckCircle size={15} style={{ color: "#2D6A4F" }} />
+          <span className="text-sm text-[#3A3D39]">{inviteSuccess}</span>
         </div>
       )}
 
@@ -189,54 +189,54 @@ const ShenmayTeam = () => {
       {showInviteForm && (
         <form onSubmit={handleInvite} className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)" }}>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-white/70">Invite a new agent</p>
-            <button type="button" onClick={() => setShowInviteForm(false)} className="text-white/20 hover:text-white/50 text-xl leading-none">×</button>
+            <p className="text-sm font-semibold text-[#3A3D39]">Invite a new agent</p>
+            <button type="button" onClick={() => setShowInviteForm(false)} className="text-[#6B6B64] hover:text-[#6B6B64] text-xl leading-none">×</button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] text-white/30 mb-1.5">First Name</label>
+              <label className="block text-[11px] text-[#6B6B64] mb-1.5">First Name</label>
               <input
                 type="text"
                 value={inviteFirst}
                 onChange={(e) => setInviteFirst(e.target.value)}
                 placeholder="Jane"
-                className="w-full px-3 py-2 rounded-xl text-sm text-white/80 outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="w-full px-3 py-2 rounded-xl text-sm text-[#1A1D1A] outline-none transition-all"
+                style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
               />
             </div>
             <div>
-              <label className="block text-[11px] text-white/30 mb-1.5">Last Name</label>
+              <label className="block text-[11px] text-[#6B6B64] mb-1.5">Last Name</label>
               <input
                 type="text"
                 value={inviteLast}
                 onChange={(e) => setInviteLast(e.target.value)}
                 placeholder="Smith"
-                className="w-full px-3 py-2 rounded-xl text-sm text-white/80 outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                className="w-full px-3 py-2 rounded-xl text-sm text-[#1A1D1A] outline-none transition-all"
+                style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
               />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] text-white/30 mb-1.5">Email Address *</label>
+            <label className="block text-[11px] text-[#6B6B64] mb-1.5">Email Address *</label>
             <input
               type="email"
               required
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="jane@company.com"
-              className="w-full px-3 py-2 rounded-xl text-sm text-white/80 outline-none transition-all"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              className="w-full px-3 py-2 rounded-xl text-sm text-[#1A1D1A] outline-none transition-all"
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
             />
           </div>
           {inviteError && (
-            <p className="text-sm" style={{ color: "#F87171" }}>{inviteError}</p>
+            <p className="text-sm" style={{ color: "#7A1F1A" }}>{inviteError}</p>
           )}
           <div className="flex items-center gap-3 pt-1">
             <button
               type="submit"
               disabled={inviting || !inviteEmail.trim()}
               className="flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-xl transition-all disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+              style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
             >
               <Mail size={14} />
               {inviting ? "Sending…" : "Send Invitation"}
@@ -244,7 +244,7 @@ const ShenmayTeam = () => {
             <button
               type="button"
               onClick={() => setShowInviteForm(false)}
-              className="text-sm text-white/30 hover:text-white/50 px-3 py-2"
+              className="text-sm text-[#6B6B64] hover:text-[#6B6B64] px-3 py-2"
             >
               Cancel
             </button>
@@ -254,7 +254,7 @@ const ShenmayTeam = () => {
 
       {/* Agent list */}
       <div className="rounded-2xl overflow-hidden" style={card}>
-        <div className="grid grid-cols-[2fr_1.5fr_1fr_auto] gap-4 px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/20" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="grid grid-cols-[2fr_1.5fr_1fr_auto] gap-4 px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#6B6B64]" style={{ borderBottom: "1px solid #EDE7D7" }}>
           <span>Agent</span>
           <span>Role</span>
           <span>Status</span>
@@ -268,26 +268,26 @@ const ShenmayTeam = () => {
             <div
               key={agent.id}
               className="grid grid-cols-[2fr_1.5fr_1fr_auto] gap-4 items-center px-6 py-4 transition-all duration-150 hover:bg-white/[0.01]"
-              style={i < agents.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.03)" } : {}}
+              style={i < agents.length - 1 ? { borderBottom: "1px solid #EDE7D7" } : {}}
             >
               {/* Name + email */}
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                    style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" }}
+                    style={{ background: "#EDE7D7", color: "#6B6B64" }}
                   >
                     {(agent.first_name?.[0] || agent.email?.[0] || "?").toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-white/75 truncate">
+                    <p className="text-[13px] font-medium text-[#1A1D1A]/75 truncate">
                       {agent.first_name || agent.last_name
                         ? `${agent.first_name || ""} ${agent.last_name || ""}`.trim()
-                        : <span className="text-white/30">—</span>
+                        : <span className="text-[#6B6B64]">—</span>
                       }
-                      {isSelf && <span className="ml-1.5 text-[10px] text-white/25">(you)</span>}
+                      {isSelf && <span className="ml-1.5 text-[10px] text-[#6B6B64]">(you)</span>}
                     </p>
-                    <p className="text-[11px] text-white/25 truncate">{agent.email}</p>
+                    <p className="text-[11px] text-[#6B6B64] truncate">{agent.email}</p>
                   </div>
                 </div>
               </div>
@@ -301,11 +301,11 @@ const ShenmayTeam = () => {
               {/* Status */}
               <div>
                 {agent.email_verified ? (
-                  <span className="flex items-center gap-1 text-[12px]" style={{ color: "#4ADE80" }}>
+                  <span className="flex items-center gap-1 text-[12px]" style={{ color: "#2D6A4F" }}>
                     <CheckCircle size={11} /> Active
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-[12px]" style={{ color: "#F59E0B" }}>
+                  <span className="flex items-center gap-1 text-[12px]" style={{ color: "#A6660E" }}>
                     <Clock size={11} /> Pending
                   </span>
                 )}
@@ -319,7 +319,7 @@ const ShenmayTeam = () => {
                       onClick={() => handleRemove(agent.id, agent.email)}
                       disabled={removing === agent.id}
                       className="p-1.5 rounded-lg transition-all hover:opacity-70 disabled:opacity-30"
-                      style={{ color: "rgba(239,68,68,0.5)" }}
+                      style={{ color: "rgba(122,31,26,0.5)" }}
                       title={`Remove ${agent.email}`}
                     >
                       {removing === agent.id
@@ -336,9 +336,9 @@ const ShenmayTeam = () => {
       </div>
 
       {/* Info box */}
-      <div className="rounded-2xl px-5 py-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
-        <p className="text-[12px] text-white/30 leading-relaxed">
-          <span className="font-semibold text-white/40">How it works:</span> Invited agents receive an email with a link to set their password. Once accepted, they can log into the dashboard using the same login page. Agents can view conversations and take over live chats — only the account owner can invite or remove agents.
+      <div className="rounded-2xl px-5 py-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+        <p className="text-[12px] text-[#6B6B64] leading-relaxed">
+          <span className="font-semibold text-[#6B6B64]">How it works:</span> Invited agents receive an email with a link to set their password. Once accepted, they can log into the dashboard using the same login page. Agents can view conversations and take over live chats — only the account owner can invite or remove agents.
         </p>
       </div>
     </div>

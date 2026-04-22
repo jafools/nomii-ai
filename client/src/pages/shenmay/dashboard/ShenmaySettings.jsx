@@ -17,15 +17,15 @@ const INDUSTRIES = [
   { value: "other", label: "Other" },
 ];
 
-const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" };
-const inputClass = "w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(201,168,76,0.3)]";
-const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.8)" };
+const card = { background: "#EDE7D7", border: "1px solid #EDE7D7" };
+const inputClass = "w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(15,95,92,0.3)]";
+const inputStyle = { background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#1A1D1A" };
 
 /* ---------- Company Profile ---------- */
 const CompanyProfile = () => {
   const { setShenmayTenant, setShenmayUser } = useShenmayAuth();
   const [form, setForm] = useState({
-    name: "", agent_name: "", chat_bubble_name: "", vertical: "", primary_color: "#1E3A5F",
+    name: "", agent_name: "", chat_bubble_name: "", vertical: "", primary_color: "#1A1D1A",
     website_url: "", company_description: "",
   });
   const [saving, setSaving] = useState(false);
@@ -43,7 +43,7 @@ const CompanyProfile = () => {
           agent_name: t.agent_name || "",
           chat_bubble_name: t.chat_bubble_name || "",
           vertical: t.vertical || "",
-          primary_color: t.primary_color || "#1E3A5F",
+          primary_color: t.primary_color || "#1A1D1A",
           website_url: t.website_url || "",
           company_description: t.company_description || t.description || "",
         });
@@ -72,9 +72,9 @@ const CompanyProfile = () => {
   if (loadingMe) {
     return (
       <div className="rounded-2xl p-6 animate-pulse space-y-4" style={card}>
-        <div className="h-4 w-32 rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-4 w-32 rounded-lg" style={{ background: "#EDE7D7" }} />
         <div className="grid grid-cols-2 gap-4">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />)}
+          {[...Array(6)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "#EDE7D7" }} />)}
         </div>
       </div>
     );
@@ -82,50 +82,50 @@ const CompanyProfile = () => {
 
   return (
     <form onSubmit={save} className="rounded-2xl p-6 space-y-5" style={card}>
-      <h3 className="text-sm font-semibold text-white/70">Company Profile</h3>
+      <h3 className="text-sm font-semibold text-[#3A3D39]">Company Profile</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Company Name</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Name</label>
           <input type="text" required value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Agent Name</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Agent Name</label>
           <input type="text" value={form.agent_name} onChange={set("agent_name")} className={inputClass} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Chat Bubble Label</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Chat Bubble Label</label>
           <input type="text" value={form.chat_bubble_name} onChange={set("chat_bubble_name")} placeholder="e.g. Chat with Steve" className={inputClass} style={inputStyle} />
-          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>Text shown on the floating chat button. Defaults to "Chat with [Agent Name]" if blank.</p>
+          <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>Text shown on the floating chat button. Defaults to "Chat with [Agent Name]" if blank.</p>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Industry</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Industry</label>
           <select value={form.vertical} onChange={set("vertical")} className={inputClass + " cursor-pointer"} style={{ ...inputStyle, colorScheme: "dark" }}>
-            <option value="" style={{ background: "#1a2235", color: "rgba(255,255,255,0.5)" }}>Select…</option>
-            {INDUSTRIES.map((v) => <option key={v.value} value={v.value} style={{ background: "#1a2235", color: "rgba(255,255,255,0.8)" }}>{v.label}</option>)}
+            <option value="" style={{ background: "#1a2235", color: "#6B6B64" }}>Select…</option>
+            {INDUSTRIES.map((v) => <option key={v.value} value={v.value} style={{ background: "#1a2235", color: "#1A1D1A" }}>{v.label}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Website URL</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Website URL</label>
           <input type="url" value={form.website_url} onChange={set("website_url")} className={inputClass} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Primary Color</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Primary Color</label>
           <div className="flex items-center gap-2">
-            <input type="color" value={form.primary_color} onChange={set("primary_color")} className="w-10 h-9 rounded-lg cursor-pointer p-0.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }} />
+            <input type="color" value={form.primary_color} onChange={set("primary_color")} className="w-10 h-9 rounded-lg cursor-pointer p-0.5" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} />
             <input type="text" value={form.primary_color} onChange={set("primary_color")} maxLength={7} className={inputClass + " flex-1"} style={inputStyle} />
           </div>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Company Description</label>
+        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Description</label>
         <textarea rows={3} value={form.company_description} onChange={set("company_description")} className={inputClass} style={inputStyle} />
       </div>
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
           {saving ? "Saving…" : "Save changes"}
         </button>
         {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#4ADE80" }}>
+          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#2D6A4F" }}>
             <Check size={14} /> Saved ✓
           </span>
         )}
@@ -154,35 +154,35 @@ const WidgetSection = () => {
 
   return (
     <div className="rounded-2xl p-6 space-y-5" style={card}>
-      <h3 className="text-sm font-semibold text-white/70">Widget</h3>
+      <h3 className="text-sm font-semibold text-[#3A3D39]">Widget</h3>
       <div>
-        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Your Widget Key</label>
+        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Your Widget Key</label>
         <div className="flex gap-2">
           <input type="text" readOnly value={widgetKey} className={inputClass + " flex-1 font-mono text-xs"} style={inputStyle} />
-          <button onClick={() => copy(widgetKey, setCopiedKey)} className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
-            {copiedKey ? <><Check size={14} style={{ color: "#4ADE80" }} /> Copied</> : <><Copy size={14} /> Copy</>}
+          <button onClick={() => copy(widgetKey, setCopiedKey)} className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
+            {copiedKey ? <><Check size={14} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={14} /> Copy</>}
           </button>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Verification Status</label>
+        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Verification Status</label>
         {shenmayTenant?.widget_verified ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(34,197,94,0.12)", color: "#4ADE80" }}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(45,106,79,0.12)", color: "#2D6A4F" }}>
             <Check size={12} /> Connected
           </span>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(245,158,11,0.12)", color: "#FBBF24" }}>Not yet detected</span>
-            <Link to="/shenmay/onboarding" className="text-xs font-medium hover:underline" style={{ color: "#C9A84C" }}>→ Installation guide</Link>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(245,158,11,0.12)", color: "#A6660E" }}>Not yet detected</span>
+            <Link to="/shenmay/onboarding" className="text-xs font-medium hover:underline" style={{ color: "#0F5F5C" }}>→ Installation guide</Link>
           </div>
         )}
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Embed Snippet</label>
+        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Embed Snippet</label>
         <div className="relative">
-          <pre className="p-4 rounded-xl text-xs font-mono overflow-x-auto whitespace-pre-wrap" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}>{snippet}</pre>
-          <button onClick={() => copy(snippet, setCopiedSnippet)} className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
-            {copiedSnippet ? <><Check size={12} style={{ color: "#4ADE80" }} /> Copied</> : <><Copy size={12} /> Copy</>}
+          <pre className="p-4 rounded-xl text-xs font-mono overflow-x-auto whitespace-pre-wrap" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>{snippet}</pre>
+          <button onClick={() => copy(snippet, setCopiedSnippet)} className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>
+            {copiedSnippet ? <><Check size={12} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={12} /> Copy</>}
           </button>
         </div>
       </div>
@@ -271,34 +271,34 @@ const ProductsSection = () => {
   return (
     <div className="rounded-2xl p-6 space-y-5" style={card}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white/70">Products & Services</h3>
-        <button onClick={() => { setShowForm((v) => !v); cancelEdit(); }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        <h3 className="text-sm font-semibold text-[#3A3D39]">Products & Services</h3>
+        <button onClick={() => { setShowForm((v) => !v); cancelEdit(); }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
           {showForm ? <><ChevronUp className="h-4 w-4" /> Cancel</> : <><Plus className="h-4 w-4" /> Add Product</>}
         </button>
       </div>
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="rounded-xl p-5 space-y-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <form onSubmit={handleAdd} className="rounded-xl p-5 space-y-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <div>
-            <label className="block text-[12px] font-medium text-white/30 mb-1.5">Name *</label>
+            <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Name *</label>
             <input type="text" required maxLength={200} value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-white/30 mb-1.5">Description</label>
+            <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Description</label>
             <textarea rows={2} maxLength={1000} value={form.description} onChange={set("description")} className={inputClass} style={inputStyle} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-medium text-white/30 mb-1.5">Category</label>
+              <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Category</label>
               <input type="text" maxLength={100} value={form.category} onChange={set("category")} className={inputClass} style={inputStyle} />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-white/30 mb-1.5">Price Info</label>
+              <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Price Info</label>
               <input type="text" maxLength={100} value={form.price_info} onChange={set("price_info")} className={inputClass} style={inputStyle} />
             </div>
           </div>
-          <button type="submit" disabled={saving} className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+          <button type="submit" disabled={saving} className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
             {saving ? "Saving…" : "Save Product"}
           </button>
         </form>
@@ -307,10 +307,10 @@ const ProductsSection = () => {
       {/* Product cards */}
       {loading ? (
         <div className="space-y-3 animate-pulse">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }} />)}
+          {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl" style={{ background: "#EDE7D7" }} />)}
         </div>
       ) : products.length === 0 ? (
-        <p className="text-sm text-white/25 py-4">No products yet. Add one above.</p>
+        <p className="text-sm text-[#6B6B64] py-4">No products yet. Add one above.</p>
       ) : (
         <div className="space-y-3">
           {products.map((p) => {
@@ -319,30 +319,30 @@ const ProductsSection = () => {
 
             if (isEditing) {
               return (
-                <div key={pid} className="rounded-xl p-5 space-y-3" style={{ background: "rgba(201,168,76,0.04)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                <div key={pid} className="rounded-xl p-5 space-y-3" style={{ background: "rgba(15,95,92,0.04)", border: "1px solid rgba(15,95,92,0.15)" }}>
                   <div>
-                    <label className="block text-[12px] font-medium text-white/30 mb-1">Name *</label>
+                    <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Name *</label>
                     <input type="text" required value={editForm.name} onChange={setEdit("name")} className={inputClass} style={inputStyle} />
                   </div>
                   <div>
-                    <label className="block text-[12px] font-medium text-white/30 mb-1">Description</label>
+                    <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Description</label>
                     <textarea rows={2} value={editForm.description} onChange={setEdit("description")} className={inputClass} style={inputStyle} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-white/30 mb-1">Category</label>
+                      <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Category</label>
                       <input type="text" value={editForm.category} onChange={setEdit("category")} className={inputClass} style={inputStyle} />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-white/30 mb-1">Price Info</label>
+                      <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Price Info</label>
                       <input type="text" value={editForm.price_info} onChange={setEdit("price_info")} className={inputClass} style={inputStyle} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">
-                    <button onClick={handleEditSave} disabled={editSaving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+                    <button onClick={handleEditSave} disabled={editSaving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
                       {editSaving ? "Saving…" : <><Check size={14} /> Save</>}
                     </button>
-                    <button onClick={cancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
+                    <button onClick={cancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
                       <X size={14} /> Cancel
                     </button>
                   </div>
@@ -351,21 +351,21 @@ const ProductsSection = () => {
             }
 
             return (
-              <div key={pid} className="rounded-xl p-4 flex items-start gap-4 transition-colors hover:bg-white/[0.01]" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={pid} className="rounded-xl p-4 flex items-start gap-4 transition-colors hover:bg-white/[0.01]" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[13px] font-semibold text-white/70">{p.name}</p>
+                    <p className="text-[13px] font-semibold text-[#3A3D39]">{p.name}</p>
                     {p.category && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C" }}>{p.category}</span>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(15,95,92,0.1)", color: "#0F5F5C" }}>{p.category}</span>
                     )}
                   </div>
-                  {p.description && <p className="text-[12px] text-white/30 line-clamp-2">{p.description}</p>}
+                  {p.description && <p className="text-[12px] text-[#6B6B64] line-clamp-2">{p.description}</p>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => startEdit(p)} className="p-1.5 rounded-lg transition-colors hover:bg-white/[0.04]" style={{ color: "rgba(255,255,255,0.35)" }} title="Edit">
+                  <button onClick={() => startEdit(p)} className="p-1.5 rounded-lg transition-colors hover:bg-[#F5F1E8]" style={{ color: "#6B6B64" }} title="Edit">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => handleDelete(pid)} className="p-1.5 rounded-lg transition-colors hover:bg-white/[0.04]" style={{ color: "#F87171" }} title="Delete">
+                  <button onClick={() => handleDelete(pid)} className="p-1.5 rounded-lg transition-colors hover:bg-[#F5F1E8]" style={{ color: "#7A1F1A" }} title="Delete">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -416,10 +416,10 @@ const AgentSoulSection = () => {
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2 mb-1">
-            <Brain size={14} style={{ color: "#C9A84C" }} /> Agent Soul
+          <h3 className="text-sm font-semibold text-[#3A3D39] flex items-center gap-2 mb-1">
+            <Brain size={14} style={{ color: "#0F5F5C" }} /> Agent Soul
           </h3>
-          <p className="text-[12px] text-white/30">
+          <p className="text-[12px] text-[#6B6B64]">
             Your agent's identity, tone, and communication style — auto-generated from your company profile.
             Regenerate any time after updating your profile.
           </p>
@@ -428,7 +428,7 @@ const AgentSoulSection = () => {
           onClick={handleGenerate}
           disabled={generating}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-80 shrink-0 ml-4 disabled:opacity-50"
-          style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.2)" }}
+          style={{ background: "rgba(15,95,92,0.12)", color: "#0F5F5C", border: "1px solid rgba(15,95,92,0.2)" }}
         >
           <Sparkles size={12} />
           {generating ? "Generating…" : soul ? "Regenerate" : "Generate Soul"}
@@ -437,38 +437,38 @@ const AgentSoulSection = () => {
 
       {loading ? (
         <div className="space-y-2">
-          {[1,2,3].map((i) => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />)}
+          {[1,2,3].map((i) => <div key={i} className="h-8 rounded-lg animate-pulse" style={{ background: "#EDE7D7" }} />)}
         </div>
       ) : !soul ? (
-        <div className="rounded-xl p-5 text-center" style={{ background: "rgba(201,168,76,0.04)", border: "1px dashed rgba(201,168,76,0.15)" }}>
-          <p className="text-sm text-white/30 mb-1">No soul generated yet.</p>
-          <p className="text-xs text-white/20">Click <strong className="text-white/30">Generate Soul</strong> to create your agent's identity from your company profile.</p>
+        <div className="rounded-xl p-5 text-center" style={{ background: "rgba(15,95,92,0.04)", border: "1px dashed rgba(15,95,92,0.15)" }}>
+          <p className="text-sm text-[#6B6B64] mb-1">No soul generated yet.</p>
+          <p className="text-xs text-[#6B6B64]">Click <strong className="text-[#6B6B64]">Generate Soul</strong> to create your agent's identity from your company profile.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Identity */}
           {soul.base_identity && (
-            <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <div className="rounded-xl p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Brain size={10} /> Identity
               </p>
               <div className="space-y-1.5">
                 <div className="flex gap-3 text-sm">
-                  <span className="text-white/25 w-24 shrink-0">Agent Name</span>
-                  <span className="text-white/70 font-medium">{soul.base_identity.agent_name}</span>
+                  <span className="text-[#6B6B64] w-24 shrink-0">Agent Name</span>
+                  <span className="text-[#3A3D39] font-medium">{soul.base_identity.agent_name}</span>
                 </div>
                 <div className="flex gap-3 text-sm">
-                  <span className="text-white/25 w-24 shrink-0">Organisation</span>
-                  <span className="text-white/70">{soul.base_identity.organization}</span>
+                  <span className="text-[#6B6B64] w-24 shrink-0">Organisation</span>
+                  <span className="text-[#3A3D39]">{soul.base_identity.organization}</span>
                 </div>
                 <div className="flex gap-3 text-sm">
-                  <span className="text-white/25 w-24 shrink-0">Tone</span>
-                  <span className="text-white/70 italic">{soul.base_identity.tone_description}</span>
+                  <span className="text-[#6B6B64] w-24 shrink-0">Tone</span>
+                  <span className="text-[#3A3D39] italic">{soul.base_identity.tone_description}</span>
                 </div>
                 {soul.base_identity.role && (
                   <div className="flex gap-3 text-sm">
-                    <span className="text-white/25 w-24 shrink-0">Role</span>
-                    <span className="text-white/50 text-xs leading-relaxed">{soul.base_identity.role}</span>
+                    <span className="text-[#6B6B64] w-24 shrink-0">Role</span>
+                    <span className="text-[#6B6B64] text-xs leading-relaxed">{soul.base_identity.role}</span>
                   </div>
                 )}
               </div>
@@ -477,14 +477,14 @@ const AgentSoulSection = () => {
 
           {/* Communication style */}
           {soul.communication_style?.key_principles?.length > 0 && (
-            <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <div className="rounded-xl p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <MessageSquare size={10} /> Communication Principles
               </p>
               <ul className="space-y-1.5">
                 {soul.communication_style.key_principles.map((p, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "rgba(201,168,76,0.4)" }} />
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-[#6B6B64]">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "rgba(15,95,92,0.4)" }} />
                     {p}
                   </li>
                 ))}
@@ -494,15 +494,15 @@ const AgentSoulSection = () => {
 
           {/* Compliance */}
           {soul.compliance?.disclaimer && (
-            <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <div className="rounded-xl p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Shield size={10} /> Compliance
               </p>
-              <p className="text-[13px] text-white/40 leading-relaxed">{soul.compliance.disclaimer}</p>
+              <p className="text-[13px] text-[#6B6B64] leading-relaxed">{soul.compliance.disclaimer}</p>
               {soul.compliance.restricted_topics?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {soul.compliance.restricted_topics.map((t, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full text-[11px]" style={{ background: "rgba(239,68,68,0.08)", color: "rgba(248,113,113,0.6)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                    <span key={i} className="px-2 py-0.5 rounded-full text-[11px]" style={{ background: "rgba(122,31,26,0.08)", color: "rgba(248,113,113,0.6)", border: "1px solid rgba(122,31,26,0.1)" }}>
                       {t}
                     </span>
                   ))}
@@ -512,7 +512,7 @@ const AgentSoulSection = () => {
           )}
 
           {soul.generated_at && (
-            <p className="text-[11px] text-white/15 text-right">
+            <p className="text-[11px] text-[#D8D0BD] text-right">
               Last generated {new Date(soul.generated_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
             </p>
           )}
@@ -600,13 +600,13 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
     <div className="rounded-2xl p-6 space-y-5" style={card}>
       <div className="flex items-center gap-3">
         <Key size={16} style={{ color: "#A78BFA" }} />
-        <h3 className="text-sm font-semibold text-white/70">Data API</h3>
+        <h3 className="text-sm font-semibold text-[#3A3D39]">Data API</h3>
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(167,139,250,0.1)", color: "#A78BFA" }}>
           For developers
         </span>
       </div>
 
-      <p className="text-[13px] text-white/40 leading-relaxed">
+      <p className="text-[13px] text-[#6B6B64] leading-relaxed">
         Push customer data directly from your own system — no file uploads needed.
         Your data stays in your CRM; Shenmay reads it at query time. Use this if your
         company's IT team wants to automate the data sync.
@@ -619,35 +619,35 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
           { icon: "🔌", label: "Data API", desc: "Push data programmatically. Set it up once; it syncs automatically.", active: true },
           { icon: "🔗", label: "Live Connector", desc: "Shenmay calls your system in real time. Data never leaves your servers.", nav: "/shenmay/dashboard/tools", navLabel: "Set up in Tools →" },
         ].map((m) => (
-          <div key={m.label} className="rounded-xl p-4" style={{ background: m.active ? "rgba(167,139,250,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${m.active ? "rgba(167,139,250,0.2)" : "rgba(255,255,255,0.05)"}` }}>
+          <div key={m.label} className="rounded-xl p-4" style={{ background: m.active ? "rgba(167,139,250,0.06)" : "#EDE7D7", border: `1px solid ${m.active ? "rgba(167,139,250,0.2)" : "#EDE7D7"}` }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{m.icon}</span>
-              <span className="text-[12px] font-semibold text-white/70">{m.label}</span>
+              <span className="text-[12px] font-semibold text-[#3A3D39]">{m.label}</span>
               {m.active && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-auto" style={{ background: "rgba(167,139,250,0.15)", color: "#A78BFA" }}>You are here</span>}
             </div>
-            <p className="text-[11px] text-white/30 leading-relaxed">{m.desc}</p>
-            {m.nav && <Link to={m.nav} className="text-[11px] font-medium mt-2 inline-block hover:underline" style={{ color: "#C9A84C" }}>{m.navLabel}</Link>}
+            <p className="text-[11px] text-[#6B6B64] leading-relaxed">{m.desc}</p>
+            {m.nav && <Link to={m.nav} className="text-[11px] font-medium mt-2 inline-block hover:underline" style={{ color: "#0F5F5C" }}>{m.navLabel}</Link>}
           </div>
         ))}
       </div>
 
       {/* Key status */}
       {loading ? (
-        <div className="h-10 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+        <div className="h-10 rounded-xl animate-pulse" style={{ background: "#EDE7D7" }} />
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-[12px] font-medium text-white/30 mb-1">API Key Status</p>
+              <p className="text-[12px] font-medium text-[#6B6B64] mb-1">API Key Status</p>
               {keyInfo?.has_key ? (
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(34,197,94,0.12)", color: "#4ADE80" }}>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(45,106,79,0.12)", color: "#2D6A4F" }}>
                     <Check size={11} /> Active
                   </span>
-                  <span className="text-[12px] font-mono text-white/30">{keyInfo.prefix}</span>
+                  <span className="text-[12px] font-mono text-[#6B6B64]">{keyInfo.prefix}</span>
                 </div>
               ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "#EDE7D7", color: "#6B6B64" }}>
                   No key generated
                 </span>
               )}
@@ -657,7 +657,7 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
                 onClick={handleGenerate}
                 disabled={generating}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+                style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
               >
                 <RefreshCw size={13} className={generating ? "animate-spin" : ""} />
                 {keyInfo?.has_key ? "Rotate Key" : "Generate Key"}
@@ -666,18 +666,18 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
                 <button
                   onClick={() => setConfirmRevoke(true)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-                  style={{ border: "1px solid rgba(248,113,113,0.3)", color: "#F87171" }}
+                  style={{ border: "1px solid rgba(248,113,113,0.3)", color: "#7A1F1A" }}
                 >
                   <Trash2 size={13} /> Revoke
                 </button>
               )}
               {confirmRevoke && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-white/40">Confirm revoke?</span>
-                  <button onClick={handleRevoke} disabled={revoking} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "rgba(248,113,113,0.15)", color: "#F87171" }}>
+                  <span className="text-[12px] text-[#6B6B64]">Confirm revoke?</span>
+                  <button onClick={handleRevoke} disabled={revoking} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: "rgba(248,113,113,0.15)", color: "#7A1F1A" }}>
                     {revoking ? "Revoking…" : "Yes, revoke"}
                   </button>
-                  <button onClick={() => setConfirmRevoke(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/40 hover:text-white/60">Cancel</button>
+                  <button onClick={() => setConfirmRevoke(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#6B6B64] hover:text-[#3A3D39]">Cancel</button>
                 </div>
               )}
             </div>
@@ -685,10 +685,10 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
 
           {/* New key — shown once */}
           {newKey && (
-            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.25)" }}>
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.25)" }}>
               <div className="flex items-center gap-2">
-                <AlertTriangle size={14} style={{ color: "#FBBF24" }} />
-                <p className="text-[12px] font-semibold" style={{ color: "#FBBF24" }}>Copy this key now — it won't be shown again</p>
+                <AlertTriangle size={14} style={{ color: "#A6660E" }} />
+                <p className="text-[12px] font-semibold" style={{ color: "#A6660E" }}>Copy this key now — it won't be shown again</p>
               </div>
               <div className="flex gap-2">
                 <input
@@ -696,13 +696,13 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
                   readOnly
                   value={newKey}
                   className="flex-1 px-3 py-2 rounded-xl text-xs font-mono focus:outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
+                  style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#3A3D39" }}
                 />
-                <button onClick={() => setShowKey(v => !v)} className="px-2.5 py-2 rounded-xl transition-colors" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
+                <button onClick={() => setShowKey(v => !v)} className="px-2.5 py-2 rounded-xl transition-colors" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
-                <button onClick={() => copy(newKey, setCopied)} className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
-                  {copied ? <><Check size={13} style={{ color: "#4ADE80" }} /> Copied</> : <><Copy size={13} /> Copy</>}
+                <button onClick={() => copy(newKey, setCopied)} className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
+                  {copied ? <><Check size={13} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={13} /> Copy</>}
                 </button>
               </div>
             </div>
@@ -712,14 +712,14 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
 
       {/* Code snippet */}
       <div>
-        <p className="text-[12px] font-medium text-white/30 mb-2">Example API calls</p>
+        <p className="text-[12px] font-medium text-[#6B6B64] mb-2">Example API calls</p>
         <div className="relative">
-          <pre className="p-4 rounded-xl text-[11px] font-mono overflow-x-auto whitespace-pre" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", lineHeight: "1.6" }}>{exampleSnippet}</pre>
-          <button onClick={() => copy(exampleSnippet, setCopiedSnippet)} className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
-            {copiedSnippet ? <><Check size={11} style={{ color: "#4ADE80" }} /> Copied</> : <><Copy size={11} /> Copy</>}
+          <pre className="p-4 rounded-xl text-[11px] font-mono overflow-x-auto whitespace-pre" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64", lineHeight: "1.6" }}>{exampleSnippet}</pre>
+          <button onClick={() => copy(exampleSnippet, setCopiedSnippet)} className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>
+            {copiedSnippet ? <><Check size={11} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={11} /> Copy</>}
           </button>
         </div>
-        <p className="text-[11px] mt-2 text-white/20">Full API reference: <a href="https://github.com/jafools/nomii-ai/blob/main/docs/DATA-API.md" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "#C9A84C" }}>github.com/jafools/nomii-ai/docs/DATA-API.md</a></p>
+        <p className="text-[11px] mt-2 text-[#6B6B64]">Full API reference: <a href="https://github.com/jafools/nomii-ai/blob/main/docs/DATA-API.md" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "#0F5F5C" }}>github.com/jafools/nomii-ai/docs/DATA-API.md</a></p>
       </div>
     </div>
   );
@@ -867,8 +867,8 @@ const WebhooksSection = () => {
     <div className="rounded-2xl p-6 space-y-5" style={card}>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-white/70">Webhooks</h3>
-          <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <h3 className="text-sm font-semibold text-[#3A3D39]">Webhooks</h3>
+          <p className="text-[11px] mt-0.5" style={{ color: "#6B6B64" }}>
             Receive signed POST requests when events occur in your account.
           </p>
         </div>
@@ -876,7 +876,7 @@ const WebhooksSection = () => {
           <button
             onClick={() => { setShowForm(true); setNewSecret(null); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+            style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
           >
             <Plus size={13} /> Add webhook
           </button>
@@ -885,10 +885,10 @@ const WebhooksSection = () => {
 
       {/* One-time secret reveal */}
       {newSecret && (
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.25)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.25)" }}>
           <div className="flex items-center gap-2">
-            <AlertTriangle size={13} style={{ color: "#FBBF24" }} />
-            <p className="text-[12px] font-semibold" style={{ color: "#FBBF24" }}>
+            <AlertTriangle size={13} style={{ color: "#A6660E" }} />
+            <p className="text-[12px] font-semibold" style={{ color: "#A6660E" }}>
               Copy your signing secret now — it won't be shown again
             </p>
           </div>
@@ -898,29 +898,29 @@ const WebhooksSection = () => {
               readOnly
               value={newSecret}
               className="flex-1 px-3 py-2 rounded-xl text-xs font-mono focus:outline-none"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#3A3D39" }}
             />
             <button
               onClick={copySecret}
               className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5"
-              style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+              style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}
             >
-              {copiedSecret ? <><Check size={13} style={{ color: "#4ADE80" }} /> Copied</> : <><Copy size={13} /> Copy</>}
+              {copiedSecret ? <><Check size={13} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={13} /> Copy</>}
             </button>
           </div>
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-            Verify the <code style={{ color: "rgba(255,255,255,0.4)" }}>X-Nomii-Signature</code> header on incoming requests using HMAC-SHA256.
+          <p className="text-[11px]" style={{ color: "#6B6B64" }}>
+            Verify the <code style={{ color: "#6B6B64" }}>X-Nomii-Signature</code> header on incoming requests using HMAC-SHA256.
           </p>
         </div>
       )}
 
       {/* Add form */}
       {showForm && (
-        <div className="rounded-xl p-4 space-y-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-[12px] font-semibold text-white/60">New webhook</p>
+        <div className="rounded-xl p-4 space-y-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+          <p className="text-[12px] font-semibold text-[#3A3D39]">New webhook</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-white/30 mb-1">Label</label>
+              <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
               <input
                 type="text"
                 placeholder="e.g. Slack alerts"
@@ -931,7 +931,7 @@ const WebhooksSection = () => {
               />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-white/30 mb-1">Endpoint URL <span style={{ color: "#C9A84C" }}>*</span></label>
+              <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL <span style={{ color: "#0F5F5C" }}>*</span></label>
               <input
                 type="url"
                 placeholder="https://your-server.com/hooks/shenmay"
@@ -943,7 +943,7 @@ const WebhooksSection = () => {
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-white/30 mb-2">Events to send</label>
+            <label className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events to send</label>
             <div className="flex flex-wrap gap-2">
               {ALL_EVENTS.map(ev => {
                 const on = form.event_types.includes(ev.value);
@@ -954,9 +954,9 @@ const WebhooksSection = () => {
                     onClick={() => setForm(f => ({ ...f, event_types: toggleEvent(f.event_types, ev.value) }))}
                     className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
                     style={{
-                      background: on ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${on ? "rgba(201,168,76,0.4)" : "rgba(255,255,255,0.08)"}`,
-                      color: on ? "#C9A84C" : "rgba(255,255,255,0.35)",
+                      background: on ? "rgba(15,95,92,0.15)" : "#EDE7D7",
+                      border: `1px solid ${on ? "rgba(15,95,92,0.4)" : "#EDE7D7"}`,
+                      color: on ? "#0F5F5C" : "#6B6B64",
                     }}
                   >
                     {ev.label}
@@ -970,14 +970,14 @@ const WebhooksSection = () => {
               onClick={handleCreate}
               disabled={saving}
               className="px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}
+              style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}
             >
               {saving ? "Saving…" : "Create webhook"}
             </button>
             <button
               onClick={() => setShowForm(false)}
               className="px-4 py-2 rounded-xl text-sm font-medium"
-              style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}
+              style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}
             >
               Cancel
             </button>
@@ -989,33 +989,33 @@ const WebhooksSection = () => {
       {loading ? (
         <div className="space-y-3">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+            <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: "#EDE7D7" }} />
           ))}
         </div>
       ) : hooks.length === 0 ? (
         <div className="py-8 text-center">
-          <Webhook size={28} className="mx-auto mb-3" style={{ color: "rgba(255,255,255,0.1)" }} />
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.2)" }}>No webhooks yet</p>
+          <Webhook size={28} className="mx-auto mb-3" style={{ color: "#D8D0BD" }} />
+          <p className="text-sm" style={{ color: "#6B6B64" }}>No webhooks yet</p>
         </div>
       ) : (
         <div className="space-y-3">
           {hooks.map(h => (
-            <div key={h.id} className="rounded-xl p-4 space-y-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div key={h.id} className="rounded-xl p-4 space-y-3" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
               {editingId === h.id ? (
                 /* inline edit form */
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-white/30 mb-1">Label</label>
+                      <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
                       <input type="text" value={editForm.label} onChange={e => setEditForm(f => ({ ...f, label: e.target.value }))} className={inputClass} style={inputStyle} />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-white/30 mb-1">Endpoint URL</label>
+                      <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL</label>
                       <input type="url" value={editForm.url} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} className={inputClass} style={inputStyle} />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-white/30 mb-2">Events</label>
+                    <label className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events</label>
                     <div className="flex flex-wrap gap-2">
                       {ALL_EVENTS.map(ev => {
                         const on = editForm.event_types?.includes(ev.value);
@@ -1026,9 +1026,9 @@ const WebhooksSection = () => {
                             onClick={() => setEditForm(f => ({ ...f, event_types: toggleEvent(f.event_types || [], ev.value) }))}
                             className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all"
                             style={{
-                              background: on ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-                              border: `1px solid ${on ? "rgba(201,168,76,0.4)" : "rgba(255,255,255,0.08)"}`,
-                              color: on ? "#C9A84C" : "rgba(255,255,255,0.35)",
+                              background: on ? "rgba(15,95,92,0.15)" : "#EDE7D7",
+                              border: `1px solid ${on ? "rgba(15,95,92,0.4)" : "#EDE7D7"}`,
+                              color: on ? "#0F5F5C" : "#6B6B64",
                             }}
                           >
                             {ev.label}
@@ -1038,10 +1038,10 @@ const WebhooksSection = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={handleEditSave} disabled={editSaving} className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+                    <button onClick={handleEditSave} disabled={editSaving} className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
                       {editSaving ? "Saving…" : "Save"}
                     </button>
-                    <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }}>
+                    <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
                       Cancel
                     </button>
                   </div>
@@ -1052,31 +1052,31 @@ const WebhooksSection = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[13px] font-semibold text-white/80 truncate">{h.label}</span>
+                        <span className="text-[13px] font-semibold text-[#1A1D1A] truncate">{h.label}</span>
                         <span
                           className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold"
                           style={h.enabled
-                            ? { background: "rgba(34,197,94,0.1)", color: "#4ADE80" }
-                            : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)" }}
+                            ? { background: "rgba(45,106,79,0.1)", color: "#2D6A4F" }
+                            : { background: "#EDE7D7", color: "#6B6B64" }}
                         >
                           {h.enabled ? "Active" : "Paused"}
                         </span>
                         {h.consecutive_failures >= 3 && (
-                          <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "rgba(239,68,68,0.1)", color: "#F87171" }}>
+                          <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "rgba(122,31,26,0.1)", color: "#7A1F1A" }}>
                             {h.consecutive_failures} failures
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] font-mono truncate" style={{ color: "rgba(255,255,255,0.3)" }}>{h.url}</p>
+                      <p className="text-[11px] font-mono truncate" style={{ color: "#6B6B64" }}>{h.url}</p>
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {(h.event_types || []).map(ev => (
-                          <span key={ev} className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: "rgba(201,168,76,0.08)", color: "rgba(201,168,76,0.6)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                          <span key={ev} className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: "rgba(15,95,92,0.08)", color: "rgba(15,95,92,0.6)", border: "1px solid rgba(15,95,92,0.15)" }}>
                             {ev}
                           </span>
                         ))}
                       </div>
                       {h.last_triggered_at && (
-                        <p className="text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.2)" }}>
+                        <p className="text-[10px] mt-1.5" style={{ color: "#6B6B64" }}>
                           Last triggered {relativeTime(h.last_triggered_at)}
                           {h.last_success_at && ` · Success ${relativeTime(h.last_success_at)}`}
                         </p>
@@ -1088,7 +1088,7 @@ const WebhooksSection = () => {
                         disabled={toggling[h.id]}
                         title={h.enabled ? "Pause" : "Enable"}
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-50"
-                        style={{ color: h.enabled ? "#4ADE80" : "rgba(255,255,255,0.3)" }}
+                        style={{ color: h.enabled ? "#2D6A4F" : "#6B6B64" }}
                       >
                         {h.enabled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                       </button>
@@ -1097,14 +1097,14 @@ const WebhooksSection = () => {
                         disabled={testing[h.id] || !h.enabled}
                         title="Send test ping"
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-40"
-                        style={{ color: "rgba(255,255,255,0.35)" }}
+                        style={{ color: "#6B6B64" }}
                       >
                         <Send size={13} />
                       </button>
                       <button
                         onClick={() => startEdit(h)}
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
-                        style={{ color: "rgba(255,255,255,0.35)" }}
+                        style={{ color: "#6B6B64" }}
                       >
                         <Pencil size={13} />
                       </button>
@@ -1112,7 +1112,7 @@ const WebhooksSection = () => {
                         onClick={() => handleDelete(h.id)}
                         disabled={deleting[h.id]}
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-50"
-                        style={{ color: "rgba(239,68,68,0.5)" }}
+                        style={{ color: "rgba(122,31,26,0.5)" }}
                       >
                         <Trash2 size={13} />
                       </button>
@@ -1125,9 +1125,9 @@ const WebhooksSection = () => {
         </div>
       )}
 
-      <div className="pt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-        <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-          All payloads are signed with HMAC-SHA256. Verify using the <code style={{ color: "rgba(255,255,255,0.35)" }}>X-Nomii-Signature</code> header.
+      <div className="pt-1" style={{ borderTop: "1px solid #EDE7D7" }}>
+        <p className="text-[11px]" style={{ color: "#6B6B64" }}>
+          All payloads are signed with HMAC-SHA256. Verify using the <code style={{ color: "#6B6B64" }}>X-Nomii-Signature</code> header.
           Endpoints must respond within 10 seconds. One automatic retry after 3s on failure.
         </p>
       </div>
@@ -1137,8 +1137,8 @@ const WebhooksSection = () => {
 
 /* ---------- Labels Section ---------- */
 const PRESET_COLORS = [
-  "#C9A84C", "#4ADE80", "#60A5FA", "#F87171", "#A78BFA",
-  "#FB923C", "#34D399", "#F472B6", "#94A3B8", "#FBBF24",
+  "#0F5F5C", "#2D6A4F", "#60A5FA", "#7A1F1A", "#A78BFA",
+  "#FB923C", "#34D399", "#F472B6", "#94A3B8", "#A6660E",
 ];
 
 const LabelsSection = () => {
@@ -1195,18 +1195,18 @@ const LabelsSection = () => {
 
   return (
     <div className="rounded-2xl p-6 space-y-5"
-      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Tag size={16} style={{ color: "#C9A84C" }} />
+          <Tag size={16} style={{ color: "#0F5F5C" }} />
           <div>
-            <h3 className="text-[14px] font-semibold text-white/80">Conversation Labels</h3>
-            <p className="text-[11px] text-white/30 mt-0.5">Tag conversations to organise and filter them.</p>
+            <h3 className="text-[14px] font-semibold text-[#1A1D1A]">Conversation Labels</h3>
+            <p className="text-[11px] text-[#6B6B64] mt-0.5">Tag conversations to organise and filter them.</p>
           </div>
         </div>
         <button onClick={openNew}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-opacity hover:opacity-80"
-          style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.20)" }}>
+          style={{ background: "rgba(15,95,92,0.12)", color: "#0F5F5C", border: "1px solid rgba(15,95,92,0.20)" }}>
           <Plus size={13} /> New Label
         </button>
       </div>
@@ -1214,7 +1214,7 @@ const LabelsSection = () => {
       {/* New / edit form */}
       {editing && (
         <div className="rounded-xl p-4 space-y-3"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <div className="flex gap-3">
             <input
               value={formName}
@@ -1222,12 +1222,12 @@ const LabelsSection = () => {
               maxLength={50}
               placeholder="Label name…"
               className="flex-1 px-3 py-2 rounded-lg text-[13px] outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.80)" }}
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#1A1D1A" }}
               onKeyDown={e => e.key === "Enter" && handleSave()}
               autoFocus
             />
             {/* Color preview */}
-            <div className="w-9 h-9 rounded-lg shrink-0" style={{ background: formColor, border: "2px solid rgba(255,255,255,0.15)" }} />
+            <div className="w-9 h-9 rounded-lg shrink-0" style={{ background: formColor, border: "2px solid #D8D0BD" }} />
           </div>
           {/* Color presets */}
           <div className="flex gap-2 flex-wrap">
@@ -1238,12 +1238,12 @@ const LabelsSection = () => {
             ))}
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={cancel} className="px-3 py-1.5 rounded-lg text-[12px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <button onClick={cancel} className="px-3 py-1.5 rounded-lg text-[12px]" style={{ color: "#6B6B64" }}>
               Cancel
             </button>
             <button onClick={handleSave} disabled={!formName.trim() || saving}
               className="px-4 py-1.5 rounded-lg text-[12px] font-semibold disabled:opacity-50 transition-opacity hover:opacity-80"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+              style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
               {saving ? "Saving…" : editing === "new" ? "Create" : "Save"}
             </button>
           </div>
@@ -1253,12 +1253,12 @@ const LabelsSection = () => {
       {/* Labels list */}
       {loading ? (
         <div className="space-y-2 animate-pulse">
-          {[1,2,3].map(i => <div key={i} className="h-10 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }} />)}
+          {[1,2,3].map(i => <div key={i} className="h-10 rounded-lg" style={{ background: "#EDE7D7" }} />)}
         </div>
       ) : labels.length === 0 && !editing ? (
         <div className="text-center py-8">
-          <Tag size={28} className="mx-auto mb-2" style={{ color: "rgba(255,255,255,0.08)" }} />
-          <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.20)" }}>No labels yet. Create one to start tagging conversations.</p>
+          <Tag size={28} className="mx-auto mb-2" style={{ color: "#EDE7D7" }} />
+          <p className="text-[12px]" style={{ color: "#6B6B64" }}>No labels yet. Create one to start tagging conversations.</p>
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -1266,16 +1266,16 @@ const LabelsSection = () => {
             <div key={l.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl group"
               style={{ background: "rgba(255,255,255,0.025)" }}>
               <span className="w-3 h-3 rounded-full shrink-0" style={{ background: l.color }} />
-              <span className="flex-1 text-[13px]" style={{ color: "rgba(255,255,255,0.70)" }}>{l.name}</span>
+              <span className="flex-1 text-[13px]" style={{ color: "#3A3D39" }}>{l.name}</span>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => openEdit(l)}
                   className="p-1.5 rounded-lg transition-colors hover:opacity-70"
-                  style={{ color: "rgba(255,255,255,0.30)" }}>
+                  style={{ color: "#6B6B64" }}>
                   <Pencil size={12} />
                 </button>
                 <button onClick={() => handleDelete(l.id)}
                   className="p-1.5 rounded-lg transition-colors hover:opacity-70"
-                  style={{ color: "#F87171" }}>
+                  style={{ color: "#7A1F1A" }}>
                   <Trash2 size={12} />
                 </button>
               </div>
@@ -1374,25 +1374,25 @@ const ConnectorsSection = () => {
 
   return (
     <div className="rounded-2xl p-6 space-y-5"
-      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Plug2 size={16} style={{ color: "#C9A84C" }} />
+        <Plug2 size={16} style={{ color: "#0F5F5C" }} />
         <div>
-          <h3 className="text-[14px] font-semibold text-white/80">Connectors</h3>
-          <p className="text-[11px] text-white/30 mt-0.5">Send real-time alerts to Slack, Teams, or Zapier when key events occur.</p>
+          <h3 className="text-[14px] font-semibold text-[#1A1D1A]">Connectors</h3>
+          <p className="text-[11px] text-[#6B6B64] mt-0.5">Send real-time alerts to Slack, Teams, or Zapier when key events occur.</p>
         </div>
       </div>
 
       {/* Tab strip */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#EDE7D7" }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setTestResult(null); }}
             className="flex-1 py-1.5 rounded-lg text-[12px] font-medium transition-all"
             style={tab === t.id
-              ? { background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.20)" }
-              : { color: "rgba(255,255,255,0.35)" }}>
+              ? { background: "rgba(15,95,92,0.15)", color: "#0F5F5C", border: "1px solid rgba(15,95,92,0.20)" }
+              : { color: "#6B6B64" }}>
             {t.label}
           </button>
         ))}
@@ -1400,8 +1400,8 @@ const ConnectorsSection = () => {
 
       {loading ? (
         <div className="space-y-3 animate-pulse">
-          <div className="h-10 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />
-          <div className="h-32 rounded-xl" style={{ background: "rgba(255,255,255,0.02)" }} />
+          <div className="h-10 rounded-xl" style={{ background: "#EDE7D7" }} />
+          <div className="h-32 rounded-xl" style={{ background: "#EDE7D7" }} />
         </div>
 
       ) : isZapier ? (
@@ -1413,21 +1413,21 @@ const ConnectorsSection = () => {
               <Zap size={14} style={{ color: "#FB923C" }} />
               <span className="text-[13px] font-semibold" style={{ color: "#FB923C" }}>Zapier-ready Webhooks</span>
             </div>
-            <p className="text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.40)" }}>
-              Shenmay AI fires outgoing webhooks on every key conversation event. Connect Zapier by creating a <strong className="text-white/60">Webhooks by Zapier</strong> trigger, then paste the Zapier URL into your Shenmay webhook settings below.
+            <p className="text-[12px] leading-relaxed" style={{ color: "#6B6B64" }}>
+              Shenmay AI fires outgoing webhooks on every key conversation event. Connect Zapier by creating a <strong className="text-[#3A3D39]">Webhooks by Zapier</strong> trigger, then paste the Zapier URL into your Shenmay webhook settings below.
             </p>
           </div>
 
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.22)" }}>Supported events</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#6B6B64" }}>Supported events</p>
             <div className="grid grid-cols-2 gap-2">
               {CONNECTOR_EVENTS.map(ev => (
                 <div key={ev.value} className="flex items-start gap-2 px-3 py-2 rounded-lg"
-                  style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.04)" }}>
-                  <div className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ background: "#C9A84C" }} />
+                  style={{ background: "rgba(255,255,255,0.025)", border: "1px solid #EDE7D7" }}>
+                  <div className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={{ background: "#0F5F5C" }} />
                   <div>
-                    <p className="text-[11px] font-mono" style={{ color: "rgba(255,255,255,0.50)" }}>{ev.value}</p>
-                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>{ev.label}</p>
+                    <p className="text-[11px] font-mono" style={{ color: "#6B6B64" }}>{ev.value}</p>
+                    <p className="text-[10px]" style={{ color: "#6B6B64" }}>{ev.label}</p>
                   </div>
                 </div>
               ))}
@@ -1435,23 +1435,23 @@ const ConnectorsSection = () => {
           </div>
 
           <div className="rounded-xl p-4 space-y-3"
-            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <p className="text-[12px] font-semibold" style={{ color: "rgba(255,255,255,0.45)" }}>How to connect</p>
-            <ol className="space-y-2 text-[12px]" style={{ color: "rgba(255,255,255,0.38)" }}>
+            style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+            <p className="text-[12px] font-semibold" style={{ color: "#6B6B64" }}>How to connect</p>
+            <ol className="space-y-2 text-[12px]" style={{ color: "#6B6B64" }}>
               <li className="flex gap-2.5">
-                <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>1.</span>
-                In Zapier, create a new Zap and choose <strong className="text-white/55">Webhooks by Zapier</strong> as the trigger.
+                <span className="font-bold shrink-0" style={{ color: "#0F5F5C" }}>1.</span>
+                In Zapier, create a new Zap and choose <strong className="text-[#6B6B64]">Webhooks by Zapier</strong> as the trigger.
               </li>
               <li className="flex gap-2.5">
-                <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>2.</span>
-                Select <strong className="text-white/55">Catch Hook</strong> and copy your unique Zapier webhook URL.
+                <span className="font-bold shrink-0" style={{ color: "#0F5F5C" }}>2.</span>
+                Select <strong className="text-[#6B6B64]">Catch Hook</strong> and copy your unique Zapier webhook URL.
               </li>
               <li className="flex gap-2.5">
-                <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>3.</span>
-                Go to <strong className="text-white/55">Settings → Webhooks</strong> and add a new webhook with that URL and the events you need.
+                <span className="font-bold shrink-0" style={{ color: "#0F5F5C" }}>3.</span>
+                Go to <strong className="text-[#6B6B64]">Settings → Webhooks</strong> and add a new webhook with that URL and the events you need.
               </li>
               <li className="flex gap-2.5">
-                <span className="font-bold shrink-0" style={{ color: "#C9A84C" }}>4.</span>
+                <span className="font-bold shrink-0" style={{ color: "#0F5F5C" }}>4.</span>
                 Trigger any event in Shenmay to let Zapier detect the payload structure, then build your Zap actions.
               </li>
             </ol>
@@ -1464,7 +1464,7 @@ const ConnectorsSection = () => {
 
           {/* Webhook URL field */}
           <div className="space-y-1.5">
-            <label className="text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.42)" }}>
+            <label className="text-[12px] font-medium" style={{ color: "#6B6B64" }}>
               {isSlack ? "Slack Incoming Webhook URL" : "Teams Incoming Webhook URL"}
             </label>
             <div className="relative">
@@ -1476,15 +1476,15 @@ const ConnectorsSection = () => {
                   ? "https://hooks.slack.com/services/…"
                   : "https://outlook.office.com/webhook/…"}
                 className="w-full px-3 py-2.5 pr-10 rounded-xl text-[13px] outline-none"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.78)" }}
+                style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#3A3D39" }}
               />
               <button onClick={() => setShowUrl(v => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
-                style={{ color: "rgba(255,255,255,0.35)" }}>
+                style={{ color: "#6B6B64" }}>
                 {showUrl ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
-            <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.22)" }}>
+            <p className="text-[11px]" style={{ color: "#6B6B64" }}>
               {isSlack
                 ? "Create an incoming webhook at api.slack.com/apps → your app → Incoming Webhooks."
                 : "Add a connector in Teams: open the channel → Connectors → Incoming Webhook → Configure."}
@@ -1493,7 +1493,7 @@ const ConnectorsSection = () => {
 
           {/* Events */}
           <div className="space-y-2">
-            <p className="text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.42)" }}>Notify on</p>
+            <p className="text-[12px] font-medium" style={{ color: "#6B6B64" }}>Notify on</p>
             <div className="grid grid-cols-2 gap-2">
               {CONNECTOR_EVENTS.map(ev => {
                 const on = currentEvents.includes(ev.value);
@@ -1502,12 +1502,12 @@ const ConnectorsSection = () => {
                     onClick={() => toggleEvent(setCurrentEvents, ev.value)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all"
                     style={on
-                      ? { background: "rgba(201,168,76,0.10)", border: "1px solid rgba(201,168,76,0.22)", color: "#C9A84C" }
-                      : { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.32)" }}>
+                      ? { background: "rgba(15,95,92,0.10)", border: "1px solid rgba(15,95,92,0.22)", color: "#0F5F5C" }
+                      : { background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>
                     <div className="w-3.5 h-3.5 rounded flex items-center justify-center shrink-0"
                       style={{
-                        background: on ? "rgba(201,168,76,0.25)" : "rgba(255,255,255,0.05)",
-                        border: `1px solid ${on ? "rgba(201,168,76,0.45)" : "rgba(255,255,255,0.09)"}`,
+                        background: on ? "rgba(15,95,92,0.25)" : "#EDE7D7",
+                        border: `1px solid ${on ? "rgba(15,95,92,0.45)" : "#EDE7D7"}`,
                       }}>
                       {on && <Check size={9} strokeWidth={3} />}
                     </div>
@@ -1522,8 +1522,8 @@ const ConnectorsSection = () => {
           {testResult && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px]"
               style={testResult.ok
-                ? { background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.18)", color: "#4ADE80" }
-                : { background: "rgba(248,113,113,0.07)", border: "1px solid rgba(248,113,113,0.18)", color: "#F87171" }}>
+                ? { background: "rgba(45,106,79,0.07)", border: "1px solid rgba(45,106,79,0.18)", color: "#2D6A4F" }
+                : { background: "rgba(248,113,113,0.07)", border: "1px solid rgba(248,113,113,0.18)", color: "#7A1F1A" }}>
               {testResult.ok ? <Check size={13} /> : <AlertTriangle size={13} />}
               <span>{testResult.message}</span>
             </div>
@@ -1535,7 +1535,7 @@ const ConnectorsSection = () => {
               onClick={handleTest}
               disabled={testing || !currentUrl}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-30"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.50)" }}>
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>
               <Send size={12} />
               {testing ? "Sending…" : "Send test message"}
             </button>
@@ -1543,7 +1543,7 @@ const ConnectorsSection = () => {
               onClick={handleSave}
               disabled={saving}
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-[12px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+              style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
               {saving ? "Saving…" : "Save"}
             </button>
           </div>
@@ -1588,9 +1588,9 @@ const EmailTemplatesSection = () => {
   if (loading) {
     return (
       <div className="rounded-2xl p-6 animate-pulse space-y-4" style={card}>
-        <div className="h-4 w-40 rounded-lg" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="h-4 w-40 rounded-lg" style={{ background: "#EDE7D7" }} />
         <div className="grid grid-cols-2 gap-4">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "rgba(255,255,255,0.04)" }} />)}
+          {[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl" style={{ background: "#EDE7D7" }} />)}
         </div>
       </div>
     );
@@ -1599,48 +1599,48 @@ const EmailTemplatesSection = () => {
   return (
     <form onSubmit={handleSave} className="rounded-2xl p-6 space-y-5" style={card}>
       <div className="flex items-center gap-2">
-        <Mail size={16} style={{ color: "#C9A84C" }} />
+        <Mail size={16} style={{ color: "#0F5F5C" }} />
         <div>
-          <h3 className="text-[14px] font-semibold text-white/80">Email Templates</h3>
-          <p className="text-[11px] text-white/30 mt-0.5">Customize the sender name, reply-to address, and footer on emails sent to your team and customers.</p>
+          <h3 className="text-[14px] font-semibold text-[#1A1D1A]">Email Templates</h3>
+          <p className="text-[11px] text-[#6B6B64] mt-0.5">Customize the sender name, reply-to address, and footer on emails sent to your team and customers.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">From Name</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">From Name</label>
           <input type="text" value={form.email_from_name} onChange={set("email_from_name")} maxLength={100}
             placeholder="e.g. Acme Co Support" className={inputClass} style={inputStyle} />
-          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
             Appears as the sender name. Defaults to "Shenmay AI" if blank.
           </p>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-white/30 mb-1.5">Reply-To Address</label>
+          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Reply-To Address</label>
           <input type="email" value={form.email_reply_to} onChange={set("email_reply_to")} maxLength={255}
             placeholder="e.g. support@yourcompany.com" className={inputClass} style={inputStyle} />
-          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
             When recipients hit "Reply", their email goes to this address.
           </p>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-white/30 mb-1.5">Email Footer</label>
+        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Email Footer</label>
         <textarea rows={2} value={form.email_footer} onChange={set("email_footer")} maxLength={500}
           placeholder="e.g. Acme Co · 123 Main St, Suite 400 · Springfield, IL 62701"
           className={inputClass} style={inputStyle} />
-        <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+        <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
           Added at the bottom of all emails. Useful for compliance or branding.
         </p>
       </div>
       <div className="flex items-center gap-3">
         <button type="submit" disabled={saving}
           className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+          style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
           {saving ? "Saving…" : "Save email settings"}
         </button>
         {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#4ADE80" }}>
+          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "#2D6A4F" }}>
             <Check size={14} /> Saved
           </span>
         )}
@@ -1698,27 +1698,27 @@ const PrivacySection = () => {
   return (
     <section className="rounded-2xl p-5 sm:p-6" style={card}>
       <div className="flex items-center gap-2 mb-1">
-        <Shield size={16} style={{ color: 'rgba(201,168,76,0.85)' }} />
-        <h3 className="text-base font-semibold text-white/85">Privacy &amp; PII Protection</h3>
+        <Shield size={16} style={{ color: 'rgba(15,95,92,0.85)' }} />
+        <h3 className="text-base font-semibold text-[#1A1D1A]/85">Privacy &amp; PII Protection</h3>
       </div>
-      <p className="text-xs text-white/40 mb-4">
+      <p className="text-xs text-[#6B6B64] mb-4">
         Owner-only. Controls whether regulated personal identifiers are tokenized before reaching Anthropic.
       </p>
 
       <div className="flex items-start justify-between gap-4 p-4 rounded-xl"
-           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+           style={{ background: '#EDE7D7', border: '1px solid #EDE7D7' }}>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-white/80 mb-1">Tokenize PII before sending to Anthropic</div>
-          <p className="text-xs text-white/50 leading-relaxed">
+          <div className="text-sm font-medium text-[#1A1D1A] mb-1">Tokenize PII before sending to Anthropic</div>
+          <p className="text-xs text-[#6B6B64] leading-relaxed">
             When ON, SSNs, payment cards, IBANs, emails, phone numbers, dates of birth, postcodes, and
-            account numbers are replaced with opaque placeholders (<code style={{ color: 'rgba(201,168,76,0.85)' }}>[SSN_1]</code>,
-            <code style={{ color: 'rgba(201,168,76,0.85)' }}> [EMAIL_1]</code>, …) before every outbound Claude call. A second-pass
+            account numbers are replaced with opaque placeholders (<code style={{ color: 'rgba(15,95,92,0.85)' }}>[SSN_1]</code>,
+            <code style={{ color: 'rgba(15,95,92,0.85)' }}> [EMAIL_1]</code>, …) before every outbound Claude call. A second-pass
             breach detector blocks any request that still contains unredacted PII. Disable only if you have a
             specific compliance reason — most tenants should leave this ON.
           </p>
           {!enabled && (
             <div className="mt-3 flex items-start gap-2 text-xs p-2 rounded-lg"
-                 style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5' }}>
+                 style={{ background: 'rgba(122,31,26,0.08)', border: '1px solid rgba(122,31,26,0.2)', color: '#FCA5A5' }}>
               <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
               <span>
                 Tokenization is OFF. Customer SSNs, cards, and other regulated identifiers will be sent to
@@ -1733,14 +1733,14 @@ const PrivacySection = () => {
           onClick={() => onToggle(!enabled)}
           className="flex-shrink-0 transition-opacity hover:opacity-80 disabled:opacity-50"
           aria-label={enabled ? 'Disable PII tokenization' : 'Enable PII tokenization'}
-          style={{ color: enabled ? '#4ADE80' : 'rgba(255,255,255,0.4)' }}
+          style={{ color: enabled ? '#2D6A4F' : '#6B6B64' }}
         >
           {enabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
         </button>
       </div>
 
       {saved && (
-        <div className="mt-3 flex items-center gap-1.5 text-sm font-medium" style={{ color: '#4ADE80' }}>
+        <div className="mt-3 flex items-center gap-1.5 text-sm font-medium" style={{ color: '#2D6A4F' }}>
           <Check size={14} /> Saved
         </div>
       )}
@@ -1753,8 +1753,8 @@ const PrivacySection = () => {
 const ShenmaySettings = () => (
   <div className="space-y-6">
     <div className="mb-2">
-      <h2 className="text-xl font-bold text-white/90 mb-1">Settings</h2>
-      <p className="text-sm text-white/30">Manage your company profile, widget, and products.</p>
+      <h2 className="text-xl font-bold text-[#1A1D1A] mb-1">Settings</h2>
+      <p className="text-sm text-[#6B6B64]">Manage your company profile, widget, and products.</p>
     </div>
     <CompanyProfile />
     <AgentSoulSection />

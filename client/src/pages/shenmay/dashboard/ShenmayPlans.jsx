@@ -37,43 +37,43 @@ const UPGRADE_MAP = {
 function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReached }) {
   if (limit === null || limit === undefined) {
     return (
-      <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="rounded-xl p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <div className="flex items-center gap-2 mb-1">
-          <Icon className="h-4 w-4" style={{ color: "rgba(255,255,255,0.30)" }} />
-          <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>{label}</span>
+          <Icon className="h-4 w-4" style={{ color: "#6B6B64" }} />
+          <span className="text-xs font-semibold" style={{ color: "#6B6B64" }}>{label}</span>
         </div>
-        <p className="text-lg font-bold" style={{ color: "rgba(255,255,255,0.70)" }}>
+        <p className="text-lg font-bold" style={{ color: "#3A3D39" }}>
           {used?.toLocaleString() ?? 0}
-          <span className="text-sm font-normal ml-1" style={{ color: "rgba(255,255,255,0.30)" }}>/ Unlimited</span>
+          <span className="text-sm font-normal ml-1" style={{ color: "#6B6B64" }}>/ Unlimited</span>
         </p>
       </div>
     );
   }
 
   const displayPct = Math.min(100, pct ?? 0);
-  const barColor = limitReached ? "#EF4444" : nearLimit ? "#F59E0B" : "#C9A84C";
+  const barColor = limitReached ? "#7A1F1A" : nearLimit ? "#A6660E" : "#0F5F5C";
   const statusLabel = limitReached ? "Limit reached" : nearLimit ? `${displayPct}% used` : `${displayPct}% used`;
 
   return (
     <div
       className="rounded-xl p-4"
       style={{
-        background: limitReached ? "rgba(239,68,68,0.06)" : nearLimit ? "rgba(245,158,11,0.06)" : "rgba(255,255,255,0.03)",
-        border: `1px solid ${limitReached ? "rgba(239,68,68,0.20)" : nearLimit ? "rgba(245,158,11,0.20)" : "rgba(255,255,255,0.07)"}`,
+        background: limitReached ? "rgba(122,31,26,0.06)" : nearLimit ? "rgba(245,158,11,0.06)" : "#EDE7D7",
+        border: `1px solid ${limitReached ? "rgba(122,31,26,0.20)" : nearLimit ? "rgba(245,158,11,0.20)" : "#EDE7D7"}`,
       }}
     >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4" style={{ color: limitReached ? "#EF4444" : nearLimit ? "#F59E0B" : "rgba(255,255,255,0.30)" }} />
-          <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.40)" }}>{label}</span>
+          <Icon className="h-4 w-4" style={{ color: limitReached ? "#7A1F1A" : nearLimit ? "#A6660E" : "#6B6B64" }} />
+          <span className="text-xs font-semibold" style={{ color: "#6B6B64" }}>{label}</span>
         </div>
         <span className="text-[10px] font-semibold" style={{ color: barColor }}>{statusLabel}</span>
       </div>
-      <p className="text-lg font-bold mb-2" style={{ color: limitReached ? "#EF4444" : nearLimit ? "#F59E0B" : "rgba(255,255,255,0.80)" }}>
+      <p className="text-lg font-bold mb-2" style={{ color: limitReached ? "#7A1F1A" : nearLimit ? "#A6660E" : "#1A1D1A" }}>
         {used?.toLocaleString() ?? 0}
-        <span className="text-sm font-normal ml-1" style={{ color: "rgba(255,255,255,0.30)" }}>/ {limit?.toLocaleString()}</span>
+        <span className="text-sm font-normal ml-1" style={{ color: "#6B6B64" }}>/ {limit?.toLocaleString()}</span>
       </p>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#EDE7D7" }}>
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${displayPct}%`, background: barColor }}
@@ -85,7 +85,7 @@ function UsageMeter({ icon: Icon, label, used, limit, pct, nearLimit, limitReach
 
 function UpgradeNudge({ current, next, delta }) {
   const currentLabel = PLAN_LABELS[current] || { label: current, color: "#6B7280" };
-  const nextLabel    = PLAN_LABELS[next]    || { label: next,    color: "#C9A84C" };
+  const nextLabel    = PLAN_LABELS[next]    || { label: next,    color: "#0F5F5C" };
   const scrollToPlans = (e) => {
     e.preventDefault();
     document.querySelector("stripe-pricing-table")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -94,12 +94,12 @@ function UpgradeNudge({ current, next, delta }) {
     <div
       className="rounded-2xl p-5 flex flex-col md:flex-row md:items-center gap-4"
       style={{
-        background: `linear-gradient(135deg, rgba(255,255,255,0.02), ${nextLabel.color}14)`,
+        background: `linear-gradient(135deg, #EDE7D7, ${nextLabel.color}14)`,
         border:     `1px solid ${nextLabel.color}33`,
       }}
     >
       <div className="shrink-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1.5" style={{ color: "#6B6B64" }}>
           Current plan
         </p>
         <span
@@ -110,16 +110,16 @@ function UpgradeNudge({ current, next, delta }) {
         </span>
       </div>
 
-      <ArrowRight className="h-5 w-5 shrink-0 hidden md:block" style={{ color: "rgba(255,255,255,0.25)" }} />
+      <ArrowRight className="h-5 w-5 shrink-0 hidden md:block" style={{ color: "#6B6B64" }} />
 
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "#6B6B64" }}>
           Recommended next
         </p>
         <p className="text-base font-bold mb-0.5" style={{ color: nextLabel.color }}>
           {nextLabel.label}
         </p>
-        <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{delta}</p>
+        <p className="text-xs" style={{ color: "#6B6B64" }}>{delta}</p>
       </div>
 
       <a
@@ -261,7 +261,7 @@ const ShenmayPlans = () => {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>License & Usage</h2>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>License & Usage</h2>
           <div className="flex items-center gap-2">
             <span
               className="text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
@@ -269,7 +269,7 @@ const ShenmayPlans = () => {
             >
               {planLabel}
             </span>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+            <p className="text-sm" style={{ color: "#6B6B64" }}>
               Self-hosted deployment
             </p>
           </div>
@@ -293,11 +293,11 @@ const ShenmayPlans = () => {
         {/* Limit reached banner */}
         {usage && (usage.customer_limit_reached || usage.message_limit_reached) && (
           <div className="rounded-xl px-5 py-4 flex items-start gap-3"
-            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
-            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#EF4444" }} />
+            style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.25)" }}>
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#7A1F1A" }} />
             <div>
-              <p className="text-sm font-semibold" style={{ color: "#EF4444" }}>Plan limit reached</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(239,68,68,0.70)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#7A1F1A" }}>Plan limit reached</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(122,31,26,0.70)" }}>
                 Purchase a license and add your key below to restore service immediately.
               </p>
             </div>
@@ -307,7 +307,7 @@ const ShenmayPlans = () => {
         {/* Usage meters */}
         {usage && (
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "#6B6B64" }}>
               Current Usage
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -336,29 +336,29 @@ const ShenmayPlans = () => {
         {/* ── Current license status (only if a key is active) ────────────── */}
         {licenseInfo?.has_license && (
           <div className="rounded-2xl p-6 space-y-3"
-            style={{ background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.20)" }}>
+            style={{ background: "rgba(45,106,79,0.05)", border: "1px solid rgba(45,106,79,0.20)" }}>
             <div className="flex items-center gap-3">
-              <CheckCircle2 size={20} style={{ color: "#22C55E" }} />
-              <p className="font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
+              <CheckCircle2 size={20} style={{ color: "#2D6A4F" }} />
+              <p className="font-bold" style={{ color: "#1A1D1A" }}>
                 License active
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.30)" }}>Key</p>
-                <code className="text-xs px-2 py-1 rounded" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.75)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "#6B6B64" }}>Key</p>
+                <code className="text-xs px-2 py-1 rounded" style={{ background: "#EDE7D7", color: "#3A3D39" }}>
                   {licenseInfo.key_masked}
                 </code>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "rgba(255,255,255,0.30)" }}>Plan</p>
-                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.85)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: "#6B6B64" }}>Plan</p>
+                <p className="text-sm font-semibold" style={{ color: "#1A1D1A" }}>
                   {(PLAN_LABELS[licenseInfo.plan]?.label || licenseInfo.plan)} — {licenseInfo.max_messages_month} msg/mo, {licenseInfo.max_customers} customers
                 </p>
               </div>
             </div>
             {licenseInfo.validated_at && (
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
+              <p className="text-xs" style={{ color: "#6B6B64" }}>
                 Last validated {new Date(licenseInfo.validated_at).toLocaleString()} (revalidates every 24h)
               </p>
             )}
@@ -367,15 +367,15 @@ const ShenmayPlans = () => {
                 onClick={handleDeactivateLicense}
                 disabled={licenseBusy}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-                style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444" }}
+                style={{ background: "rgba(122,31,26,0.10)", border: "1px solid rgba(122,31,26,0.25)", color: "#7A1F1A" }}
               >
                 <XCircle size={14} />
                 Deactivate license
               </button>
             )}
             {licenseInfo.env_var_in_use && (
-              <p className="text-xs italic" style={{ color: "rgba(255,255,255,0.40)" }}>
-                License is pinned in <code style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY</code> in your .env — to deactivate, remove that line and restart.
+              <p className="text-xs italic" style={{ color: "#6B6B64" }}>
+                License is pinned in <code style={{ background: "#EDE7D7" }}>NOMII_LICENSE_KEY</code> in your .env — to deactivate, remove that line and restart.
               </p>
             )}
           </div>
@@ -383,23 +383,23 @@ const ShenmayPlans = () => {
 
         {/* ── Activate / change license ─────────────────────────────────────── */}
         <div className="rounded-2xl p-6 space-y-4"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <div className="flex items-center gap-3">
-            <Key size={20} style={{ color: "#C9A84C" }} />
-            <p className="font-bold" style={{ color: "rgba(255,255,255,0.85)" }}>
+            <Key size={20} style={{ color: "#0F5F5C" }} />
+            <p className="font-bold" style={{ color: "#1A1D1A" }}>
               {licenseInfo?.has_license ? "Change license" : (isTrialPlan ? "Activate a license" : "Update license")}
             </p>
           </div>
 
           {!licenseInfo?.has_license && (
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+            <p className="text-sm" style={{ color: "#6B6B64" }}>
               Purchase a license at{" "}
               <a
                 href="https://pontensolutions.com/nomii/license"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
-                style={{ color: "#C9A84C" }}
+                style={{ color: "#0F5F5C" }}
               >
                 pontensolutions.com/nomii/license
               </a>
@@ -408,13 +408,13 @@ const ShenmayPlans = () => {
           )}
 
           {licenseInfo?.env_var_in_use ? (
-            <p className="text-xs italic" style={{ color: "rgba(255,255,255,0.50)" }}>
-              Your license is currently pinned via <code style={{ background: "rgba(255,255,255,0.08)" }}>NOMII_LICENSE_KEY</code> in .env. To change it from the dashboard, remove that line and restart, then come back here.
+            <p className="text-xs italic" style={{ color: "#6B6B64" }}>
+              Your license is currently pinned via <code style={{ background: "#EDE7D7" }}>NOMII_LICENSE_KEY</code> in .env. To change it from the dashboard, remove that line and restart, then come back here.
             </p>
           ) : (
             <form onSubmit={handleActivateLicense} className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-[0.15em] block mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>
+                <label className="text-[10px] font-bold uppercase tracking-[0.15em] block mb-2" style={{ color: "#6B6B64" }}>
                   License key
                 </label>
                 <input
@@ -427,21 +427,21 @@ const ShenmayPlans = () => {
                   autoComplete="off"
                   className="w-full px-4 py-2.5 rounded-xl text-sm font-mono outline-none transition-all disabled:opacity-50"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    color: "rgba(255,255,255,0.92)",
+                    background: "#EDE7D7",
+                    border: "1px solid #D8D0BD",
+                    color: "#1A1D1A",
                   }}
                 />
               </div>
 
               {licenseError && (
-                <div className="flex items-start gap-2 text-xs" style={{ color: "#EF4444" }}>
+                <div className="flex items-start gap-2 text-xs" style={{ color: "#7A1F1A" }}>
                   <XCircle size={14} className="shrink-0 mt-0.5" />
                   <span>{licenseError}</span>
                 </div>
               )}
               {licenseSuccess && (
-                <div className="flex items-start gap-2 text-xs" style={{ color: "#22C55E" }}>
+                <div className="flex items-start gap-2 text-xs" style={{ color: "#2D6A4F" }}>
                   <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
                   <span>{licenseSuccess}</span>
                 </div>
@@ -452,7 +452,7 @@ const ShenmayPlans = () => {
                   type="submit"
                   disabled={licenseBusy || !licenseInput.trim()}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-                  style={{ background: "rgba(201,168,76,0.20)", border: "1px solid rgba(201,168,76,0.45)", color: "#C9A84C" }}
+                  style={{ background: "rgba(15,95,92,0.20)", border: "1px solid rgba(15,95,92,0.45)", color: "#0F5F5C" }}
                 >
                   {licenseBusy ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
                   {licenseInfo?.has_license ? "Replace license" : "Activate license"}
@@ -462,7 +462,7 @@ const ShenmayPlans = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.70)" }}
+                  style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#3A3D39" }}
                 >
                   Get a license
                   <ExternalLink size={12} />
@@ -479,22 +479,22 @@ const ShenmayPlans = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>Plans & Billing</h2>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Plans & Billing</h2>
+          <p className="text-sm" style={{ color: "#6B6B64" }}>
             {isMaster ? "Master account — unlimited access, no billing required." : "Enterprise plan — contact your account manager for billing."}
           </p>
         </div>
         <div className="rounded-2xl p-8 flex items-center gap-6"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(201,168,76,0.20)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid rgba(15,95,92,0.20)" }}>
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: "rgba(201,168,76,0.12)" }}>
-            <Crown size={28} style={{ color: "#C9A84C" }} />
+            style={{ background: "rgba(15,95,92,0.12)" }}>
+            <Crown size={28} style={{ color: "#0F5F5C" }} />
           </div>
           <div>
-            <p className="font-bold text-lg" style={{ color: "rgba(255,255,255,0.90)" }}>
+            <p className="font-bold text-lg" style={{ color: "#1A1D1A" }}>
               {isMaster ? "Master License" : "Enterprise Plan"}
             </p>
-            <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.40)" }}>
+            <p className="text-sm mt-1" style={{ color: "#6B6B64" }}>
               Unlimited customers · Unlimited messages · Never expires
             </p>
           </div>
@@ -511,7 +511,7 @@ const ShenmayPlans = () => {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>Plans & Billing</h2>
+          <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Plans & Billing</h2>
           <div className="flex items-center gap-2">
             <span
               className="text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
@@ -519,7 +519,7 @@ const ShenmayPlans = () => {
             >
               {planLabel}
             </span>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+            <p className="text-sm" style={{ color: "#6B6B64" }}>
               {["free", "trial"].includes(currentPlan)
                 ? "Upgrade to unlock more customers and AI messages."
                 : `Current plan. ${isActive ? "Manage your billing below." : ""}`}
@@ -530,8 +530,8 @@ const ShenmayPlans = () => {
           <button
             onClick={handleManageBilling}
             disabled={busy}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all hover:bg-white/[0.04]"
-            style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)" }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all hover:bg-[#F5F1E8]"
+            style={{ border: "1px solid #D8D0BD", color: "#3A3D39" }}
           >
             <ExternalLink size={14} />
             {busy ? "Opening..." : "Manage Billing & Invoices"}
@@ -542,11 +542,11 @@ const ShenmayPlans = () => {
       {/* Limit warning banner */}
       {hasLimitReached && (
         <div className="rounded-xl px-5 py-4 flex items-start gap-3"
-          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)" }}>
-          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#EF4444" }} />
+          style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.25)" }}>
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#7A1F1A" }} />
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#EF4444" }}>Plan limit reached</p>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(239,68,68,0.70)" }}>
+            <p className="text-sm font-semibold" style={{ color: "#7A1F1A" }}>Plan limit reached</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgba(122,31,26,0.70)" }}>
               {usage.customer_limit_reached && "No new AI agents will be spawned for new customers. "}
               {usage.message_limit_reached && "All AI agents are currently halted until the next billing period. "}
               Upgrade your plan to restore service immediately.
@@ -557,9 +557,9 @@ const ShenmayPlans = () => {
       {!hasLimitReached && hasLimitWarning && (
         <div className="rounded-xl px-5 py-4 flex items-start gap-3"
           style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.20)" }}>
-          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#F59E0B" }} />
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#A6660E" }} />
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#F59E0B" }}>Approaching your plan limits</p>
+            <p className="text-sm font-semibold" style={{ color: "#A6660E" }}>Approaching your plan limits</p>
             <p className="text-xs mt-0.5" style={{ color: "rgba(245,158,11,0.70)" }}>
               You're nearing your plan's limits. Consider upgrading to avoid any service interruption.
             </p>
@@ -570,7 +570,7 @@ const ShenmayPlans = () => {
       {/* Usage summary */}
       {usage && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "#6B6B64" }}>
             Current Usage
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -609,11 +609,11 @@ const ShenmayPlans = () => {
 
       {/* Stripe Pricing Table */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+        <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "#6B6B64" }}>
           Available Plans
         </p>
         <div className="rounded-2xl overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <stripe-pricing-table
             pricing-table-id={stripeConfig.pricingTableId}
             publishable-key={stripeConfig.publishableKey}
@@ -625,18 +625,18 @@ const ShenmayPlans = () => {
 
       {/* Enterprise CTA */}
       <div className="rounded-2xl p-6 text-center"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-        <TrendingUp className="h-8 w-8 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.15)" }} />
-        <h3 className="font-bold mb-1" style={{ color: "rgba(255,255,255,0.80)" }}>Need more?</h3>
-        <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+        <TrendingUp className="h-8 w-8 mx-auto mb-3" style={{ color: "#D8D0BD" }} />
+        <h3 className="font-bold mb-1" style={{ color: "#1A1D1A" }}>Need more?</h3>
+        <p className="text-sm mb-4" style={{ color: "#6B6B64" }}>
           Enterprise plans with unlimited customers, dedicated SLA, and custom integrations.
         </p>
         <a
           href="https://pontensolutions.com/contact"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-white/[0.05]"
-          style={{ border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)" }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-[#EDE7D7]"
+          style={{ border: "1px solid #D8D0BD", color: "#3A3D39" }}
         >
           Contact Sales <ExternalLink size={14} />
         </a>

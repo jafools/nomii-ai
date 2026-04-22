@@ -26,10 +26,10 @@ import {
 
 // ── Colour + icon map ─────────────────────────────────────────────────────────
 const TYPE_STYLE = {
-  lookup:    { color: "#3B82F6", bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.22)",  icon: Search      },
+  lookup:    { color: "#0F5F5C", bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.22)",  icon: Search      },
   calculate: { color: "#10B981", bg: "rgba(16,185,129,0.10)",  border: "rgba(16,185,129,0.22)",  icon: Calculator  },
-  report:    { color: "#C9A84C", bg: "rgba(201,168,76,0.10)",  border: "rgba(201,168,76,0.22)",  icon: FileText    },
-  escalate:  { color: "#F87171", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.22)", icon: Users       },
+  report:    { color: "#0F5F5C", bg: "rgba(15,95,92,0.10)",  border: "rgba(15,95,92,0.22)",  icon: FileText    },
+  escalate:  { color: "#7A1F1A", bg: "rgba(248,113,113,0.10)", border: "rgba(248,113,113,0.22)", icon: Users       },
   connect:   { color: "#A78BFA", bg: "rgba(167,139,250,0.10)", border: "rgba(167,139,250,0.22)", icon: Zap         },
 };
 const TYPE_EMOJI = { lookup: "🔍", calculate: "📊", report: "📄", escalate: "🙋", connect: "🔗" };
@@ -60,17 +60,17 @@ function ToolTypeBadge({ type }) {
 }
 
 function Spinner({ size = 18 }) {
-  return <Loader2 size={size} className="animate-spin" style={{ color: "#C9A84C" }} />;
+  return <Loader2 size={size} className="animate-spin" style={{ color: "#0F5F5C" }} />;
 }
 
 function ErrorBanner({ message, onDismiss }) {
   if (!message) return null;
   return (
     <div className="flex items-start gap-3 p-4 rounded-xl mb-4"
-      style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
-      <AlertCircle size={16} className="shrink-0 mt-0.5" style={{ color: "#F87171" }} />
-      <p className="text-sm flex-1" style={{ color: "#F87171" }}>{message}</p>
-      {onDismiss && <button onClick={onDismiss}><X size={14} style={{ color: "#F87171" }} /></button>}
+      style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.20)" }}>
+      <AlertCircle size={16} className="shrink-0 mt-0.5" style={{ color: "#7A1F1A" }} />
+      <p className="text-sm flex-1" style={{ color: "#7A1F1A" }}>{message}</p>
+      {onDismiss && <button onClick={onDismiss}><X size={14} style={{ color: "#7A1F1A" }} /></button>}
     </div>
   );
 }
@@ -83,9 +83,9 @@ function StepDots({ current, total }) {
         <div key={i} className="rounded-full transition-all duration-200" style={{
           width:  i + 1 === current ? 20 : 8,
           height: 8,
-          background: i + 1 === current ? "#C9A84C"
-            : i + 1 < current ? "rgba(201,168,76,0.40)"
-            : "rgba(255,255,255,0.12)",
+          background: i + 1 === current ? "#0F5F5C"
+            : i + 1 < current ? "rgba(15,95,92,0.40)"
+            : "#D8D0BD",
         }} />
       ))}
     </div>
@@ -98,21 +98,21 @@ function ModalShell({ children, title, onClose, back, step, totalSteps }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.70)", backdropFilter: "blur(4px)" }}>
       <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <div className="flex items-center justify-between p-5 pb-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          style={{ borderBottom: "1px solid #EDE7D7" }}>
           <div className="flex items-center gap-2">
             {back && (
               <button onClick={back} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
-                <ChevronLeft size={16} style={{ color: "rgba(255,255,255,0.40)" }} />
+                <ChevronLeft size={16} style={{ color: "#6B6B64" }} />
               </button>
             )}
-            <h2 className="text-base font-semibold" style={{ color: "rgba(255,255,255,0.90)" }}>
+            <h2 className="text-base font-semibold" style={{ color: "#1A1D1A" }}>
               {title}
             </h2>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
-            <X size={16} style={{ color: "rgba(255,255,255,0.40)" }} />
+            <X size={16} style={{ color: "#6B6B64" }} />
           </button>
         </div>
         <div className="p-5">
@@ -126,7 +126,7 @@ function ModalShell({ children, title, onClose, back, step, totalSteps }) {
 
 // ── Config fields (shared between Create and Edit) ────────────────────────────
 function ConfigFields({ fields, config, onChange, toolType }) {
-  const inputStyle = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.90)" };
+  const inputStyle = { background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" };
   const labelClass = "block text-[11px] font-semibold uppercase tracking-wider mb-1.5";
   const inputClass = "w-full px-4 py-3 rounded-xl text-sm outline-none transition-all";
   const authType   = config.auth_type || "none";
@@ -135,15 +135,15 @@ function ConfigFields({ fields, config, onChange, toolType }) {
     <div>
       {fields.map(field => (
         <div className="mb-4" key={field.key}>
-          <label className={labelClass} style={{ color: "rgba(255,255,255,0.40)" }}>
-            {field.label}{field.required && <span style={{ color: "#F87171" }}> *</span>}
+          <label className={labelClass} style={{ color: "#6B6B64" }}>
+            {field.label}{field.required && <span style={{ color: "#7A1F1A" }}> *</span>}
           </label>
           {field.type === "select" ? (
             <select value={config[field.key] ?? field.default ?? ""}
               onChange={e => onChange(field.key, e.target.value)}
               className={inputClass} style={{ ...inputStyle, colorScheme: "dark" }}>
               {(field.options || []).map(opt => (
-                <option key={opt.value || opt} value={opt.value || opt} style={{ background: "#0F1A2E" }}>
+                <option key={opt.value || opt} value={opt.value || opt} style={{ background: "#EDE7D7" }}>
                   {opt.label || opt}
                 </option>
               ))}
@@ -152,8 +152,8 @@ function ConfigFields({ fields, config, onChange, toolType }) {
             <input type="text" value={config[field.key] ?? ""}
               onChange={e => onChange(field.key, e.target.value)}
               placeholder={field.placeholder} className={inputClass} style={inputStyle}
-              onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-              onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
+              onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+              onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
           )}
         </div>
       ))}
@@ -165,37 +165,37 @@ function ConfigFields({ fields, config, onChange, toolType }) {
           <p className="text-[11px] font-semibold uppercase tracking-wider"
             style={{ color: "rgba(167,139,250,0.70)" }}>Authentication credentials</p>
           <div>
-            <label className={labelClass} style={{ color: "rgba(255,255,255,0.40)" }}>
+            <label className={labelClass} style={{ color: "#6B6B64" }}>
               {authType === "bearer" ? "Bearer token" : "API key value"}
-              <span style={{ color: "#F87171" }}> *</span>
+              <span style={{ color: "#7A1F1A" }}> *</span>
             </label>
             <input type="password" value={config.auth_token ?? ""}
               onChange={e => onChange("auth_token", e.target.value)}
               placeholder={authType === "bearer" ? "eyJhbGciO..." : "your-api-key-here"}
               className={inputClass} style={inputStyle}
               onFocus={e => e.target.style.borderColor = "rgba(167,139,250,0.5)"}
-              onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
-            <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+              onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
+            <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
               Stored securely. Not visible to your team after saving.
             </p>
           </div>
           {authType === "api_key" && (
             <div>
-              <label className={labelClass} style={{ color: "rgba(255,255,255,0.40)" }}>
-                Header name <span style={{ color: "#F87171" }}>*</span>
+              <label className={labelClass} style={{ color: "#6B6B64" }}>
+                Header name <span style={{ color: "#7A1F1A" }}>*</span>
               </label>
               <input type="text" value={config.auth_header_name ?? ""}
                 onChange={e => onChange("auth_header_name", e.target.value)}
                 placeholder="e.g. X-Api-Key" className={inputClass} style={inputStyle}
-                onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-                onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
+                onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+                onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
             </div>
           )}
         </div>
       )}
 
       {fields.length === 0 && toolType !== "connect" && (
-        <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.40)" }}>
+        <p className="text-sm mb-6" style={{ color: "#6B6B64" }}>
           This tool type needs no extra settings — you're all set!
         </p>
       )}
@@ -232,7 +232,7 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
   if (step === 1) return (
     <ModalShell onClose={onClose} title="What should your AI be able to do?"
       step={1} totalSteps={3}>
-      <p className="text-sm mb-5" style={{ color: "rgba(255,255,255,0.42)" }}>
+      <p className="text-sm mb-5" style={{ color: "#6B6B64" }}>
         Pick the type of action that matches your goal. You can add more tools later.
       </p>
       <div className="grid gap-3">
@@ -242,9 +242,9 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
             <button key={tt.type}
               onClick={() => { setType(tt.type); setStep(2); }}
               className="flex items-start gap-4 p-4 rounded-xl text-left transition-all duration-150"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = s.border; e.currentTarget.style.background = s.bg; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#EDE7D7"; e.currentTarget.style.background = "#EDE7D7"; }}
             >
               <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-xl"
                 style={{ background: s.bg, border: `1px solid ${s.border}` }}>
@@ -252,15 +252,15 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.90)" }}>
+                  <span className="text-sm font-semibold" style={{ color: "#1A1D1A" }}>
                     {tt.label}
                   </span>
-                  <ChevronRight size={14} style={{ color: "rgba(255,255,255,0.25)" }} />
+                  <ChevronRight size={14} style={{ color: "#6B6B64" }} />
                 </div>
-                <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.50)" }}>{tt.tagline}</p>
+                <p className="text-[12px]" style={{ color: "#6B6B64" }}>{tt.tagline}</p>
                 {tt.explanation && (
                   <p className="text-[11px] mt-1.5 leading-relaxed"
-                    style={{ color: "rgba(255,255,255,0.28)" }}>{tt.explanation}</p>
+                    style={{ color: "#6B6B64" }}>{tt.explanation}</p>
                 )}
               </div>
             </button>
@@ -278,46 +278,46 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
 
       {/* Selected type chip */}
       <div className="flex items-center gap-2 mb-5 p-3 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <span className="text-base">{typeInfo?.emoji || TYPE_EMOJI[selectedType]}</span>
-        <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.70)" }}>
+        <span className="text-sm font-medium" style={{ color: "#3A3D39" }}>
           {typeInfo?.label}
         </span>
       </div>
 
       <div className="mb-5">
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-          style={{ color: "rgba(255,255,255,0.40)" }}>Tool name</label>
+          style={{ color: "#6B6B64" }}>Tool name</label>
         <input type="text" value={displayName} onChange={e => setName(e.target.value)}
           placeholder={`e.g. ${typeInfo?.label || "My Tool"}`}
           maxLength={80} autoFocus
           className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.90)" }}
-          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-          onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
-        <p className="text-[11px] mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
+          onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+          onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
+        <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>
           Give it a name your team will recognise — clear and descriptive.
         </p>
       </div>
 
       <div className="mb-6">
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-          style={{ color: "rgba(255,255,255,0.40)" }}>When should your AI use this?</label>
+          style={{ color: "#6B6B64" }}>When should your AI use this?</label>
         <textarea value={trigger} onChange={e => setTrigger(e.target.value)}
           rows={4}
           placeholder={typeInfo?.example || "Describe in plain English when your AI should use this…"}
           maxLength={500}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all resize-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.90)" }}
-          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-          onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
-        <p className="text-[11px] mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
+          style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
+          onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+          onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
+        <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>
           Write this like you're explaining it to a new team member. Your AI reads this to decide when to act.
         </p>
         {typeInfo?.example && (
           <div className="mt-2 px-3 py-2 rounded-lg"
-            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.12)" }}>
-            <p className="text-[11px]" style={{ color: "rgba(201,168,76,0.65)" }}>
+            style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.12)" }}>
+            <p className="text-[11px]" style={{ color: "rgba(15,95,92,0.65)" }}>
               <span className="font-semibold">Example: </span>{typeInfo.example}
             </p>
           </div>
@@ -331,7 +331,7 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
           setError(null); setStep(3);
         }}
         className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-        style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+        style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
       >
         Next: Final settings <ChevronRight size={14} className="inline ml-1" />
       </button>
@@ -346,15 +346,15 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
 
       {/* Summary recap */}
       <div className="mb-5 p-4 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-        <p className="text-[11px] mb-1" style={{ color: "rgba(255,255,255,0.35)" }}>Your tool so far</p>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+        <p className="text-[11px] mb-1" style={{ color: "#6B6B64" }}>Your tool so far</p>
         <div className="flex items-center gap-2 mb-1">
           <ToolTypeBadge type={selectedType} />
-          <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>
+          <span className="text-sm font-medium" style={{ color: "#1A1D1A" }}>
             {displayName}
           </span>
         </div>
-        <p className="text-[11px] line-clamp-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-[11px] line-clamp-2" style={{ color: "#6B6B64" }}>
           {trigger}
         </p>
       </div>
@@ -368,7 +368,7 @@ function CreateToolModal({ toolTypes, onClose, onCreate }) {
 
       <button onClick={handleSave} disabled={saving}
         className="w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}>
+        style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}>
         {saving ? <><Spinner size={15} /> Saving…</> : <><CheckCircle2 size={15} /> Add this tool</>}
       </button>
     </ModalShell>
@@ -402,33 +402,33 @@ function EditToolModal({ tool, toolTypes, onClose, onSave }) {
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       <div className="flex items-center gap-2 mb-5 p-3 rounded-xl"
-        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <span className="text-base">{TYPE_EMOJI[tool.tool_type]}</span>
         <ToolTypeBadge type={tool.tool_type} />
       </div>
 
       <div className="mb-5">
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-          style={{ color: "rgba(255,255,255,0.40)" }}>Tool name</label>
+          style={{ color: "#6B6B64" }}>Tool name</label>
         <input type="text" value={displayName} onChange={e => setName(e.target.value)}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.90)" }}
-          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-          onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
+          style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
+          onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+          onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
       </div>
 
       <div className="mb-5">
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-          style={{ color: "rgba(255,255,255,0.40)" }}>When should your AI use this?</label>
+          style={{ color: "#6B6B64" }}>When should your AI use this?</label>
         <textarea value={trigger} onChange={e => setTrigger(e.target.value)} rows={3}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.90)" }}
-          onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.5)"}
-          onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.10)"} />
+          style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
+          onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
+          onBlur={e  => e.target.style.borderColor = "#D8D0BD"} />
         {typeInfo?.example && (
           <div className="mt-2 px-3 py-2 rounded-lg"
-            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.12)" }}>
-            <p className="text-[11px]" style={{ color: "rgba(201,168,76,0.65)" }}>
+            style={{ background: "rgba(15,95,92,0.06)", border: "1px solid rgba(15,95,92,0.12)" }}>
+            <p className="text-[11px]" style={{ color: "rgba(15,95,92,0.65)" }}>
               <span className="font-semibold">Example: </span>{typeInfo.example}
             </p>
           </div>
@@ -444,7 +444,7 @@ function EditToolModal({ tool, toolTypes, onClose, onSave }) {
 
       <button onClick={handleSave} disabled={saving}
         className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}>
+        style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}>
         {saving ? <><Spinner size={15} /> Saving…</> : "Save changes"}
       </button>
     </ModalShell>
@@ -457,29 +457,29 @@ function ConfirmDelete({ tool, onConfirm, onCancel, deleting }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.70)", backdropFilter: "blur(4px)" }}>
       <div className="w-full max-w-sm rounded-2xl p-6 text-center"
-        style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}>
+        style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
         <div className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-4"
-          style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.20)" }}>
-          <Trash2 size={22} style={{ color: "#F87171" }} />
+          style={{ background: "rgba(122,31,26,0.10)", border: "1px solid rgba(122,31,26,0.20)" }}>
+          <Trash2 size={22} style={{ color: "#7A1F1A" }} />
         </div>
-        <h3 className="text-base font-semibold mb-2" style={{ color: "rgba(255,255,255,0.90)" }}>
+        <h3 className="text-base font-semibold mb-2" style={{ color: "#1A1D1A" }}>
           Remove "{tool.display_name}"?
         </h3>
-        <p className="text-sm mb-1" style={{ color: "rgba(255,255,255,0.40)" }}>
+        <p className="text-sm mb-1" style={{ color: "#6B6B64" }}>
           Your AI will stop using this tool. Your existing data is unaffected.
         </p>
-        <p className="text-[12px] mb-6" style={{ color: "rgba(255,255,255,0.28)" }}>
+        <p className="text-[12px] mb-6" style={{ color: "#6B6B64" }}>
           Tip: you can also just pause the tool temporarily using the toggle.
         </p>
         <div className="flex gap-3">
           <button onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-white/[0.04]"
-            style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.65)" }}>
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors hover:bg-[#F5F1E8]"
+            style={{ borderColor: "#D8D0BD", color: "#3A3D39" }}>
             Cancel
           </button>
           <button onClick={onConfirm} disabled={deleting}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", border: "1px solid rgba(239,68,68,0.25)" }}>
+            style={{ background: "rgba(122,31,26,0.15)", color: "#7A1F1A", border: "1px solid rgba(122,31,26,0.25)" }}>
             {deleting ? <Spinner size={14} /> : "Remove"}
           </button>
         </div>
@@ -567,30 +567,30 @@ function TestModal({ tool, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+      <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #EDE7D7" }}>
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl flex items-center justify-center text-base" style={{ background: s.bg, border: `1px solid ${s.border}` }}>
               {TYPE_EMOJI[tool.tool_type]}
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Test: {tool.display_name}</p>
-              <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <p className="text-sm font-semibold text-[#1A1D1A]">Test: {tool.display_name}</p>
+              <p className="text-[11px]" style={{ color: "#6B6B64" }}>
                 {mode === "sandbox" ? "Sandbox — no real customer data" : selectedCust ? `Testing with ${selectedCust.first_name} ${selectedCust.last_name}` : "Real customer mode"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors">
-            <X size={16} style={{ color: "rgba(255,255,255,0.4)" }} />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#EDE7D7] transition-colors">
+            <X size={16} style={{ color: "#6B6B64" }} />
           </button>
         </div>
 
         <div className="px-6 py-5 space-y-4 max-h-[78vh] overflow-y-auto">
 
           {/* Mode toggle */}
-          <div className="flex rounded-xl p-1 gap-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex rounded-xl p-1 gap-1" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
             {[
               { id: "sandbox", label: "🧪 Sandbox",       sub: "No real data" },
               { id: "real",    label: "👤 Real customer", sub: "Uses live records" },
@@ -600,9 +600,9 @@ function TestModal({ tool, onClose }) {
                 onClick={() => switchMode(m.id)}
                 className="flex-1 flex flex-col items-center py-2 px-3 rounded-lg text-[11px] font-semibold transition-all"
                 style={{
-                  background: mode === m.id ? (m.id === "real" ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.07)") : "transparent",
-                  color: mode === m.id ? (m.id === "real" ? "#C9A84C" : "rgba(255,255,255,0.85)") : "rgba(255,255,255,0.35)",
-                  border: mode === m.id ? `1px solid ${m.id === "real" ? "rgba(201,168,76,0.30)" : "rgba(255,255,255,0.12)"}` : "1px solid transparent",
+                  background: mode === m.id ? (m.id === "real" ? "rgba(15,95,92,0.15)" : "#EDE7D7") : "transparent",
+                  color: mode === m.id ? (m.id === "real" ? "#0F5F5C" : "#1A1D1A") : "#6B6B64",
+                  border: mode === m.id ? `1px solid ${m.id === "real" ? "rgba(15,95,92,0.30)" : "#D8D0BD"}` : "1px solid transparent",
                 }}
               >
                 <span>{m.label}</span>
@@ -614,20 +614,20 @@ function TestModal({ tool, onClose }) {
           {/* Real customer picker */}
           {mode === "real" && (
             <div className="relative">
-              <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Select test customer
               </label>
               {selectedCust ? (
-                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.25)" }}>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-xl" style={{ background: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.25)" }}>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: "#C9A84C" }}>
+                    <p className="text-sm font-medium" style={{ color: "#0F5F5C" }}>
                       {selectedCust.first_name} {selectedCust.last_name}
                     </p>
-                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{selectedCust.email}</p>
+                    <p className="text-[11px]" style={{ color: "#6B6B64" }}>{selectedCust.email}</p>
                   </div>
                   <button onClick={() => { setSelCust(null); setCSearch(""); setShowDrop(true); }}
-                    className="p-1 rounded-lg hover:bg-white/[0.06]">
-                    <X size={12} style={{ color: "rgba(255,255,255,0.4)" }} />
+                    className="p-1 rounded-lg hover:bg-[#EDE7D7]">
+                    <X size={12} style={{ color: "#6B6B64" }} />
                   </button>
                 </div>
               ) : (
@@ -638,30 +638,30 @@ function TestModal({ tool, onClose }) {
                     onChange={e => { setCSearch(e.target.value); setShowDrop(true); }}
                     placeholder="Search by name or email…"
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.85)" }}
-                    onFocus={e => { e.target.style.borderColor = "rgba(201,168,76,0.5)"; setShowDrop(true); }}
-                    onBlur={e => setTimeout(() => { e.target.style.borderColor = "rgba(255,255,255,0.10)"; setShowDrop(false); }, 150)}
+                    style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
+                    onFocus={e => { e.target.style.borderColor = "rgba(15,95,92,0.5)"; setShowDrop(true); }}
+                    onBlur={e => setTimeout(() => { e.target.style.borderColor = "#D8D0BD"; setShowDrop(false); }, 150)}
                   />
                   {showDropdown && (
-                    <div className="absolute z-10 w-full mt-1 rounded-xl overflow-hidden shadow-xl" style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.12)", maxHeight: 200, overflowY: "auto" }}>
+                    <div className="absolute z-10 w-full mt-1 rounded-xl overflow-hidden shadow-xl" style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", maxHeight: 200, overflowY: "auto" }}>
                       {custLoading ? (
                         <div className="flex items-center justify-center py-6">
-                          <Loader2 size={16} className="animate-spin" style={{ color: "#C9A84C" }} />
+                          <Loader2 size={16} className="animate-spin" style={{ color: "#0F5F5C" }} />
                         </div>
                       ) : customers.length === 0 ? (
-                        <p className="text-center py-5 text-[12px]" style={{ color: "rgba(255,255,255,0.35)" }}>No customers found</p>
+                        <p className="text-center py-5 text-[12px]" style={{ color: "#6B6B64" }}>No customers found</p>
                       ) : (
                         customers.map(c => (
                           <button
                             key={c.id}
                             onMouseDown={() => { setSelCust(c); setCSearch(""); setShowDrop(false); }}
-                            className="w-full text-left px-4 py-3 transition-colors hover:bg-white/[0.04]"
-                            style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                            className="w-full text-left px-4 py-3 transition-colors hover:bg-[#F5F1E8]"
+                            style={{ borderBottom: "1px solid #EDE7D7" }}
                           >
-                            <p className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>
+                            <p className="text-[13px] font-medium" style={{ color: "#1A1D1A" }}>
                               {c.first_name} {c.last_name}
                             </p>
-                            <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{c.email}</p>
+                            <p className="text-[11px]" style={{ color: "#6B6B64" }}>{c.email}</p>
                           </button>
                         ))
                       )}
@@ -669,7 +669,7 @@ function TestModal({ tool, onClose }) {
                   )}
                 </>
               )}
-              <p className="text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <p className="text-[10px] mt-1.5" style={{ color: "#6B6B64" }}>
                 Tip: use an employee's own profile so you can verify the results safely.
               </p>
             </div>
@@ -677,19 +677,19 @@ function TestModal({ tool, onClose }) {
 
           {/* Warning banner */}
           <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl" style={{ background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.18)" }}>
-            <TriangleAlert size={13} className="shrink-0 mt-0.5" style={{ color: "#F59E0B" }} />
+            <TriangleAlert size={13} className="shrink-0 mt-0.5" style={{ color: "#A6660E" }} />
             <p className="text-[11px] leading-relaxed" style={{ color: "rgba(245,158,11,0.9)" }}>{warnText}</p>
           </div>
 
           {/* Trigger hint */}
-          <div className="text-[11px] px-3 py-2.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <span style={{ color: "rgba(255,255,255,0.30)" }}>Triggers when: </span>
-            <span style={{ color: "rgba(255,255,255,0.60)" }}>{tool.trigger_description}</span>
+          <div className="text-[11px] px-3 py-2.5 rounded-lg" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+            <span style={{ color: "#6B6B64" }}>Triggers when: </span>
+            <span style={{ color: "#3A3D39" }}>{tool.trigger_description}</span>
           </div>
 
           {/* Message input */}
           <div>
-            <label className="block text-[11px] font-semibold mb-2" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <label className="block text-[11px] font-semibold mb-2" style={{ color: "#6B6B64" }}>
               Sample customer message
             </label>
             <textarea
@@ -699,11 +699,11 @@ function TestModal({ tool, onClose }) {
               placeholder="Type a message a customer might send to trigger this tool…"
               rows={3}
               className="w-full resize-none rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)", lineHeight: "1.5" }}
+              style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#1A1D1A", lineHeight: "1.5" }}
               onFocus={e => e.target.style.borderColor = s.color + "66"}
-              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+              onBlur={e => e.target.style.borderColor = "#EDE7D7"}
             />
-            <p className="text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.2)" }}>⌘ + Enter to run</p>
+            <p className="text-[10px] mt-1.5" style={{ color: "#6B6B64" }}>⌘ + Enter to run</p>
           </div>
 
           {/* Run button */}
@@ -711,7 +711,7 @@ function TestModal({ tool, onClose }) {
             onClick={handleRun}
             disabled={running || !canRun}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-            style={{ background: (running || !canRun) ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, ${s.color} 0%, ${s.color}cc 100%)`, color: (running || !canRun) ? "rgba(255,255,255,0.4)" : "#fff" }}
+            style={{ background: (running || !canRun) ? "#EDE7D7" : `linear-gradient(135deg, ${s.color} 0%, ${s.color}cc 100%)`, color: (running || !canRun) ? "#6B6B64" : "#fff" }}
           >
             {running
               ? <><Loader2 size={15} className="animate-spin" /> Running…</>
@@ -722,28 +722,28 @@ function TestModal({ tool, onClose }) {
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)" }}>
-              <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: "#F87171" }} />
-              <p className="text-[12px]" style={{ color: "#F87171" }}>{error}</p>
+            <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.20)" }}>
+              <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: "#7A1F1A" }} />
+              <p className="text-[12px]" style={{ color: "#7A1F1A" }}>{error}</p>
             </div>
           )}
 
           {/* Result panel */}
           {result && (
-            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${result.invoked ? s.border : "rgba(255,255,255,0.08)"}` }}>
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${result.invoked ? s.border : "#EDE7D7"}` }}>
               {/* Status row */}
-              <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: result.invoked ? s.bg : "rgba(255,255,255,0.03)" }}>
+              <div className="flex items-center gap-2.5 px-4 py-3" style={{ background: result.invoked ? s.bg : "#EDE7D7" }}>
                 {result.invoked
                   ? <CheckCircle2 size={14} style={{ color: s.color }} />
-                  : <AlertCircle  size={14} style={{ color: "rgba(255,255,255,0.35)" }} />}
+                  : <AlertCircle  size={14} style={{ color: "#6B6B64" }} />}
                 <div className="flex-1 min-w-0">
-                  <span className="text-[12px] font-semibold" style={{ color: result.invoked ? s.color : "rgba(255,255,255,0.50)" }}>
+                  <span className="text-[12px] font-semibold" style={{ color: result.invoked ? s.color : "#6B6B64" }}>
                     {result.invoked
                       ? `✓ Tool triggered${result.simulated ? " (simulated)" : ""}`
                       : "Tool was not triggered by this message"}
                   </span>
                   {result.test_customer && (
-                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
+                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(15,95,92,0.12)", color: "#0F5F5C" }}>
                       {result.test_customer.name}
                     </span>
                   )}
@@ -752,19 +752,19 @@ function TestModal({ tool, onClose }) {
 
               {/* AI response */}
               {result.ai_response && (
-                <div className="px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "rgba(255,255,255,0.25)" }}>Agent response</p>
-                  <p className="text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.70)" }}>{result.ai_response}</p>
+                <div className="px-4 py-3" style={{ borderTop: "1px solid #EDE7D7" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#6B6B64" }}>Agent response</p>
+                  <p className="text-[12px] leading-relaxed" style={{ color: "#3A3D39" }}>{result.ai_response}</p>
                 </div>
               )}
 
               {/* Tool I/O (collapsible) */}
               {result.invoked && (result.tool_input || result.tool_result) && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ borderTop: "1px solid #EDE7D7" }}>
                   <button
                     onClick={() => setShowJson(v => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition-colors hover:bg-white/[0.03]"
-                    style={{ color: "rgba(255,255,255,0.30)" }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition-colors hover:bg-[#EDE7D7]"
+                    style={{ color: "#6B6B64" }}
                   >
                     Tool input / output
                     {showJson ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -773,16 +773,16 @@ function TestModal({ tool, onClose }) {
                     <div className="px-4 pb-4 space-y-3">
                       {result.tool_input && (
                         <div>
-                          <p className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>Parameters Claude passed</p>
-                          <pre className="text-[11px] font-mono p-2.5 rounded-lg overflow-x-auto" style={{ background: "rgba(0,0,0,0.3)", color: "rgba(255,255,255,0.45)" }}>
+                          <p className="text-[10px] mb-1" style={{ color: "#6B6B64" }}>Parameters Claude passed</p>
+                          <pre className="text-[11px] font-mono p-2.5 rounded-lg overflow-x-auto" style={{ background: "rgba(0,0,0,0.3)", color: "#6B6B64" }}>
                             {JSON.stringify(result.tool_input, null, 2)}
                           </pre>
                         </div>
                       )}
                       {result.tool_result && (
                         <div>
-                          <p className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>Tool returned</p>
-                          <pre className="text-[11px] font-mono p-2.5 rounded-lg overflow-x-auto" style={{ background: "rgba(0,0,0,0.3)", color: "rgba(255,255,255,0.45)" }}>
+                          <p className="text-[10px] mb-1" style={{ color: "#6B6B64" }}>Tool returned</p>
+                          <pre className="text-[11px] font-mono p-2.5 rounded-lg overflow-x-auto" style={{ background: "rgba(0,0,0,0.3)", color: "#6B6B64" }}>
                             {JSON.stringify(result.tool_result, null, 2).slice(0, 600)}
                           </pre>
                         </div>
@@ -808,12 +808,12 @@ function ToolCard({ tool, onEdit, onDelete, onToggle, toggling }) {
   return (
     <div className="rounded-xl p-5 transition-all duration-200"
       style={{
-        background: isActive ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.015)",
-        border: `1px solid ${isActive ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)"}`,
+        background: isActive ? "#EDE7D7" : "rgba(255,255,255,0.015)",
+        border: `1px solid ${isActive ? "#EDE7D7" : "#EDE7D7"}`,
         opacity: isActive ? 1 : 0.65,
       }}
       onMouseEnter={e => isActive && (e.currentTarget.style.borderColor = s.border)}
-      onMouseLeave={e => e.currentTarget.style.borderColor = isActive ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)"}
+      onMouseLeave={e => e.currentTarget.style.borderColor = isActive ? "#EDE7D7" : "#EDE7D7"}
     >
       <div className="flex items-start justify-between gap-3">
         {/* Left: icon + info */}
@@ -824,19 +824,19 @@ function ToolCard({ tool, onEdit, onDelete, onToggle, toggling }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.90)" }}>
+              <span className="text-sm font-semibold" style={{ color: "#1A1D1A" }}>
                 {tool.display_name}
               </span>
               <ToolTypeBadge type={tool.tool_type} />
               {!isActive && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)" }}>
+                  style={{ background: "#EDE7D7", color: "#6B6B64" }}>
                   PAUSED
                 </span>
               )}
             </div>
             <p className="text-[12px] leading-relaxed line-clamp-2"
-              style={{ color: "rgba(255,255,255,0.40)" }}>
+              style={{ color: "#6B6B64" }}>
               {tool.trigger_description}
             </p>
           </div>
@@ -856,18 +856,18 @@ function ToolCard({ tool, onEdit, onDelete, onToggle, toggling }) {
           )}
           {/* Enable / disable toggle */}
           <button onClick={() => onToggle(tool)} disabled={toggling === tool.id}
-            className="p-2 rounded-lg transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+            className="p-2 rounded-lg transition-colors hover:bg-[#EDE7D7] disabled:opacity-50"
             title={isActive ? "Pause this tool" : "Resume this tool"}>
             {toggling === tool.id
-              ? <Loader2 size={16} className="animate-spin" style={{ color: "rgba(255,255,255,0.35)" }} />
+              ? <Loader2 size={16} className="animate-spin" style={{ color: "#6B6B64" }} />
               : isActive
                 ? <ToggleRight size={18} style={{ color: "#10B981" }} />
-                : <ToggleLeft  size={18} style={{ color: "rgba(255,255,255,0.30)" }} />}
+                : <ToggleLeft  size={18} style={{ color: "#6B6B64" }} />}
           </button>
           {/* Edit */}
           <button onClick={() => onEdit(tool)}
-            className="p-2 rounded-lg transition-colors hover:bg-white/[0.06]" title="Edit">
-            <Pencil size={14} style={{ color: "rgba(255,255,255,0.35)" }} />
+            className="p-2 rounded-lg transition-colors hover:bg-[#EDE7D7]" title="Edit">
+            <Pencil size={14} style={{ color: "#6B6B64" }} />
           </button>
           {/* Delete */}
           <button onClick={() => onDelete(tool)}
@@ -887,22 +887,22 @@ function EmptyState({ onAdd }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-6">
       <div className="h-16 w-16 rounded-2xl flex items-center justify-center mb-5 text-3xl"
-        style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.15)" }}>
+        style={{ background: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.15)" }}>
         🔧
       </div>
-      <h3 className="text-lg font-semibold mb-2" style={{ color: "rgba(255,255,255,0.90)" }}>
+      <h3 className="text-lg font-semibold mb-2" style={{ color: "#1A1D1A" }}>
         Your AI has no tools yet
       </h3>
-      <p className="text-sm max-w-xs mb-2" style={{ color: "rgba(255,255,255,0.40)" }}>
+      <p className="text-sm max-w-xs mb-2" style={{ color: "#6B6B64" }}>
         Tools let your AI do more than just chat — look up real client data, run
         calculations, write reports, and know when to involve your team.
       </p>
-      <p className="text-sm max-w-xs mb-8" style={{ color: "rgba(255,255,255,0.28)" }}>
+      <p className="text-sm max-w-xs mb-8" style={{ color: "#6B6B64" }}>
         No coding required. Describe what you want in plain English and you're done.
       </p>
       <button onClick={onAdd}
-        className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-lg hover:shadow-[#C9A84C]/15"
-        style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}>
+        className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-lg hover:shadow-[#0F5F5C]/15"
+        style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}>
         <Plus size={16} /> Add your first tool
       </button>
     </div>
@@ -914,22 +914,22 @@ function WhatAreTools() {
   const [open, setOpen] = useState(false);
   return (
     <div className="mb-6 rounded-xl overflow-hidden"
-      style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.15)" }}>
+      style={{ background: "rgba(15,95,92,0.05)", border: "1px solid rgba(15,95,92,0.15)" }}>
       <button onClick={() => setOpen(v => !v)}
         className="w-full flex items-center justify-between px-5 py-4 text-left">
         <div className="flex items-center gap-2.5">
-          <HelpCircle size={15} style={{ color: "#C9A84C" }} />
-          <span className="text-sm font-medium" style={{ color: "#C9A84C" }}>
+          <HelpCircle size={15} style={{ color: "#0F5F5C" }} />
+          <span className="text-sm font-medium" style={{ color: "#0F5F5C" }}>
             What are tools, and do I need them?
           </span>
         </div>
         <ChevronDown size={14}
           className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          style={{ color: "rgba(201,168,76,0.60)" }} />
+          style={{ color: "rgba(15,95,92,0.60)" }} />
       </button>
       {open && (
         <div className="px-5 pb-5">
-          <div className="space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.48)" }}>
+          <div className="space-y-3 text-sm" style={{ color: "#6B6B64" }}>
             <p>By default your AI can chat — but it's working from memory alone.
                Tools give it the ability to take real actions in real time.</p>
             <p>Think of it this way: without tools your AI is a helpful colleague who can
@@ -1020,13 +1020,13 @@ export default function ShenmayTools() {
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>
+          <h1 className="text-xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
             AI Tools
           </h1>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <p className="text-sm" style={{ color: "#6B6B64" }}>
             Give your AI agent real abilities — beyond just chatting.
             {activeTools.length > 0 && (
-              <span style={{ color: "rgba(255,255,255,0.25)" }}>
+              <span style={{ color: "#6B6B64" }}>
                 {" "}· {activeTools.length} active
               </span>
             )}
@@ -1035,8 +1035,8 @@ export default function ShenmayTools() {
         {tools.length > 0 && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0 transition-all hover:shadow-lg hover:shadow-[#C9A84C]/15"
-            style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0 transition-all hover:shadow-lg hover:shadow-[#0F5F5C]/15"
+            style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
           >
             <Plus size={14} /> New Tool
           </button>
@@ -1048,7 +1048,7 @@ export default function ShenmayTools() {
       {loading ? (
         <div className="flex items-center justify-center py-16 gap-3">
           <Spinner />
-          <span className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <span className="text-sm" style={{ color: "#6B6B64" }}>
             Loading your tools…
           </span>
         </div>
@@ -1061,7 +1061,7 @@ export default function ShenmayTools() {
           {/* Active tools */}
           {activeTools.length === 0 && (
             <p className="text-sm mb-4 text-center py-8"
-              style={{ color: "rgba(255,255,255,0.35)" }}>
+              style={{ color: "#6B6B64" }}>
               All tools are currently paused. Resume a tool to let your AI use it again.
             </p>
           )}
@@ -1079,7 +1079,7 @@ export default function ShenmayTools() {
               <button
                 onClick={() => setShowPaused(v => !v)}
                 className="flex items-center gap-2 text-[12px] font-medium mb-3 hover:opacity-80 transition-opacity"
-                style={{ color: "rgba(255,255,255,0.35)" }}
+                style={{ color: "#6B6B64" }}
               >
                 <ChevronDown size={13}
                   className={`transition-transform duration-200 ${showPaused ? "rotate-180" : ""}`} />

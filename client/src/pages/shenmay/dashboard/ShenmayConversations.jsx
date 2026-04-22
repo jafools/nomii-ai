@@ -11,9 +11,9 @@ import {
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 const statusStyle = {
-  active:    { bg: "rgba(34,197,94,0.12)",   color: "#4ADE80",              label: "Active"    },
-  ended:     { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", label: "Ended"   },
-  escalated: { bg: "rgba(239,68,68,0.12)",   color: "#F87171",              label: "Escalated" },
+  active:    { bg: "rgba(45,106,79,0.12)",   color: "#2D6A4F",              label: "Active"    },
+  ended:     { bg: "#EDE7D7", color: "#6B6B64", label: "Ended"   },
+  escalated: { bg: "rgba(122,31,26,0.12)",   color: "#7A1F1A",              label: "Escalated" },
 };
 
 function useDebounce(value, delay = 300) {
@@ -32,9 +32,9 @@ function Pill({ active, onClick, children }) {
       onClick={onClick}
       className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all duration-150 shrink-0"
       style={{
-        background: active ? "rgba(201,168,76,0.18)" : "rgba(255,255,255,0.05)",
-        color:      active ? "#C9A84C"               : "rgba(255,255,255,0.35)",
-        border:     active ? "1px solid rgba(201,168,76,0.35)" : "1px solid transparent",
+        background: active ? "rgba(15,95,92,0.18)" : "#EDE7D7",
+        color:      active ? "#0F5F5C"               : "#6B6B64",
+        border:     active ? "1px solid rgba(15,95,92,0.35)" : "1px solid transparent",
       }}
     >
       {children}
@@ -71,7 +71,7 @@ const ConversationList = ({
       <div className="px-3 pt-3 pb-2 shrink-0">
         <div className="relative">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: "rgba(255,255,255,0.25)" }} />
+            style={{ color: "#6B6B64" }} />
           <input
             ref={inputRef}
             type="text"
@@ -80,17 +80,17 @@ const ConversationList = ({
             placeholder="Search by name or email…"
             className="w-full pl-8 pr-7 py-2 rounded-lg text-[12px] outline-none"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.80)",
+              background: "#EDE7D7",
+              border: "1px solid #EDE7D7",
+              color: "#1A1D1A",
             }}
-            onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.4)"}
-            onBlur={e  => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+            onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.4)"}
+            onBlur={e  => e.target.style.borderColor = "#EDE7D7"}
           />
           {search && (
             <button onClick={() => onSearchChange("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <X size={12} style={{ color: "rgba(255,255,255,0.30)" }} />
+              <X size={12} style={{ color: "#6B6B64" }} />
             </button>
           )}
         </div>
@@ -114,10 +114,10 @@ const ConversationList = ({
             {p.label}
           </Pill>
         ))}
-        <div className="w-px h-3 shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="w-px h-3 shrink-0" style={{ background: "#EDE7D7" }} />
         <Pill active={unreadOnly} onClick={onUnreadToggle}>
           <span className="flex items-center gap-1">
-            <Circle size={5} fill={unreadOnly ? "#EAB308" : "rgba(255,255,255,0.3)"}
+            <Circle size={5} fill={unreadOnly ? "#EAB308" : "#6B6B64"}
               stroke="none" className="shrink-0" />
             Unread
           </span>
@@ -126,8 +126,8 @@ const ConversationList = ({
 
       {/* Divider + result count */}
       <div className="shrink-0 flex items-center justify-between px-4 pb-2"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-        <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.20)" }}>
+        style={{ borderBottom: "1px solid #EDE7D7" }}>
+        <span className="text-[10px]" style={{ color: "#6B6B64" }}>
           {loading ? "Loading…" : `${conversations.length} of ${total}`}
         </span>
       </div>
@@ -137,18 +137,18 @@ const ConversationList = ({
         <div className="p-4 space-y-3 animate-pulse flex-1">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex gap-3 items-center">
-              <div className="h-9 w-9 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.06)" }} />
+              <div className="h-9 w-9 rounded-full shrink-0" style={{ background: "#EDE7D7" }} />
               <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-24 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
-                <div className="h-2.5 w-36 rounded" style={{ background: "rgba(255,255,255,0.04)" }} />
+                <div className="h-3 w-24 rounded" style={{ background: "#EDE7D7" }} />
+                <div className="h-2.5 w-36 rounded" style={{ background: "#EDE7D7" }} />
               </div>
             </div>
           ))}
         </div>
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 text-center p-6">
-          <MessageSquare className="h-7 w-7 mb-2" style={{ color: "rgba(255,255,255,0.07)" }} />
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.20)" }}>
+          <MessageSquare className="h-7 w-7 mb-2" style={{ color: "#EDE7D7" }} />
+          <p className="text-xs" style={{ color: "#6B6B64" }}>
             {search || statusFilter || modeFilter || unreadOnly
               ? "No conversations match your filters"
               : "No conversations yet"}
@@ -157,7 +157,7 @@ const ConversationList = ({
             <button
               onClick={() => { onSearchChange(""); onStatusFilter(""); onModeFilter(""); onUnreadToggle(false); }}
               className="mt-3 text-[11px] font-medium"
-              style={{ color: "rgba(201,168,76,0.65)" }}>
+              style={{ color: "rgba(15,95,92,0.65)" }}>
               Clear filters
             </button>
           )}
@@ -188,16 +188,16 @@ const ConversationList = ({
                 className="flex items-start gap-0 transition-all duration-150"
                 style={{
                   background: isSelected
-                    ? "rgba(201,168,76,0.10)"
+                    ? "rgba(15,95,92,0.10)"
                     : isUnread
                     ? "rgba(255,255,255,0.025)"
                     : "transparent",
                   borderLeft: isSelected
-                    ? "2px solid #C9A84C"
+                    ? "2px solid #0F5F5C"
                     : isUnread
                     ? "2px solid rgba(234,179,8,0.6)"
                     : "2px solid transparent",
-                  borderBottom: "1px solid rgba(255,255,255,0.03)",
+                  borderBottom: "1px solid #EDE7D7",
                 }}
               >
                 {/* Checkbox — visible on hover or when any items selected */}
@@ -207,8 +207,8 @@ const ConversationList = ({
                   onClick={e => { e.stopPropagation(); onToggleSelect?.(id); }}
                 >
                   {isChecked
-                    ? <CheckSquare size={14} style={{ color: "#C9A84C" }} />
-                    : <Square size={14} style={{ color: "rgba(255,255,255,0.20)" }} />}
+                    ? <CheckSquare size={14} style={{ color: "#0F5F5C" }} />
+                    : <Square size={14} style={{ color: "#6B6B64" }} />}
                 </div>
 
                 <button
@@ -219,18 +219,18 @@ const ConversationList = ({
                   <div className="relative shrink-0">
                     <div className="h-9 w-9 rounded-full flex items-center justify-center text-[12px] font-bold"
                       style={{
-                        background: isSelected   ? "rgba(201,168,76,0.20)"
-                                  : isEscalated  ? "rgba(239,68,68,0.12)"
-                                  : "rgba(255,255,255,0.06)",
-                        color: isSelected   ? "#C9A84C"
-                             : isEscalated  ? "#F87171"
-                             : "rgba(255,255,255,0.4)",
+                        background: isSelected   ? "rgba(15,95,92,0.20)"
+                                  : isEscalated  ? "rgba(122,31,26,0.12)"
+                                  : "#EDE7D7",
+                        color: isSelected   ? "#0F5F5C"
+                             : isEscalated  ? "#7A1F1A"
+                             : "#6B6B64",
                       }}>
                       {name[0]?.toUpperCase() || "?"}
                     </div>
                     {isUnread && (
                       <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-                        style={{ background: "#EAB308", borderColor: "#0B1222" }} />
+                        style={{ background: "#EAB308", borderColor: "#F5F1E8" }} />
                     )}
                   </div>
 
@@ -239,16 +239,16 @@ const ConversationList = ({
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[13px] truncate"
                         style={{
-                          color: isSelected ? "#C9A84C" : isUnread ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.70)",
+                          color: isSelected ? "#0F5F5C" : isUnread ? "#1A1D1A" : "#3A3D39",
                           fontWeight: isUnread ? 700 : 600,
                         }}>
                         {name}
                       </p>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {csatScore === 2 && <ThumbsUp size={10} style={{ color: "#4ADE80" }} />}
-                        {csatScore === 1 && <ThumbsDown size={10} style={{ color: "#F87171" }} />}
+                        {csatScore === 2 && <ThumbsUp size={10} style={{ color: "#2D6A4F" }} />}
+                        {csatScore === 1 && <ThumbsDown size={10} style={{ color: "#7A1F1A" }} />}
                         <span className="text-[10px]"
-                          style={{ color: isUnread ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.20)" }}>
+                          style={{ color: isUnread ? "#6B6B64" : "#6B6B64" }}>
                           {relTime(c.last_message_at)}
                         </span>
                       </div>
@@ -257,7 +257,7 @@ const ConversationList = ({
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {isEscalated && (
                         <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
-                          style={{ background: "rgba(239,68,68,0.15)", color: "#F87171" }}>
+                          style={{ background: "rgba(122,31,26,0.15)", color: "#7A1F1A" }}>
                           ESCALATED
                         </span>
                       )}
@@ -267,7 +267,7 @@ const ConversationList = ({
                           <Users size={8} /> HUMAN
                         </span>
                       )}
-                      <p className="text-[12px] truncate flex-1" style={{ color: "rgba(255,255,255,0.25)" }}>
+                      <p className="text-[12px] truncate flex-1" style={{ color: "#6B6B64" }}>
                         {truncMsg || "No messages yet"}
                       </p>
                     </div>
@@ -283,7 +283,7 @@ const ConversationList = ({
                           </span>
                         ))}
                         {labels.length > 3 && (
-                          <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.20)" }}>
+                          <span className="text-[9px]" style={{ color: "#6B6B64" }}>
                             +{labels.length - 3}
                           </span>
                         )}
@@ -340,24 +340,24 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
   if (!conversationId) return (
     <div className="flex flex-col items-center justify-center h-full text-center">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "rgba(255,255,255,0.03)" }}>
-        <MessageSquare className="h-7 w-7" style={{ color: "rgba(255,255,255,0.08)" }} />
+        style={{ background: "#EDE7D7" }}>
+        <MessageSquare className="h-7 w-7" style={{ color: "#EDE7D7" }} />
       </div>
-      <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.20)" }}>No conversation selected</p>
-      <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.10)" }}>Pick one from the list</p>
+      <p className="text-sm font-medium" style={{ color: "#6B6B64" }}>No conversation selected</p>
+      <p className="text-xs mt-1" style={{ color: "#D8D0BD" }}>Pick one from the list</p>
     </div>
   );
 
   if (loading) return (
     <div className="flex flex-col h-full">
       <div className="h-16 flex items-center px-6 animate-pulse"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-        <div className="h-4 w-32 rounded" style={{ background: "rgba(255,255,255,0.06)" }} />
+        style={{ borderBottom: "1px solid #EDE7D7" }}>
+        <div className="h-4 w-32 rounded" style={{ background: "#EDE7D7" }} />
       </div>
       <div className="flex-1 p-6 space-y-4 animate-pulse">
         {[...Array(4)].map((_, i) => (
           <div key={i} className={`flex ${i % 2 ? "justify-end" : "justify-start"}`}>
-            <div className="h-14 w-56 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }} />
+            <div className="h-14 w-56 rounded-2xl" style={{ background: "#EDE7D7" }} />
           </div>
         ))}
       </div>
@@ -367,13 +367,13 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
   if (error) return (
     <div className="flex flex-col items-center justify-center h-full text-center">
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "rgba(239,68,68,0.1)" }}>
-        <AlertTriangle className="h-6 w-6" style={{ color: "#F87171" }} />
+        style={{ background: "rgba(122,31,26,0.1)" }}>
+        <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
       </div>
-      <p className="text-sm text-white/30 mb-4">{error}</p>
+      <p className="text-sm text-[#6B6B64] mb-4">{error}</p>
       <button onClick={fetchThread}
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-        style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
         <RefreshCw className="h-4 w-4" /> Retry
       </button>
     </div>
@@ -391,23 +391,23 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-6 shrink-0"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        style={{ borderBottom: "1px solid #EDE7D7" }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
-            style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}>
+            style={{ background: "rgba(15,95,92,0.15)", color: "#0F5F5C" }}>
             {name[0]?.toUpperCase() || "?"}
           </div>
           <div>
             {convo?.customer_id && !convo?.is_anonymous ? (
               <Link to={`/shenmay/dashboard/customers/${convo.customer_id}`}
-                className="text-[14px] font-semibold text-white/80 hover:text-[#C9A84C] transition-colors flex items-center gap-1">
+                className="text-[14px] font-semibold text-[#1A1D1A] hover:text-[#0F5F5C] transition-colors flex items-center gap-1">
                 {name}<ExternalLink className="h-3 w-3 opacity-40" />
               </Link>
             ) : (
-              <p className="text-[14px] font-semibold text-white/80">{name}</p>
+              <p className="text-[14px] font-semibold text-[#1A1D1A]">{name}</p>
             )}
             {convo?.email && !convo?.is_anonymous && (
-              <p className="text-[11px] text-white/25">{convo.email}</p>
+              <p className="text-[11px] text-[#6B6B64]">{convo.email}</p>
             )}
           </div>
         </div>
@@ -429,7 +429,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
             <Link to={`/shenmay/dashboard/conversations/${conversationId}`}
               title="Open full conversation"
               className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
-              style={{ color: "rgba(255,255,255,0.20)" }}>
+              style={{ color: "#6B6B64" }}>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           )}
@@ -439,7 +439,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
       {/* Escalated banner */}
       {st === "escalated" && (
         <div className="mx-6 mt-3 rounded-xl px-4 py-2.5 flex items-center gap-2.5 text-[13px] font-medium"
-          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.12)", color: "#F87171" }}>
+          style={{ background: "rgba(122,31,26,0.08)", border: "1px solid rgba(122,31,26,0.12)", color: "#7A1F1A" }}>
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Escalated for human review
         </div>
       )}
@@ -448,8 +448,8 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center py-10">
-            <MessageSquare className="h-8 w-8 mx-auto mb-3" style={{ color: "rgba(255,255,255,0.06)" }} />
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.15)" }}>No messages in this conversation.</p>
+            <MessageSquare className="h-8 w-8 mx-auto mb-3" style={{ color: "#EDE7D7" }} />
+            <p className="text-xs" style={{ color: "#D8D0BD" }}>No messages in this conversation.</p>
           </div>
         ) : messages.map((msg, i) => {
           const role    = (msg.role || msg.sender || "").toLowerCase();
@@ -462,19 +462,19 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
               <div className="max-w-[70%]">
                 <div className="rounded-2xl px-4 py-2.5"
                   style={isAgent ? {
-                    background: "linear-gradient(135deg, rgba(201,168,76,0.22), rgba(201,168,76,0.10))",
-                    border: "1px solid rgba(201,168,76,0.15)",
+                    background: "linear-gradient(135deg, rgba(15,95,92,0.22), rgba(15,95,92,0.10))",
+                    border: "1px solid rgba(15,95,92,0.15)",
                     borderBottomRightRadius: "6px",
                   } : {
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "#EDE7D7",
+                    border: "1px solid #EDE7D7",
                     borderBottomLeftRadius: "6px",
                   }}>
-                  <p className="text-[13px] whitespace-pre-wrap" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  <p className="text-[13px] whitespace-pre-wrap" style={{ color: "#3A3D39" }}>
                     {content}
                   </p>
                 </div>
-                <p className="text-[10px] mt-1 px-1" style={{ color: "rgba(255,255,255,0.12)" }}>
+                <p className="text-[10px] mt-1 px-1" style={{ color: "#D8D0BD" }}>
                   {isAgent ? (shenmayTenant?.agent_name || "Agent") : ""}
                   {isAgent && ts ? " · " : ""}{ts}
                 </p>
@@ -586,13 +586,13 @@ const ShenmayConversations = () => {
   if (error && conversations.length === 0) return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "rgba(239,68,68,0.1)" }}>
-        <AlertTriangle className="h-6 w-6" style={{ color: "#F87171" }} />
+        style={{ background: "rgba(122,31,26,0.1)" }}>
+        <AlertTriangle className="h-6 w-6" style={{ color: "#7A1F1A" }} />
       </div>
-      <p className="text-sm text-white/30 mb-4">{error}</p>
+      <p className="text-sm text-[#6B6B64] mb-4">{error}</p>
       <button onClick={() => fetchList()}
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-        style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
         <RefreshCw className="h-4 w-4" /> Retry
       </button>
     </div>
@@ -601,41 +601,41 @@ const ShenmayConversations = () => {
   return (
     <div className="flex rounded-2xl overflow-hidden"
       style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "#EDE7D7",
+        border: "1px solid #EDE7D7",
         height: "calc(100vh - 7.5rem)",
       }}>
       {/* Left panel */}
       <div className="w-[310px] shrink-0 flex flex-col"
-        style={{ borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+        style={{ borderRight: "1px solid #EDE7D7" }}>
         <div className="h-12 flex items-center px-4 shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          style={{ borderBottom: "1px solid #EDE7D7" }}>
           {selectedIds.size > 0 ? (
             /* Bulk action toolbar */
             <div className="flex items-center gap-2 w-full relative">
-              <span className="text-[11px] font-semibold shrink-0" style={{ color: "#C9A84C" }}>
+              <span className="text-[11px] font-semibold shrink-0" style={{ color: "#0F5F5C" }}>
                 {selectedIds.size} selected
               </span>
               <button onClick={handleBulkResolve} disabled={bulkLoading}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
-                style={{ background: "rgba(34,197,94,0.12)", color: "#4ADE80" }}>
+                style={{ background: "rgba(45,106,79,0.12)", color: "#2D6A4F" }}>
                 <CheckCheck size={11} /> Resolve
               </button>
               {allLabels.length > 0 && (
                 <div className="relative shrink-0">
                   <button onClick={() => setBulkLabelOpen(v => !v)} disabled={bulkLoading}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-                    style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
+                    style={{ background: "rgba(15,95,92,0.12)", color: "#0F5F5C" }}>
                     <Tag size={11} /> Label <ChevronDown size={9} />
                   </button>
                   {bulkLabelOpen && (
                     <div className="absolute left-0 top-8 z-20 rounded-xl shadow-2xl overflow-hidden min-w-[140px]"
-                      style={{ background: "#141c2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      style={{ background: "#141c2e", border: "1px solid #EDE7D7" }}>
                       {allLabels.map(l => (
                         <button key={l.id} onClick={() => handleBulkLabel(l.id)}
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px] hover:bg-white/5 transition-colors">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: l.color }} />
-                          <span style={{ color: "rgba(255,255,255,0.65)" }}>{l.name}</span>
+                          <span style={{ color: "#3A3D39" }}>{l.name}</span>
                         </button>
                       ))}
                     </div>
@@ -644,12 +644,12 @@ const ShenmayConversations = () => {
               )}
               <button onClick={clearSelection}
                 className="ml-auto p-1 rounded-lg transition-opacity hover:opacity-70"
-                style={{ color: "rgba(255,255,255,0.25)" }}>
+                style={{ color: "#6B6B64" }}>
                 <X size={13} />
               </button>
             </div>
           ) : (
-            <h3 className="text-[13px] font-semibold" style={{ color: "rgba(255,255,255,0.55)" }}>
+            <h3 className="text-[13px] font-semibold" style={{ color: "#6B6B64" }}>
               Conversations
             </h3>
           )}

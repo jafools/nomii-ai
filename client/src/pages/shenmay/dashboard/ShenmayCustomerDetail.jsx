@@ -7,15 +7,15 @@ import { ArrowLeft, RefreshCw, AlertTriangle, User, MessageSquare, Trash2, Brain
 import { Badge } from "@/components/ui/badge";
 
 const statusStyle = {
-  completed: { bg: "rgba(34,197,94,0.12)", color: "#4ADE80", label: "Completed" },
+  completed: { bg: "rgba(45,106,79,0.12)", color: "#2D6A4F", label: "Completed" },
   in_progress: { bg: "rgba(59,130,246,0.12)", color: "#60A5FA", label: "In Progress" },
-  pending: { bg: "rgba(245,158,11,0.12)", color: "#FBBF24", label: "Pending" },
-  new: { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", label: "New" },
+  pending: { bg: "rgba(245,158,11,0.12)", color: "#A6660E", label: "Pending" },
+  new: { bg: "#EDE7D7", color: "#6B6B64", label: "New" },
 };
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "Never";
 
-const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" };
+const card = { background: "#EDE7D7", border: "1px solid #EDE7D7" };
 
 const ShenmayCustomerDetail = () => {
   const { id } = useParams();
@@ -71,11 +71,11 @@ const ShenmayCustomerDetail = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(239,68,68,0.1)" }}>
-          <AlertTriangle size={24} style={{ color: "#F87171" }} />
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(122,31,26,0.1)" }}>
+          <AlertTriangle size={24} style={{ color: "#7A1F1A" }} />
         </div>
-        <p className="text-sm text-white/30">{error}</p>
-        <button onClick={fetch} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #C9A84C, #B8943F)", color: "#0B1222" }}>
+        <p className="text-sm text-[#6B6B64]">{error}</p>
+        <button onClick={fetch} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
           <RefreshCw size={14} /> Retry
         </button>
       </div>
@@ -93,16 +93,16 @@ const ShenmayCustomerDetail = () => {
     <div className="space-y-6">
       {/* Back + refresh indicator */}
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate("/shenmay/dashboard/customers")} className="flex items-center gap-1.5 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <button onClick={() => navigate("/shenmay/dashboard/customers")} className="flex items-center gap-1.5 text-sm transition-colors" style={{ color: "#6B6B64" }}>
           <ArrowLeft size={16} /> All customers
         </button>
         <div className="flex items-center gap-2">
           {lastRefreshed && (
-            <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.18)" }}>
+            <span className="text-[11px]" style={{ color: "#D8D0BD" }}>
               Updated {lastRefreshed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
-          <button onClick={fetch} title="Refresh now" className="p-1.5 rounded-lg transition-colors hover:opacity-80" style={{ color: "rgba(255,255,255,0.25)" }}>
+          <button onClick={fetch} title="Refresh now" className="p-1.5 rounded-lg transition-colors hover:opacity-80" style={{ color: "#6B6B64" }}>
             <RefreshCw size={13} />
           </button>
         </div>
@@ -110,16 +110,16 @@ const ShenmayCustomerDetail = () => {
 
       {/* Header Card */}
       <div className="rounded-2xl p-6 flex items-center gap-5" style={card}>
-        <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ background: "rgba(15,95,92,0.15)", color: "#0F5F5C" }}>
           {initials || <User size={24} />}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-white/90">{customer.first_name} {customer.last_name}</h2>
-          <p className="text-sm text-white/30">{customer.email}</p>
+          <h2 className="text-lg font-semibold text-[#1A1D1A]">{customer.first_name} {customer.last_name}</h2>
+          <p className="text-sm text-[#6B6B64]">{customer.email}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>{st.label}</span>
-          <span className="text-[11px] text-white/20">Last interaction: {fmtDate(customer.last_interaction)}</span>
+          <span className="text-[11px] text-[#6B6B64]">Last interaction: {fmtDate(customer.last_interaction)}</span>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ const ShenmayCustomerDetail = () => {
 
       {/* Conversations */}
       <div className="rounded-2xl p-6" style={card}>
-        <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#3A3D39] mb-3 flex items-center gap-2">
           <MessageSquare size={14} /> Conversations
         </h3>
         {conversations.length > 0 ? (
@@ -141,7 +141,7 @@ const ShenmayCustomerDetail = () => {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-white/20 italic">No conversations yet.</p>
+          <p className="text-sm text-[#6B6B64] italic">No conversations yet.</p>
         )}
       </div>
 
@@ -193,26 +193,26 @@ const SoulSection = ({ soul, memory }) => {
   return (
     <div className="rounded-2xl p-6 space-y-5" style={card}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2">
-          <Brain size={14} style={{ color: "#C9A84C" }} /> Soul
+        <h3 className="text-sm font-semibold text-[#3A3D39] flex items-center gap-2">
+          <Brain size={14} style={{ color: "#0F5F5C" }} /> Soul
         </h3>
-        <span className="text-[11px] text-white/20">What the agent has learned about this customer</span>
+        <span className="text-[11px] text-[#6B6B64]">What the agent has learned about this customer</span>
       </div>
 
       {!hasContent ? (
-        <p className="text-sm text-white/20 italic">No soul data yet — the agent is still getting to know this customer.</p>
+        <p className="text-sm text-[#6B6B64] italic">No soul data yet — the agent is still getting to know this customer.</p>
       ) : (
         <>
           {/* Biographical facts */}
           {(bioFields.length > 0 || hasFamily) && (
             <div>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">About This Person</p>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2">About This Person</p>
               {bioFields.length > 0 && (
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-3">
                   {bioFields.map(({ label, value }) => (
                     <div key={label}>
-                      <span className="text-[11px] text-white/25 font-medium uppercase tracking-wide">{label}</span>
-                      <p className="text-[13px] text-white/55 mt-0.5">{String(value)}</p>
+                      <span className="text-[11px] text-[#6B6B64] font-medium uppercase tracking-wide">{label}</span>
+                      <p className="text-[13px] text-[#6B6B64] mt-0.5">{String(value)}</p>
                     </div>
                   ))}
                 </div>
@@ -220,13 +220,13 @@ const SoulSection = ({ soul, memory }) => {
               {hasFamily && (
                 <div className="space-y-1">
                   {family.spouse && (
-                    <p className="text-[13px] text-white/45">Spouse: {family.spouse.name}{family.spouse.age ? ` (${family.spouse.age})` : ""}{family.spouse.health_notes ? ` — ${family.spouse.health_notes}` : ""}</p>
+                    <p className="text-[13px] text-[#6B6B64]">Spouse: {family.spouse.name}{family.spouse.age ? ` (${family.spouse.age})` : ""}{family.spouse.health_notes ? ` — ${family.spouse.health_notes}` : ""}</p>
                   )}
                   {family.late_spouse && (
-                    <p className="text-[13px] text-white/45">Late spouse: {family.late_spouse.name}{family.late_spouse.passed ? ` (passed ${family.late_spouse.passed})` : ""}</p>
+                    <p className="text-[13px] text-[#6B6B64]">Late spouse: {family.late_spouse.name}{family.late_spouse.passed ? ` (passed ${family.late_spouse.passed})` : ""}</p>
                   )}
                   {family.children?.map((child, i) => (
-                    <p key={i} className="text-[13px] text-white/45">{child.name}{child.age ? ` (${child.age})` : ""}{child.location ? ` — ${child.location}` : ""}</p>
+                    <p key={i} className="text-[13px] text-[#6B6B64]">{child.name}{child.age ? ` (${child.age})` : ""}{child.location ? ` — ${child.location}` : ""}</p>
                   ))}
                 </div>
               )}
@@ -236,7 +236,7 @@ const SoulSection = ({ soul, memory }) => {
           {/* Personality & style — how the agent should engage */}
           {hasPersonality && (
             <div>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Personality & Style</p>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2">Personality & Style</p>
               <div className="space-y-2">
                 {[
                   { key: "interests",         label: "Interests" },
@@ -248,10 +248,10 @@ const SoulSection = ({ soul, memory }) => {
                   if (!items || !Array.isArray(items) || items.length === 0) return null;
                   return (
                     <div key={key}>
-                      <p className="text-[10px] text-white/20 uppercase tracking-wider mb-1">{label}</p>
+                      <p className="text-[10px] text-[#6B6B64] uppercase tracking-wider mb-1">{label}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {items.map((item, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.15)" }}>
+                          <span key={i} className="px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: "rgba(15,95,92,0.1)", color: "#0F5F5C", border: "1px solid rgba(15,95,92,0.15)" }}>
                             {item}
                           </span>
                         ))}
@@ -266,12 +266,12 @@ const SoulSection = ({ soul, memory }) => {
           {/* Goals & concerns */}
           {hasGoals && (
             <div>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Goals & Concerns</p>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2">Goals & Concerns</p>
               <div className="space-y-2">
                 {goals.length > 0 && (
                   <ul className="space-y-1">
                     {goals.map((g, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
+                      <li key={i} className="flex items-start gap-2 text-[13px] text-[#6B6B64]">
                         <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#FB923C", opacity: 0.6 }} />{g}
                       </li>
                     ))}
@@ -280,18 +280,18 @@ const SoulSection = ({ soul, memory }) => {
                 {concerns.length > 0 && (
                   <ul className="space-y-1">
                     {concerns.map((c, i) => (
-                      <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#F87171", opacity: 0.6 }} />{c}
+                      <li key={i} className="flex items-start gap-2 text-[13px] text-[#6B6B64]">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#7A1F1A", opacity: 0.6 }} />{c}
                       </li>
                     ))}
                   </ul>
                 )}
                 {actionItems.length > 0 && (
                   <div>
-                    <p className="text-[10px] text-white/20 uppercase tracking-wider mb-1">Open Action Items</p>
+                    <p className="text-[10px] text-[#6B6B64] uppercase tracking-wider mb-1">Open Action Items</p>
                     <ul className="space-y-1">
                       {actionItems.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-[13px] text-white/50">
+                        <li key={i} className="flex items-start gap-2 text-[13px] text-[#6B6B64]">
                           <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#60A5FA", opacity: 0.6 }} />{item}
                         </li>
                       ))}
@@ -305,11 +305,11 @@ const SoulSection = ({ soul, memory }) => {
           {/* Agent notes */}
           {agentNotes.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold text-white/25 uppercase tracking-wider mb-2">Agent Notes</p>
+              <p className="text-[11px] font-semibold text-[#6B6B64] uppercase tracking-wider mb-2">Agent Notes</p>
               <ul className="space-y-1">
                 {agentNotes.map((note, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[13px] text-white/40">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.15)" }} />{note}
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-[#6B6B64]">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#D8D0BD" }} />{note}
                   </li>
                 ))}
               </ul>
@@ -331,25 +331,25 @@ const MemorySection = ({ memory }) => {
   return (
     <div className="rounded-2xl p-6" style={card}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#3A3D39] flex items-center gap-2">
           <BookOpen size={14} style={{ color: "#60A5FA" }} /> Memory
         </h3>
-        <span className="text-[11px] text-white/20">Past conversation history</span>
+        <span className="text-[11px] text-[#6B6B64]">Past conversation history</span>
       </div>
       {history.length > 0 ? (
         <div className="space-y-3">
           {history.map((entry, i) => (
-            <div key={i} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+            <div key={i} className="rounded-xl p-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
               <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <p className="text-[13px] font-semibold text-white/60">
+                <p className="text-[13px] font-semibold text-[#3A3D39]">
                   Session #{entry.session || i + 1}
-                  {entry.date && <span className="text-white/25 font-normal"> — {new Date(entry.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
+                  {entry.date && <span className="text-[#6B6B64] font-normal"> — {new Date(entry.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
                 </p>
                 {entry.message_count != null && (
-                  <span className="text-[11px] text-white/25">{entry.message_count} messages</span>
+                  <span className="text-[11px] text-[#6B6B64]">{entry.message_count} messages</span>
                 )}
               </div>
-              {entry.summary && <p className="text-[13px] text-white/40 mb-2">{entry.summary}</p>}
+              {entry.summary && <p className="text-[13px] text-[#6B6B64] mb-2">{entry.summary}</p>}
               {entry.topics?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {entry.topics.map((t, j) => (
@@ -363,7 +363,7 @@ const MemorySection = ({ memory }) => {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-white/20 italic">No memory yet — will populate after the first completed conversation.</p>
+        <p className="text-sm text-[#6B6B64] italic">No memory yet — will populate after the first completed conversation.</p>
       )}
     </div>
   );
@@ -392,14 +392,14 @@ const ConversationRow = ({ conversation: c, onSynced }) => {
   };
 
   return (
-    <div className="flex items-center gap-2" style={{ border: "1px solid rgba(255,255,255,0.04)", borderRadius: "0.75rem" }}>
-      <Link to={`/shenmay/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-white/[0.02]">
+    <div className="flex items-center gap-2" style={{ border: "1px solid #EDE7D7", borderRadius: "0.75rem" }}>
+      <Link to={`/shenmay/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-[#F5F1E8]">
         <div className="text-sm">
-          <span className="font-medium text-white/60">{c.status}</span>
-          <span className="text-white/25 ml-2">{c.message_count || 0} messages</span>
-          {c.summary && <span className="text-white/20 ml-2 text-[12px]">{c.summary.substring(0, 60)}{c.summary.length > 60 ? "…" : ""}</span>}
+          <span className="font-medium text-[#3A3D39]">{c.status}</span>
+          <span className="text-[#6B6B64] ml-2">{c.message_count || 0} messages</span>
+          {c.summary && <span className="text-[#6B6B64] ml-2 text-[12px]">{c.summary.substring(0, 60)}{c.summary.length > 60 ? "…" : ""}</span>}
         </div>
-        <span className="text-[11px] text-white/20 ml-3 shrink-0">{fmtDate(c.created_at)}</span>
+        <span className="text-[11px] text-[#6B6B64] ml-3 shrink-0">{fmtDate(c.created_at)}</span>
       </Link>
       <button
         onClick={handleSync}
@@ -494,7 +494,7 @@ const CustomerDataSection = ({ customerId }) => {
       <div className="rounded-2xl p-6" style={card}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#3A3D39] flex items-center gap-2">
             <Database size={14} style={{ color: "#34D399" }} />
             Customer Data
             {total > 0 && (
@@ -514,56 +514,56 @@ const CustomerDataSection = ({ customerId }) => {
 
         {/* Add form */}
         {showAddForm && (
-          <form onSubmit={handleAdd} className="rounded-xl p-4 mb-4 space-y-3" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p className="text-[12px] font-semibold text-white/40 uppercase tracking-wider">New Record</p>
+          <form onSubmit={handleAdd} className="rounded-xl p-4 mb-4 space-y-3" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
+            <p className="text-[12px] font-semibold text-[#6B6B64] uppercase tracking-wider">New Record</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-white/30 mb-1">Category <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] text-[#6B6B64] mb-1">Category <span className="text-red-400">*</span></label>
                 <input
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   placeholder="e.g. portfolio, goals"
                   required
-                  className="w-full rounded-lg px-3 py-2 text-sm text-white/80 bg-transparent outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
+                  style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-white/30 mb-1">Label <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] text-[#6B6B64] mb-1">Label <span className="text-red-400">*</span></label>
                 <input
                   value={form.label}
                   onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
                   placeholder="e.g. Account Balance"
                   required
-                  className="w-full rounded-lg px-3 py-2 text-sm text-white/80 bg-transparent outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
+                  style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-white/30 mb-1">Value</label>
+                <label className="block text-[11px] text-[#6B6B64] mb-1">Value</label>
                 <input
                   value={form.value}
                   onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
                   placeholder="e.g. $245,000"
-                  className="w-full rounded-lg px-3 py-2 text-sm text-white/80 bg-transparent outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
+                  style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-white/30 mb-1">Type</label>
+                <label className="block text-[11px] text-[#6B6B64] mb-1">Type</label>
                 <input
                   value={form.value_type}
                   onChange={(e) => setForm((f) => ({ ...f, value_type: e.target.value }))}
                   placeholder="currency / date / text"
-                  className="w-full rounded-lg px-3 py-2 text-sm text-white/80 bg-transparent outline-none"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
+                  style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowAddForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-white/30 hover:text-white/50">Cancel</button>
+              <button type="button" onClick={() => setShowAddForm(false)} className="px-3 py-1.5 rounded-lg text-xs text-[#6B6B64] hover:text-[#6B6B64]">Cancel</button>
               <button
                 type="submit"
                 disabled={saving}
@@ -579,32 +579,32 @@ const CustomerDataSection = ({ customerId }) => {
         {/* Records */}
         {loading ? (
           <div className="space-y-2">
-            {[1,2].map((i) => <div key={i} className="h-10 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />)}
+            {[1,2].map((i) => <div key={i} className="h-10 rounded-lg animate-pulse" style={{ background: "#EDE7D7" }} />)}
           </div>
         ) : categories.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm text-white/20 italic">No data records yet.</p>
-            <p className="text-xs text-white/15 mt-1">Add records manually above, or push data via the Data API.</p>
+            <p className="text-sm text-[#6B6B64] italic">No data records yet.</p>
+            <p className="text-xs text-[#D8D0BD] mt-1">Add records manually above, or push data via the Data API.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {categories.map((cat) => (
-              <div key={cat} className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div key={cat} className="rounded-xl overflow-hidden" style={{ border: "1px solid #EDE7D7" }}>
                 {/* Category header */}
                 <div
-                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#F5F1E8] transition-colors"
                   onClick={() => toggleCategory(cat)}
-                  style={{ background: "rgba(255,255,255,0.02)" }}
+                  style={{ background: "#EDE7D7" }}
                 >
                   <div className="flex items-center gap-2">
-                    {expanded[cat] ? <ChevronDown size={13} className="text-white/25" /> : <ChevronRight size={13} className="text-white/25" />}
-                    <span className="text-[13px] font-semibold text-white/60 capitalize">{cat.replace(/_/g, " ")}</span>
-                    <span className="text-[11px] text-white/25">{records[cat]?.length} record{records[cat]?.length !== 1 ? "s" : ""}</span>
+                    {expanded[cat] ? <ChevronDown size={13} className="text-[#6B6B64]" /> : <ChevronRight size={13} className="text-[#6B6B64]" />}
+                    <span className="text-[13px] font-semibold text-[#3A3D39] capitalize">{cat.replace(/_/g, " ")}</span>
+                    <span className="text-[11px] text-[#6B6B64]">{records[cat]?.length} record{records[cat]?.length !== 1 ? "s" : ""}</span>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); setConfirmDelete({ type: "category", category: cat }); }}
                     className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all hover:opacity-80"
-                    style={{ color: "rgba(248,113,113,0.6)", background: "rgba(239,68,68,0.05)" }}
+                    style={{ color: "rgba(248,113,113,0.6)", background: "rgba(122,31,26,0.05)" }}
                     title="Clear all records in this category"
                   >
                     <Trash2 size={11} /> Clear
@@ -613,21 +613,21 @@ const CustomerDataSection = ({ customerId }) => {
 
                 {/* Records */}
                 {expanded[cat] && (
-                  <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                  <div className="divide-y" style={{ borderColor: "#EDE7D7" }}>
                     {(records[cat] || []).map((rec, i) => (
                       <div key={i} className="flex items-center justify-between px-4 py-2.5 group hover:bg-white/[0.01]">
                         <div className="flex items-center gap-3 min-w-0">
-                          <Tag size={11} className="shrink-0 text-white/20" />
+                          <Tag size={11} className="shrink-0 text-[#6B6B64]" />
                           <div className="min-w-0">
-                            <span className="text-[13px] text-white/50 truncate">{rec.label}</span>
+                            <span className="text-[13px] text-[#6B6B64] truncate">{rec.label}</span>
                             {rec.source && rec.source !== "portal" && (
-                              <span className="ml-2 text-[10px] text-white/20">[{rec.source}]</span>
+                              <span className="ml-2 text-[10px] text-[#6B6B64]">[{rec.source}]</span>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           {rec.value != null && (
-                            <span className="text-[13px] font-medium text-white/70">{rec.value}</span>
+                            <span className="text-[13px] font-medium text-[#3A3D39]">{rec.value}</span>
                           )}
                           <button
                             onClick={() => setConfirmDelete({ type: "record", category: cat, label: rec.label })}
@@ -651,23 +651,23 @@ const CustomerDataSection = ({ customerId }) => {
       {/* Confirm delete modal */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setConfirmDelete(null)}>
-          <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(239,68,68,0.1)" }}>
-                <Trash2 size={18} style={{ color: "#F87171" }} />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(122,31,26,0.1)" }}>
+                <Trash2 size={18} style={{ color: "#7A1F1A" }} />
               </div>
-              <h3 className="text-base font-semibold text-white/90">
+              <h3 className="text-base font-semibold text-[#1A1D1A]">
                 {confirmDelete.type === "category" ? `Clear "${confirmDelete.category}"?` : "Delete record?"}
               </h3>
             </div>
-            <p className="text-sm text-white/30 mb-6">
+            <p className="text-sm text-[#6B6B64] mb-6">
               {confirmDelete.type === "category"
                 ? `This will delete all ${records[confirmDelete.category]?.length || 0} records in the "${confirmDelete.category}" category.`
                 : `This will permanently remove the "${confirmDelete.label}" record.`}
             </p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 rounded-xl text-sm font-medium" style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>Cancel</button>
-              <button onClick={handleDelete} className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90" style={{ background: "rgba(239,68,68,0.9)", color: "#fff" }}>Delete</button>
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 rounded-xl text-sm font-medium" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90" style={{ background: "rgba(122,31,26,0.9)", color: "#fff" }}>Delete</button>
             </div>
           </div>
         </div>
@@ -693,18 +693,18 @@ const ExportCustomerCard = ({ customerId, customerName }) => {
   };
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: "rgba(201,168,76,0.03)", border: "1px solid rgba(201,168,76,0.12)" }}>
-      <h3 className="text-sm font-semibold text-white/70 mb-2 flex items-center gap-2">
-        <Download size={14} style={{ color: "#C9A84C" }} /> Export Customer Data
+    <div className="rounded-2xl p-6" style={{ background: "rgba(15,95,92,0.03)", border: "1px solid rgba(15,95,92,0.12)" }}>
+      <h3 className="text-sm font-semibold text-[#3A3D39] mb-2 flex items-center gap-2">
+        <Download size={14} style={{ color: "#0F5F5C" }} /> Export Customer Data
       </h3>
-      <p className="text-sm text-white/30 mb-4">
+      <p className="text-sm text-[#6B6B64] mb-4">
         Under GDPR Article 20 (Right to Data Portability) and CCPA, customers can request a copy of all personal data held about them. Export a complete JSON package including profile, memory, conversation summaries, and structured records.
       </p>
       <button
         onClick={handleExport}
         disabled={exporting}
         className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-        style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.2)" }}
+        style={{ background: "rgba(15,95,92,0.15)", color: "#0F5F5C", border: "1px solid rgba(15,95,92,0.2)" }}
       >
         <Download size={14} />
         {exporting ? "Exporting…" : "Export customer data"}
@@ -733,17 +733,17 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
 
   return (
     <>
-      <div className="rounded-2xl p-6" style={{ background: "rgba(239,68,68,0.03)", border: "1px solid rgba(239,68,68,0.12)" }}>
-        <h3 className="text-sm font-semibold text-white/70 mb-2 flex items-center gap-2">
-          <Trash2 size={14} style={{ color: "#F87171" }} /> Delete Customer Data
+      <div className="rounded-2xl p-6" style={{ background: "rgba(122,31,26,0.03)", border: "1px solid rgba(122,31,26,0.12)" }}>
+        <h3 className="text-sm font-semibold text-[#3A3D39] mb-2 flex items-center gap-2">
+          <Trash2 size={14} style={{ color: "#7A1F1A" }} /> Delete Customer Data
         </h3>
-        <p className="text-sm text-white/30 mb-4">
-          If this customer has requested to be forgotten under GDPR or CCPA, you can anonymise and remove all their personal data here. <strong className="text-white/50">This cannot be undone.</strong>
+        <p className="text-sm text-[#6B6B64] mb-4">
+          If this customer has requested to be forgotten under GDPR or CCPA, you can anonymise and remove all their personal data here. <strong className="text-[#6B6B64]">This cannot be undone.</strong>
         </p>
         <button
           onClick={() => setShowConfirm(true)}
           className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90"
-          style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", border: "1px solid rgba(239,68,68,0.2)" }}
+          style={{ background: "rgba(122,31,26,0.15)", color: "#7A1F1A", border: "1px solid rgba(122,31,26,0.2)" }}
         >
           Delete customer data
         </button>
@@ -751,14 +751,14 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
 
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => !deleting && setShowConfirm(false)}>
-          <div className="rounded-2xl p-6 max-w-md w-full mx-4" style={{ background: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="rounded-2xl p-6 max-w-md w-full mx-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(239,68,68,0.1)" }}>
-                <AlertTriangle size={20} style={{ color: "#F87171" }} />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(122,31,26,0.1)" }}>
+                <AlertTriangle size={20} style={{ color: "#7A1F1A" }} />
               </div>
-              <h3 className="text-lg font-semibold text-white/90">Confirm data deletion</h3>
+              <h3 className="text-lg font-semibold text-[#1A1D1A]">Confirm data deletion</h3>
             </div>
-            <p className="text-sm text-white/30 mb-6">
+            <p className="text-sm text-[#6B6B64] mb-6">
               This will permanently anonymise and remove all personal data for this customer, including their soul file, memory file, and conversation history. This action cannot be undone.
             </p>
             <div className="flex items-center justify-end gap-3">
@@ -766,7 +766,7 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
                 onClick={() => setShowConfirm(false)}
                 disabled={deleting}
                 className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+                style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}
               >
                 Cancel
               </button>
@@ -774,7 +774,7 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
                 onClick={handleDelete}
                 disabled={deleting}
                 className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 disabled:opacity-50"
-                style={{ background: "rgba(239,68,68,0.9)", color: "#fff" }}
+                style={{ background: "rgba(122,31,26,0.9)", color: "#fff" }}
               >
                 {deleting ? "Deleting…" : "Yes, delete all data"}
               </button>

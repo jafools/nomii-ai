@@ -10,7 +10,8 @@ import {
 } from "@/lib/shenmayApi";
 import SubscriptionGate from "@/components/shenmay/SubscriptionGate";
 import { PLAN_LABELS, NOTIFICATION_TYPES } from "@/lib/constants";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import { TOKENS as T, Kicker } from "@/components/shenmay/ui/ShenmayUI";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -30,13 +31,12 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-// ── Notification helpers ───────────────────────────────────────────────────
-// Keys use the NOTIFICATION_TYPES enum from @/lib/constants.
+// ── Notification helpers ───────────────────────────────────────────────
 const NOTIF_ICON = {
-  [NOTIFICATION_TYPES.FLAG]:          { Icon: Flag,          color: "#EF4444" },
-  [NOTIFICATION_TYPES.HUMAN_REPLY]:   { Icon: MessageCircle, color: "#C9A84C" },
-  [NOTIFICATION_TYPES.ESCALATION]:    { Icon: TrendingUp,    color: "#F97316" },
-  [NOTIFICATION_TYPES.LIMIT_REACHED]: { Icon: Zap,           color: "#EF4444" },
+  [NOTIFICATION_TYPES.FLAG]:          { Icon: Flag,          color: T.danger  },
+  [NOTIFICATION_TYPES.HUMAN_REPLY]:   { Icon: MessageCircle, color: T.teal    },
+  [NOTIFICATION_TYPES.ESCALATION]:    { Icon: TrendingUp,    color: T.warning },
+  [NOTIFICATION_TYPES.LIMIT_REACHED]: { Icon: Zap,           color: T.danger  },
 };
 
 function timeAgo(dateStr) {
@@ -50,30 +50,34 @@ function timeAgo(dateStr) {
 }
 
 function NotifItem({ n, onNavigate }) {
-  const { Icon, color } = NOTIF_ICON[n.type] || { Icon: Bell, color: "#6B7280" };
+  const { Icon, color } = NOTIF_ICON[n.type] || { Icon: Bell, color: T.mute };
   const isUnread = !n.read_at;
   return (
     <button
       onClick={() => onNavigate(n)}
-      className="w-full text-left px-4 py-3 flex items-start gap-3 transition-colors hover:bg-white/[0.04]"
-      style={{ borderLeft: isUnread ? `2px solid ${color}` : "2px solid transparent" }}
+      style={{
+        width: "100%", textAlign: "left", padding: "12px 16px",
+        display: "flex", alignItems: "flex-start", gap: 12,
+        borderLeft: isUnread ? `2px solid ${color}` : "2px solid transparent",
+        background: "transparent", border: "none", borderBottom: `1px solid ${T.paperEdge}`, cursor: "pointer",
+        fontFamily: T.sans,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = T.paperDeep)}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
-      <div
-        className="mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-        style={{ background: `${color}18` }}
-      >
-        <Icon size={13} style={{ color }} />
+      <div style={{ width: 26, height: 26, borderRadius: 6, background: `${color}1A`, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+        <Icon size={13} color={color} />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-medium truncate" style={{ color: isUnread ? "#fff" : "rgba(255,255,255,0.55)" }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontSize: 13, fontWeight: isUnread ? 500 : 400, color: isUnread ? T.ink : T.inkSoft, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {n.title}
         </p>
         {n.body && (
-          <p className="text-[11px] mt-0.5 truncate" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p style={{ fontSize: 12, color: T.mute, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {n.body}
           </p>
         )}
-        <p className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.2)" }}>
+        <p style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: T.mute, margin: "4px 0 0", textTransform: "uppercase" }}>
           {timeAgo(n.created_at)}
         </p>
       </div>
@@ -81,40 +85,35 @@ function NotifItem({ n, onNavigate }) {
   );
 }
 
-// Plan display helpers live in @/lib/constants as PLAN_LABELS (imported above).
-
 function UsageBar({ label, used, limit, pct, nearLimit }) {
-  if (limit === null || limit === undefined) return null; // unrestricted
-  const barColor = pct >= 100 ? "#EF4444" : nearLimit ? "#F59E0B" : "#C9A84C";
+  if (limit === null || limit === undefined) return null;
+  const barColor = pct >= 100 ? T.danger : nearLimit ? T.warning : T.teal;
   const displayPct = Math.min(100, pct ?? 0);
   return (
-    <div className="mb-2">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{label}</span>
-        <span className="text-[10px] font-semibold" style={{ color: nearLimit || pct >= 100 ? barColor : "rgba(255,255,255,0.45)" }}>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mute }}>{label}</span>
+        <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, color: nearLimit || pct >= 100 ? barColor : T.inkSoft, letterSpacing: "0.05em" }}>
           {used?.toLocaleString() ?? 0} / {limit?.toLocaleString()}
         </span>
       </div>
-      <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${displayPct}%`, background: barColor }}
-        />
+      <div style={{ height: 2, borderRadius: 1, background: T.paperEdge, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${displayPct}%`, background: barColor, transition: "width 500ms ease" }} />
       </div>
     </div>
   );
 }
 
 const NAV = [
-  { label: "Overview",       icon: LayoutDashboard, to: "/shenmay/dashboard",               end: true },
-  { label: "Conversations",  icon: MessageSquare,   to: "/shenmay/dashboard/conversations",  badge: "conversations" },
-  { label: "Customers",      icon: Users,           to: "/shenmay/dashboard/customers" },
-  { label: "Concerns",       icon: AlertTriangle,   to: "/shenmay/dashboard/concerns",       badge: "concerns" },
-  { label: "AI Tools",       icon: Wrench,          to: "/shenmay/dashboard/tools" },
-  { label: "Team",           icon: Users2,          to: "/shenmay/dashboard/team" },
-  { label: "Plans & Billing",icon: Zap,             to: "/shenmay/dashboard/plans" },
-  { label: "Settings",       icon: Settings,        to: "/shenmay/dashboard/settings" },
-  { label: "Profile",        icon: UserCircle,      to: "/shenmay/dashboard/profile" },
+  { label: "Overview",          icon: LayoutDashboard, to: "/shenmay/dashboard",               end: true },
+  { label: "Conversations",     icon: MessageSquare,   to: "/shenmay/dashboard/conversations",  badge: "conversations" },
+  { label: "Customers",         icon: Users,           to: "/shenmay/dashboard/customers" },
+  { label: "Concerns",          icon: AlertTriangle,   to: "/shenmay/dashboard/concerns",       badge: "concerns" },
+  { label: "AI tools",          icon: Wrench,          to: "/shenmay/dashboard/tools" },
+  { label: "Team",              icon: Users2,          to: "/shenmay/dashboard/team" },
+  { label: "Plans & billing",   icon: Zap,             to: "/shenmay/dashboard/plans" },
+  { label: "Settings",          icon: Settings,        to: "/shenmay/dashboard/settings" },
+  { label: "Profile",           icon: UserCircle,      to: "/shenmay/dashboard/profile" },
 ];
 
 const PAGE_TITLES = {
@@ -122,9 +121,9 @@ const PAGE_TITLES = {
   "/shenmay/dashboard/conversations": "Conversations",
   "/shenmay/dashboard/customers": "Customers",
   "/shenmay/dashboard/concerns": "Concerns",
-  "/shenmay/dashboard/tools": "AI Tools",
+  "/shenmay/dashboard/tools": "AI tools",
   "/shenmay/dashboard/team": "Team",
-  "/shenmay/dashboard/plans": "Plans & Billing",
+  "/shenmay/dashboard/plans": "Plans & billing",
   "/shenmay/dashboard/settings": "Settings",
   "/shenmay/dashboard/profile": "Profile",
 };
@@ -132,144 +131,127 @@ const PAGE_TITLES = {
 const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage }) => {
   const planInfo = subscription ? (PLAN_LABELS[subscription.plan] || PLAN_LABELS.free) : null;
   return (
-  <div className="flex flex-col h-full">
-    {/* Brand */}
-    <div className="px-5 pt-7 pb-5">
-      <img src={shenmayLogo} alt="Shenmay AI" className="h-8 block mx-auto" />
-    </div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: T.sans }}>
+      {/* Brand */}
+      <div style={{ padding: "28px 24px 20px" }}>
+        <ShenmayWordmark size={22} />
+      </div>
 
-    {/* Tenant pill */}
-    {shenmayTenant && (
-      <div className="mx-4 mb-4 rounded-xl px-4 py-3" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.12)" }}>
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C" }}>
-            {shenmayTenant.name?.[0]?.toUpperCase() || "K"}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-white/90 truncate">{shenmayTenant.name}</p>
-            {shenmayTenant.agent_name && (
-              <p className="text-[11px] text-white/30 truncate">{shenmayTenant.agent_name}</p>
+      {/* Tenant pill */}
+      {shenmayTenant && (
+        <div style={{ margin: "0 16px 16px", padding: "14px 14px 12px", background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 6, background: T.ink, color: T.paper, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
+              {shenmayTenant.name?.[0]?.toUpperCase() || "S"}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: T.ink, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing: "-0.005em" }}>
+                {shenmayTenant.name}
+              </p>
+              {shenmayTenant.agent_name && (
+                <p style={{ fontSize: 11, color: T.mute, margin: "2px 0 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shenmayTenant.agent_name}</p>
+              )}
+            </div>
+            {planInfo && (
+              <span style={{ fontFamily: T.mono, fontSize: 9, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", padding: "3px 6px", borderRadius: 3, background: `${T.teal}18`, color: T.teal, flexShrink: 0 }}>
+                {planInfo.label}
+              </span>
             )}
           </div>
-          {planInfo && (
-            <span
-              className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0"
-              style={{ background: `${planInfo.color}22`, color: planInfo.color, border: `1px solid ${planInfo.color}44` }}
-            >
-              {planInfo.label}
-            </span>
+
+          {usage && (
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.paperEdge}` }}>
+              <UsageBar label="Customers" used={usage.customers_count} limit={usage.customers_limit} pct={usage.customers_pct} nearLimit={usage.near_customer_limit} />
+              <UsageBar label="Messages · this month" used={usage.messages_used} limit={usage.messages_limit} pct={usage.messages_pct} nearLimit={usage.near_message_limit} />
+              {(usage.near_customer_limit || usage.near_message_limit) && !usage.customer_limit_reached && !usage.message_limit_reached && (
+                <NavLink to="/shenmay/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.warning, textDecoration: "none", marginTop: 6 }}>
+                  Approaching limit · upgrade →
+                </NavLink>
+              )}
+              {(usage.customer_limit_reached || usage.message_limit_reached) && (
+                <NavLink to="/shenmay/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.danger, textDecoration: "none", marginTop: 6 }}>
+                  Limit reached · upgrade →
+                </NavLink>
+              )}
+            </div>
           )}
         </div>
+      )}
 
-        {/* Usage meters */}
-        {usage && (
-          <div className="mt-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-            <UsageBar
-              label="Customers"
-              used={usage.customers_count}
-              limit={usage.customers_limit}
-              pct={usage.customers_pct}
-              nearLimit={usage.near_customer_limit}
-            />
-            <UsageBar
-              label="Messages this month"
-              used={usage.messages_used}
-              limit={usage.messages_limit}
-              pct={usage.messages_pct}
-              nearLimit={usage.near_message_limit}
-            />
-            {(usage.near_customer_limit || usage.near_message_limit) && (
-              <NavLink
-                to="/shenmay/dashboard/plans"
-                className="text-[10px] font-semibold hover:opacity-80 transition-opacity mt-1 block"
-                style={{ color: "#F59E0B" }}
-              >
-                ⚠ Approaching limit — upgrade plan →
-              </NavLink>
-            )}
-            {(usage.customer_limit_reached || usage.message_limit_reached) && (
-              <NavLink
-                to="/shenmay/dashboard/plans"
-                className="text-[10px] font-semibold hover:opacity-80 transition-opacity mt-1 block"
-                style={{ color: "#EF4444" }}
-              >
-                ⛔ Limit reached — upgrade now →
-              </NavLink>
-            )}
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <Kicker color={T.mute} style={{ fontSize: 10, letterSpacing: "0.14em", padding: "0 12px 10px", display: "block" }}>Menu</Kicker>
+        {NAV.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              style={({ isActive }) => ({
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 12px",
+                borderRadius: 6,
+                fontSize: 13,
+                fontWeight: 500,
+                letterSpacing: "-0.005em",
+                textDecoration: "none",
+                color: isActive ? T.ink : T.inkSoft,
+                background: isActive ? "#FFFFFF" : "transparent",
+                border: isActive ? `1px solid ${T.paperEdge}` : "1px solid transparent",
+                boxShadow: isActive ? "inset 3px 0 0 " + T.teal : "none",
+                transition: "background 180ms, color 180ms",
+              })}
+              onMouseEnter={(e) => { if (!e.currentTarget.style.background.includes("255, 255")) e.currentTarget.style.background = "rgba(255,255,255,0.5)"; }}
+              onMouseLeave={(e) => {
+                const isActive = e.currentTarget.getAttribute("aria-current") === "page";
+                if (!isActive) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <Icon size={15} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.badge === "conversations" && badges.unread_conversations > 0 && (
+                <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", padding: "2px 6px", borderRadius: 3, background: T.teal, color: T.paper, minWidth: 20, textAlign: "center" }}>
+                  {badges.unread_conversations > 99 ? "99+" : badges.unread_conversations}
+                </span>
+              )}
+              {item.badge === "concerns" && badges.open_concerns > 0 && (
+                <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 500, letterSpacing: "0.02em", padding: "2px 6px", borderRadius: 3, background: badges.unread_concerns > 0 ? T.danger : `${T.danger}80`, color: T.paper, minWidth: 20, textAlign: "center" }}>
+                  {badges.open_concerns > 99 ? "99+" : badges.open_concerns}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      {/* Bottom · user + sign out */}
+      <div style={{ padding: "16px 20px 24px", borderTop: `1px solid ${T.paperEdge}`, marginTop: 12 }}>
+        {shenmayUser && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: T.paperEdge, color: T.ink, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 500, flexShrink: 0 }}>
+              {(shenmayUser.firstName?.[0] || "").toUpperCase()}{(shenmayUser.lastName?.[0] || "").toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 12, color: T.ink, fontWeight: 500, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {shenmayUser.firstName} {shenmayUser.lastName}
+              </p>
+              <p style={{ fontSize: 11, color: T.mute, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shenmayUser.email}</p>
+            </div>
           </div>
         )}
+        <button
+          onClick={handleSignOut}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: T.mute, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: T.sans }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = T.danger)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = T.mute)}
+        >
+          <LogOut size={13} /> Sign out
+        </button>
       </div>
-    )}
-
-    {/* Nav */}
-    <nav className="flex-1 px-3 space-y-0.5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/20 px-3 mb-2">Menu</p>
-      {NAV.map((item) => {
-        const Icon = item.icon;
-        return (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 ${
-                isActive
-                  ? "text-white"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
-              }`
-            }
-            style={({ isActive }) =>
-              isActive
-                ? {
-                    background: "linear-gradient(135deg, rgba(201,168,76,0.16) 0%, rgba(201,168,76,0.06) 100%)",
-                    color: "#C9A84C",
-                    boxShadow: "inset 2px 0 0 #C9A84C, 0 1px 3px rgba(0,0,0,0.15)",
-                  }
-                : {}
-            }
-          >
-            <Icon className="h-[17px] w-[17px] shrink-0" />
-            <span className="flex-1">{item.label}</span>
-            {item.badge === "conversations" && badges.unread_conversations > 0 && (
-              <span className="text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5" style={{ background: "rgba(234,179,8,0.9)", color: "#000" }}>
-                {badges.unread_conversations > 99 ? "99+" : badges.unread_conversations}
-              </span>
-            )}
-            {item.badge === "concerns" && badges.open_concerns > 0 && (
-              <span className="text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5" style={{ background: badges.unread_concerns > 0 ? "rgba(239,68,68,0.9)" : "rgba(239,68,68,0.5)", color: "#fff" }}>
-                {badges.open_concerns > 99 ? "99+" : badges.open_concerns}
-              </span>
-            )}
-          </NavLink>
-        );
-      })}
-    </nav>
-
-    {/* Bottom */}
-    <div className="px-4 pb-5">
-      <div className="border-t border-white/[0.06] pt-4" />
-      {shenmayUser && (
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
-            {(shenmayUser.firstName?.[0] || "").toUpperCase()}{(shenmayUser.lastName?.[0] || "").toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[12px] text-white/70 font-medium truncate">
-              {shenmayUser.firstName} {shenmayUser.lastName}
-            </p>
-            <p className="text-[11px] text-white/25 truncate">{shenmayUser.email}</p>
-          </div>
-        </div>
-      )}
-      <button
-        onClick={handleSignOut}
-        className="flex items-center gap-2 text-[12px] text-white/25 hover:text-white/60 transition-colors w-full px-1"
-      >
-        <LogOut className="h-3.5 w-3.5" />
-        Sign out
-      </button>
     </div>
-  </div>
   );
 };
 
@@ -282,11 +264,10 @@ const ShenmayDashboardLayout = () => {
   const [usageData, setUsageData] = useState(null);
   const badgeIntervalRef = useRef(null);
 
-  // ── Notification state ──────────────────────────────────────────────────
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount]     = useState(0);
-  const [notifOpen, setNotifOpen]         = useState(false);
-  const notifRef                          = useRef(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -296,25 +277,19 @@ const ShenmayDashboardLayout = () => {
     } catch {}
   }, []);
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!notifOpen) return;
-    const handler = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setNotifOpen(false);
-      }
-    };
+    const handler = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
 
   const handleBellClick = async () => {
-    setNotifOpen(prev => !prev);
-    // Mark all read when opening the panel
+    setNotifOpen((prev) => !prev);
     if (!notifOpen && unreadCount > 0) {
       try {
         await markNotificationsRead();
-        setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+        setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
         setUnreadCount(0);
       } catch {}
     }
@@ -322,53 +297,30 @@ const ShenmayDashboardLayout = () => {
 
   const handleNotifNavigate = (n) => {
     setNotifOpen(false);
-    if (n.resource_type === "conversation" && n.resource_id) {
-      navigate(`/shenmay/dashboard/conversations/${n.resource_id}`);
-    } else {
-      navigate("/shenmay/dashboard/concerns");
-    }
+    if (n.resource_type === "conversation" && n.resource_id) navigate(`/shenmay/dashboard/conversations/${n.resource_id}`);
+    else navigate("/shenmay/dashboard/concerns");
   };
-  // ────────────────────────────────────────────────────────────────────────
 
   const fetchBadges = useCallback(async () => {
-    try {
-      const data = await getBadgeCounts();
-      setBadges(data);
-    } catch {}
+    try { const data = await getBadgeCounts(); setBadges(data); } catch {}
   }, []);
 
   const fetchUsage = useCallback(async () => {
-    try {
-      const data = await fetchSubscriptionUsage();
-      if (data?.usage) setUsageData(data.usage);
-    } catch {}
+    try { const data = await fetchSubscriptionUsage(); if (data?.usage) setUsageData(data.usage); } catch {}
   }, []);
 
   useEffect(() => {
-    fetchBadges();
-    fetchUsage();
-    fetchNotifications();
-    // Poll badges every 10s, notifications every 15s, usage every 60s
+    fetchBadges(); fetchUsage(); fetchNotifications();
     badgeIntervalRef.current = setInterval(fetchBadges, 10000);
     const notifId = setInterval(fetchNotifications, 15000);
     const usageId = setInterval(fetchUsage, 60000);
-    return () => {
-      clearInterval(badgeIntervalRef.current);
-      clearInterval(notifId);
-      clearInterval(usageId);
-    };
+    return () => { clearInterval(badgeIntervalRef.current); clearInterval(notifId); clearInterval(usageId); };
   }, [fetchBadges, fetchUsage, fetchNotifications]);
 
-  // Refresh badges when navigating away from conversations/concerns (clear stale count)
   useEffect(() => { fetchBadges(); }, [location.pathname, fetchBadges]);
-
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const handleSignOut = () => {
-    clearToken();
-    setShenmayUser(null);
-    navigate("/shenmay/login", { replace: true });
-  };
+  const handleSignOut = () => { clearToken(); setShenmayUser(null); navigate("/shenmay/login", { replace: true }); };
 
   const pageTitle =
     PAGE_TITLES[location.pathname] ||
@@ -376,36 +328,35 @@ const ShenmayDashboardLayout = () => {
     "Dashboard";
 
   const sidebarProps = { shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage: usageData };
+  const isConversationsList = location.pathname.startsWith("/shenmay/dashboard/conversations") && !location.pathname.includes("/conversations/");
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#0B1222" }}>
+    <div className="shenmay-scope" style={{ minHeight: "100vh", display: "flex", background: T.paper, color: T.ink, fontFamily: T.sans }}>
       {/* Desktop sidebar */}
       <aside
-        className="hidden lg:flex w-[250px] shrink-0 flex-col"
+        className="shenmay-dash-sidebar"
         style={{
-          background: "linear-gradient(180deg, #0F1A2E 0%, #0A1525 60%, #0B1222 100%)",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
+          display: "none",
+          width: 256,
+          flexShrink: 0,
+          flexDirection: "column",
+          background: T.paperDeep,
+          borderRight: `1px solid ${T.paperEdge}`,
           minHeight: "100vh",
           position: "sticky",
           top: 0,
-          boxShadow: "4px 0 24px rgba(0,0,0,0.20)",
         }}
       >
         <SidebarContent {...sidebarProps} />
       </aside>
+      <style>{`@media (min-width: 1024px) { .shenmay-dash-sidebar { display: flex !important; } }`}</style>
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside
-            className="relative w-[270px] h-full flex flex-col z-50 overflow-y-auto"
-            style={{ background: "linear-gradient(180deg, #0F1A2E 0%, #0B1222 100%)" }}
-          >
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-5 right-4 text-white/40 hover:text-white z-10"
-            >
+        <div style={{ position: "fixed", inset: 0, zIndex: 40 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(26,29,26,0.35)", backdropFilter: "blur(4px)" }} onClick={() => setMobileOpen(false)} />
+          <aside style={{ position: "relative", width: 280, height: "100%", display: "flex", flexDirection: "column", zIndex: 50, overflow: "auto", background: T.paperDeep, borderRight: `1px solid ${T.paperEdge}` }}>
+            <button onClick={() => setMobileOpen(false)} style={{ position: "absolute", top: 20, right: 16, color: T.mute, background: "none", border: "none", cursor: "pointer", zIndex: 10 }}>
               <X size={18} />
             </button>
             <SidebarContent {...sidebarProps} />
@@ -413,108 +364,87 @@ const ShenmayDashboardLayout = () => {
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 min-w-0 min-h-screen flex flex-col">
+      {/* Main */}
+      <div style={{ flex: 1, minWidth: 0, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         {/* Top bar */}
         <header
-          className="h-14 flex items-center px-5 lg:px-8 sticky top-0 z-20 backdrop-blur-md"
-          style={{ background: "rgba(11,18,34,0.85)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+          style={{
+            height: 56,
+            display: "flex",
+            alignItems: "center",
+            padding: "0 20px",
+            position: "sticky",
+            top: 0,
+            zIndex: 20,
+            background: "rgba(245,241,232,0.88)",
+            backdropFilter: "blur(12px)",
+            borderBottom: `1px solid ${T.paperEdge}`,
+          }}
         >
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden mr-3 p-1.5 rounded-lg transition-colors"
-            style={{ color: "rgba(255,255,255,0.5)" }}
-          >
-            <Menu size={20} />
+          <button className="shenmay-dash-menu-btn" onClick={() => setMobileOpen(true)} style={{ background: "none", border: "none", padding: 6, marginRight: 10, color: T.ink, cursor: "pointer", display: "inline-flex" }} aria-label="Open menu">
+            <Menu size={18} />
           </button>
-          <h1 className="text-sm font-semibold text-white/80">{pageTitle}</h1>
+          <style>{`@media (min-width: 1024px) { .shenmay-dash-menu-btn { display: none !important; } }`}</style>
+          <h1 style={{ margin: 0, fontSize: 14, fontWeight: 500, color: T.ink, letterSpacing: "-0.005em" }}>{pageTitle}</h1>
 
-          {/* ── Notification bell ── */}
-          <div className="ml-auto relative" ref={notifRef}>
+          {/* Notification bell */}
+          <div style={{ marginLeft: "auto", position: "relative" }} ref={notifRef}>
             <button
               onClick={handleBellClick}
-              className="relative p-2 rounded-lg transition-colors"
-              style={{ color: notifOpen ? "#C9A84C" : "rgba(255,255,255,0.35)" }}
+              style={{ position: "relative", padding: 8, borderRadius: 6, background: "transparent", border: "none", color: notifOpen ? T.teal : T.ink, cursor: "pointer", display: "inline-flex" }}
               aria-label="Notifications"
+              onMouseEnter={(e) => { if (!notifOpen) e.currentTarget.style.color = T.teal; }}
+              onMouseLeave={(e) => { if (!notifOpen) e.currentTarget.style.color = T.ink; }}
             >
               <Bell size={17} />
               {unreadCount > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 text-[9px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1"
-                  style={{ background: "#EF4444", color: "#fff" }}
-                >
+                <span style={{ position: "absolute", top: 0, right: 0, fontFamily: T.mono, fontSize: 9, fontWeight: 500, padding: "1px 4px", borderRadius: 8, background: T.danger, color: T.paper, minWidth: 14, textAlign: "center" }}>
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
 
-            {/* Dropdown */}
             {notifOpen && (
-              <div
-                className="absolute right-0 top-full mt-2 w-80 rounded-xl overflow-hidden"
-                style={{
-                  background: "#0F1A2E",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "0 16px 48px rgba(0,0,0,0.5)",
-                  zIndex: 50,
-                }}
-              >
-                {/* Header */}
-                <div
-                  className="flex items-center justify-between px-4 py-2.5"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-                >
-                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    Notifications
-                  </span>
-                  {notifications.some(n => !n.read_at) && (
+              <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 8, width: 336, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, boxShadow: "0 16px 48px rgba(26,29,26,0.12)", zIndex: 50, overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px solid ${T.paperEdge}` }}>
+                  <Kicker color={T.mute}>Notifications</Kicker>
+                  {notifications.some((n) => !n.read_at) && (
                     <button
                       onClick={async () => {
                         await markNotificationsRead();
-                        setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+                        setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
                         setUnreadCount(0);
                       }}
-                      className="text-[10px] font-semibold transition-opacity hover:opacity-80"
-                      style={{ color: "#C9A84C" }}
+                      style={{ fontSize: 11, fontWeight: 500, color: T.teal, background: "none", border: "none", cursor: "pointer", fontFamily: T.sans, padding: 0 }}
                     >
                       Mark all read
                     </button>
                   )}
                 </div>
 
-                {/* List */}
-                <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
+                <div style={{ overflowY: "auto", maxHeight: 360 }}>
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-10 text-center" style={{ color: "rgba(255,255,255,0.2)", fontSize: "12px" }}>
-                      <Bell size={20} className="mx-auto mb-2 opacity-30" />
+                    <div style={{ padding: "36px 16px", textAlign: "center", color: T.mute, fontSize: 12 }}>
+                      <Bell size={20} style={{ margin: "0 auto 8px", opacity: 0.4, display: "block" }} />
                       No notifications yet
                     </div>
                   ) : (
-                    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      {notifications.map((n) => (
-                        <NotifItem key={n.id} n={n} onNavigate={handleNotifNavigate} />
-                      ))}
-                    </div>
+                    notifications.map((n) => <NotifItem key={n.id} n={n} onNavigate={handleNotifNavigate} />)
                   )}
                 </div>
               </div>
             )}
           </div>
-          {/* ── End notification bell ── */}
         </header>
 
-        {/* Trial limit banner — shown on all pages when trial limits are exceeded */}
-        {subscription && ["trial", "free"].includes(subscription.plan) && usageData &&
-          (usageData.customer_limit_reached || usageData.message_limit_reached) && (
-          <div
-            className="px-5 lg:px-8 py-3.5 flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between"
-            style={{ background: "linear-gradient(90deg, #7C1F1F 0%, #991F1F 100%)", borderBottom: "1px solid rgba(239,68,68,0.30)" }}
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-lg shrink-0 mt-0.5">⛔</span>
+        {/* Trial limit banner */}
+        {subscription && ["trial", "free"].includes(subscription.plan) && usageData && (usageData.customer_limit_reached || usageData.message_limit_reached) && (
+          <div style={{ padding: "14px 20px", background: T.ink, color: T.paper, borderBottom: `1px solid ${T.ink}`, display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 13, background: T.danger, color: T.paper, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: T.mono, fontWeight: 500 }}>!</div>
               <div>
-                <p className="text-sm font-bold text-white">Trial limit reached — your AI agents are paused</p>
-                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, letterSpacing: "-0.005em" }}>Trial limit reached — your agents are paused</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(245,241,232,0.7)", lineHeight: 1.5 }}>
                   {usageData.customer_limit_reached && usageData.message_limit_reached
                     ? "You've used all trial customers and messages."
                     : usageData.customer_limit_reached
@@ -524,29 +454,19 @@ const ShenmayDashboardLayout = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <NavLink
-                to="/shenmay/dashboard/plans"
-                className="text-xs font-bold px-3.5 py-2 rounded-lg transition-all"
-                style={{ background: "#fff", color: "#991F1F" }}
-              >
-                View Plans
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <NavLink to="/shenmay/dashboard/plans" style={{ fontSize: 12, fontWeight: 500, padding: "8px 14px", borderRadius: 6, background: T.paper, color: T.ink, textDecoration: "none", letterSpacing: "0.01em" }}>
+                View plans
               </NavLink>
-              <a
-                href="https://pontensolutions.com/contact"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-semibold px-3.5 py-2 rounded-lg transition-all"
-                style={{ border: "1px solid rgba(255,255,255,0.35)", color: "#fff" }}
-              >
-                Contact Sales
+              <a href="https://pontensolutions.com/contact" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 500, padding: "8px 14px", borderRadius: 6, border: `1px solid ${T.paper}66`, color: T.paper, textDecoration: "none", letterSpacing: "0.01em" }}>
+                Contact sales
               </a>
             </div>
           </div>
         )}
 
-        <main className={`flex-1 overflow-x-hidden ${location.pathname.startsWith("/shenmay/dashboard/conversations") && !location.pathname.includes("/conversations/") ? "p-0" : "p-5 lg:p-8"}`}>
-          {/* Plans + Profile are always accessible; everything else is gated */}
+        <main style={{ flex: 1, overflowX: "hidden", padding: isConversationsList ? 0 : "20px 24px" }}>
+          {/* Plans + Profile always accessible; everything else is gated */}
           {location.pathname.includes("/plans") || location.pathname.includes("/profile")
             ? <Outlet />
             : <SubscriptionGate subscription={subscription}><Outlet /></SubscriptionGate>

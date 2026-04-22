@@ -13,8 +13,8 @@ import { Plus, Trash2, Pencil, Check, ChevronUp, Download, ArrowRight, Sparkles,
 
 /* ── shared styles (dark-themed) ── */
 const inp =
-  "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/20 focus:border-[#C9A84C]/50";
-const inpStyle = { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", borderColor: "rgba(255,255,255,0.10)" };
+  "w-full px-4 py-2.5 rounded-lg text-sm transition-all duration-200 border placeholder:text-[#6B6B64] focus:outline-none focus:ring-2 focus:ring-[#0F5F5C]/20 focus:border-[#0F5F5C]/50";
+const inpStyle = { backgroundColor: "#EDE7D7", color: "#1A1D1A", borderColor: "#D8D0BD" };
 
 /* ========================================================================= */
 
@@ -215,26 +215,26 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
   if (showSavedSummary) {
     return (
       <div>
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>Products & Services</h2>
-        <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)" }}>
-          <CheckCircle2 size={20} style={{ color: "#4ADE80" }} />
+        <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>Products & Services</h2>
+        <div className="rounded-xl p-5 mb-6 flex items-center gap-3" style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)" }}>
+          <CheckCircle2 size={20} style={{ color: "#2D6A4F" }} />
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#4ADE80" }}>✓ Products saved</p>
-            <p className="text-xs" style={{ color: "rgba(74,222,128,0.70)" }}>Your products are already configured.</p>
+            <p className="text-sm font-semibold" style={{ color: "#2D6A4F" }}>✓ Products saved</p>
+            <p className="text-xs" style={{ color: "rgba(45,106,79,0.70)" }}>Your products are already configured.</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setShowSavedSummary(false)}
             className="text-sm font-semibold hover:opacity-70 transition-opacity"
-            style={{ color: "#C9A84C" }}
+            style={{ color: "#0F5F5C" }}
           >
             Edit products →
           </button>
           <button
             onClick={() => advance(stepIndex)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 group"
-            style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20 group"
+            style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
           >
             Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </button>
@@ -245,10 +245,10 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-1" style={{ color: "rgba(255,255,255,0.90)" }}>
+      <h2 className="text-2xl font-bold mb-1" style={{ color: "#1A1D1A" }}>
         What does your company offer?
       </h2>
-      <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.40)" }}>
+      <p className="text-sm mb-8" style={{ color: "#6B6B64" }}>
         Your AI agent will use this to answer customer questions about your products and services.
       </p>
 
@@ -263,15 +263,15 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
         >
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-5 w-5" style={{ color: "#8B9EF5" }} />
-            <span className="font-semibold text-base" style={{ color: "rgba(255,255,255,0.85)" }}>
+            <span className="font-semibold text-base" style={{ color: "#1A1D1A" }}>
               Import with AI
             </span>
           </div>
-          <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+          <p className="text-sm mb-3" style={{ color: "#6B6B64" }}>
             Enter a URL or describe what you sell — we'll extract your products and services automatically.
           </p>
-          <div className="rounded-xl px-4 py-3 mb-4 text-[12px]" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)", lineHeight: 1.7 }}>
-            <span className="font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>💡 For best results:</span> Link directly to your
+          <div className="rounded-xl px-4 py-3 mb-4 text-[12px]" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64", lineHeight: 1.7 }}>
+            <span className="font-semibold" style={{ color: "#6B6B64" }}>💡 For best results:</span> Link directly to your
             {" "}<span style={{ color: "#8B9EF5" }}>products page</span>,{" "}
             <span style={{ color: "#8B9EF5" }}>services page</span>, or
             {" "}<span style={{ color: "#8B9EF5" }}>pricing page</span> — not your homepage.
@@ -297,9 +297,9 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
           {aiFallback && (
             <div
               className="flex items-start gap-2.5 mt-4 rounded-lg px-4 py-3 text-sm"
-              style={{ backgroundColor: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.20)", color: "rgba(201,168,76,0.90)" }}
+              style={{ backgroundColor: "rgba(15,95,92,0.08)", border: "1px solid rgba(15,95,92,0.20)", color: "rgba(15,95,92,0.90)" }}
             >
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#C9A84C" }} />
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#0F5F5C" }} />
               <span>
                 We couldn't extract much from that site — it may use JavaScript to load content. Try pasting a description of what you offer in the box above.
               </span>
@@ -308,7 +308,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
 
           {/* error */}
           {aiError && !aiFallback && (
-            <p className="mt-3 text-sm" style={{ color: "#EF4444" }}>
+            <p className="mt-3 text-sm" style={{ color: "#7A1F1A" }}>
               {aiError}
             </p>
           )}
@@ -316,7 +316,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
           <button
             onClick={handleAiExtract}
             disabled={aiLoading || !aiInput.trim()}
-            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-40 transition-all duration-200 hover:shadow-lg"
+            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-lg text-[#1A1D1A] text-sm font-semibold disabled:opacity-40 transition-all duration-200 hover:shadow-lg"
             style={{ background: "linear-gradient(135deg, #6374d9 0%, #4f6dcd 100%)" }}
           >
             {aiLoading ? (
@@ -338,47 +338,47 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
           {/* success banner */}
           <div
             className="flex items-center gap-2.5 rounded-lg px-4 py-3 mb-5 text-sm font-medium"
-            style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)", color: "rgba(74,222,128,0.90)" }}
+            style={{ background: "rgba(45,106,79,0.10)", border: "1px solid rgba(45,106,79,0.20)", color: "rgba(45,106,79,0.90)" }}
           >
             <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "#10b981" }} />
             Found {proposed.length} products/services. Review them below and uncheck any you don't want.
           </div>
 
           {/* proposed list */}
-          <div className="rounded-xl overflow-hidden mb-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-xl overflow-hidden mb-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
             {proposed.map((p, i) => (
               <label
                 key={i}
-                className="flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors hover:bg-white/[0.03]"
-                style={{ borderBottom: i < proposed.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+                className="flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors hover:bg-[#EDE7D7]"
+                style={{ borderBottom: i < proposed.length - 1 ? "1px solid #EDE7D7" : "none" }}
               >
                 <input
                   type="checkbox"
                   checked={!!checked[i]}
                   onChange={() => toggleCheck(i)}
-                  className="mt-1 h-4 w-4 accent-[#C9A84C] rounded"
+                  className="mt-1 h-4 w-4 accent-[#0F5F5C] rounded"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    <span className="font-semibold text-sm" style={{ color: "#1A1D1A" }}>
                       {p.name}
                     </span>
                     {p.category && (
                       <span
                         className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C" }}
+                        style={{ background: "rgba(15,95,92,0.12)", color: "#0F5F5C" }}
                       >
                         {p.category}
                       </span>
                     )}
                     {p.price_info && (
-                      <span className="text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
+                      <span className="text-xs" style={{ color: "#6B6B64" }}>
                         {p.price_info}
                       </span>
                     )}
                   </div>
                   {p.description && (
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "rgba(255,255,255,0.30)" }}>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "#6B6B64" }}>
                       {p.description}
                     </p>
                   )}
@@ -392,8 +392,8 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
             <button
               onClick={handleBulkSave}
               disabled={selectedCount === 0 || bulkSaving}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-40 transition-all duration-200 hover:shadow-lg hover:shadow-[#1E3A5F]/20 group"
-              style={{ background: "linear-gradient(135deg, #1E3A5F 0%, #2a4f7a 100%)" }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[#1A1D1A] text-sm font-semibold disabled:opacity-40 transition-all duration-200 hover:shadow-lg hover:shadow-[#1A1D1A]/20 group"
+              style={{ background: "linear-gradient(135deg, #1A1D1A 0%, #3A3D39 100%)" }}
             >
               {bulkSaving ? (
                 <>
@@ -407,7 +407,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                 </>
               )}
             </button>
-            <button onClick={resetAi} className="text-sm underline hover:opacity-70 transition-opacity" style={{ color: "rgba(255,255,255,0.40)" }}>
+            <button onClick={resetAi} className="text-sm underline hover:opacity-70 transition-opacity" style={{ color: "#6B6B64" }}>
               Start over
             </button>
           </div>
@@ -417,13 +417,13 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
       {/* ─── Section 2 — Existing products table ─── */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.70)" }}>
+          <h3 className="text-sm font-semibold" style={{ color: "#3A3D39" }}>
             Your Products
           </h3>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-[#1E3A5F]/20"
-            style={{ background: "linear-gradient(135deg, #1E3A5F 0%, #2a4f7a 100%)" }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-[#1A1D1A] text-sm font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-[#1A1D1A]/20"
+            style={{ background: "linear-gradient(135deg, #1A1D1A 0%, #3A3D39 100%)" }}
           >
             {showForm ? <ChevronUp className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {showForm ? "Cancel" : "Add Product"}
@@ -434,10 +434,10 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
           <form
             onSubmit={handleAdd}
             className="rounded-xl p-5 mb-6 space-y-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
           >
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Name *
               </label>
               <input
@@ -452,7 +452,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Description
               </label>
               <textarea
@@ -467,7 +467,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                   Category
                 </label>
                 <input
@@ -481,7 +481,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                   Price / Cost Info
                 </label>
                 <input
@@ -496,7 +496,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Notes
               </label>
               <input
@@ -512,8 +512,8 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-50 transition-all duration-200 hover:opacity-90"
-              style={{ backgroundColor: "#C9A84C" }}
+              className="px-5 py-2 rounded-lg text-[#1A1D1A] text-sm font-semibold disabled:opacity-50 transition-all duration-200 hover:opacity-90"
+              style={{ backgroundColor: "#0F5F5C" }}
             >
               {saving ? "Saving…" : "Save Product"}
             </button>
@@ -523,22 +523,22 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ backgroundColor: "#EDE7D7" }} />
             ))}
           </div>
         ) : products.length === 0 ? (
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.30)" }}>
+          <p className="text-sm" style={{ color: "#6B6B64" }}>
             No products yet. Use AI import above, add manually, or import via CSV.
           </p>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Name</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Category</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Description</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>Actions</th>
+                <tr style={{ background: "#EDE7D7", borderBottom: "1px solid #EDE7D7" }}>
+                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "#6B6B64" }}>Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "#6B6B64" }}>Category</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: "#6B6B64" }}>Description</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold" style={{ color: "#6B6B64" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -547,7 +547,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                   const isEditing = editingId === pid;
                   if (isEditing) {
                     return (
-                      <tr key={pid} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(201,168,76,0.05)" }}>
+                      <tr key={pid} style={{ borderBottom: "1px solid #EDE7D7", background: "rgba(15,95,92,0.05)" }}>
                         <td className="px-4 py-2">
                           <input type="text" value={editForm.name} onChange={setEdit("name")} className={inp} style={{ ...inpStyle, padding: "6px 10px", fontSize: "13px" }} />
                         </td>
@@ -558,10 +558,10 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                           <input type="text" value={editForm.description} onChange={setEdit("description")} className={inp} style={{ ...inpStyle, padding: "6px 10px", fontSize: "13px" }} />
                         </td>
                         <td className="px-4 py-2 text-right whitespace-nowrap">
-                          <button onClick={handleEditSave} disabled={editSaving} className="p-1 transition-colors hover:opacity-70 mr-1" style={{ color: "#4ADE80" }} title="Save">
+                          <button onClick={handleEditSave} disabled={editSaving} className="p-1 transition-colors hover:opacity-70 mr-1" style={{ color: "#2D6A4F" }} title="Save">
                             {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                           </button>
-                          <button onClick={cancelEdit} className="p-1 transition-colors hover:opacity-70" style={{ color: "rgba(255,255,255,0.40)" }} title="Cancel">
+                          <button onClick={cancelEdit} className="p-1 transition-colors hover:opacity-70" style={{ color: "#6B6B64" }} title="Cancel">
                             <X className="h-4 w-4" />
                           </button>
                         </td>
@@ -569,15 +569,15 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                     );
                   }
                   return (
-                    <tr key={pid} className="transition-colors hover:bg-white/[0.02]" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <td className="px-4 py-3 font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>{p.name}</td>
-                      <td className="px-4 py-3" style={{ color: "rgba(255,255,255,0.40)" }}>{p.category || "—"}</td>
-                      <td className="px-4 py-3 max-w-[200px] truncate" style={{ color: "rgba(255,255,255,0.40)" }}>{p.description || "—"}</td>
+                    <tr key={pid} className="transition-colors hover:bg-[#F5F1E8]" style={{ borderBottom: "1px solid #EDE7D7" }}>
+                      <td className="px-4 py-3 font-medium" style={{ color: "#1A1D1A" }}>{p.name}</td>
+                      <td className="px-4 py-3" style={{ color: "#6B6B64" }}>{p.category || "—"}</td>
+                      <td className="px-4 py-3 max-w-[200px] truncate" style={{ color: "#6B6B64" }}>{p.description || "—"}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <button onClick={() => startEdit(p)} className="p-1 transition-colors hover:opacity-70 mr-1" style={{ color: "rgba(255,255,255,0.40)" }} title="Edit">
+                        <button onClick={() => startEdit(p)} className="p-1 transition-colors hover:opacity-70 mr-1" style={{ color: "#6B6B64" }} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleDelete(pid)} className="p-1 transition-colors hover:opacity-70" style={{ color: "#F87171" }} title="Delete">
+                        <button onClick={() => handleDelete(pid)} className="p-1 transition-colors hover:opacity-70" style={{ color: "#7A1F1A" }} title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
@@ -591,17 +591,17 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
       </div>
 
       {/* ─── Section 3 — CSV Import ─── */}
-      <div className="rounded-xl p-6 text-center mb-6" style={{ border: "2px dashed rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)" }}>
-        <p className="text-sm mb-2" style={{ color: "rgba(255,255,255,0.40)" }}>Or import from CSV</p>
+      <div className="rounded-xl p-6 text-center mb-6" style={{ border: "2px dashed #D8D0BD", background: "#EDE7D7" }}>
+        <p className="text-sm mb-2" style={{ color: "#6B6B64" }}>Or import from CSV</p>
         <label
-          className="inline-block px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer text-white transition-all duration-200 hover:shadow-lg hover:shadow-[#1E3A5F]/20"
-          style={{ background: "linear-gradient(135deg, #1E3A5F 0%, #2a4f7a 100%)" }}
+          className="inline-block px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer text-[#1A1D1A] transition-all duration-200 hover:shadow-lg hover:shadow-[#1A1D1A]/20"
+          style={{ background: "linear-gradient(135deg, #1A1D1A 0%, #3A3D39 100%)" }}
         >
           {uploading ? "Importing…" : "Choose CSV File"}
           <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" disabled={uploading} />
         </label>
         <p className="mt-3">
-          <button onClick={downloadTemplate} className="text-xs underline" style={{ color: "#C9A84C" }}>
+          <button onClick={downloadTemplate} className="text-xs underline" style={{ color: "#0F5F5C" }}>
             <Download className="inline h-3 w-3 mr-1" />Download template
           </button>
         </p>
@@ -612,8 +612,8 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
         <button
           onClick={() => advance(stepIndex)}
           disabled={products.length === 0}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-semibold text-sm transition-all duration-200 disabled:opacity-40 hover:shadow-lg hover:shadow-[#1E3A5F]/20 group"
-          style={{ background: "linear-gradient(135deg, #1E3A5F 0%, #2a4f7a 100%)" }}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[#1A1D1A] font-semibold text-sm transition-all duration-200 disabled:opacity-40 hover:shadow-lg hover:shadow-[#1A1D1A]/20 group"
+          style={{ background: "linear-gradient(135deg, #1A1D1A 0%, #3A3D39 100%)" }}
         >
           Continue
           <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
@@ -621,7 +621,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
         <button
           onClick={() => advance(stepIndex)}
           className="text-sm underline hover:opacity-70 transition-opacity"
-          style={{ color: "rgba(255,255,255,0.40)" }}
+          style={{ color: "#6B6B64" }}
         >
           Skip this step →
         </button>
