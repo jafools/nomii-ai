@@ -106,27 +106,27 @@ function UsageBar({ label, used, limit, pct, nearLimit }) {
 }
 
 const NAV = [
-  { label: "Overview",       icon: LayoutDashboard, to: "/nomii/dashboard",               end: true },
-  { label: "Conversations",  icon: MessageSquare,   to: "/nomii/dashboard/conversations",  badge: "conversations" },
-  { label: "Customers",      icon: Users,           to: "/nomii/dashboard/customers" },
-  { label: "Concerns",       icon: AlertTriangle,   to: "/nomii/dashboard/concerns",       badge: "concerns" },
-  { label: "AI Tools",       icon: Wrench,          to: "/nomii/dashboard/tools" },
-  { label: "Team",           icon: Users2,          to: "/nomii/dashboard/team" },
-  { label: "Plans & Billing",icon: Zap,             to: "/nomii/dashboard/plans" },
-  { label: "Settings",       icon: Settings,        to: "/nomii/dashboard/settings" },
-  { label: "Profile",        icon: UserCircle,      to: "/nomii/dashboard/profile" },
+  { label: "Overview",       icon: LayoutDashboard, to: "/shenmay/dashboard",               end: true },
+  { label: "Conversations",  icon: MessageSquare,   to: "/shenmay/dashboard/conversations",  badge: "conversations" },
+  { label: "Customers",      icon: Users,           to: "/shenmay/dashboard/customers" },
+  { label: "Concerns",       icon: AlertTriangle,   to: "/shenmay/dashboard/concerns",       badge: "concerns" },
+  { label: "AI Tools",       icon: Wrench,          to: "/shenmay/dashboard/tools" },
+  { label: "Team",           icon: Users2,          to: "/shenmay/dashboard/team" },
+  { label: "Plans & Billing",icon: Zap,             to: "/shenmay/dashboard/plans" },
+  { label: "Settings",       icon: Settings,        to: "/shenmay/dashboard/settings" },
+  { label: "Profile",        icon: UserCircle,      to: "/shenmay/dashboard/profile" },
 ];
 
 const PAGE_TITLES = {
-  "/nomii/dashboard": "Overview",
-  "/nomii/dashboard/conversations": "Conversations",
-  "/nomii/dashboard/customers": "Customers",
-  "/nomii/dashboard/concerns": "Concerns",
-  "/nomii/dashboard/tools": "AI Tools",
-  "/nomii/dashboard/team": "Team",
-  "/nomii/dashboard/plans": "Plans & Billing",
-  "/nomii/dashboard/settings": "Settings",
-  "/nomii/dashboard/profile": "Profile",
+  "/shenmay/dashboard": "Overview",
+  "/shenmay/dashboard/conversations": "Conversations",
+  "/shenmay/dashboard/customers": "Customers",
+  "/shenmay/dashboard/concerns": "Concerns",
+  "/shenmay/dashboard/tools": "AI Tools",
+  "/shenmay/dashboard/team": "Team",
+  "/shenmay/dashboard/plans": "Plans & Billing",
+  "/shenmay/dashboard/settings": "Settings",
+  "/shenmay/dashboard/profile": "Profile",
 };
 
 const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage }) => {
@@ -180,7 +180,7 @@ const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, sub
             />
             {(usage.near_customer_limit || usage.near_message_limit) && (
               <NavLink
-                to="/nomii/dashboard/plans"
+                to="/shenmay/dashboard/plans"
                 className="text-[10px] font-semibold hover:opacity-80 transition-opacity mt-1 block"
                 style={{ color: "#F59E0B" }}
               >
@@ -189,7 +189,7 @@ const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, sub
             )}
             {(usage.customer_limit_reached || usage.message_limit_reached) && (
               <NavLink
-                to="/nomii/dashboard/plans"
+                to="/shenmay/dashboard/plans"
                 className="text-[10px] font-semibold hover:opacity-80 transition-opacity mt-1 block"
                 style={{ color: "#EF4444" }}
               >
@@ -323,9 +323,9 @@ const ShenmayDashboardLayout = () => {
   const handleNotifNavigate = (n) => {
     setNotifOpen(false);
     if (n.resource_type === "conversation" && n.resource_id) {
-      navigate(`/nomii/dashboard/conversations/${n.resource_id}`);
+      navigate(`/shenmay/dashboard/conversations/${n.resource_id}`);
     } else {
-      navigate("/nomii/dashboard/concerns");
+      navigate("/shenmay/dashboard/concerns");
     }
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -367,7 +367,7 @@ const ShenmayDashboardLayout = () => {
   const handleSignOut = () => {
     clearToken();
     setShenmayUser(null);
-    navigate("/nomii/login", { replace: true });
+    navigate("/shenmay/login", { replace: true });
   };
 
   const pageTitle =
@@ -526,7 +526,7 @@ const ShenmayDashboardLayout = () => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <NavLink
-                to="/nomii/dashboard/plans"
+                to="/shenmay/dashboard/plans"
                 className="text-xs font-bold px-3.5 py-2 rounded-lg transition-all"
                 style={{ background: "#fff", color: "#991F1F" }}
               >
@@ -545,7 +545,7 @@ const ShenmayDashboardLayout = () => {
           </div>
         )}
 
-        <main className={`flex-1 overflow-x-hidden ${location.pathname.startsWith("/nomii/dashboard/conversations") && !location.pathname.includes("/conversations/") ? "p-0" : "p-5 lg:p-8"}`}>
+        <main className={`flex-1 overflow-x-hidden ${location.pathname.startsWith("/shenmay/dashboard/conversations") && !location.pathname.includes("/conversations/") ? "p-0" : "p-5 lg:p-8"}`}>
           {/* Plans + Profile are always accessible; everything else is gated */}
           {location.pathname.includes("/plans") || location.pathname.includes("/profile")
             ? <Outlet />

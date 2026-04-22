@@ -61,7 +61,7 @@ const ShenmayAcceptInvite = () => {
       }
       if (data.token) {
         setToken(data.token);
-        navigate("/nomii/dashboard", { replace: true });
+        navigate("/shenmay/dashboard", { replace: true });
       }
     } catch (err) {
       setSubmitError(err.message || "Failed to accept invitation. Please try again.");
@@ -95,7 +95,7 @@ const ShenmayAcceptInvite = () => {
             <div className="flex flex-col items-center py-8 gap-4 text-center">
               <AlertTriangle size={28} style={{ color: "#F87171" }} />
               <p className="text-sm text-white/50">{infoError}</p>
-              <Link to="/nomii/login" className="text-sm underline" style={{ color: "#C9A84C" }}>
+              <Link to="/shenmay/login" className="text-sm underline" style={{ color: "#C9A84C" }}>
                 Go to login
               </Link>
             </div>
@@ -192,7 +192,7 @@ const ShenmayAcceptInvite = () => {
 
         <p className="text-center text-xs mt-6" style={{ color: "rgba(255,255,255,0.2)" }}>
           Already have an account?{" "}
-          <Link to="/nomii/login" style={{ color: "#C9A84C" }} className="hover:underline">Sign in</Link>
+          <Link to="/shenmay/login" style={{ color: "#C9A84C" }} className="hover:underline">Sign in</Link>
         </p>
       </div>
     </div>

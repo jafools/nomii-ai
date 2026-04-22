@@ -52,7 +52,7 @@ export const isLoggedIn = () => !!getToken();
  * - Attaches the portal JWT from localStorage (when present).
  * - Serializes the body as JSON.
  * - Aborts after 30 seconds and throws a user-friendly timeout error.
- * - On 401, clears the token and redirects to /nomii/login (SPA UX).
+ * - On 401, clears the token and redirects to /shenmay/login (SPA UX).
  * - On non-2xx, throws an Error whose `.code` is the server's stable
  *   code string (or null) and `.message` is the server's error string.
  *
@@ -87,7 +87,7 @@ export async function apiRequest(method, path, body) {
 
   if (res.status === 401) {
     clearToken();
-    window.location.href = "/nomii/login";
+    window.location.href = "/shenmay/login";
     throw new Error("Unauthorized");
   }
 

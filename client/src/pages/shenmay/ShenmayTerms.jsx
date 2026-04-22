@@ -15,7 +15,7 @@ const ShenmayTerms = () => (
   <div className="min-h-screen bg-[#FAFAFA]">
     <div className="max-w-3xl mx-auto px-6 py-12">
       <div className="flex items-center gap-4 mb-10">
-        <Link to="/nomii/signup" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <Link to="/shenmay/signup" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ArrowLeft size={18} style={{ color: "#1E3A5F" }} />
         </Link>
         <img src={shenmayLogo} alt="Shenmay AI" className="h-7" />

@@ -48,6 +48,7 @@ const { anonymizeCustomer }          = require('../jobs/dataRetention');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const { fireNotifications }          = require('../services/notificationService');
 const { validateWebhookUrl }         = require('../utils/validateWebhookUrl');
+const { envVar }                     = require('../utils/env');
 
 const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret';
 
@@ -2221,9 +2222,9 @@ router.post('/license/activate', requireSelfHostedDeployment, async (req, res, n
     if (!license_key || !license_key.trim()) {
       return res.status(400).json({ error: 'License key is required' });
     }
-    if (process.env.NOMII_LICENSE_KEY) {
+    if (envVar('LICENSE_KEY')) {
       return res.status(409).json({
-        error: 'A license key is already pinned in NOMII_LICENSE_KEY. Remove it from .env and restart, then re-activate from the dashboard.',
+        error: 'A license key is already pinned in SHENMAY_LICENSE_KEY (or legacy NOMII_LICENSE_KEY). Remove it from .env and restart, then re-activate from the dashboard.',
       });
     }
 
@@ -2247,9 +2248,9 @@ router.post('/license/activate', requireSelfHostedDeployment, async (req, res, n
 // DELETE /api/portal/license  — clear key + revert to trial limits
 router.delete('/license', requireSelfHostedDeployment, async (req, res, next) => {
   try {
-    if (process.env.NOMII_LICENSE_KEY) {
+    if (envVar('LICENSE_KEY')) {
       return res.status(409).json({
-        error: 'License is pinned in NOMII_LICENSE_KEY. Remove it from .env and restart to deactivate from the dashboard.',
+        error: 'License is pinned in SHENMAY_LICENSE_KEY (or legacy NOMII_LICENSE_KEY). Remove it from .env and restart to deactivate from the dashboard.',
       });
     }
     const { deactivateLicense } = require('../services/licenseService');
@@ -2420,7 +2421,7 @@ router.post('/team/invite', async (req, res, next) => {
     );
 
     // Send invite email
-    const inviteUrl = `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/nomii/accept-invite?token=${inviteToken}`;
+    const inviteUrl = `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/shenmay/accept-invite?token=${inviteToken}`;
     try {
       const { sendAgentInviteEmail } = require('../services/emailService');
       const { rows: tenantRows } = await db.query('SELECT name FROM tenants WHERE id = $1', [req.portal.tenant_id]);
@@ -2602,7 +2603,7 @@ const STRIPE_PRICE_MAP  = {
   growth:       process.env.STRIPE_PRICE_GROWTH        || null,
   professional: process.env.STRIPE_PRICE_PROFESSIONAL  || null,
 };
-const STRIPE_PORTAL_RETURN_URL = process.env.STRIPE_PORTAL_RETURN_URL || `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/nomii/dashboard`;
+const STRIPE_PORTAL_RETURN_URL = process.env.STRIPE_PORTAL_RETURN_URL || `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/shenmay/dashboard`;
 
 // Helper: get Stripe instance (lazy init)
 let _stripe = null;
@@ -2891,7 +2892,7 @@ router.get('/tools/types', (req, res) => {
         example: 'Use when you have an internal API, CRM, or database that your IT team can expose via a URL.',
         config_fields: [
           { key: 'webhook_url', label: 'Your system URL (endpoint)', type: 'text', required: true,
-            placeholder: 'https://api.yourcompany.com/nomii/client-data' },
+            placeholder: 'https://api.yourcompany.com/shenmay/client-data' },
           { key: 'method', label: 'Request method', type: 'select', required: false,
             options: [
               { value: 'POST', label: 'POST (recommended)' },

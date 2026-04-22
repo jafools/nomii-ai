@@ -38,19 +38,20 @@ const https  = require('https');
 const http   = require('http');
 const crypto = require('crypto');
 const { PLAN_LIMITS, isSelfHosted } = require('../config/plans');
+const { envVar } = require('../utils/env');
 
-const VALIDATE_URL = process.env.NOMII_LICENSE_VALIDATE_URL
-  || 'https://api.pontensolutions.com/api/license/validate';
+const VALIDATE_URL = envVar('LICENSE_VALIDATE_URL',
+  'https://api.pontensolutions.com/api/license/validate');
 
 const HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // Stable identifier for this server process.
-// Override with NOMII_INSTANCE_ID for consistency across restarts.
-const INSTANCE_ID = process.env.NOMII_INSTANCE_ID
+// Override with SHENMAY_INSTANCE_ID (or legacy NOMII_INSTANCE_ID) for consistency across restarts.
+const INSTANCE_ID = envVar('INSTANCE_ID')
   || crypto.createHash('sha256')
        .update(
-         (process.env.NOMII_LICENSE_KEY || '') +
-         (process.env.APP_URL           || '') +
+         (envVar('LICENSE_KEY') || '') +
+         (process.env.APP_URL   || '') +
          process.pid.toString()
        )
        .digest('hex')
@@ -239,7 +240,7 @@ async function checkLicenseOnStartup() {
   // Precedence: env var > DB column > trial mode.
   // Env var lets operators pin a key in .env (the original behaviour).
   // DB column lets owners activate from the dashboard without restart.
-  let licenseKey = process.env.NOMII_LICENSE_KEY;
+  let licenseKey = envVar('LICENSE_KEY');
   let keySource  = 'env';
 
   if (!licenseKey) {
@@ -265,8 +266,8 @@ async function checkLicenseOnStartup() {
     // subscription row seeded by seedSelfHostedTenant (20 msg, 1 customer).
     console.log('[License] No license key — running in self-hosted trial mode.');
     console.log('[License]   Limits: 20 messages/mo, 1 customer.');
-    const appUrl = (process.env.APP_URL || 'https://nomii.pontensolutions.com').replace(/\/$/, '');
-    console.log(`[License]   Upgrade: ${appUrl}/nomii/license`);
+    const appUrl = (process.env.APP_URL || 'https://shenmay.ai').replace(/\/$/, '');
+    console.log(`[License]   Upgrade: ${appUrl}/shenmay/license`);
     return;
   }
 
@@ -286,7 +287,7 @@ async function checkLicenseOnStartup() {
       // Dashboard-activated key turned out to be invalid (revoked, expired,
       // network down on first boot, etc). Don't crash — fall back to trial
       // limits and let the owner reactivate from the dashboard.
-      console.warn('[License] Falling back to trial limits. Reactivate from /nomii/dashboard/plans.');
+      console.warn('[License] Falling back to trial limits. Reactivate from /shenmay/dashboard/plans.');
       try { await applyPlanLimits('trial'); } catch { /* best-effort */ }
     } else {
       // Env-var path stays strict: an invalid key in .env is almost certainly
@@ -408,7 +409,7 @@ async function getLicenseStatus(tenantId) {
     max_messages_month:    r.max_messages_month,
     max_customers:         r.max_customers,
     validated_at:          r.license_key_validated_at,
-    env_var_in_use:        !!process.env.NOMII_LICENSE_KEY,
+    env_var_in_use:        !!envVar('LICENSE_KEY'),
   };
 }
 

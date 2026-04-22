@@ -33,6 +33,8 @@
  * @property {string|null}        limit_notified_at
  */
 
+const { envVar } = require('../utils/env');
+
 /** @type {Record<PlanName, PlanLimits>} */
 const PLAN_LIMITS = {
   trial:        { max_customers: 1,     max_messages_month: 20,     managed_ai: false, max_agents: 1   },
@@ -91,11 +93,12 @@ const DEPLOYMENT_MODES = Object.freeze({
 
 /**
  * Returns true when running as a self-hosted single-tenant deployment.
- * Set NOMII_DEPLOYMENT=selfhosted in docker-compose.selfhosted.yml.
+ * Set SHENMAY_DEPLOYMENT=selfhosted in docker-compose.selfhosted.yml.
+ * (NOMII_DEPLOYMENT still honored for back-compat — see server/src/utils/env.js.)
  * @returns {boolean}
  */
 function isSelfHosted() {
-  return process.env.NOMII_DEPLOYMENT === DEPLOYMENT_MODES.SELFHOSTED;
+  return envVar('DEPLOYMENT') === DEPLOYMENT_MODES.SELFHOSTED;
 }
 
 /**

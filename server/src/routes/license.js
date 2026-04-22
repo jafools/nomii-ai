@@ -19,10 +19,11 @@
 const router = require('express').Router();
 const crypto = require('crypto');
 const db     = require('../db');
+const { envVar } = require('../utils/env');
 
 // Guard: only expose the validation endpoint on the master (cloud) instance.
-// Self-hosted instances must NOT set NOMII_LICENSE_MASTER.
-const isMaster = process.env.NOMII_LICENSE_MASTER === 'true';
+// Self-hosted instances must NOT set SHENMAY_LICENSE_MASTER / NOMII_LICENSE_MASTER.
+const isMaster = envVar('LICENSE_MASTER') === 'true';
 
 router.post('/validate', async (req, res, next) => {
   if (!isMaster) {

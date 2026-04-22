@@ -147,7 +147,7 @@ const ShenmayLicenseSuccess = () => {
         </p>
       </div>
 
-      <Link to="/nomii/login"
+      <Link to="/shenmay/login"
             className="mt-6 text-sm hover:opacity-80 transition-opacity"
             style={{ color: "rgba(255,255,255,0.45)" }}>
         Back to login

@@ -93,7 +93,7 @@ const ShenmayCustomerDetail = () => {
     <div className="space-y-6">
       {/* Back + refresh indicator */}
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate("/nomii/dashboard/customers")} className="flex items-center gap-1.5 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <button onClick={() => navigate("/shenmay/dashboard/customers")} className="flex items-center gap-1.5 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.35)" }}>
           <ArrowLeft size={16} /> All customers
         </button>
         <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ const ConversationRow = ({ conversation: c, onSynced }) => {
 
   return (
     <div className="flex items-center gap-2" style={{ border: "1px solid rgba(255,255,255,0.04)", borderRadius: "0.75rem" }}>
-      <Link to={`/nomii/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-white/[0.02]">
+      <Link to={`/shenmay/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-white/[0.02]">
         <div className="text-sm">
           <span className="font-medium text-white/60">{c.status}</span>
           <span className="text-white/25 ml-2">{c.message_count || 0} messages</span>
@@ -723,7 +723,7 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
     try {
       await deleteCustomer(customerId);
       toast({ title: "Customer data has been anonymised and removed." });
-      navigate("/nomii/dashboard/customers");
+      navigate("/shenmay/dashboard/customers");
     } catch (err) {
       toast({ title: "Deletion failed", description: err.message, variant: "destructive" });
     } finally {

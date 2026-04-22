@@ -31,7 +31,7 @@ const ShenmayLogin = () => {
   // If the user already has a valid token, skip the login page entirely
   useEffect(() => {
     if (isLoggedIn()) {
-      navigate("/nomii/dashboard", { replace: true });
+      navigate("/shenmay/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -62,7 +62,7 @@ const ShenmayLogin = () => {
       // Any earlier step completion sends back to the wizard to finish setup.
       const steps = data.tenant?.onboarding_steps;
       const onboardingDone = steps?.install_widget === true || steps?.widget === true;
-      navigate(onboardingDone ? "/nomii/dashboard" : "/nomii/onboarding", { replace: true });
+      navigate(onboardingDone ? "/shenmay/dashboard" : "/shenmay/onboarding", { replace: true });
     } catch (err) {
       if (err.code === "email_unverified") {
         setUnverified(true);
@@ -233,7 +233,7 @@ const ShenmayLogin = () => {
               {!isSelfHosted && (
                 <p className="text-center text-sm mt-8" style={{ color: "rgba(255,255,255,0.35)" }}>
                   Don't have an account?{" "}
-                  <Link to="/nomii/signup" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
+                  <Link to="/shenmay/signup" className="font-semibold hover:opacity-80 transition-opacity" style={{ color: "#C9A84C" }}>
                     Get started →
                   </Link>
                 </p>

@@ -155,7 +155,7 @@ const ShenmayConcerns = () => {
               {/* Actions */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => navigate(`/nomii/dashboard/conversations/${convId}`)}
+                  onClick={() => navigate(`/shenmay/dashboard/conversations/${convId}`)}
                   className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-90"
                   style={{ background: isUnread ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.06)", color: isUnread ? "#F87171" : "rgba(255,255,255,0.5)", border: isUnread ? "1px solid rgba(239,68,68,0.2)" : "1px solid rgba(255,255,255,0.08)" }}
                   title="Open conversation"
@@ -175,7 +175,7 @@ const ShenmayConcerns = () => {
                 </button>
                 {c.customer_id && (
                   <Link
-                    to={`/nomii/dashboard/customers/${c.customer_id}`}
+                    to={`/shenmay/dashboard/customers/${c.customer_id}`}
                     onClick={(e) => e.stopPropagation()}
                     title="View customer profile"
                     className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"

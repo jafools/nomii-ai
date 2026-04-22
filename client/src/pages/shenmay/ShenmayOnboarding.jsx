@@ -37,7 +37,7 @@ const UserPill = ({ admin }) => {
 
   const handleLogout = () => {
     clearToken();
-    navigate("/nomii/login");
+    navigate("/shenmay/login");
   };
 
   return (
@@ -64,7 +64,7 @@ const UserPill = ({ admin }) => {
           style={{ backgroundColor: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}
         >
           <Link
-            to="/nomii/dashboard"
+            to="/shenmay/dashboard"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
             style={{ color: "rgba(255,255,255,0.70)" }}
@@ -97,7 +97,7 @@ const ShenmayOnboarding = () => {
   useEffect(() => {
     const token = localStorage.getItem("nomii_portal_token");
     if (!token) {
-      navigate("/nomii/login");
+      navigate("/shenmay/login");
       return;
     }
 
@@ -132,7 +132,7 @@ const ShenmayOnboarding = () => {
 
         // Only redirect to dashboard if widget step is explicitly true
         if (steps.widget === true || steps.install_widget === true) {
-          navigate("/nomii/dashboard", { replace: true });
+          navigate("/shenmay/dashboard", { replace: true });
           return;
         }
 
@@ -204,7 +204,7 @@ const ShenmayOnboarding = () => {
         {/* Logo + User pill */}
         <div className="p-6 pb-2 relative z-10">
           <div className="flex items-center justify-between mb-1">
-            <Link to="/nomii/dashboard">
+            <Link to="/shenmay/dashboard">
               <img src={shenmayLogo} alt="Shenmay AI" className="h-14 brightness-0 invert" />
             </Link>
             {admin && <UserPill admin={admin} />}
@@ -268,7 +268,7 @@ const ShenmayOnboarding = () => {
           <div className="p-5 relative z-10">
             <div className="border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
               <Link
-                to="/nomii/dashboard"
+                to="/shenmay/dashboard"
                 className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
                 style={{ color: "#C9A84C" }}
               >
@@ -285,7 +285,7 @@ const ShenmayOnboarding = () => {
         <div className="md:hidden p-4 border-b" style={{ backgroundColor: "#0F1A2E", borderColor: "rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <Link to="/nomii/dashboard">
+              <Link to="/shenmay/dashboard">
                 <img src={shenmayLogo} alt="Shenmay AI" className="h-12 brightness-0 invert" />
               </Link>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
@@ -326,7 +326,7 @@ const ShenmayOnboarding = () => {
                 Your AI agent is live. Head to your dashboard to see conversations and manage your customers.
               </p>
               <Link
-                to="/nomii/dashboard"
+                to="/shenmay/dashboard"
                 className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 group"
                 style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
               >
@@ -367,11 +367,11 @@ const UserPillMobile = ({ admin }) => {
       {open && (
         <div className="absolute right-0 top-full mt-1.5 w-44 rounded-lg py-1 z-50 shadow-lg"
           style={{ backgroundColor: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <Link to="/nomii/dashboard" onClick={() => setOpen(false)}
+          <Link to="/shenmay/dashboard" onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]" style={{ color: "rgba(255,255,255,0.70)" }}>
             <LayoutDashboard size={14} style={{ color: "rgba(255,255,255,0.40)" }} /> Dashboard
           </Link>
-          <button onClick={() => { clearToken(); navigate("/nomii/login"); }}
+          <button onClick={() => { clearToken(); navigate("/shenmay/login"); }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left hover:bg-white/[0.04]" style={{ color: "#F87171" }}>
             <LogOut size={14} /> Log out
           </button>
@@ -411,7 +411,7 @@ class OnboardingErrorBoundary extends Component {
                 Reload page
               </button>
               <a
-                href="/nomii/dashboard"
+                href="/shenmay/dashboard"
                 className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all hover:shadow-lg hover:shadow-[#C9A84C]/20"
                 style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
               >
