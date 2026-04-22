@@ -1,0 +1,84 @@
+/* ============================================================
+ * Shenmay AI — Design Tokens (Direction B, Apr 22 2026)
+ *
+ * Source of truth: the Direction B marketing page at
+ * pontensolutions.com/products/nomii-ai (redesigned 2026-04-22
+ * in PR ponten-solutions#4, commit 19fbe4a).
+ *
+ * Use these tokens in the SaaS app so dashboard surfaces feel
+ * visually continuous with the marketing site. Inline-style pattern
+ * is preferred (matches the handoff components), but `.shenmay-scope`
+ * can be applied to a container to opt its descendants into the
+ * palette via CSS custom properties.
+ *
+ * DO NOT port the old ponten-solutions dark navy/blue tokens in
+ * index.css — those are the LOCKED corp-site tokens and stay owned
+ * by that page. The Shenmay tokens below are the app's brand.
+ * ============================================================ */
+
+:root,
+.shenmay-scope {
+  /* ── Palette ──────────────────────────────────────────────── */
+  --shenmay-ink:        #1A1D1A;   /* primary text, dark sections */
+  --shenmay-ink-soft:   #3A3D39;   /* secondary text on paper */
+  --shenmay-paper:      #F5F1E8;   /* warm off-white background */
+  --shenmay-paper-deep: #EDE7D7;   /* secondary bg, cards, inputs */
+  --shenmay-paper-edge: #D8D0BD;   /* hairline borders on paper */
+  --shenmay-mute:       #6B6B64;   /* muted label text */
+  --shenmay-teal:       #0F5F5C;   /* accent dot, kickers, featured CTA */
+  --shenmay-teal-dark:  #083A38;   /* hover / emphasis */
+  --shenmay-teal-light: #84C7C4;   /* dark-section accents */
+  --shenmay-success:    #2D6A4F;   /* confirmation states */
+  --shenmay-danger:     #7A1F1A;   /* error states (warm, not loud) */
+
+  /* ── Typography scale (matches marketing rhythm) ────────────── */
+  --shenmay-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --shenmay-font-mono: ui-monospace, Menlo, monospace;
+  /* tight tracking is core to the brand — used on all display text */
+  --shenmay-track-display: -0.045em;
+  --shenmay-track-kicker:   0.16em;
+  --shenmay-track-body:    -0.01em;
+
+  /* ── Spacing rhythm (8pt grid; editorial feels wider than dashboard) ─ */
+  --shenmay-gutter-tight: 0.5rem;
+  --shenmay-gutter:       1rem;
+  --shenmay-gutter-wide:  2rem;
+  --shenmay-rhythm:       3rem;     /* between editorial sections */
+
+  /* ── Surfaces ────────────────────────────────────────────────── */
+  --shenmay-radius-sm:    4px;
+  --shenmay-radius:       6px;      /* buttons, inputs */
+  --shenmay-radius-lg:    12px;     /* cards */
+  --shenmay-border:       1px solid var(--shenmay-paper-edge);
+  --shenmay-hairline:     1px solid rgba(26,29,26,0.08);
+  --shenmay-shadow-card:  0 1px 0 rgba(26,29,26,0.04), 0 8px 24px -12px rgba(26,29,26,0.12);
+}
+
+/* ── Kicker / eyebrow utility ──────────────────────────────────── */
+.shenmay-kicker {
+  font-family: var(--shenmay-font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: var(--shenmay-track-kicker);
+  text-transform: uppercase;
+  color: var(--shenmay-teal);
+}
+
+/* ── Pull-quote / italic display utility ──────────────────────── */
+.shenmay-display {
+  font-family: var(--shenmay-font-sans);
+  font-weight: 300;
+  letter-spacing: var(--shenmay-track-display);
+  color: var(--shenmay-ink);
+  line-height: 1.05;
+}
+
+/* ── Subtle pulse for the wordmark teal dot ───────────────────── */
+@keyframes shenmay-dot-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.14); }
+}
+
+.shenmay-dot-pulse {
+  animation: shenmay-dot-pulse 2.8s ease-in-out infinite;
+}
