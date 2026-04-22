@@ -3,24 +3,25 @@ import { Link, useNavigate } from "react-router-dom";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
 import { getMe, clearToken } from "@/lib/shenmayApi";
 import { Building2, Package, Users, Code, Key, Check, ArrowRight, ChevronDown, LogOut, LayoutDashboard, CheckCircle2, AlertTriangle } from "lucide-react";
-import shenmayLogo from "@/assets/shenmay-full-dark.svg";
 import Step1CompanyProfile from "@/components/shenmay/onboarding/Step1CompanyProfile";
 import Step2Products from "@/components/shenmay/onboarding/Step2Products";
 import Step3Customers from "@/components/shenmay/onboarding/Step3Customers";
 import Step4InstallWidget from "@/components/shenmay/onboarding/Step4InstallWidget";
 import StepApiKey from "@/components/shenmay/onboarding/StepApiKey";
 import StepTools from "@/components/shenmay/onboarding/StepTools";
+import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
+import { TOKENS as T, Kicker, Display, Lede, Button, PageShell } from "@/components/shenmay/ui/ShenmayUI";
 
 const STEPS = [
-  { key: "company_profile", label: "Company Profile",    desc: "Tell us about your business", icon: Building2 },
-  { key: "products",        label: "Products & Services", desc: "What you offer",              icon: Package   },
-  { key: "customers",       label: "Customer Data",       desc: "Import your contacts",        icon: Users     },
+  { key: "company_profile", label: "Company profile",    desc: "Tell us about your business", icon: Building2 },
+  { key: "products",        label: "Products & services", desc: "What you offer",              icon: Package   },
+  { key: "customers",       label: "Customer data",       desc: "Import your contacts",        icon: Users     },
   { key: "api_key",         label: "Connect AI",          desc: "Add your API key",            icon: Key       },
-  { key: "tools",           label: "AI Tools",            desc: "Give your AI abilities",      icon: Code      },
-  { key: "install_widget",  label: "Add the Widget",      desc: "Add to your website",         icon: Code      },
+  { key: "tools",           label: "AI tools",            desc: "Give your agent abilities",   icon: Code      },
+  { key: "install_widget",  label: "Add the widget",      desc: "Drop it on your site",        icon: Code      },
 ];
 
-/* ── User Identity Pill ── */
+/* ── User pill (desktop) ── */
 const UserPill = ({ admin }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -35,47 +36,72 @@ const UserPill = ({ admin }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleLogout = () => {
-    clearToken();
-    navigate("/shenmay/login");
-  };
+  const handleLogout = () => { clearToken(); navigate("/shenmay/login"); };
 
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: "relative" }} ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors hover:bg-white/10"
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, background: "transparent", border: `1px solid ${T.paperEdge}`, cursor: "pointer", color: T.ink }}
       >
-        <div
-          className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-          style={{ backgroundColor: "#C9A84C", color: "#fff" }}
-        >
+        <div style={{ width: 26, height: 26, borderRadius: "50%", background: T.ink, color: T.paper, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 500, fontFamily: T.sans }}>
           {initials}
         </div>
-        <span className="text-xs truncate max-w-[140px] hidden sm:block" style={{ color: "rgba(255,255,255,0.7)" }}>
-          {email}
-        </span>
-        <ChevronDown size={12} style={{ color: "rgba(255,255,255,0.4)" }} />
+        <span style={{ fontSize: 12, color: T.inkSoft, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</span>
+        <ChevronDown size={12} color={T.mute} />
       </button>
 
       {open && (
-        <div
-          className="absolute right-0 top-full mt-1.5 w-48 rounded-lg py-1 z-50 shadow-lg"
-          style={{ backgroundColor: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}
-        >
+        <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 6, width: 200, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 8, boxShadow: "0 8px 24px -12px rgba(26,29,26,0.2)", zIndex: 50, overflow: "hidden" }}>
           <Link
             to="/shenmay/dashboard"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]"
-            style={{ color: "rgba(255,255,255,0.70)" }}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.ink, textDecoration: "none" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = T.paperDeep)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <LayoutDashboard size={14} style={{ color: "rgba(255,255,255,0.40)" }} /> Dashboard
+            <LayoutDashboard size={14} color={T.mute} /> Dashboard
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left hover:bg-white/[0.04]"
-            style={{ color: "#F87171" }}
+            style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.danger, background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#F3E8E4")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
+            <LogOut size={14} /> Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const UserPillMobile = ({ admin }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const navigate = useNavigate();
+  const initials = ((admin?.first_name?.[0] || "") + (admin?.last_name?.[0] || "")).toUpperCase() || "?";
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button onClick={() => setOpen((v) => !v)}
+        style={{ width: 32, height: 32, borderRadius: "50%", background: T.ink, color: T.paper, fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer" }}>
+        {initials}
+      </button>
+      {open && (
+        <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 6, width: 180, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 8, zIndex: 50, overflow: "hidden" }}>
+          <Link to="/shenmay/dashboard" onClick={() => setOpen(false)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.ink, textDecoration: "none" }}>
+            <LayoutDashboard size={14} color={T.mute} /> Dashboard
+          </Link>
+          <button onClick={() => { clearToken(); navigate("/shenmay/login"); }}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.danger, background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
             <LogOut size={14} /> Log out
           </button>
         </div>
@@ -93,13 +119,9 @@ const ShenmayOnboarding = () => {
   const [wizardComplete, setWizardComplete] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch fresh data on mount — determine correct step before rendering
   useEffect(() => {
     const token = localStorage.getItem("nomii_portal_token");
-    if (!token) {
-      navigate("/shenmay/login");
-      return;
-    }
+    if (!token) { navigate("/shenmay/login"); return; }
 
     setInitialLoading(true);
     getMe()
@@ -108,76 +130,40 @@ const ShenmayOnboarding = () => {
         if (data?.admin) setShenmayUser(data.admin);
         if (data?.tenant) setShenmayTenant(data.tenant);
 
-        // Safely default onboarding_steps — never access props on null
-        const steps =
-          data?.tenant?.onboarding_steps != null &&
-          typeof data.tenant.onboarding_steps === "object"
-            ? data.tenant.onboarding_steps
-            : {};
-
+        const steps = data?.tenant?.onboarding_steps != null && typeof data.tenant.onboarding_steps === "object" ? data.tenant.onboarding_steps : {};
         const done = new Set();
-        // Map both legacy short keys and current STEPS keys to step indices
-        const keyMap = {
-          company: 0, company_profile: 0,
-          products: 1,
-          customers: 2,
-          api_key: 3,
-          tools: 4,
-          widget: 5, install_widget: 5,
-        };
-        Object.entries(keyMap).forEach(([apiKey, idx]) => {
-          if (steps[apiKey] === true) done.add(idx);
-        });
+        const keyMap = { company: 0, company_profile: 0, products: 1, customers: 2, api_key: 3, tools: 4, widget: 5, install_widget: 5 };
+        Object.entries(keyMap).forEach(([apiKey, idx]) => { if (steps[apiKey] === true) done.add(idx); });
         setCompletedSteps(done);
 
-        // Only redirect to dashboard if widget step is explicitly true
-        if (steps.widget === true || steps.install_widget === true) {
-          navigate("/shenmay/dashboard", { replace: true });
-          return;
-        }
-
-        // Resume at first incomplete step
+        if (steps.widget === true || steps.install_widget === true) { navigate("/shenmay/dashboard", { replace: true }); return; }
         const resumeStep = STEPS.findIndex((_, i) => !done.has(i));
         setActiveStep(resumeStep >= 0 ? resumeStep : 0);
       })
-      .catch(() => {
-        // If getMe() fails for any reason, fall back to Step 1 — never crash
-        setActiveStep(0);
-      })
+      .catch(() => setActiveStep(0))
       .finally(() => setInitialLoading(false));
   }, []);
 
-  const markComplete = (stepIndex) => {
-    setCompletedSteps((prev) => new Set([...prev, stepIndex]));
-  };
+  const markComplete = (stepIndex) => setCompletedSteps((prev) => new Set([...prev, stepIndex]));
+  const advance = (stepIndex) => { markComplete(stepIndex); if (stepIndex < STEPS.length - 1) setActiveStep(stepIndex + 1); };
+  const onWidgetVerified = () => { markComplete(5); setWizardComplete(true); };
 
-  const advance = (stepIndex) => {
-    markComplete(stepIndex);
-    if (stepIndex < STEPS.length - 1) setActiveStep(stepIndex + 1);
-  };
-
-  const onWidgetVerified = () => {
-    markComplete(5);
-    setWizardComplete(true);
-  };
-
-  const allComplete = STEPS.every((_, i) => completedSteps.has(i));
   const anyComplete = completedSteps.size > 0;
   const progress = Math.round((completedSteps.size / STEPS.length) * 100);
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0B1222" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C9A84C", borderTopColor: "transparent" }} />
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.40)" }}>Loading your setup…</p>
+      <PageShell style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 28, height: 28, border: `2px solid ${T.teal}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <Kicker color={T.mute}>Loading your setup…</Kicker>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   const admin = shenmayUser || meData?.admin;
-
   const stepProps = { shenmayTenant, setShenmayTenant, shenmayUser, markComplete, advance };
 
   const stepComponents = [
@@ -185,46 +171,50 @@ const ShenmayOnboarding = () => {
     <Step2Products {...stepProps} stepIndex={1} />,
     <Step3Customers {...stepProps} stepIndex={2} />,
     <StepApiKey onComplete={() => { markComplete(3); advance(3); }} tenant={shenmayTenant} />,
-    <StepTools
-      {...stepProps}
-      stepIndex={4}
-      onSkip={() => advance(4)}
-    />,
+    <StepTools {...stepProps} stepIndex={4} onSkip={() => advance(4)} />,
     <Step4InstallWidget {...stepProps} stepIndex={5} onWidgetVerified={onWidgetVerified} />,
   ];
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: "#0B1222" }}>
-      {/* Sidebar */}
-      <aside className="hidden md:flex w-[280px] min-h-screen flex-col shrink-0 relative overflow-hidden" style={{ background: "linear-gradient(180deg, #1E3A5F 0%, #15294a 60%, #0f1e38 100%)" }}>
-        {/* Decorative orbs */}
-        <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] rounded-full opacity-[0.08]" style={{ background: "radial-gradient(circle, #C9A84C, transparent 70%)" }} />
-        <div className="absolute top-1/3 -right-16 w-[200px] h-[200px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, #5B9BD5, transparent 70%)" }} />
+    <PageShell style={{ display: "flex", minHeight: "100vh" }}>
+      {/* ── Sidebar (≥md) ────────────────────────────────── */}
+      <aside className="shenmay-onboarding-sidebar"
+        style={{
+          display: "none",
+          width: 304,
+          minHeight: "100vh",
+          background: T.paperDeep,
+          borderRight: `1px solid ${T.paperEdge}`,
+          flexDirection: "column",
+          flexShrink: 0,
+        }}
+      >
+        <style>{`@media (min-width: 768px) { .shenmay-onboarding-sidebar { display: flex !important; } }`}</style>
 
-        {/* Logo + User pill */}
-        <div className="p-6 pb-2 relative z-10">
-          <div className="flex items-center justify-between mb-1">
-            <Link to="/shenmay/dashboard">
-              <img src={shenmayLogo} alt="Shenmay AI" className="h-14 brightness-0 invert" />
+        {/* Brand + user pill */}
+        <div style={{ padding: "28px 28px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+              <ShenmayWordmark size={24} />
             </Link>
             {admin && <UserPill admin={admin} />}
           </div>
-          <p className="text-[10px] font-medium tracking-widest uppercase mt-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>Setup Wizard</p>
+          <Kicker color={T.mute} style={{ display: "block", fontSize: 10, letterSpacing: "0.22em" }}>Setup wizard</Kicker>
         </div>
 
-        {/* Progress */}
-        <div className="px-6 py-4 relative z-10">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>Progress</span>
-            <span className="text-[11px] font-bold" style={{ color: "#C9A84C" }}>{progress}%</span>
+        {/* Progress bar */}
+        <div style={{ padding: "12px 28px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+            <Kicker color={T.mute} style={{ fontSize: 10, letterSpacing: "0.16em" }}>Progress</Kicker>
+            <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 500, color: T.teal, letterSpacing: "0.08em" }}>{progress}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #C9A84C, #e0c06e)" }} />
+          <div style={{ height: 2, borderRadius: 2, background: T.paperEdge, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${progress}%`, background: T.teal, transition: "width 500ms ease" }} />
           </div>
         </div>
 
         {/* Steps nav */}
-        <nav className="flex-1 px-4 py-2 relative z-10">
+        <nav style={{ flex: 1, padding: "8px 16px" }}>
           {STEPS.map((step, i) => {
             const isActive = activeStep === i;
             const isDone = completedSteps.has(i);
@@ -233,193 +223,134 @@ const ShenmayOnboarding = () => {
               <button
                 key={step.key}
                 onClick={() => setActiveStep(i)}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left mb-1 transition-all duration-200"
                 style={{
-                  backgroundColor: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "12px 14px",
+                  borderRadius: 8,
+                  background: isActive ? "#FFFFFF" : "transparent",
+                  border: isActive ? `1px solid ${T.paperEdge}` : "1px solid transparent",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  marginBottom: 4,
+                  transition: "background 180ms, border-color 180ms",
                 }}
               >
-                <div
-                  className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200"
-                  style={
-                    isDone
-                      ? { backgroundColor: "#22C55E", color: "#fff" }
-                      : isActive
-                      ? { backgroundColor: "#C9A84C", color: "#fff" }
-                      : { backgroundColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)" }
-                  }
-                >
-                  {isDone ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                <div style={{
+                  width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+                  background: isDone ? T.teal : isActive ? T.ink : T.paperEdge,
+                  color: isDone || isActive ? T.paper : T.mute,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  transition: "background 180ms, color 180ms",
+                }}>
+                  {isDone ? <Check size={14} /> : <Icon size={14} />}
                 </div>
-                <div>
-                  <span className="block text-sm font-medium" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.6)" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: isActive ? T.ink : T.inkSoft, letterSpacing: "-0.005em" }}>
                     {step.label}
-                  </span>
-                  <span className="block text-[11px]" style={{ color: isActive ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)" }}>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.mute, marginTop: 2, letterSpacing: "-0.005em" }}>
                     {step.desc}
-                  </span>
+                  </div>
                 </div>
               </button>
             );
           })}
         </nav>
 
-        {/* Bottom link */}
+        {/* Skip to dashboard */}
         {anyComplete && (
-          <div className="p-5 relative z-10">
-            <div className="border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-              <Link
-                to="/shenmay/dashboard"
-                className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: "#C9A84C" }}
-              >
-                Skip to dashboard <ArrowRight size={14} />
-              </Link>
-            </div>
+          <div style={{ padding: 20, borderTop: `1px solid ${T.paperEdge}` }}>
+            <Link to="/shenmay/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+              Skip to dashboard <ArrowRight size={13} />
+            </Link>
           </div>
         )}
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      {/* ── Main ─────────────────────────────────────────── */}
+      <main style={{ flex: 1, overflow: "auto" }}>
         {/* Mobile header */}
-        <div className="md:hidden p-4 border-b" style={{ backgroundColor: "#0F1A2E", borderColor: "rgba(255,255,255,0.06)" }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Link to="/shenmay/dashboard">
-                <img src={shenmayLogo} alt="Shenmay AI" className="h-12 brightness-0 invert" />
+        <div className="shenmay-onboarding-mobile-header"
+          style={{ display: "block", padding: "16px 20px", background: T.paperDeep, borderBottom: `1px solid ${T.paperEdge}` }}>
+          <style>{`@media (min-width: 768px) { .shenmay-onboarding-mobile-header { display: none !important; } }`}</style>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+                <ShenmayWordmark size={20} />
               </Link>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(201,168,76,0.12)", color: "#C9A84C" }}>
+              <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.teal, padding: "3px 8px", background: "rgba(15,95,92,0.1)", borderRadius: 4 }}>
                 Step {activeStep + 1} of {STEPS.length}
               </span>
             </div>
-            {admin && (
-              <div className="relative">
-                <UserPillMobile admin={admin} />
-              </div>
-            )}
+            {admin && <UserPillMobile admin={admin} />}
           </div>
-          <div className="flex gap-1.5">
+          <div style={{ display: "flex", gap: 4 }}>
             {STEPS.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveStep(i)}
-                className="h-1.5 flex-1 rounded-full transition-all duration-300"
+              <button key={i} onClick={() => setActiveStep(i)}
                 style={{
-                  backgroundColor: completedSteps.has(i) ? "#22C55E" : i === activeStep ? "#C9A84C" : "rgba(255,255,255,0.10)",
+                  height: 2, flex: 1, borderRadius: 2, border: "none", padding: 0, cursor: "pointer",
+                  background: completedSteps.has(i) ? T.teal : i === activeStep ? T.ink : T.paperEdge,
+                  transition: "background 300ms",
                 }}
               />
             ))}
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto px-6 py-10 md:px-8 md:py-12">
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 56px" }}>
           {wizardComplete ? (
-            <div className="flex flex-col items-center justify-center text-center py-16">
-              <div
-                className="h-20 w-20 rounded-full flex items-center justify-center mb-6"
-                style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)" }}
-              >
-                <CheckCircle2 className="h-10 w-10" style={{ color: "#4ADE80" }} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "48px 0" }}>
+              <div style={{ width: 82, height: 82, borderRadius: "50%", background: "#EBF1E9", border: `1px solid #CDDCCA`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+                <CheckCircle2 size={36} color={T.success} />
               </div>
-              <h2 className="text-2xl font-bold mb-2" style={{ color: "rgba(255,255,255,0.90)" }}>You're all set!</h2>
-              <p className="text-sm max-w-md mb-8" style={{ color: "rgba(255,255,255,0.40)" }}>
-                Your AI agent is live. Head to your dashboard to see conversations and manage your customers.
-              </p>
-              <Link
-                to="/shenmay/dashboard"
-                className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-[#C9A84C]/20 group"
-                style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
-              >
-                Go to Dashboard
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
+              <Kicker color={T.success}>You're all set</Kicker>
+              <Display size={36} italic style={{ marginTop: 12 }}>Your agent is live.</Display>
+              <Lede style={{ marginTop: 12, maxWidth: 420 }}>
+                Head to your dashboard to see conversations and manage your customers.
+              </Lede>
+              <div style={{ marginTop: 32 }}>
+                <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+                  <Button variant="primary" size="lg">Go to dashboard <ArrowRight size={15} /></Button>
+                </Link>
+              </div>
             </div>
           ) : (
             stepComponents[activeStep]
           )}
         </div>
       </main>
-    </div>
+    </PageShell>
   );
 };
 
-/* Mobile user pill — simpler, no email shown */
-const UserPillMobile = ({ admin }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const navigate = useNavigate();
-  const initials = ((admin?.first_name?.[0] || "") + (admin?.last_name?.[0] || "")).toUpperCase() || "?";
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref}>
-      <button onClick={() => setOpen((v) => !v)}
-        className="h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold"
-        style={{ backgroundColor: "#1E3A5F", color: "#fff" }}
-      >
-        {initials}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-44 rounded-lg py-1 z-50 shadow-lg"
-          style={{ backgroundColor: "#0F1A2E", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <Link to="/shenmay/dashboard" onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-white/[0.04]" style={{ color: "rgba(255,255,255,0.70)" }}>
-            <LayoutDashboard size={14} style={{ color: "rgba(255,255,255,0.40)" }} /> Dashboard
-          </Link>
-          <button onClick={() => { clearToken(); navigate("/shenmay/login"); }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left hover:bg-white/[0.04]" style={{ color: "#F87171" }}>
-            <LogOut size={14} /> Log out
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* ── Error Boundary ── */
+/* ── Error boundary ── */
 class OnboardingErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0B1222" }}>
-          <div className="flex flex-col items-center gap-4 text-center px-6">
-            <div className="h-14 w-14 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
-              <AlertTriangle className="h-7 w-7" style={{ color: "#F87171" }} />
+        <PageShell style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, textAlign: "center", maxWidth: 440 }}>
+            <div style={{ width: 58, height: 58, borderRadius: "50%", background: "#F3E8E4", border: `1px solid ${T.danger}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <AlertTriangle size={26} color={T.danger} />
             </div>
-            <h2 className="text-xl font-bold" style={{ color: "rgba(255,255,255,0.90)" }}>Something went wrong</h2>
-            <p className="text-sm max-w-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-              We hit an unexpected error loading the setup wizard. You can try again or head to the dashboard.
-            </p>
-            <div className="flex gap-3 mt-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-5 py-2.5 rounded-lg text-sm font-medium border transition-colors hover:bg-white/[0.04]"
-                style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.65)" }}
-              >
-                Reload page
-              </button>
-              <a
-                href="/shenmay/dashboard"
-                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all hover:shadow-lg hover:shadow-[#C9A84C]/20"
-                style={{ background: "linear-gradient(135deg, #C9A84C 0%, #B8943F 100%)", color: "#0B1222" }}
-              >
-                Go to Dashboard
+            <Kicker color={T.danger}>Something went wrong</Kicker>
+            <Display size={28} italic>The wizard hit a snag.</Display>
+            <Lede style={{ marginTop: 0 }}>
+              We hit an unexpected error loading the setup wizard. Try reloading, or head to the dashboard.
+            </Lede>
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              <Button variant="ghost" onClick={() => window.location.reload()}>Reload page</Button>
+              <a href="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+                <Button variant="primary">Go to dashboard</Button>
               </a>
             </div>
           </div>
-        </div>
+        </PageShell>
       );
     }
     return this.props.children;
