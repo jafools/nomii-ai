@@ -11,7 +11,7 @@
 # Runs on Hetzner itself (so DB operations are local).
 set -uo pipefail
 
-BASE="https://nomii.pontensolutions.com"
+BASE="https://shenmay.ai"
 SSH="nomii@204.168.232.24"
 TEST_SLUG="pii-e2e-$(date +%s)"
 TEST_EMAIL="pii-e2e-$(date +%s)@example.test"
