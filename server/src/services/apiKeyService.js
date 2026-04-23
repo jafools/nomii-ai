@@ -1,5 +1,5 @@
 /**
- * NOMII AI — API Key Encryption Service
+ * SHENMAY AI — API Key Encryption Service
  *
  * Encrypts/decrypts tenant API keys (BYOK — "bring your own key" — flow)
  * using AES-256-GCM. The ciphertext and IV are stored as base64 TEXT

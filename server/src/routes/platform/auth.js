@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Platform Admin Auth Routes
+ * SHENMAY AI — Platform Admin Auth Routes
  *
  * POST /api/platform/auth/login   — Authenticate platform admin, get JWT
  * GET  /api/platform/auth/me      — Get current platform admin from JWT

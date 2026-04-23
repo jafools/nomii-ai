@@ -1,5 +1,5 @@
 /**
- * NOMII AI — License Endpoints (cloud master only)
+ * SHENMAY AI — License Endpoints (cloud master only)
  *
  * POST /api/license/validate
  *   Called by self-hosted instances on startup + every 24h.

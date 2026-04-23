@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Server Entry Point
+ * SHENMAY AI — Server Entry Point
  */
 
 require('dotenv').config();
@@ -14,9 +14,14 @@ const { isSelfHosted, DEPLOYMENT_MODES } = require('./config/plans');
 // Refuse to start in production with known-default secrets.
 (function validateSecrets() {
   const BAD_SECRETS = new Set([
+    'shenmay-dev-secret',
+    'shenmay-dev-secret-change-in-production',
+    'widget-dev-secret',
+    'shenmay-dev-encryption-key',
+    // Legacy nomii-prefixed dev secrets — kept in the deny-list so any stale
+    // .env from before the v3.0.x rebrand still trips the prod boot check.
     'nomii-dev-secret',
     'nomii-dev-secret-change-in-production',
-    'widget-dev-secret',
     'nomii-dev-encryption-key',
   ]);
   const isProd = process.env.NODE_ENV === 'production';

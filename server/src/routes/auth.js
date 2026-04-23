@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Auth Routes
+ * SHENMAY AI — Auth Routes
  *
  * POST /api/auth/detect-tenant — Step 1 login: find tenant from email
  * POST /api/auth/register      — Create a new customer or advisor account

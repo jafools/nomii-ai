@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Platform Admin Authentication Middleware
+ * SHENMAY AI — Platform Admin Authentication Middleware
  *
  * Separate from tenant auth. Platform admins have their own JWT payload:
  *   { platform_admin_id, user_type: 'platform_admin', email }

@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Initial Database Schema
+-- SHENMAY AI — Initial Database Schema
 -- Migration 001: Core tables for multi-tenant agent platform
 -- Industry-agnostic: supports any vertical (retirement, healthcare, etc.)
 -- ============================================================

@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Seed Data: Covenant Trust Demo
+-- SHENMAY AI — Seed Data: Covenant Trust Demo
 -- Vertical: Retirement Planning
 -- Run after 001_initial_schema.sql
 -- ============================================================

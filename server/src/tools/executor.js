@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Tool Executor
+ * SHENMAY AI — Tool Executor
  *
  * Receives a tool call from Claude (name + params), finds the right handler
  * in the registry, and runs it with the request context.

@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Agent Soul Generator
+ * SHENMAY AI — Agent Soul Generator
  *
  * Generates an industry-appropriate agent soul from a tenant's onboarding
  * data (company, agent name, vertical, description). The generated soul is

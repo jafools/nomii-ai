@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Email Service
+ * SHENMAY AI — Email Service
  *
  * Sends transactional emails via One.com SMTP (nodemailer).
  *

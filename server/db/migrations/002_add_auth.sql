@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Migration 002: Authentication
+-- SHENMAY AI — Migration 002: Authentication
 -- Adds password_hash to customers and advisors for JWT auth
 -- ============================================================
 

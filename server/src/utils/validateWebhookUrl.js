@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Webhook URL Validator (SSRF Guard)
+ * SHENMAY AI — Webhook URL Validator (SSRF Guard)
  *
  * Rejects webhook URLs that point to private/internal infrastructure to prevent
  * Server-Side Request Forgery (SSRF) attacks.

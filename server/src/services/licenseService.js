@@ -82,7 +82,7 @@ function post(url, body) {
       headers: {
         'Content-Type':   'application/json',
         'Content-Length': Buffer.byteLength(payload),
-        'User-Agent':     'nomii-selfhosted/1.0',
+        'User-Agent':     'shenmay-selfhosted/1.0',
       },
       timeout: 10000,
     }, (res) => {

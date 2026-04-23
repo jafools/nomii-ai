@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Security Headers Middleware
+ * SHENMAY AI — Security Headers Middleware
  *
  * Applies HTTP security headers to all non-widget responses.
  * Widget routes use permissive CORS (cross-origin iframe) and are handled separately.

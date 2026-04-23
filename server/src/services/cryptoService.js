@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Crypto Service
+ * SHENMAY AI — Crypto Service
  *
  * Extends the existing AES-256-GCM pattern from apiKeyService.js to support
  * encrypting arbitrary JSON objects (memory_file, soul_file, etc.).
@@ -30,7 +30,7 @@ const crypto = require('crypto');
 const ALGORITHM  = 'aes-256-gcm';
 
 function getEncryptionKey() {
-  const secret = process.env.API_KEY_ENCRYPTION_SECRET || process.env.JWT_SECRET || 'nomii-dev-encryption-key';
+  const secret = process.env.API_KEY_ENCRYPTION_SECRET || process.env.JWT_SECRET || 'shenmay-dev-encryption-key';
   return crypto.createHash('sha256').update(secret).digest();
 }
 

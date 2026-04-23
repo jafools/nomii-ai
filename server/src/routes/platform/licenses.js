@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Platform Admin: License Management
+ * SHENMAY AI — Platform Admin: License Management
  *
  * GET    /api/platform/licenses             — List all licenses
  * POST   /api/platform/licenses             — Issue a new license key

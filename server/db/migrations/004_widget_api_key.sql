@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Migration 004: Widget API Keys
+-- SHENMAY AI — Migration 004: Widget API Keys
 -- Adds a widget_api_key to each tenant so their website can
 -- authenticate embed widget sessions without exposing passwords.
 -- ============================================================

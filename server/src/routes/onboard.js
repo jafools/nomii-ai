@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Tenant Onboarding Routes
+ * SHENMAY AI — Tenant Onboarding Routes
  *
  * Self-serve registration and login for tenant admins at pontensolutions.com.
  * These routes are PUBLIC (no auth required).

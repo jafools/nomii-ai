@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Widget Routes
+ * SHENMAY AI — Widget Routes
  *
  * Endpoints that power the embedded chat widget:
  *

@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Database Connection
+ * SHENMAY AI — Database Connection
  * PostgreSQL connection pool using pg
  */
 
