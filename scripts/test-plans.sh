@@ -9,8 +9,8 @@
 # ============================================================
 
 EMAIL="${1:-ajaces@gmail.com}"
-DB_CMD="docker exec shenmay-db psql -U nomii -d nomii_ai -t -c"
-DB_EXEC="docker exec shenmay-db psql -U nomii -d nomii_ai -c"
+DB_CMD="docker exec shenmay-db psql -U shenmay -d shenmay_ai -t -c"
+DB_EXEC="docker exec shenmay-db psql -U shenmay -d shenmay_ai -c"
 API="https://api.pontensolutions.com"
 
 echo ""
@@ -36,7 +36,7 @@ echo ""
 HAS_COL=$($DB_CMD "SELECT column_name FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='max_agents';" 2>/dev/null | tr -d ' \n')
 if [ -z "$HAS_COL" ]; then
   echo "⚠️   max_agents column missing — applying migration now..."
-  docker exec shenmay-db psql -U nomii -d nomii_ai -c "
+  docker exec shenmay-db psql -U shenmay -d shenmay_ai -c "
     ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS max_agents INTEGER NOT NULL DEFAULT 3;
     UPDATE subscriptions SET max_agents = 1   WHERE plan = 'free';
     UPDATE subscriptions SET max_agents = 3   WHERE plan = 'trial';
@@ -55,7 +55,7 @@ set_plan() {
   local MAX_MESSAGES=$3
   local MAX_AGENTS=$4
 
-  docker exec -i shenmay-db psql -U nomii -d nomii_ai <<SQL
+  docker exec -i shenmay-db psql -U shenmay -d shenmay_ai <<SQL
 UPDATE subscriptions
 SET plan='${PLAN}', status='active', max_customers=${MAX_CUSTOMERS}, max_messages_month=${MAX_MESSAGES}, max_agents=${MAX_AGENTS}, trial_ends_at=NOW()
 WHERE tenant_id='${TENANT_ID}';
@@ -128,7 +128,7 @@ echo "────────────────────────�
 echo "  TEST 4: CANCELLED / EXPIRED"
 echo "  Expected: dashboard shows paywall / subscription gate"
 echo "──────────────────────────────────────────────────"
-docker exec -i shenmay-db psql -U nomii -d nomii_ai <<SQL
+docker exec -i shenmay-db psql -U shenmay -d shenmay_ai <<SQL
 UPDATE subscriptions SET status='canceled' WHERE tenant_id='${TENANT_ID}';
 SQL
 show_plan
@@ -143,7 +143,7 @@ echo ""
 echo "──────────────────────────────────────────────────"
 echo "  RESTORE: Setting back to active trial"
 echo "──────────────────────────────────────────────────"
-docker exec -i shenmay-db psql -U nomii -d nomii_ai <<SQL
+docker exec -i shenmay-db psql -U shenmay -d shenmay_ai <<SQL
 UPDATE subscriptions SET plan='trial', status='active', max_customers=25, max_messages_month=500, max_agents=3, trial_ends_at=NOW() + INTERVAL '14 days' WHERE tenant_id='${TENANT_ID}';
 SQL
 show_plan

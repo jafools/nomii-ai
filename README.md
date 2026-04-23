@@ -45,7 +45,7 @@ chmod +x scripts/setup-db.sh
 # Prerequisites: Node.js 18+, PostgreSQL 14+
 
 # 1. Create database
-createdb nomii_ai
+createdb shenmay_ai
 
 # 2. Install dependencies
 npm run install:all

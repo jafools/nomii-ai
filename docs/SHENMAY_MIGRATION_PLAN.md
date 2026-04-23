@@ -309,7 +309,14 @@ requires coordinated Lateris change. Defer or skip permanently.
 
 ---
 
-## Phase 7 — Database rename [~10 min maintenance window]
+## Phase 7 — Database rename ✅ SHIPPED (v2.8.0, 2026-04-23)
+
+**Status:** LIVE on Hetzner. Postgres database renamed `nomii_ai` → `shenmay_ai`,
+user renamed `nomii` → `shenmay`. All in-repo defaults (compose env, dev
+fallback connection strings in `server/src/db.js` + `server/db/*.js`, CI
+test-DB vars, scripts, docs) flipped in the same PR. Hetzner `.env` updated
+via sed during the deploy. `pgdata` volume persisted across the rename —
+34 tenants preserved, zero data loss.
 
 **Goal:** Postgres DB name = `shenmay_ai`, DB user = `shenmay`.
 

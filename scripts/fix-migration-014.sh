@@ -24,7 +24,7 @@ echo "=================================================="
 echo ""
 
 # ── Check DB container is up ─────────────────────────────────
-if ! docker exec shenmay-db psql -U nomii -d nomii_ai -c "SELECT 1" > /dev/null 2>&1; then
+if ! docker exec shenmay-db psql -U shenmay -d shenmay_ai -c "SELECT 1" > /dev/null 2>&1; then
   echo "❌  shenmay-db container not reachable. Run: docker compose ps"
   exit 1
 fi
@@ -33,7 +33,7 @@ echo "✅  Database connection confirmed"
 echo ""
 
 # ── Check if already applied ─────────────────────────────────
-UNREAD_EXISTS=$(docker exec shenmay-db psql -U nomii -d nomii_ai -t -c \
+UNREAD_EXISTS=$(docker exec shenmay-db psql -U shenmay -d shenmay_ai -t -c \
   "SELECT COUNT(*) FROM information_schema.columns
    WHERE table_name = 'conversations' AND column_name = 'unread';" 2>/dev/null | tr -d ' \n')
 
@@ -50,7 +50,7 @@ fi
 echo "⚙️   Applying migration 014..."
 echo ""
 
-docker exec -i shenmay-db psql -U nomii -d nomii_ai <<'SQL'
+docker exec -i shenmay-db psql -U shenmay -d shenmay_ai <<'SQL'
 -- ──────────────────────────────────────────────────────────────
 -- Migration 014 — Unread flags + Multi-agent support
 -- (safe to re-run — all statements are idempotent)
@@ -106,7 +106,7 @@ echo "  Restarting backend to clear any cached query errors..."
 docker compose restart backend 2>/dev/null || true
 echo ""
 echo "  Verifying columns exist:"
-docker exec shenmay-db psql -U nomii -d nomii_ai -c \
+docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
   "SELECT column_name, data_type FROM information_schema.columns
    WHERE table_name = 'conversations' AND column_name = 'unread'
    UNION ALL

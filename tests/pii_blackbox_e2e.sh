@@ -23,19 +23,19 @@ echo ""
 
 # ── 1. Create disposable tenant + subscription ─────────────────────────────
 echo "1. Creating disposable test tenant..."
-ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai -c \"INSERT INTO tenants (name, slug, vertical, agent_name, widget_api_key, pii_tokenization_enabled) VALUES ('PII E2E Test $TEST_SLUG', '$TEST_SLUG', 'general', 'TestBot', 'e2e_' || encode(gen_random_bytes(20), 'hex'), true);\"" > /dev/null
-WIDGET_KEY=$(ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai -t -A -c \"SELECT widget_api_key FROM tenants WHERE slug = '$TEST_SLUG'\"" | tr -d '[:space:]')
+ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -c \"INSERT INTO tenants (name, slug, vertical, agent_name, widget_api_key, pii_tokenization_enabled) VALUES ('PII E2E Test $TEST_SLUG', '$TEST_SLUG', 'general', 'TestBot', 'e2e_' || encode(gen_random_bytes(20), 'hex'), true);\"" > /dev/null
+WIDGET_KEY=$(ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -t -A -c \"SELECT widget_api_key FROM tenants WHERE slug = '$TEST_SLUG'\"" | tr -d '[:space:]')
 echo "   widget_api_key: ${WIDGET_KEY:0:20}..."
 
 # Attach an active "master" subscription so the /chat endpoint doesn't reject.
-ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai" <<SQL > /dev/null
+ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai" <<SQL > /dev/null
   INSERT INTO subscriptions (tenant_id, plan, status, managed_ai_enabled, max_customers, max_messages_month)
   SELECT id, 'master', 'active', true, 999999, 999999 FROM tenants WHERE slug = '$TEST_SLUG';
 SQL
 echo "   subscription attached"
 
 # Baseline breach log count
-BREACH_BEFORE=$(ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai -t -A -c 'SELECT COUNT(*) FROM pii_breach_log'" | tr -d '[:space:]')
+BREACH_BEFORE=$(ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -t -A -c 'SELECT COUNT(*) FROM pii_breach_log'" | tr -d '[:space:]')
 echo "   pii_breach_log baseline: $BREACH_BEFORE"
 
 # ── 2. Start widget session ────────────────────────────────────────────────
@@ -57,7 +57,7 @@ echo "   customer_id:     $CUST_ID"
 # ── 3. Start tailing backend logs so we can verify NO raw PII leaves ───────
 echo ""
 echo "3. Starting backend log tail (filtered to this conversation)..."
-ssh "$SSH" "docker logs -f --since=1s nomii-backend 2>&1 | grep -E '$CONV_ID|PII|BreachError|Tool call|\\[LLM\\]' > /tmp/pii_e2e_backend.log" &
+ssh "$SSH" "docker logs -f --since=1s shenmay-backend 2>&1 | grep -E '$CONV_ID|PII|BreachError|Tool call|\\[LLM\\]' > /tmp/pii_e2e_backend.log" &
 TAIL_PID=$!
 trap "kill $TAIL_PID 2>/dev/null || true" EXIT
 sleep 2
@@ -126,20 +126,20 @@ fi
 # ── 7. Check pii_breach_log for unexpected blocks ──────────────────────────
 echo ""
 echo "7. Checking pii_breach_log (expected: 0 new rows — clean tokenization)..."
-BREACH_AFTER=$(ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai -t -A -c 'SELECT COUNT(*) FROM pii_breach_log'" | tr -d '[:space:]')
+BREACH_AFTER=$(ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -t -A -c 'SELECT COUNT(*) FROM pii_breach_log'" | tr -d '[:space:]')
 BREACH_NEW=$((BREACH_AFTER - BREACH_BEFORE))
 echo "   pii_breach_log after: $BREACH_AFTER (delta: +$BREACH_NEW)"
 
 BREACH_PASSED=true
 if [ "$BREACH_NEW" -gt 0 ]; then
   echo "   ! $BREACH_NEW breach(es) recorded (this may be OK if tokenizer was conservative)"
-  ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai -c 'SELECT call_site, findings FROM pii_breach_log ORDER BY blocked_at DESC LIMIT $BREACH_NEW'"
+  ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -c 'SELECT call_site, findings FROM pii_breach_log ORDER BY blocked_at DESC LIMIT $BREACH_NEW'"
 fi
 
 # ── 8. Cleanup ──────────────────────────────────────────────────────────────
 echo ""
 echo "8. Cleaning up test tenant..."
-ssh "$SSH" "docker exec -i nomii-db psql -U nomii -d nomii_ai" <<SQL > /dev/null
+ssh "$SSH" "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai" <<SQL > /dev/null
   DELETE FROM messages WHERE conversation_id = '$CONV_ID';
   DELETE FROM conversations WHERE id = '$CONV_ID';
   DELETE FROM customers WHERE id = '$CUST_ID';

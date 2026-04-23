@@ -11,8 +11,8 @@ CONTAINER="${NOMII_DB_CONTAINER:-shenmay-db}"
 # Defaults match the canonical post-rename identity used by both
 # docker-compose.yml (SaaS) and docker-compose.selfhosted.yml.
 # Override only if your install predates the knomi→nomii rename.
-DB_USER="${NOMII_DB_USER:-nomii}"
-DB_NAME="${NOMII_DB_NAME:-nomii_ai}"
+DB_USER="${NOMII_DB_USER:-shenmay}"
+DB_NAME="${NOMII_DB_NAME:-shenmay_ai}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/../server/db/migrations" && pwd)"
 
 # Colour helpers
