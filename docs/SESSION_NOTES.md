@@ -5,7 +5,90 @@
 
 ---
 
-## Last updated: 2026-04-23 late morning (**v2.8.1 LIVE on Hetzner** — rebrand bounded-context work DONE; Phases 5/6/7 shipped, only 8/9 remain)
+## Last updated: 2026-04-23 afternoon (**v3.0.1 LIVE on Hetzner** — Phase 8 CLOSED 5 months early; only Phase 9 + external blockers remain)
+
+Continuous afternoon session picked up where the late-morning handoff left off (v2.8.1 shipped). Closed the **entire code-level rebrand** including Phase 8's 5 backward-compat shims that were on a 6-month sunset timer. Bumped to `v3.0.0` (major) then `v3.0.1` (patch cleanup). 5 tags this session, 5 PRs merged, 0 rollbacks. **Discovery that unlocked it:** the send-list SQL audit revealed 33 tenants but **zero real external customers** — every row was disposable-email test data. With 0 customers to protect, the 6-month timer was guarding nothing.
+
+### Ship log
+
+| PR | Tag | Title |
+|---|---|---|
+| [#60](https://github.com/jafools/nomii-ai/pull/60) | **v2.8.2** | chore(brand): compose URL defaults + constants.js header → shenmay |
+| [#61](https://github.com/jafools/nomii-ai/pull/61) | v2.8.2 (docs-only) | docs(customer-comms): post-Phase-7 SQL wrapper + test-domain filter |
+| [#62](https://github.com/jafools/nomii-ai/pull/62) | **v3.0.0** | chore(brand): close Phase 8 — remove all 5 NOMII_* shims |
+| [#63](https://github.com/jafools/nomii-ai/pull/63) | (pre-bundled) | chore(brand): post-Phase-8 cleanup — install.sh + dev secrets + CORS + widget CSS |
+| [#64](https://github.com/jafools/nomii-ai/pull/64) | **v3.0.1** | chore(brand): widget postMessage rename + post-rebrand cleanup bundle |
+
+### Major decisions
+
+1. **Closed Phase 8 early.** Sunset timer was 6-12 months to protect customers; zero customers = zero benefit. Phase 9 USPTO still deferred (Austin's call).
+2. **Hard-flip (not dual-accept) for widget postMessage API.** Same zero-customer reasoning; adding a fresh shim would contradict the Phase 8 close we just did.
+3. **License key `NOMII-XXXX` format left alone.** 1 live key in prod (Austin's master tenant) + 3 generators + 2 UI placeholders — needs a rotation plan, not worth bundling.
+4. **anonDomains.js dual-domain kept.** 53 live customer rows in prod use `@visitor.nomii` — needs a data migration, separate concern.
+
+### Production state at session handoff
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (HTTP 200) |
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:3.0.1` |
+| Git HEAD on Hetzner | `v3.0.1` (`257b86a`) |
+| Container user | `shenmay` (renamed from `nomii` in v3.0.1 Dockerfile) |
+| Hetzner `.env` | `SHENMAY_LICENSE_MASTER=true` (renamed from `NOMII_LICENSE_MASTER` during v3.0.0 deploy; backup at `.env.pre-v3.0.0-*.bak`) |
+| `/api/health` | `{"status":"ok","service":"shenmay-ai"}` |
+| `/api/license/validate` | HTTP 400 (route active — confirms SHENMAY_LICENSE_MASTER is being read) |
+| Staging URL | **https://nomii-staging.pontensolutions.com** (HTTP 200) |
+| Staging images | `shenmay-{backend,frontend}:edge` |
+| Staging container names | `shenmay-{db,backend,frontend}-staging` (renamed this session) |
+| Staging `.env` + compose | Both renamed `NOMII_*` → `SHENMAY_*` |
+| Cloudflare tunnel origin | `http://shenmay-frontend-staging:80` (flipped via dashboard this session, MCP Chrome automation) |
+
+### Cutover gotchas worth remembering
+
+- **Phase 8 timer vs. customer count.** The original 6-12 month sunset was designed for customer protection. When customer count was audited (send-list SQL returning 33 rows, all test data), the timer's purpose evaporated. Lesson: schedule-based shim sunsets should be gated on "telemetry shows ≥0 usage", not calendar math. If your user count is zero, fast-forward.
+- **Widget postMessage API was never in the Phase 5-8 plan.** Discovered during post-Phase-8 "is everything rebranded?" sweep. The `nomii:setUser` / `:identify` / `:toggle` / `:close` / `:updateLabel` surface was never called out as a rebrand-tracked contract. Always do a final post-closure sweep for things the plan missed.
+- **Dockerfile container user rename is safe** because the backend container has no host-bind volumes — pgdata lives in the db container. If the backend had bind mounts, renaming USER would have required a chown operation in the compose lifecycle.
+- **scripts/backup.sh retention glob** updated to match both `shenmay_backup_*` AND `nomii_backup_*` so existing customer backup directories don't leak old dumps forever after the filename prefix flip. Not strictly needed today (0 customers), but operational hygiene for the future.
+- **Cloudflare tunnel dashboard flip via Chrome MCP worked cleanly.** Tunnel is token-managed (no local `config.yml`), so the dashboard is the only way. 5 MCP tool calls: login → Networks → Connectors → click `Nomii-ai` → edit the public-hostname row → change origin. Saved in `feedback_chrome_mcp_react_events.md` pattern.
+- **Network-alias trick worked for zero-downtime container rename on staging.** Kept `nomii-frontend-staging` as a `tunnel_bridge` alias during the cutover so the Cloudflare tunnel kept routing. Then flipped the dashboard. Then removed the alias. Total downtime: 0s.
+
+### v3.0.x verification artifacts
+
+```
+$ curl -s https://shenmay.ai/api/health
+{"status":"ok","service":"shenmay-ai","timestamp":"2026-04-23T12:39:01.373Z"}
+
+$ ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
+ghcr.io/jafools/shenmay-backend:3.0.1
+
+$ ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.User}}'"
+shenmay
+
+$ curl -sS https://shenmay.ai/embed.js | grep -E "SHENMAY AI|shenmay:setUser"
+ * SHENMAY AI — Embed Script  (embed.js)
+ *     window.postMessage({ type: 'shenmay:setUser', email: 'user@example.com', ...}, '*');
+```
+
+### Still deferred (explicit scope — pick up next session)
+
+1. **Marketing page publish** — Austin's in Lovable flipping `/products/nomii-ai` → `/products/shenmay-ai` and `/nomii/license` → `/shenmay/license`. Once published, unblocks 6 client-side URL fixes in `client/src/pages/shenmay/`.
+2. **License key format rotation** — `NOMII-XXXX-XXXX-XXXX-XXXX` → `SHENMAY-XXXX-...`. 3 generators (`license.js`, `platform/licenses.js`, `stripe-webhook.js`) + 2 UI placeholders (`ShenmayPlans.jsx`, `install.sh`) + rotate Austin's 1 live master key.
+3. **anonDomains.js data migration** — migrate 53 rows from `@visitor.nomii` → `@visitor.shenmay` and drop `ANON_EMAIL_DOMAINS` from an array to a single string.
+4. **GitHub repo rename** `jafools/nomii-ai` — unblocks install-URL + API-docs-link cleanups in embed examples, `ShenmayLicenseSuccess.jsx`, `ShenmaySettings.jsx`, `install.sh`.
+5. **Cloudflare tunnel display-name** "Nomii-ai" → "Shenmay-ai" — 5-sec dashboard action.
+6. **Phase 9 USPTO ITU filing** — $700, Class 9 + 42. Austin's call; every day = priority-date loss.
+7. **Customer-comms email blast** — only meaningful once a real customer exists.
+
+### Backups created this session
+
+- Hetzner: `~/nomii-ai/.env.pre-v3.0.0-20260423-113342.bak`
+- pontenprox: `/root/nomii-staging/.env.pre-v3.0.0-*.bak` + `docker-compose.staging.yml.pre-v3.0.0-*.bak` + `docker-compose.staging.yml.pre-shenmay-container-rename-*.bak` + `docker-compose.staging.yml.pre-alias-cleanup-*.bak`
+
+Full vault writeup: [[projects/nomii/shenmay-phase8-closure-v3-apr-23-2026]].
+
+---
+
+## Previous: 2026-04-23 late morning (**v2.8.1 LIVE on Hetzner** — rebrand bounded-context work DONE; Phases 5/6/7 shipped, only 8/9 remain)
 
 Continuous session that closed out **every code-level bounded-context rename** of the Shenmay migration. 6 PRs merged, 5 production tags (v2.6.0 → v2.8.1), 0 rollbacks, ~2 minutes cumulative downtime across all deploys. Only Phase 8 (sunset of legacy shims, 6-month timer) and Phase 9 (USPTO ITU + ®) remain — both on long timers and unrelated to codebase work.
 
