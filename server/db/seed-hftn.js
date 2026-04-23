@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Seed: Hope for This Nation tenant
+ * SHENMAY AI — Seed: Hope for This Nation tenant
  *
  * Creates the HFTN test tenant with Beacon as the AI companion,
  * generates a widget API key, and prints the embed snippet.

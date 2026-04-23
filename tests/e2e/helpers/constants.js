@@ -42,9 +42,9 @@ module.exports = {
 
   // Selectors — widget
   SEL_WIDGET: {
-    launcher: '#nomii-launcher',
-    iframeWrap: '#nomii-iframe-wrap',
-    iframe: '#nomii-iframe',
+    launcher: '#shenmay-launcher',
+    iframeWrap: '#shenmay-iframe-wrap',
+    iframe: '#shenmay-iframe',
     chatInput: '#input',
     sendBtn: '#send-btn',
     closeBtn: '#close-btn',

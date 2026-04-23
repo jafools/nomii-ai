@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Seed Widget API Keys
+ * SHENMAY AI — Seed Widget API Keys
  *
  * Generates a widget_api_key for any tenant that doesn't have one yet,
  * and prints the key for Covenant Trust so you can test the embed widget.

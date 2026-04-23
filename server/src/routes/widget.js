@@ -370,7 +370,7 @@ router.post('/session', async (req, res, next) => {
 // ── POST /api/widget/session/claim ────────────────────────────────────────
 //
 // Called by widget.html when the host page signals that a previously-anonymous
-// visitor has just authenticated (via nomii:identify postMessage).
+// visitor has just authenticated (via shenmay:identify postMessage).
 //
 // Body: { widget_key, anon_token, email, display_name? }
 //

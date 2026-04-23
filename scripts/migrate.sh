@@ -8,9 +8,9 @@
 set -e
 
 CONTAINER="${SHENMAY_DB_CONTAINER:-shenmay-db}"
-# Defaults match the canonical post-rename identity used by both
-# docker-compose.yml (SaaS) and docker-compose.selfhosted.yml.
-# Override only if your install predates the knomi→nomii rename.
+# Defaults match the canonical identity used by both docker-compose.yml
+# (SaaS) and docker-compose.selfhosted.yml. Override if your install
+# uses a different container or credentials.
 DB_USER="${SHENMAY_DB_USER:-shenmay}"
 DB_NAME="${SHENMAY_DB_NAME:-shenmay_ai}"
 MIGRATIONS_DIR="$(cd "$(dirname "$0")/../server/db/migrations" && pwd)"

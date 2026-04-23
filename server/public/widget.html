@@ -760,7 +760,7 @@
       }
       try {
         window.parent.postMessage({
-          type:         'nomii:updateLabel',
+          type:         'shenmay:updateLabel',
           label:        bubbleLabel,
           color:        data.agent.bubble_color || data.agent.primary_color || null,
         }, '*');
@@ -1225,7 +1225,7 @@
 
   // ── Anonymous → Authenticated handoff (session claim) ─────────────────────
   //
-  // Called when the host page fires nomii:identify (user just logged in).
+  // Called when the host page fires shenmay:identify (user just logged in).
   // Instead of reloading the iframe (which would lose the conversation), we:
   //   1. Call /api/widget/session/claim with the current anon token + new email
   //   2. Backend migrates the conversation to the real customer and issues a new JWT
@@ -1323,7 +1323,7 @@
   function closeWidget() {
     widgetCurrentlyOpen = false;
     endSession();
-    window.parent.postMessage({ type: 'nomii:close' }, '*');
+    window.parent.postMessage({ type: 'shenmay:close' }, '*');
   }
 
   // ── Close button — show CSAT for non-anonymous users with messages ─────────
@@ -1467,7 +1467,7 @@
     if (e.source !== window.parent) return;
 
     // Track open/closed state and manage focus when widget opens
-    if (e.data.type === 'nomii:toggle') {
+    if (e.data.type === 'shenmay:toggle') {
       widgetCurrentlyOpen = e.data.open;
       if (e.data.open) {
         if (chatWrapper.classList.contains('ready')) inputEl.focus();
@@ -1480,14 +1480,14 @@
     // Fired by embed.js when it detects a login event on the host page.
     // We claim the session in-place rather than reloading the iframe so the
     // existing conversation is preserved.
-    if (e.data.type === 'nomii:identify' && e.data.email && isAnonymous) {
+    if (e.data.type === 'shenmay:identify' && e.data.email && isAnonymous) {
       claimSession(e.data.email, e.data.name || '');
     }
 
     // ── SPA auth reset (logout or user switch) ────────────────────────────────
     // The iframe will be reloaded by embed.js on logout, but we stop polling
     // and fire end-session first so the memory update isn't skipped.
-    if (e.data.type === 'nomii:setUser') {
+    if (e.data.type === 'shenmay:setUser') {
       if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       if (sessionToken && !sessionEnded) {
         endSession();

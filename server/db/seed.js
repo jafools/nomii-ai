@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Database Seeder
+ * SHENMAY AI — Database Seeder
  * Populates the database with Covenant Trust demo data + persona Soul/Memory files
  */
 
