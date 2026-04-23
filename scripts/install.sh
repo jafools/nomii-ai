@@ -3,7 +3,7 @@
 # Shenmay AI — Self-Hosted Installer
 #
 # Run this on a fresh Linux server:
-#   curl -sSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/jafools/shenmay-ai/main/scripts/install.sh | bash
 #
 # Or if you've cloned the repo:
 #   bash scripts/install.sh
@@ -35,7 +35,7 @@ fi
 R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m'
 B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
 
-GITHUB_REPO="jafools/nomii-ai"
+GITHUB_REPO="jafools/shenmay-ai"
 # By default, pull from the latest tagged release (reproducible, known-good).
 # Override with:
 #   SHENMAY_GITHUB_REF=v1.2.0  — pin to a specific release

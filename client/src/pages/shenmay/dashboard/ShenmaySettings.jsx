@@ -720,7 +720,7 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
             {copiedSnippet ? <><Check size={11} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={11} /> Copy</>}
           </button>
         </div>
-        <p className="text-[11px] mt-2 text-[#6B6B64]">Full API reference: <a href="https://github.com/jafools/nomii-ai/blob/main/docs/DATA-API.md" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "#0F5F5C" }}>github.com/jafools/nomii-ai/docs/DATA-API.md</a></p>
+        <p className="text-[11px] mt-2 text-[#6B6B64]">Full API reference: <a href="https://github.com/jafools/shenmay-ai/blob/main/docs/DATA-API.md" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: "#0F5F5C" }}>github.com/jafools/shenmay-ai/docs/DATA-API.md</a></p>
       </div>
     </div>
   );

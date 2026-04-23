@@ -20,7 +20,7 @@
 # ============================================================
 set -e
 
-GITHUB_REPO="${GITHUB_REPO:-jafools/nomii-ai}"
+GITHUB_REPO="${GITHUB_REPO:-jafools/shenmay-ai}"
 # Track the latest tagged release by default. Override with:
 #   SHENMAY_GITHUB_REF=v1.2.3   — pin to a specific release
 #   SHENMAY_GITHUB_REF=main     — track edge (not recommended for prod)
