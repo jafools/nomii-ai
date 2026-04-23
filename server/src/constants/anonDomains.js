@@ -3,24 +3,21 @@
  *
  * The widget generates placeholder customer records for visitors who chat
  * without being logged in on the host site. Those records have emails of
- * the form `anon_<hex>@visitor.<brand>`, and every query that counts or
+ * the form `anon_<hex>@visitor.shenmay`, and every query that counts or
  * filters billable customers must exclude them.
  *
- * During the Shenmay migration (Phase 5 of docs/SHENMAY_MIGRATION_PLAN.md)
- * both the legacy `@visitor.nomii` and canonical `@visitor.shenmay` domains
- * are accepted. New sessions use `@visitor.shenmay`; old rows are
- * preserved. Every LIKE / NOT LIKE / ILIKE filter must cover both until
- * Phase 8 sunset (target 2026-10-20).
+ * Until Phase 8 of the Shenmay migration this file maintained a dual-accept
+ * array of `[@visitor.nomii, @visitor.shenmay]` for backwards compatibility.
+ * That was unified onto the single canonical domain in migration
+ * 033_anon_visitor_domain_unification.sql once the Phase-8 zero-customer
+ * audit confirmed the dual-accept window protected no real customer data.
  *
- * Use the helpers below instead of hand-writing `@visitor.nomii` into a
+ * Use the helpers below instead of hand-writing `@visitor.shenmay` into a
  * SQL fragment — that was the Phase 5 failure mode.
  */
 
-/** Canonical domain for NEW anon session generation. */
+/** Canonical domain for anon session generation. */
 const ANON_EMAIL_DOMAIN = '@visitor.shenmay';
-
-/** Every historically-valid anon domain (legacy + canonical). */
-const ANON_EMAIL_DOMAINS = ['@visitor.nomii', '@visitor.shenmay'];
 
 /**
  * SQL fragment that EXCLUDES anon rows from a query.
@@ -28,7 +25,7 @@ const ANON_EMAIL_DOMAINS = ['@visitor.nomii', '@visitor.shenmay'];
  * Pass a column name (e.g. `'cu.email'`) when the query uses an alias.
  */
 function anonEmailNotLikeGuard(col = 'email') {
-  return `${col} NOT LIKE 'anon\\_%@visitor.nomii' AND ${col} NOT LIKE 'anon\\_%@visitor.shenmay'`;
+  return `${col} NOT LIKE 'anon\\_%@visitor.shenmay'`;
 }
 
 /**
@@ -38,7 +35,7 @@ function anonEmailNotLikeGuard(col = 'email') {
  * `${anonEmailLikeMatch('cu.email')} AS is_anonymous`.
  */
 function anonEmailLikeMatch(col = 'email') {
-  return `(${col} LIKE 'anon\\_%@visitor.nomii' OR ${col} LIKE 'anon\\_%@visitor.shenmay')`;
+  return `(${col} LIKE 'anon\\_%@visitor.shenmay')`;
 }
 
 /**
@@ -46,18 +43,17 @@ function anonEmailLikeMatch(col = 'email') {
  * retention job which doesn't care about the `anon_<hex>_` prefix shape.
  */
 function anonEmailIlikeMatch(col = 'email') {
-  return `(${col} ILIKE '%@visitor.nomii%' OR ${col} ILIKE '%@visitor.shenmay%')`;
+  return `(${col} ILIKE '%@visitor.shenmay%')`;
 }
 
-/** Runtime JS predicate — true when the email is any recognised anon form. */
+/** Runtime JS predicate — true when the email is the recognised anon form. */
 function isAnonVisitorEmail(email) {
   if (!email || typeof email !== 'string') return false;
-  return ANON_EMAIL_DOMAINS.some(d => email.includes(d));
+  return email.includes(ANON_EMAIL_DOMAIN);
 }
 
 module.exports = {
   ANON_EMAIL_DOMAIN,
-  ANON_EMAIL_DOMAINS,
   anonEmailNotLikeGuard,
   anonEmailLikeMatch,
   anonEmailIlikeMatch,
