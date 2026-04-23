@@ -14,8 +14,9 @@
  *
  * 2. ANONYMOUS SESSION PURGE
  *    Fully deletes customer records for anonymous widget visitors (email ends
- *    with @visitor.nomii) that have not interacted within anon_session_ttl_days
- *    (default 30 days).
+ *    with @visitor.nomii or @visitor.shenmay — dual-accept during the Phase 5
+ *    rebrand, sunset of the nomii form in Phase 8) that have not interacted
+ *    within anon_session_ttl_days (default 30 days).
  *    Anonymous visitors have no contractual relationship — there is no basis
  *    to retain their data indefinitely.
  *
@@ -35,6 +36,7 @@
 
 const db = require('../db');
 const { writeAuditLog } = require('../middleware/auditLog');
+const { anonEmailIlikeMatch } = require('../constants/anonDomains');
 
 const INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -150,11 +152,11 @@ async function purgeAnonymousSessions() {
     cutoff.setDate(cutoff.getDate() - tenant.anon_ttl);
 
     // Find anonymous customers who haven't interacted since cutoff
-    // Anonymous customers have email ending in @visitor.nomii
+    // Anonymous customers have email ending in @visitor.nomii or @visitor.shenmay
     const { rows: anonCustomers } = await db.query(
       `SELECT id FROM customers
        WHERE tenant_id = $1
-         AND email ILIKE '%@visitor.nomii%'
+         AND ${anonEmailIlikeMatch()}
          AND (last_interaction_at < $2 OR last_interaction_at IS NULL)
          AND created_at < $2`,
       [tenant.id, cutoff.toISOString()]

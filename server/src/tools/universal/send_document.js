@@ -20,6 +20,7 @@
  */
 
 const { sendDocumentEmail } = require('../../services/emailService');
+const { isAnonVisitorEmail } = require('../../constants/anonDomains');
 
 const name = 'send_document';
 
@@ -120,7 +121,7 @@ async function handler(
   }
 
   // Don't send to anonymous visitor placeholder addresses
-  if (toEmail.includes('@visitor.nomii')) {
+  if (isAnonVisitorEmail(toEmail)) {
     return {
       success: false,
       message:

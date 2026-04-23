@@ -16,6 +16,7 @@ const {
   TRIAL_PLANS,
   NOTIFICATION_TYPES,
 } = require('../config/plans');
+const { anonEmailNotLikeGuard } = require('../constants/anonDomains');
 
 /**
  * Load subscription for a tenant. Returns null if none exists.
@@ -98,7 +99,7 @@ async function isWithinCustomerLimit(sub) {
   const { rows } = await db.query(
     `SELECT COUNT(*) FROM customers
      WHERE tenant_id = $1 AND deleted_at IS NULL
-       AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+       AND ${anonEmailNotLikeGuard()}`,
     [sub.tenant_id]
   );
   return parseInt(rows[0].count) < sub.max_customers;

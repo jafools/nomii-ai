@@ -48,6 +48,7 @@ const { anonymizeCustomer }          = require('../jobs/dataRetention');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const { fireNotifications }          = require('../services/notificationService');
 const { validateWebhookUrl }         = require('../utils/validateWebhookUrl');
+const { anonEmailNotLikeGuard, anonEmailLikeMatch } = require('../constants/anonDomains');
 const { envVar }                     = require('../utils/env');
 
 const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret';
@@ -819,7 +820,7 @@ router.post('/customers/upload', async (req, res, next) => {
     // Load subscription and current customer count to enforce limits
     const sub = await getSubscription(req.portal.tenant_id);
     const { rows: countRows } = await db.query(
-      `SELECT COUNT(*) FROM customers WHERE tenant_id = $1 AND deleted_at IS NULL AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+      `SELECT COUNT(*) FROM customers WHERE tenant_id = $1 AND deleted_at IS NULL AND ${anonEmailNotLikeGuard()}`,
       [req.portal.tenant_id]
     );
 
@@ -978,7 +979,7 @@ router.get('/customers', async (req, res, next) => {
               END AS idle_minutes
        FROM customers
        WHERE tenant_id = $1 AND deleted_at IS NULL
-         AND email NOT LIKE 'anon\\_%@visitor.nomii'
+         AND ${anonEmailNotLikeGuard()}
          ${searchClause}
        ORDER BY last_interaction_at DESC NULLS LAST, created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -999,7 +1000,7 @@ router.get('/customers', async (req, res, next) => {
     const { rows: countRows } = await db.query(
       `SELECT COUNT(*) FROM customers
        WHERE tenant_id = $1 AND deleted_at IS NULL
-         AND email NOT LIKE 'anon\\_%@visitor.nomii'
+         AND ${anonEmailNotLikeGuard()}
          ${countSearch}`,
       countParams
     );
@@ -1031,7 +1032,7 @@ router.get('/search', async (req, res, next) => {
                 first_name, last_name, onboarding_status, last_interaction_at
          FROM customers
          WHERE tenant_id = $1 AND deleted_at IS NULL
-           AND email NOT LIKE 'anon\\_%@visitor.nomii'
+           AND ${anonEmailNotLikeGuard()}
            AND (
              first_name ILIKE $2 OR last_name ILIKE $2 OR email ILIKE $2 OR
              (first_name || ' ' || last_name) ILIKE $2
@@ -1363,29 +1364,29 @@ router.get('/dashboard', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1 AND cu.deleted_at IS NULL
              AND c.created_at > NOW() - INTERVAL '30 days'
-             AND cu.email NOT LIKE 'anon\\_%@visitor.nomii'`,
+             AND ${anonEmailNotLikeGuard('cu.email')}`,
           [tid]
         ),
         db.query(
           `SELECT COUNT(*) FROM customers
            WHERE tenant_id = $1 AND deleted_at IS NULL
-             AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+             AND ${anonEmailNotLikeGuard()}`,
           [tid]
         ),
         db.query(
           `SELECT COUNT(*) FROM customers
            WHERE tenant_id = $1 AND deleted_at IS NULL
-             AND email LIKE 'anon\\_%@visitor.nomii'`,
+             AND ${anonEmailLikeMatch()}`,
           [tid]
         ),
         db.query(
           `SELECT c.id, c.status, c.created_at,
                   CASE
-                    WHEN cu.email LIKE 'anon\\_%@visitor.nomii' THEN 'Anonymous Visitor'
+                    WHEN ${anonEmailLikeMatch('cu.email')} THEN 'Anonymous Visitor'
                     ELSE COALESCE(cu.soul_file->>'customer_name', NULLIF(TRIM(cu.first_name || ' ' || cu.last_name), ''), cu.email)
                   END AS customer_display_name,
                   cu.email,
-                  cu.email LIKE 'anon\\_%@visitor.nomii' AS is_anonymous,
+                  ${anonEmailLikeMatch('cu.email')} AS is_anonymous,
                   (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message,
                   (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message_at,
                   (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) AS message_count
@@ -1479,7 +1480,7 @@ router.get('/analytics', async (req, res, next) => {
            JOIN customers cu ON c.customer_id = cu.id
            WHERE cu.tenant_id = $1
              AND cu.deleted_at IS NULL
-             AND cu.email NOT LIKE 'anon\\_%@visitor.nomii'
+             AND ${anonEmailNotLikeGuard('cu.email')}
              AND m.created_at >= NOW() - make_interval(days => ${Number(days)})
            GROUP BY cu.id, name
            ORDER BY message_count DESC
@@ -1575,11 +1576,11 @@ router.get('/conversations', async (req, res, next) => {
       `SELECT c.id, c.status, c.mode, c.unread, c.created_at,
               c.csat_score,
               CASE
-                WHEN cu.email LIKE 'anon\\_%@visitor.nomii' THEN 'Anonymous Visitor'
+                WHEN ${anonEmailLikeMatch('cu.email')} THEN 'Anonymous Visitor'
                 ELSE COALESCE(cu.soul_file->>'customer_name', NULLIF(TRIM(cu.first_name || ' ' || cu.last_name), ''), cu.email)
               END AS customer_display_name,
               cu.email, cu.id AS customer_id,
-              cu.email LIKE 'anon\\_%@visitor.nomii' AS is_anonymous,
+              ${anonEmailLikeMatch('cu.email')} AS is_anonymous,
               (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) AS message_count,
               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message,
               (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message_at,
@@ -2140,7 +2141,8 @@ router.get('/badge-counts', async (req, res, next) => {
 
 // GET /api/portal/visitors  — anonymous (unlogged) widget visitors
 // These are sessions where the host page didn't supply a user email,
-// so we auto-generated anon_<uuid>@visitor.nomii as the identifier.
+// so we auto-generated anon_<uuid>@visitor.shenmay as the identifier
+// (legacy @visitor.nomii also recognised — see server/src/constants/anonDomains.js).
 router.get('/visitors', async (req, res, next) => {
   try {
     const page   = parsePage(req.query.page);
@@ -2165,7 +2167,7 @@ router.get('/visitors', async (req, res, next) => {
        FROM customers cu
        WHERE cu.tenant_id = $1
          AND cu.deleted_at IS NULL
-         AND cu.email LIKE 'anon\\_%@visitor.nomii'
+         AND ${anonEmailLikeMatch('cu.email')}
        ORDER BY cu.last_interaction_at DESC NULLS LAST, cu.created_at DESC
        LIMIT $2 OFFSET $3`,
       [req.portal.tenant_id, limit, offset]
@@ -2174,7 +2176,7 @@ router.get('/visitors', async (req, res, next) => {
     const { rows: countRows } = await db.query(
       `SELECT COUNT(*) FROM customers
        WHERE tenant_id = $1 AND deleted_at IS NULL
-         AND email LIKE 'anon\\_%@visitor.nomii'`,
+         AND ${anonEmailLikeMatch()}`,
       [req.portal.tenant_id]
     );
 
@@ -2274,7 +2276,7 @@ router.get('/subscription', async (req, res, next) => {
     const { rows } = await db.query(
       `SELECT COUNT(*) FROM customers
        WHERE tenant_id = $1 AND deleted_at IS NULL
-         AND email NOT LIKE 'anon\\_%@visitor.nomii'`,
+         AND ${anonEmailNotLikeGuard()}`,
       [req.portal.tenant_id]
     );
 
@@ -3008,10 +3010,13 @@ try { bcrypt = require('bcryptjs'); } catch {
 }
 
 function generateDataApiKey() {
-  // Format: nomii_da_<32 random hex chars>
-  // "nomii_da_" is 9 chars; prefix stored = first 17 chars (prefix + 8 chars)
+  // Format: shenmay_da_<32 random hex chars>
+  // "shenmay_da_" is 11 chars; prefix stored = first 19 chars (prefix + 8 chars).
+  // Legacy nomii_da_ keys (9-char prefix, 17-char stored prefix) continue to
+  // authenticate via dual-accept in server/src/routes/dataApi.js — customers
+  // don't need to rotate until Phase 8 sunset (target 2026-10-20).
   const randomPart = require('crypto').randomBytes(16).toString('hex');
-  return `nomii_da_${randomPart}`;
+  return `shenmay_da_${randomPart}`;
 }
 
 // GET /api/portal/settings/data-api-key

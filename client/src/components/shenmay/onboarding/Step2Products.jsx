@@ -149,7 +149,7 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "nomii-products-template.csv";
+    a.download = "shenmay-products-template.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
