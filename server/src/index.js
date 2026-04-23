@@ -214,7 +214,7 @@ app.use('/api/public/portal', require('./routes/public-portal'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'nomii-ai', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'shenmay-ai', timestamp: new Date().toISOString() });
 });
 
 // Deployment config — consumed by the frontend to toggle SaaS vs self-hosted UI

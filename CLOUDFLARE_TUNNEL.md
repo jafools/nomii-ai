@@ -136,7 +136,7 @@ curl https://api.nomii.pontensolutions.com/api/health
 
 Expected response:
 ```json
-{"status":"ok","service":"nomii-ai","timestamp":"2026-03-10T..."}
+{"status":"ok","service":"shenmay-ai","timestamp":"2026-03-10T..."}
 ```
 
 If you get that, the tunnel is working end-to-end. 🎉
