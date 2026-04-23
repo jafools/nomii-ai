@@ -94,7 +94,6 @@ const DEPLOYMENT_MODES = Object.freeze({
 /**
  * Returns true when running as a self-hosted single-tenant deployment.
  * Set SHENMAY_DEPLOYMENT=selfhosted in docker-compose.selfhosted.yml.
- * (NOMII_DEPLOYMENT still honored for back-compat — see server/src/utils/env.js.)
  * @returns {boolean}
  */
 function isSelfHosted() {

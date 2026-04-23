@@ -910,7 +910,7 @@ const WebhooksSection = () => {
             </button>
           </div>
           <p className="text-[11px]" style={{ color: "#6B6B64" }}>
-            Verify the <code style={{ color: "#6B6B64" }}>X-Shenmay-Signature</code> header on incoming requests using HMAC-SHA256. The legacy <code style={{ color: "#6B6B64" }}>X-Nomii-Signature</code> header is also emitted with the same value until 2026-10-20 — either header is valid.
+            Verify the <code style={{ color: "#6B6B64" }}>X-Shenmay-Signature</code> header on incoming requests using HMAC-SHA256.
           </p>
         </div>
       )}
@@ -1128,7 +1128,7 @@ const WebhooksSection = () => {
 
       <div className="pt-1" style={{ borderTop: "1px solid #EDE7D7" }}>
         <p className="text-[11px]" style={{ color: "#6B6B64" }}>
-          All payloads are signed with HMAC-SHA256. Verify using the <code style={{ color: "#6B6B64" }}>X-Shenmay-Signature</code> header (the legacy <code style={{ color: "#6B6B64" }}>X-Nomii-Signature</code> header is also emitted with the identical value until 2026-10-20).
+          All payloads are signed with HMAC-SHA256. Verify using the <code style={{ color: "#6B6B64" }}>X-Shenmay-Signature</code> header.
           Endpoints must respond within 10 seconds. One automatic retry after 3s on failure.
         </p>
       </div>

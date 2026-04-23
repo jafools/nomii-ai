@@ -283,7 +283,7 @@ const ShenmayPlans = () => {
             )}
             {licenseInfo.env_var_in_use && (
               <p style={{ fontSize: 12, fontStyle: "italic", color: T.mute, margin: "12px 0 0" }}>
-                License is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>NOMII_LICENSE_KEY</code> (or SHENMAY_LICENSE_KEY) in your .env — to deactivate, remove that line and restart.
+                License is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>SHENMAY_LICENSE_KEY</code> in your .env — to deactivate, remove that line and restart.
               </p>
             )}
           </div>
@@ -314,7 +314,7 @@ const ShenmayPlans = () => {
 
           {licenseInfo?.env_var_in_use ? (
             <p style={{ fontSize: 12, fontStyle: "italic", color: T.mute, margin: "16px 0 0" }}>
-              Your license is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>NOMII_LICENSE_KEY</code> in .env. To change from the dashboard, remove that line and restart, then come back here.
+              Your license is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>SHENMAY_LICENSE_KEY</code> in .env. To change from the dashboard, remove that line and restart, then come back here.
             </p>
           ) : (
             <form onSubmit={handleActivateLicense} style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 14 }}>

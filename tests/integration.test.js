@@ -462,8 +462,8 @@ async function runTests() {
     assert(starter.max_customers === 50);
   });
 
-  await test('isSelfHosted() reflects NOMII_DEPLOYMENT env', () => {
-    const isSelfHostedNow = process.env.NOMII_DEPLOYMENT === 'selfhosted';
+  await test('isSelfHosted() reflects SHENMAY_DEPLOYMENT env', () => {
+    const isSelfHostedNow = process.env.SHENMAY_DEPLOYMENT === 'selfhosted';
     assert(isSelfHosted() === isSelfHostedNow);
   });
 
@@ -487,9 +487,9 @@ async function runTests() {
     await cleanupDb();
     await waitMs(500);
 
-    // Start SaaS server (NOMII_DEPLOYMENT not set)
+    // Start SaaS server (SHENMAY_DEPLOYMENT not set)
     saasProc = startServer(3101, {
-      NOMII_DEPLOYMENT: undefined,
+      SHENMAY_DEPLOYMENT: undefined,
     });
 
     saasUrl = await waitForServer(3101);
@@ -531,7 +531,7 @@ async function runTests() {
       assert(res.status === 401, `Expected 401, got ${res.status}`);
     });
 
-    await test('POST /api/license/validate → 404 (NOMII_LICENSE_MASTER not set)', async () => {
+    await test('POST /api/license/validate → 404 (SHENMAY_LICENSE_MASTER not set)', async () => {
       const res = await post(saasUrl, '/api/license/validate', { license_key: 'test' });
       assert(res.status === 404, `Expected 404, got ${res.status}`);
     });
@@ -569,7 +569,7 @@ async function runTests() {
 
     // Start self-hosted server
     selfhostedProc = startServer(3102, {
-      NOMII_DEPLOYMENT: 'selfhosted',
+      SHENMAY_DEPLOYMENT: 'selfhosted',
       MASTER_EMAIL: 'admin@selfhosted.test',
       ADMIN_PASSWORD: 'TestPassword123!',
       TENANT_NAME: 'Self-Hosted Test',
@@ -653,8 +653,8 @@ async function runTests() {
 
     // Start license master server
     licenseProc = startServer(3103, {
-      NOMII_DEPLOYMENT: undefined,
-      NOMII_LICENSE_MASTER: 'true',
+      SHENMAY_DEPLOYMENT: undefined,
+      SHENMAY_LICENSE_MASTER: 'true',
     });
 
     licenseUrl = await waitForServer(3103);

@@ -674,7 +674,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
     <summary style="cursor:pointer;color:#4b5563">Advanced: activate via <code>.env</code> instead</summary>
     <ol style="margin:8px 0 0;padding-left:20px">
       <li style="margin-bottom:4px">Open the <code>.env</code> file in your Shenmay installation directory.</li>
-      <li style="margin-bottom:4px">Add: <code>NOMII_LICENSE_KEY=${licenseKey}</code></li>
+      <li style="margin-bottom:4px">Add: <code>SHENMAY_LICENSE_KEY=${licenseKey}</code></li>
       <li style="margin-bottom:4px">Recreate the backend: <code>docker compose up -d --force-recreate backend</code></li>
       <li>This path pins the license via environment variable and locks out the dashboard activation UI.</li>
     </ol>
@@ -684,7 +684,7 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
 </div>
 </body></html>`;
 
-  const text = `Your Shenmay AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nHow to activate (recommended):\n  1. Log in to your Shenmay dashboard.\n  2. Go to Plans & Billing in the sidebar.\n  3. Paste the key above into the activation field and click Activate.\n\nYour plan limits lift instantly — no restart, no SSH, no file editing.\n\nAdvanced (env-var path): add NOMII_LICENSE_KEY=${licenseKey} to your .env file and run \`docker compose up -d --force-recreate backend\`. This pins the license and disables dashboard activation.\n\nKeep this key private.\n`;
+  const text = `Your Shenmay AI License Key\n\nHi ${firstName},\n\nYour license key is:\n\n  ${licenseKey}\n\nPlan: ${plan}\n${expiresAt ? `Expires: ${new Date(expiresAt).toDateString()}\n` : 'No expiry date.\n'}\nHow to activate (recommended):\n  1. Log in to your Shenmay dashboard.\n  2. Go to Plans & Billing in the sidebar.\n  3. Paste the key above into the activation field and click Activate.\n\nYour plan limits lift instantly — no restart, no SSH, no file editing.\n\nAdvanced (env-var path): add SHENMAY_LICENSE_KEY=${licenseKey} to your .env file and run \`docker compose up -d --force-recreate backend\`. This pins the license and disables dashboard activation.\n\nKeep this key private.\n`;
 
   await transporter.sendMail({
     from:    FROM,

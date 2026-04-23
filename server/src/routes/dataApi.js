@@ -1,14 +1,11 @@
 /**
- * NOMII AI — External Data Ingestion API  (v1)
+ * SHENMAY AI — External Data Ingestion API  (v1)
  *
  * Allows tenants to push customer data into Shenmay programmatically
  * from their own CRM, backend, or nightly sync job.
  *
  * Authentication:
- *   Authorization: Bearer shenmay_da_<key>  (canonical, issued for new keys)
- *   Authorization: Bearer nomii_da_<key>    (legacy, still accepted during
- *                                            Phase 5 rebrand; sunset target
- *                                            2026-10-20 per Phase 8)
+ *   Authorization: Bearer shenmay_da_<key>
  *   Key is generated in the tenant portal → Settings → Data API.
  *   Stored as a bcrypt hash — never recoverable after generation.
  *
@@ -77,29 +74,16 @@ try { bcrypt = require('bcryptjs'); } catch {
 
 // ── Auth middleware ────────────────────────────────────────────────────────────
 
-// Accepted API key prefixes. Both resolve to the same bcrypt-verified tenant
-// key — the canonical `shenmay_da_` prefix is issued for new keys, and the
-// legacy `nomii_da_` prefix continues to authenticate existing customer keys
-// during the Phase 5 rebrand (sunset target 2026-10-20 per Phase 8).
-const DATA_API_KEY_PREFIXES = ['shenmay_da_', 'nomii_da_'];
-
-function matchKeyPrefix(key) {
-  if (!key) return null;
-  for (const p of DATA_API_KEY_PREFIXES) {
-    if (key.startsWith(p)) return p;
-  }
-  return null;
-}
+// API key prefix for data ingestion — validated against bcrypt hash stored on tenants.
+const DATA_API_KEY_PREFIX = 'shenmay_da_';
 
 async function requireDataApiKey(req, res, next) {
   const auth = req.headers.authorization || '';
   const key  = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
 
-  const keyPrefixBase = matchKeyPrefix(key);
-  if (!keyPrefixBase) {
+  if (!key || !key.startsWith(DATA_API_KEY_PREFIX)) {
     return res.status(401).json({
-      error: 'Missing or invalid API key. Pass: Authorization: Bearer shenmay_da_<key> ' +
-             '(legacy nomii_da_ keys also accepted until 2026-10-20).',
+      error: 'Missing or invalid API key. Pass: Authorization: Bearer shenmay_da_<key>',
     });
   }
 
@@ -107,11 +91,9 @@ async function requireDataApiKey(req, res, next) {
     return res.status(500).json({ error: 'Server auth module not available.' });
   }
 
-  // Look up tenants that have a data_api_key_hash set.
   // data_api_key_prefix stores the full prefix plus the first 8 chars of the
-  // random tail — so `nomii_da_` keys store 17 chars, `shenmay_da_` keys
-  // store 19 chars. Slice dynamically based on which prefix matched.
-  const prefix = key.slice(0, keyPrefixBase.length + 8);
+  // random tail — 19 chars total (11-char `shenmay_da_` + 8).
+  const prefix = key.slice(0, DATA_API_KEY_PREFIX.length + 8);
   const { rows } = await db.query(
     `SELECT id AS tenant_id, data_api_key_hash
      FROM tenants

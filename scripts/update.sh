@@ -22,10 +22,10 @@ set -e
 
 GITHUB_REPO="${GITHUB_REPO:-jafools/nomii-ai}"
 # Track the latest tagged release by default. Override with:
-#   NOMII_GITHUB_REF=v1.2.3   — pin to a specific release
-#   NOMII_GITHUB_REF=main     — track edge (not recommended for prod)
-if [ -n "${NOMII_GITHUB_REF:-}" ]; then
-  GITHUB_REF="$NOMII_GITHUB_REF"
+#   SHENMAY_GITHUB_REF=v1.2.3   — pin to a specific release
+#   SHENMAY_GITHUB_REF=main     — track edge (not recommended for prod)
+if [ -n "${SHENMAY_GITHUB_REF:-}" ]; then
+  GITHUB_REF="$SHENMAY_GITHUB_REF"
 else
   LATEST_TAG=$(curl -fsSL \
     -H "Accept: application/vnd.github+json" \

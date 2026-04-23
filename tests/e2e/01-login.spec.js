@@ -7,7 +7,7 @@ test.describe('Login & Logout', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure clean state — no token
     await page.goto('/shenmay/login');
-    await page.evaluate(() => localStorage.removeItem('nomii_portal_token'));
+    await page.evaluate(() => localStorage.removeItem('shenmay_portal_token'));
   });
 
   test('login page loads with form fields', async ({ page }) => {

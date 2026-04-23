@@ -45,16 +45,6 @@ const SetupRedirect = () => {
   return null;
 };
 
-// Backward-compat shim for Phase 4 of the Shenmay rebrand. Redirects anything
-// under /nomii/* to /shenmay/* preserving the deep path + query string, so old
-// bookmarks, email magic links, and issued signup links keep working. Tracked
-// for removal in docs/SHENMAY_MIGRATION_PLAN.md Phase 8 (~2027-04).
-const NomiiToShenmayRedirect = () => {
-  const { pathname, search, hash } = useLocation();
-  const newPath = pathname.replace(/^\/nomii\b/, "/shenmay");
-  return <Navigate to={`${newPath}${search}${hash}`} replace />;
-};
-
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
@@ -119,9 +109,6 @@ const App = () => (
             <Route path="profile" element={<ShenmayProfile />} />
             <Route path="*" element={<Navigate to="/shenmay/dashboard" replace />} />
           </Route>
-
-          {/* Backward-compat: /nomii/* → /shenmay/* preserves deep path + query */}
-          <Route path="/nomii/*" element={<NomiiToShenmayRedirect />} />
 
           {/* Catch-all → login */}
           <Route path="*" element={<Navigate to="/shenmay/login" replace />} />

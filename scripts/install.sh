@@ -12,18 +12,18 @@
 set -e
 
 # ── Headless mode (CI/Ansible/Terraform/automated tests) ─────────────────────
-# Set NOMII_NONINTERACTIVE=1 to skip all prompts and use defaults / env vars:
-#   NOMII_DIR             — install directory (default: ~/nomii)
-#   NOMII_PUBLIC_URL      — public URL (default: http://localhost)
-#   NOMII_SMTP_HOST       — SMTP host (default: empty / skip)
-#   NOMII_SMTP_PORT       — SMTP port (default: 465)
-#   NOMII_SMTP_USER       — SMTP username
-#   NOMII_SMTP_PASS       — SMTP password
-#   NOMII_SMTP_FROM       — SMTP from address
-#   NOMII_CF_TOKEN        — Cloudflare Tunnel token (default: empty / skip)
-#   NOMII_LICENSE_KEY     — Shenmay license key (default: empty / trial)
-#   NOMII_AUTO_INSTALL_DOCKER=1 — also auto-install Docker if missing
-NONINT="${NOMII_NONINTERACTIVE:-0}"
+# Set SHENMAY_NONINTERACTIVE=1 to skip all prompts and use defaults / env vars:
+#   SHENMAY_DIR             — install directory (default: ~/nomii)
+#   SHENMAY_PUBLIC_URL      — public URL (default: http://localhost)
+#   SHENMAY_SMTP_HOST       — SMTP host (default: empty / skip)
+#   SHENMAY_SMTP_PORT       — SMTP port (default: 465)
+#   SHENMAY_SMTP_USER       — SMTP username
+#   SHENMAY_SMTP_PASS       — SMTP password
+#   SHENMAY_SMTP_FROM       — SMTP from address
+#   SHENMAY_CF_TOKEN        — Cloudflare Tunnel token (default: empty / skip)
+#   SHENMAY_LICENSE_KEY     — Shenmay license key (default: empty / trial)
+#   SHENMAY_AUTO_INSTALL_DOCKER=1 — also auto-install Docker if missing
+NONINT="${SHENMAY_NONINTERACTIVE:-0}"
 
 # ── Ensure interactive input works even when piped (curl | bash) ─────────────
 # Skip the tty redirect in headless mode — there's nothing to redirect to.
@@ -38,11 +38,11 @@ B='\033[0;34m' W='\033[1;37m' D='\033[2m' NC='\033[0m'
 GITHUB_REPO="jafools/nomii-ai"
 # By default, pull from the latest tagged release (reproducible, known-good).
 # Override with:
-#   NOMII_GITHUB_REF=v1.2.0  — pin to a specific release
-#   NOMII_GITHUB_REF=main    — track latest main (edge / not recommended for prod)
-#   NOMII_GITHUB_REF=<sha>   — pin to an exact commit
-if [ -n "${NOMII_GITHUB_REF:-}" ]; then
-  GITHUB_REF="$NOMII_GITHUB_REF"
+#   SHENMAY_GITHUB_REF=v1.2.0  — pin to a specific release
+#   SHENMAY_GITHUB_REF=main    — track latest main (edge / not recommended for prod)
+#   SHENMAY_GITHUB_REF=<sha>   — pin to an exact commit
+if [ -n "${SHENMAY_GITHUB_REF:-}" ]; then
+  GITHUB_REF="$SHENMAY_GITHUB_REF"
 else
   # Resolve the latest release tag via the GitHub API.
   # Fall back to "main" if there are no releases yet or the call fails.
@@ -56,7 +56,7 @@ else
 fi
 COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${COMPOSE_FILE}"
-INSTALL_DIR="${NOMII_DIR:-$HOME/nomii}"
+INSTALL_DIR="${SHENMAY_DIR:-$HOME/nomii}"
 TOTAL_STEPS=5
 
 # ── Wrap docker calls so they work right after a fresh install ───────────────
@@ -103,10 +103,10 @@ if ! command -v docker &>/dev/null; then
   echo ""
 
   if [ "$NONINT" = "1" ]; then
-    if [ "${NOMII_AUTO_INSTALL_DOCKER:-0}" = "1" ]; then
+    if [ "${SHENMAY_AUTO_INSTALL_DOCKER:-0}" = "1" ]; then
       INSTALL_DOCKER="y"
     else
-      fail "Docker is required. Set NOMII_AUTO_INSTALL_DOCKER=1 to auto-install, or install it from https://docs.docker.com/get-docker/ and re-run."
+      fail "Docker is required. Set SHENMAY_AUTO_INSTALL_DOCKER=1 to auto-install, or install it from https://docs.docker.com/get-docker/ and re-run."
     fi
   else
     ask "Install Docker automatically? This requires sudo. [Y/n]"
@@ -158,7 +158,7 @@ echo -e "   This folder stores your configuration and database.${NC}"
 echo ""
 
 if [ "$NONINT" = "1" ]; then
-  ok "Headless: using $INSTALL_DIR (set NOMII_DIR to override)"
+  ok "Headless: using $INSTALL_DIR (set SHENMAY_DIR to override)"
 else
   ask "Installation directory [${INSTALL_DIR}]:"
   read -r USER_DIR
@@ -192,8 +192,8 @@ if [ -f ".env" ]; then
   echo ""
   warn "An existing .env configuration was found."
   if [ "$NONINT" = "1" ]; then
-    ok "Headless: keeping existing .env (set NOMII_FORCE_RECONFIGURE=1 to overwrite)"
-    if [ "${NOMII_FORCE_RECONFIGURE:-0}" != "1" ]; then
+    ok "Headless: keeping existing .env (set SHENMAY_FORCE_RECONFIGURE=1 to overwrite)"
+    if [ "${SHENMAY_FORCE_RECONFIGURE:-0}" != "1" ]; then
       SKIP_CONFIG=1
     fi
   else
@@ -217,7 +217,7 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   ${D}The web address where Shenmay will be accessible."
   echo -e "   Examples: https://nomii.yourfirm.com  or  http://192.168.1.100${NC}"
   if [ "$NONINT" = "1" ]; then
-    PUBLIC_URL="${NOMII_PUBLIC_URL:-http://localhost}"
+    PUBLIC_URL="${SHENMAY_PUBLIC_URL:-http://localhost}"
     ok "Headless: using $PUBLIC_URL"
   else
     ask "Public URL [http://localhost]:"
@@ -231,11 +231,11 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   ${D}Used for advisor notifications and invite emails."
   echo -e "   Skip for now by pressing Enter — you can add it later in .env${NC}"
   if [ "$NONINT" = "1" ]; then
-    SMTP_HOST="${NOMII_SMTP_HOST:-}"
-    SMTP_PORT="${NOMII_SMTP_PORT:-465}"
-    SMTP_USER="${NOMII_SMTP_USER:-}"
-    SMTP_PASS="${NOMII_SMTP_PASS:-}"
-    SMTP_FROM="${NOMII_SMTP_FROM:-}"
+    SMTP_HOST="${SHENMAY_SMTP_HOST:-}"
+    SMTP_PORT="${SHENMAY_SMTP_PORT:-465}"
+    SMTP_USER="${SHENMAY_SMTP_USER:-}"
+    SMTP_PASS="${SHENMAY_SMTP_PASS:-}"
+    SMTP_FROM="${SHENMAY_SMTP_FROM:-}"
     if [ -n "$SMTP_HOST" ]; then
       ok "Headless: SMTP $SMTP_HOST:$SMTP_PORT (user $SMTP_USER)"
     else
@@ -268,7 +268,7 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   Create a free tunnel at: dash.cloudflare.com > Zero Trust > Networks > Tunnels"
   echo -e "   Leave blank to skip — you can add it later in .env${NC}"
   if [ "$NONINT" = "1" ]; then
-    CF_TOKEN="${NOMII_CF_TOKEN:-}"
+    CF_TOKEN="${SHENMAY_CF_TOKEN:-}"
     if [ -n "$CF_TOKEN" ]; then
       ok "Headless: Cloudflare Tunnel token set"
     else
@@ -286,16 +286,16 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   echo -e "   If you already have a paid license key, enter it here."
   echo -e "   You can add or upgrade a key at any time by editing .env and restarting.${NC}"
   if [ "$NONINT" = "1" ]; then
-    NOMII_LICENSE_KEY="${NOMII_LICENSE_KEY:-}"
-    if [ -z "$NOMII_LICENSE_KEY" ]; then
+    SHENMAY_LICENSE_KEY="${SHENMAY_LICENSE_KEY:-}"
+    if [ -z "$SHENMAY_LICENSE_KEY" ]; then
       ok "Headless: starting on free trial"
     else
       ok "Headless: license key set"
     fi
   else
     ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
-    read -r NOMII_LICENSE_KEY
-    if [ -z "$NOMII_LICENSE_KEY" ]; then
+    read -r SHENMAY_LICENSE_KEY
+    if [ -z "$SHENMAY_LICENSE_KEY" ]; then
       ok "Starting with free trial — 20 messages/mo, 1 customer"
     else
       ok "License key noted — will be validated on first start"
@@ -345,7 +345,7 @@ CLOUDFLARE_TUNNEL_TOKEN=${CF_TOKEN}
 # ── Shenmay License ─────────────────────────────
 # Leave blank for free trial (20 messages/mo, 1 customer).
 # Upgrade at: https://pontensolutions.com/nomii/license
-NOMII_LICENSE_KEY=${NOMII_LICENSE_KEY}
+SHENMAY_LICENSE_KEY=${SHENMAY_LICENSE_KEY}
 ENV
 
   ok "Configuration saved to .env"
