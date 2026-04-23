@@ -695,6 +695,63 @@ async function sendLicenseKeyEmail({ to, firstName, licenseKey, plan, expiresAt 
   });
 }
 
+// ── Send customer-portal magic-link email ──────────────────────────────────
+// Used by the Shenmay-native license portal (POST /api/public/portal/request-login).
+// The link lands on pontensolutions.com/license/verify?token=... where the
+// Lovable page exchanges the token for a session via POST /portal/verify.
+
+async function sendPortalMagicLinkEmail({ to, verifyUrl }) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fb;margin:0;padding:40px 20px;">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="display:inline-block;background:#1E3A5F;border-radius:12px;padding:10px 18px;font-size:18px;color:#fff;font-weight:700;letter-spacing:0.5px;">Shenmay AI</div>
+    </div>
+    <h1 style="font-size:22px;color:#1a2332;margin:0 0 12px;">Sign in to your license portal</h1>
+    <p style="color:#4a5568;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      Click the button below to access your Shenmay AI license dashboard. This link expires in 15 minutes.
+    </p>
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${verifyUrl}"
+         style="display:inline-block;background:#1E3A5F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
+        Sign In
+      </a>
+    </div>
+    <p style="color:#718096;font-size:13px;line-height:1.6;margin:0;">
+      If you didn't request this, you can safely ignore this email — no one can sign in without clicking the link above.
+    </p>
+    <hr style="border:none;border-top:1px solid #e4e7ed;margin:32px 0;">
+    <p style="color:#a0aec0;font-size:12px;margin:0;text-align:center;">
+      Shenmay AI · ${APP_DOMAIN}
+    </p>
+  </div>
+</body>
+</html>`;
+
+  const text = `Sign in to your Shenmay AI license portal:\n\n${verifyUrl}\n\nThis link expires in 15 minutes. If you didn't request this, ignore this email.\n\nShenmay AI`;
+
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[Email] SMTP not configured — portal magic link for ${to}:`);
+    console.log(`[Email] ${verifyUrl}`);
+    return;
+  }
+
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from:    FROM,
+    to,
+    subject: 'Sign in to your Shenmay AI license portal',
+    text,
+    html,
+  });
+
+  console.log(`[Email] Portal magic link sent to ${to}`);
+}
+
+
 module.exports = {
   sendVerificationEmail,
   sendWelcomeEmail,
@@ -705,4 +762,5 @@ module.exports = {
   sendDocumentEmail,
   sendHumanModeReplyEmail,
   sendLicenseKeyEmail,
+  sendPortalMagicLinkEmail,
 };
