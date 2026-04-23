@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Client-side shared constants and JSDoc typedefs.
+ * SHENMAY AI — Client-side shared constants and JSDoc typedefs.
  *
  * Keep in sync with server/src/config/plans.js. The client-side subset covers
  * only values that are rendered or branched on in the dashboard UI.

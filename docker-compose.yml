@@ -57,7 +57,7 @@ services:
       JWT_SECRET: '${JWT_SECRET:?JWT_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
       WIDGET_JWT_SECRET: '${WIDGET_JWT_SECRET:?WIDGET_JWT_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
       API_KEY_ENCRYPTION_SECRET: '${API_KEY_ENCRYPTION_SECRET:?API_KEY_ENCRYPTION_SECRET must be set in .env. Generate one via: openssl rand -hex 32}'
-      FRONTEND_URL: ${FRONTEND_URL:-https://nomii.pontensolutions.com}
+      FRONTEND_URL: ${FRONTEND_URL:-https://shenmay.ai}
       FRONTEND_URL_PROD: ${FRONTEND_URL_PROD:-}
       JWT_EXPIRY: ${JWT_EXPIRY:-24h}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
@@ -72,7 +72,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
-      APP_URL: ${APP_URL:-https://nomii.pontensolutions.com}
+      APP_URL: ${APP_URL:-https://shenmay.ai}
       MASTER_EMAIL: ${MASTER_EMAIL:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
