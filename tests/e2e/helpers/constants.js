@@ -26,7 +26,7 @@ module.exports = {
     submitBtn: 'button[type="submit"]',
     errorMsg: '[data-testid="login-error"]',
     forgotLink: 'button:has-text("Forgot password?")',
-    signupLink: 'a[href="/nomii/signup"]',
+    signupLink: 'a[href="/shenmay/signup"]',
   },
 
   // Selectors — dashboard

@@ -15,11 +15,11 @@ test.describe('Dashboard Navigation', () => {
 
   test.beforeEach(async ({ page }) => {
     // Inject the shared token rather than re-logging in for every test
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await page.evaluate((token) => {
       localStorage.setItem('nomii_portal_token', token);
     }, authToken);
-    await page.goto('/nomii/dashboard');
+    await page.goto('/shenmay/dashboard');
     await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
   });
 
@@ -65,26 +65,26 @@ test.describe('Dashboard Navigation', () => {
 
   test('profile page loads', async ({ page }) => {
     // Navigate via URL since profile may not always be in sidebar nav
-    await page.goto('/nomii/dashboard/profile');
+    await page.goto('/shenmay/dashboard/profile');
     await page.waitForURL(/\/profile/, { timeout: 10_000 });
     expect(page.url()).toContain('/profile');
   });
 
   test('plans page loads', async ({ page }) => {
-    await page.goto('/nomii/dashboard/plans');
+    await page.goto('/shenmay/dashboard/plans');
     await page.waitForURL(/\/plans/, { timeout: 10_000 });
     expect(page.url()).toContain('/plans');
   });
 
   test('invalid dashboard route stays within dashboard shell', async ({ page }) => {
-    // Use client-side navigation (no full page reload) so NomiiAuthProvider
+    // Use client-side navigation (no full page reload) so ShenmayAuthProvider
     // stays mounted and doesn't re-fire getMe() — which can fail transiently
-    // when the cold request hits api.pontensolutions.com mid-test.
+    // when the cold request hits the prod API mid-test.
     await page.evaluate(() => {
-      window.history.pushState({}, '', '/nomii/dashboard/nonexistent-page');
+      window.history.pushState({}, '', '/shenmay/dashboard/nonexistent-page');
       window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
     });
-    // React Router inner catch-all redirects back to /nomii/dashboard
+    // React Router inner catch-all redirects back to /shenmay/dashboard
     await page.waitForTimeout(1000);
     expect(page.url()).not.toContain('/login');
   });

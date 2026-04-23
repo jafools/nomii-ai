@@ -6,12 +6,12 @@ const { loginViaUI, loginViaAPI, logout } = require('./helpers/auth');
 test.describe('Login & Logout', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure clean state — no token
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await page.evaluate(() => localStorage.removeItem('nomii_portal_token'));
   });
 
   test('login page loads with form fields', async ({ page }) => {
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await expect(page.locator('h1')).toContainText('Sign in to Shenmay AI');
     await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.passwordInput)).toBeVisible();
@@ -20,7 +20,7 @@ test.describe('Login & Logout', () => {
   });
 
   test('shows error on empty form submit', async ({ page }) => {
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     // Clear the required attribute so the browser doesn't block submission
     await page.evaluate(() => {
       document.querySelectorAll('input[required]').forEach((el) => {
@@ -33,7 +33,7 @@ test.describe('Login & Logout', () => {
   });
 
   test('shows error on wrong password', async ({ page }) => {
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await page.fill(SEL_LOGIN.emailInput, TEST_EMAIL);
     await page.fill(SEL_LOGIN.passwordInput, 'wrong_password_xyz');
     await page.click(SEL_LOGIN.submitBtn);
@@ -50,19 +50,19 @@ test.describe('Login & Logout', () => {
   test('dashboard redirects to login when token cleared', async ({ page }) => {
     // Login first
     await loginViaAPI(page);
-    await page.goto('/nomii/dashboard');
+    await page.goto('/shenmay/dashboard');
     await page.waitForURL(/\/dashboard/, { timeout: 10_000 });
 
     // Logout — clear token
     await logout(page);
-    await page.goto('/nomii/dashboard');
+    await page.goto('/shenmay/dashboard');
     // Should redirect to login
     await page.waitForURL(/\/login/, { timeout: 10_000 });
     await expect(page.locator('h1')).toContainText('Sign in');
   });
 
   test('forgot password flow shows success message', async ({ page }) => {
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await page.click(SEL_LOGIN.forgotLink);
     // Should show "Reset your password" heading
     await expect(page.getByText('Reset your password')).toBeVisible();
@@ -74,16 +74,16 @@ test.describe('Login & Logout', () => {
   });
 
   test('signup link navigates to registration page', async ({ page }) => {
-    await page.goto('/nomii/login');
+    await page.goto('/shenmay/login');
     await page.click(SEL_LOGIN.signupLink);
     await page.waitForURL(/\/signup/);
-    expect(page.url()).toContain('/nomii/signup');
+    expect(page.url()).toContain('/shenmay/signup');
   });
 
   test('already-authenticated user is redirected from login to dashboard', async ({ page }) => {
     await loginViaAPI(page);
-    await page.goto('/nomii/login');
-    // useEffect in NomiiLogin checks isLoggedIn() and redirects
+    await page.goto('/shenmay/login');
+    // useEffect in ShenmayLogin checks isLoggedIn() and redirects
     await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 10_000 });
   });
 });
