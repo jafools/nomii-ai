@@ -116,22 +116,40 @@ over-purge in retention.
 
 ---
 
-## 5e · WordPress shortcode — `[nomii_widget]` + `[shenmay_widget]`
+## 5e · WordPress shortcode — `[nomii_widget]` + `[shenmay_widget]` ✅ SHIPPED
 
-The WP plugin source is NOT in this repo (lives in the
-`shenmay-wordpress-plugin.zip` build artifact, which is now the
-canonical filename post-5f). In-repo work is documentation-only; the
-shortcode rename happens in a separate PR against the WP plugin repo.
+**Status:** LIVE. The plugin "repo" is actually the zip artifact committed at
+[server/public/downloads/shenmay-wordpress-plugin.zip](server/public/downloads/shenmay-wordpress-plugin.zip) — edited in place
+(extract → modify `nomii-ai/nomii-ai.php` + `readme.txt` → repack). No separate
+sibling repo exists.
 
-| File | Line | Action |
-|---|---|---|
-| [FEATURES.md:239](FEATURES.md:239) | Feature list | Update to "Both `[nomii_widget]` and `[shenmay_widget]` shortcodes supported" once plugin rebuilt |
+**Implementation summary:**
 
-**Test plan:** In the WP plugin PR: register both shortcodes pointing at
-the same handler; WP install of the new plugin zip → paste either
-shortcode → widget renders.
-**Risk:** 🟢 zero — WP customers on old plugin keep working; new
-plugin supports both.
+- Plugin bumped 1.0.0 → 1.1.0.
+- `add_shortcode( 'shenmay_widget', 'nomii_shortcode_handler' )` registered
+  alongside existing `add_shortcode( 'nomii_widget', ... )` — both point at the
+  same handler.
+- Handler signature updated to `($atts, $content = null, $tag = 'shenmay_widget')`
+  so `shortcode_atts( …, $tag )` fires the correct `shortcode_atts_{$shortcode}`
+  filter per invocation.
+- Settings-page Usage copy flipped to `[shenmay_widget]` as the canonical
+  example with a note that the legacy form remains interchangeable.
+- Dashboard URL in the "Widget key not set" notice updated to `https://shenmay.ai/dashboard`.
+- `readme.txt` description, FAQ, and changelog updated; stable tag 1.1.0.
+- [FEATURES.md:239](FEATURES.md:239) — flipped to "Both `[nomii_widget]` and `[shenmay_widget]` shortcodes supported".
+
+**Explicitly out of scope (kept to avoid breaking existing WP installs):**
+
+- Folder name `nomii-ai/` — renaming forces customer deactivate/reactivate.
+- PHP constants `NOMII_OPTION_KEY` / `NOMII_VERSION` — renaming wipes customer settings from `wp_options`.
+- Plugin display name `"Nomii AI Widget"` — visible rebrand, separate micro-PR.
+
+**Test plan (on next WP staging install):** paste `[shenmay_widget]` into a
+page → widget renders; paste `[nomii_widget]` into a different page → identical
+render. Both shortcodes share the same handler, so coverage of one covers the
+other.
+**Risk:** 🟢 zero — existing `[nomii_widget]` usages continue to render
+unchanged; `[shenmay_widget]` is additive.
 
 ---
 
