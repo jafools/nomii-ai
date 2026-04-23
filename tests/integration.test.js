@@ -90,6 +90,7 @@ const BASE_ENV = {
   API_KEY_ENCRYPTION_SECRET: serverEnv.API_KEY_ENCRYPTION_SECRET || 'test-encryption-key-32-chars-long-12345',
   LOGIN_RATE_LIMIT_MAX:      '200',
   WIDGET_SESSION_RATE_LIMIT_MAX: '200',
+  PORTAL_RATE_LIMIT_MAX:     '500',
 };
 
 console.log(`Test DB: ${PG.host}:${PG.port}/${PG.database} (user: ${PG.user})`);

@@ -199,9 +199,14 @@ app.use('/api/license', require('./routes/license'));
 app.use('/api/public/license/checkout', require('./routes/license-checkout'));
 
 // Routes — Public portal license lookup (called by pontensolutions.com license portal)
+// Now serves the full magic-link auth flow: request-login, verify, GET licenses, logout.
+// A realistic login exchange is 3-4 requests per user per minute; keep a headroom
+// ceiling as HTTP-level defense-in-depth. The primary rate limits against enumeration
+// + brute force live inside the request-login handler itself (5/hr/email + 20/hr/IP,
+// Postgres-backed).
 const portalLookupLimiter = makeRateLimiter({
   windowMs: 60 * 1000,
-  max: 10,
+  max:      parseInt(process.env.PORTAL_RATE_LIMIT_MAX || '30', 10),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'rate_limited' },
