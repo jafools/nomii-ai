@@ -5,7 +5,95 @@
 
 ---
 
-## Last updated: 2026-04-23 mid-morning (**v2.5.0 LIVE on Hetzner** — Phase 5 6/7 done, only 5e remains in sibling repo)
+## Last updated: 2026-04-23 late morning (**v2.8.1 LIVE on Hetzner** — rebrand bounded-context work DONE; Phases 5/6/7 shipped, only 8/9 remain)
+
+Continuous session that closed out **every code-level bounded-context rename** of the Shenmay migration. 6 PRs merged, 5 production tags (v2.6.0 → v2.8.1), 0 rollbacks, ~2 minutes cumulative downtime across all deploys. Only Phase 8 (sunset of legacy shims, 6-month timer) and Phase 9 (USPTO ITU + ®) remain — both on long timers and unrelated to codebase work.
+
+### Ship log
+
+| PR | Tag | Title |
+|---|---|---|
+| [#53](https://github.com/jafools/nomii-ai/pull/53) | **v2.6.0** | feat(brand): Phase 5e — WP plugin `[shenmay_widget]` shortcode + v1.1.0 |
+| [#54](https://github.com/jafools/nomii-ai/pull/54) | **v2.7.0** | feat(brand): Phase 6 — Docker / GHCR / compose rename to shenmay-* |
+| [#55](https://github.com/jafools/nomii-ai/pull/55) | **v2.7.1** | fix(compose): gate cloudflared behind 'tunnel' profile |
+| [#56](https://github.com/jafools/nomii-ai/pull/56) | **v2.8.0** | feat(brand): Phase 7 — Postgres DB + user rename to shenmay_ai/shenmay |
+| [#57](https://github.com/jafools/nomii-ai/pull/57) | **v2.8.1** | fix(api): flip /api/health service field nomii-ai → shenmay-ai |
+| [#58](https://github.com/jafools/nomii-ai/pull/58) | docs-only | chore: note Proxmox staging rebrand catch-up + remaining Cloudflare step |
+
+### Rebrand scoreboard at session end
+
+| Phase | Status | Shipped in |
+|---|---|---|
+| 5 — in-code identifier rename (7 sub-items) | ✅ ALL DONE | v2.4.0 / v2.5.0 / **v2.6.0** (5e) |
+| 6 — Docker / GHCR / compose rename | ✅ DONE | **v2.7.0** + v2.7.1 cleanup |
+| 7 — Postgres DB + user rename | ✅ DONE | **v2.8.0** |
+| Service-field polish | ✅ DONE | **v2.8.1** |
+| Staging unstick (images + DB) | ✅ DONE | live-edit on pontenprox |
+| 8 — sunset legacy shims | ⏳ 6-month timer | target 2026-10-20 |
+| 9 — USPTO ITU + ® registration | ⏳ Austin's call | strictly last |
+
+### Production state at session handoff
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (HTTP 200) |
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:2.8.1` |
+| Container names | `shenmay-{db,backend,frontend}` |
+| DB identity | database `shenmay_ai`, user `shenmay` |
+| Git HEAD on Hetzner | `v2.8.1` |
+| `/api/health` | `{"status":"ok","service":"shenmay-ai","timestamp":"..."}` |
+| Legacy `/nomii/login` | HTTP 200 (backward-compat) |
+| Legacy `/downloads/nomii-wordpress-plugin.zip` | 301 → canonical |
+| Tenants preserved across all renames | 34 (zero data loss) |
+| Staging URL | **https://nomii-staging.pontensolutions.com** (HTTP 200) |
+| Staging images | `shenmay-{backend,frontend}:edge` |
+| Staging container names | still `nomii-*-staging` (Cloudflare-tunnel-blocked rename) |
+| Staging DB | `shenmay_ai_staging`, user `shenmay` |
+| Cloudflare tunnel origin | `http://nomii-frontend-staging:80` (unchanged — needs dashboard update before the staging container rename) |
+
+### Deferred / blocked on external action
+
+1. **Staging container rename `nomii-*-staging` → `shenmay-*-staging`** — the Cloudflare tunnel `knomi-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) is token-managed (no local config file on pontenprox; cloudflared image has no shell). Renaming requires Austin's 5-min Cloudflare dashboard action: Zero Trust → Networks → Tunnels → `knomi-ai` → Public Hostname row for `nomii-staging.pontensolutions.com` → change Service origin from `http://nomii-frontend-staging:80` to `http://shenmay-frontend-staging:80` → save. Pair with a compose sed on pontenprox (`container_name: nomii-*-staging` → `shenmay-*-staging`) + `docker compose down && up -d`. Documented in the Phase 6 section of `docs/SHENMAY_MIGRATION_PLAN.md` and the Staging section of CLAUDE.md. No blocker for anything else.
+2. **Customer-comms email send** — final polished text at [docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md](docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md). Austin runs the 33-row send-list SQL, feeds to one-off send script, blasts. Window: Tue–Thu 10am–2pm.
+3. **Phase 8 — sunset shims** — 6-month timer. Targets include `[nomii_widget]` WP shortcode (keep forever), `X-Nomii-Signature` header (12 months), `nomii_da_*` API key prefix (90 days after customer notice), `nomii_portal_token` fallback (90 days), `NOMII_*` env vars (6 months + zero deprecation-warning telemetry).
+4. **Phase 9 — USPTO ITU + ®** — legal filing, Austin's call, explicitly LAST per `feedback_itu_filing_last.md`.
+
+### Cutover gotchas worth remembering
+
+- **Postgres superuser rename requires a temp second superuser.** The official postgres Docker image only creates ONE superuser — the one named in `POSTGRES_USER`. There is no default `postgres` role. You can't self-rename (`ALTER USER nomii RENAME TO shenmay` while connected AS nomii fails). Pattern: `CREATE USER tmp_rename SUPERUSER PASSWORD '...'` (as nomii) → `ALTER DATABASE nomii_ai RENAME TO shenmay_ai; ALTER USER nomii RENAME TO shenmay` (as tmp_rename) → `DROP USER tmp_rename` (as shenmay).
+- **Docker `container_name:` change in compose requires `down` BEFORE `git checkout` of the new tag.** Otherwise `up -d` tries to create new-named containers alongside the old ones → port collision on 80/443/3001. Named volumes persist across the `down` so DB data survives.
+- **`docker compose up -d` without service args starts ALL services.** On Hetzner that includes `cloudflared`, which restart-loops with a blank `CLOUDFLARE_TUNNEL_TOKEN`. Fix landed in v2.7.1: `profiles: ["tunnel"]` guard on the cloudflared service in `docker-compose.yml` (parity with the selfhosted compose).
+- **Token-managed Cloudflare tunnels store hostname → origin mapping in the dashboard, not on disk.** No `/etc/cloudflared/config.yml` when the tunnel is brought up via `--token`. Renaming an origin container requires dashboard access (or Cloudflare API), not just SSH.
+- **Renaming a GHCR registry silently freezes staging's auto-refresh.** Once we flipped publishes to `shenmay-*`, the Proxmox refresh script kept pulling `ghcr.io/jafools/nomii-*:edge`. That tag still exists (immutable) but stopped getting new pushes — so the script reported "no change" every 5 min and staging silently stayed at pre-Phase-6 content for days. Fix: update the script's image refs alongside the registry rename.
+- **Selfhosted-smoke CI + first-time tag chicken-and-egg.** The smoke test pulls `ghcr.io/jafools/shenmay-backend:stable`, which doesn't exist until the first tagged release AFTER the rename. Fix: pre-build the image locally under the expected tag in the CI job so compose finds it cached (no `pull_policy: always` on that service → local wins). Added in PR #54.
+
+### v2.8.x verification artifacts
+
+```
+$ curl -s https://shenmay.ai/api/health
+{"status":"ok","service":"shenmay-ai","timestamp":"2026-04-23T08:31:17.894Z"}
+
+$ ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
+ghcr.io/jafools/shenmay-backend:2.8.1
+
+$ ssh nomii@204.168.232.24 "docker exec shenmay-db psql -U shenmay -d shenmay_ai -t -c 'SELECT COUNT(*) FROM tenants;'"
+    34
+
+$ curl -s https://nomii-staging.pontensolutions.com/api/health
+{"status":"ok","service":"shenmay-ai","timestamp":"..."}
+```
+
+### Backups created this session (on Hetzner + pontenprox)
+
+- Hetzner: `~/backups/pre-phase7-rename-2026-04-23-082027.sql` (640KB — full prod DB before Phase 7 ALTER)
+- pontenprox: `/root/backups/pre-phase7-staging-rename-2026-04-23-102812.sql` (60KB — staging DB before ALTER)
+- pontenprox: `/root/nomii-staging/{docker-compose.staging.yml,refresh-staging.sh}.pre-phase7-2026-04-23.bak` (staging compose + refresh script before sed)
+
+Full vault writeup: [[projects/nomii/shenmay-phases-5e-to-7-complete-apr-23-2026]].
+
+---
+
+## Previous: 2026-04-23 mid-morning (**v2.5.0 LIVE on Hetzner** — Phase 5 6/7 done, only 5e remains in sibling repo)
 
 Massive continuous session. Started last night at Phase 5 prep, shipped **two full releases** (v2.4.0 morning + v2.5.0 mid-morning), cleared every housekeeping item, polished the customer-comms email end-to-end. **6 of 7 Phase 5 sub-items now LIVE in production.**
 
