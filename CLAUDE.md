@@ -24,7 +24,7 @@
    GHCR rebuilds :vX.Y.Z, :vX.Y, :stable, :latest  (on-prem customers get this)
        │
        ▼
-   ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout vX.Y.Z && IMAGE_TAG=X.Y.Z docker compose pull backend frontend && IMAGE_TAG=X.Y.Z docker compose up -d backend frontend"
+   ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout vX.Y.Z && IMAGE_TAG=X.Y.Z docker compose pull backend frontend && IMAGE_TAG=X.Y.Z docker compose up -d backend frontend"
        │
        ▼
    SaaS live on Hetzner at https://shenmay.ai  (legacy https://nomii.pontensolutions.com → 301)
@@ -277,11 +277,11 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 |-----------|--------|
 | Server | CPX22, Helsinki (hel1), `204.168.232.24`, EUR 12.61/mo |
 | SSH | `ssh nomii@204.168.232.24` (key-only, root disabled) |
-| Repo | `~/nomii-ai/` |
+| Repo | `~/shenmay-ai/` (renamed from `~/nomii-ai` 2026-04-23 PM; `.env` pins `COMPOSE_PROJECT_NAME=nomii-ai` so the existing `nomii-ai_pgdata` postgres volume stays bound — flipping the project name would orphan it) |
 | DB container | `shenmay-db` (postgres:16.9-alpine), internal only |
 | Backend | `shenmay-backend`, port 3001 bound to 127.0.0.1 |
 | Frontend | `shenmay-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
-| DB credentials | user `shenmay` / db `shenmay_ai` (password in `~/nomii-ai/.env` on Hetzner) |
+| DB credentials | user `shenmay` / db `shenmay_ai` (password in `~/shenmay-ai/.env` on Hetzner) |
 | SSL | Cloudflare Full (Strict), Origin CA cert valid until 2041 |
 | Firewall | UFW: SSH (22), HTTP (80), HTTPS (443) only |
 
@@ -300,10 +300,10 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 
 ```bash
 # Standard deploy — pull the GHCR image matching the tag you just cut:
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
 
 # Emergency hotfix from main (avoid unless necessary — skips the release gate):
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git checkout main && git pull && IMAGE_TAG=edge docker compose pull backend frontend && IMAGE_TAG=edge docker compose up -d backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git checkout main && git pull && IMAGE_TAG=edge docker compose pull backend frontend && IMAGE_TAG=edge docker compose up -d backend frontend"
 
 # Verify:
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
@@ -312,13 +312,13 @@ ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
 ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
 
 # Run a migration:
-ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
+ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai < ~/shenmay-ai/server/db/migrations/031_whatever.sql"
 
 # View backend logs:
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=100"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && docker compose logs backend --tail=100"
 
 # Restart without re-pull:
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose restart backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && docker compose restart backend frontend"
 ```
 
 **Changed 2026-04-18 (PR resolving Findings #10 + #11):** SaaS now pulls the same

@@ -135,7 +135,7 @@ Wait for the GitHub Actions run to go green (~5–10 min).
 
 ```bash
 # Fetch the tag, set IMAGE_TAG, pull matching GHCR image, roll containers.
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout v1.2.3 && IMAGE_TAG=1.2.3 docker compose pull backend frontend && IMAGE_TAG=1.2.3 docker compose up -d backend frontend"
 
 # Verify
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
@@ -192,7 +192,7 @@ git push origin v1.2.4
 If a release breaks production, roll back SaaS to the previous tag:
 
 ```bash
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2.2 && IMAGE_TAG=1.2.2 docker compose pull backend frontend && IMAGE_TAG=1.2.2 docker compose up -d backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout v1.2.2 && IMAGE_TAG=1.2.2 docker compose pull backend frontend && IMAGE_TAG=1.2.2 docker compose up -d backend frontend"
 ```
 
 All prior GHCR tags are retained (`:1.2.2`, `:1.1`, etc.), so rollback is just
@@ -219,7 +219,7 @@ path.
 
 ```bash
 # 1. Look at the error
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=200"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && docker compose logs backend --tail=200"
 
 # 2. Identify the failing migration (the runner logs each file as it runs,
 #    the failed one is the last "Running:" before the crash).
@@ -227,7 +227,7 @@ ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=20
 # 3. Roll back to the previous release's code. This gets the UI back up
 #    immediately — the DB will still have any *partially-applied* schema
 #    from the failed migration, but the old code will ignore it.
-ssh nomii@204.168.232.24 "cd ~/nomii-ai && git stash && git checkout v1.X.Y-prev && git stash pop && docker compose up -d --build backend frontend"
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git stash && git checkout v1.X.Y-prev && git stash pop && docker compose up -d --build backend frontend"
 
 # 4. Fix the migration on a branch → PR → merge → new tag.
 #    If you need to clean up partial schema state on prod first, `psql`

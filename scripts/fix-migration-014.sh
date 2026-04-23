@@ -6,7 +6,7 @@
 #  safely to the running database container. All statements use
 #  IF NOT EXISTS so re-running is always safe.
 #
-#  Run from ~/nomii-ai on the server:
+#  Run from ~/shenmay-ai on the server:
 #    bash scripts/fix-migration-014.sh
 #
 #  What this fixes:
