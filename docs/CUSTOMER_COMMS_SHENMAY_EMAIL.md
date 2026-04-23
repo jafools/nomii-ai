@@ -19,11 +19,11 @@ for most customers. Self-hosted operators get one optional to-do
 
 ---
 
-## Send list (33 customers as of 2026-04-23)
+## Send list
 
 ```sql
--- Run on Hetzner:
--- ssh nomii@204.168.232.24 "docker exec -i nomii-db psql -U nomii -d nomii_ai"
+-- Run on Hetzner (post-Phase-7 container + DB naming — updated 2026-04-23 late morning):
+-- ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai"
 SELECT
   a.email,
   a.first_name,
@@ -37,16 +37,33 @@ WHERE a.email_verified     = TRUE
   AND a.password_hash IS NOT NULL
   AND a.invite_token  IS NULL           -- exclude pending invites
   AND t.is_active          = TRUE
+  -- Exclude test / internal / disposable-email tenants. Extend the
+  -- domain list as new test data shows up. Austin's own gmail stays
+  -- in by design (intentional: land-check on send).
+  AND split_part(a.email, '@', 2) NOT IN (
+    'example.com', 'example.test', 'example.net', 'example.org',
+    'pontensolutions.com', 'knomi-preview.dev', 'nomii.local',
+    'mailinator.com', 'urmom.com',
+    'fxavaj.com', 'xfavaj.com', 'nespj.com', 'nesopf.com', 'nespf.com',
+    'enotj.com', 'paylaar.com', 'agoalz.com', 'bigonla.com',
+    'lxbeta.com', 'nexafilm.com', 'devlug.com'
+  )
+  AND a.email NOT LIKE 'test%@%'         -- test@*, testuser@*, etc.
+  AND a.email NOT LIKE 'knomitest%@%'    -- pre-rename test leftovers
+  AND a.email NOT LIKE 'smtptest%@%'     -- SMTP plumbing tests
 ORDER BY a.email;
 ```
 
-**Expected size:** ~33 rows (verified as of 2026-04-23 morning).
-**Who's excluded:** pending invites (not-yet-activated), soft-deleted tenants, invited-but-not-accepted seats. All correct — we only want customers with a working login.
+**Expected size:** 1 row as of 2026-04-23 late morning — Austin's own master tenant (`ajaces@gmail.com` / PS / professional). The rest of the 34 tenants preserved through the rebrand are all test data (disposable-email signups, SMTP tests, HFTN demo tenants, etc.), filtered out by the domain/prefix rules above. **Implication:** this email blast is effectively a no-op until real external customers exist. Keep the query current so a future send picks up real tenants automatically.
+
+**Who's excluded:**
+- Pending invites (not-yet-activated), soft-deleted tenants, invited-but-not-accepted seats — correct, we only want customers with a working login
+- Disposable-email signups + internal test domains + `test%`/`knomitest%`/`smtptest%` local-part prefixes (see the NOT IN / NOT LIKE list above)
 
 **Before sending:** spot-check the list for
-- Internal test accounts (e.g. `pii-e2e-*@example.test`, `austin@*`) — filter OUT
-- Any historical Austin/dev emails you want to receive the email for yourself — leave IN (useful for sanity-check reply rate)
+- Any new disposable-email domains not yet in the NOT IN list — add them, re-run
 - Duplicates (shouldn't exist due to UNIQUE constraint, but check)
+- Austin's own inbox — intentionally kept for land-verification
 
 ---
 
