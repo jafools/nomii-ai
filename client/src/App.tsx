@@ -39,8 +39,8 @@ const SetupRedirect = () => {
   useEffect(() => {
     fetch("/api/setup/status")
       .then(r => r.ok ? r.json() : { required: false })
-      .then(({ required }) => navigate(required ? "/shenmay/setup" : "/shenmay/login", { replace: true }))
-      .catch(() => navigate("/shenmay/login", { replace: true }));
+      .then(({ required }) => navigate(required ? "/setup" : "/login", { replace: true }))
+      .catch(() => navigate("/login", { replace: true }));
   }, [navigate]);
   return null;
 };
@@ -49,6 +49,17 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return null;
+};
+
+// Legacy redirect: any /shenmay/* path from before v3.0.4 (when the canonical
+// routes lived under /shenmay/* because the SaaS was originally mounted at
+// pontensolutions.com/nomii/*) maps to the same path with the prefix stripped.
+// Preserves search params and hash so verify-email tokens, Stripe success URLs,
+// and old browser bookmarks all continue to work.
+const ShenmayLegacyRedirect = () => {
+  const location = useLocation();
+  const stripped = location.pathname.replace(/^\/shenmay/, '') || '/';
+  return <Navigate to={stripped + location.search + location.hash} replace />;
 };
 
 const App = () => (
@@ -61,26 +72,24 @@ const App = () => (
         <Routes>
           {/* Root → check setup status first, then redirect appropriately */}
           <Route path="/" element={<SetupRedirect />} />
-          <Route path="/login" element={<Navigate to="/shenmay/login" replace />} />
-          <Route path="/signup" element={<Navigate to="/shenmay/signup" replace />} />
 
           {/* First-run setup wizard (self-hosted only) */}
-          <Route path="/shenmay/setup" element={<ShenmaySetup />} />
+          <Route path="/setup" element={<ShenmaySetup />} />
 
           {/* Public auth routes */}
-          <Route path="/shenmay/login" element={<ShenmayLogin />} />
-          <Route path="/shenmay/signup" element={<ShenmaySignup />} />
-          <Route path="/shenmay/terms" element={<ShenmayTerms />} />
-          <Route path="/shenmay/verify-email" element={<ShenmayVerifyEmail />} />
-          <Route path="/shenmay/verify/:token" element={<ShenmayVerifyEmail />} />
-          <Route path="/shenmay/reset-password" element={<ShenmayResetPassword />} />
-          <Route path="/shenmay/accept-invite" element={<ShenmayAcceptInvite />} />
+          <Route path="/login" element={<ShenmayLogin />} />
+          <Route path="/signup" element={<ShenmaySignup />} />
+          <Route path="/terms" element={<ShenmayTerms />} />
+          <Route path="/verify-email" element={<ShenmayVerifyEmail />} />
+          <Route path="/verify/:token" element={<ShenmayVerifyEmail />} />
+          <Route path="/reset-password" element={<ShenmayResetPassword />} />
+          <Route path="/accept-invite" element={<ShenmayAcceptInvite />} />
 
           {/* Post-purchase success page (self-hosted license checkout) */}
-          <Route path="/shenmay/license/success" element={<ShenmayLicenseSuccess />} />
+          <Route path="/license/success" element={<ShenmayLicenseSuccess />} />
 
           {/* Protected onboarding */}
-          <Route path="/shenmay/onboarding" element={
+          <Route path="/onboarding" element={
             <ShenmayProtectedRoute>
               <ShenmayAuthProvider>
                 <ShenmayOnboarding />
@@ -89,7 +98,7 @@ const App = () => (
           } />
 
           {/* Protected dashboard */}
-          <Route path="/shenmay/dashboard" element={
+          <Route path="/dashboard" element={
             <ShenmayProtectedRoute>
               <ShenmayAuthProvider>
                 <ShenmayDashboardLayout />
@@ -107,11 +116,15 @@ const App = () => (
             <Route path="plans" element={<ShenmayPlans />} />
             <Route path="settings" element={<ShenmaySettings />} />
             <Route path="profile" element={<ShenmayProfile />} />
-            <Route path="*" element={<Navigate to="/shenmay/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
+          {/* Legacy /shenmay/* prefix → strip prefix + 301-style redirect */}
+          <Route path="/shenmay/*" element={<ShenmayLegacyRedirect />} />
+          <Route path="/shenmay" element={<Navigate to="/" replace />} />
+
           {/* Catch-all → login */}
-          <Route path="*" element={<Navigate to="/shenmay/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

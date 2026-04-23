@@ -24,7 +24,7 @@ export const ShenmayAuthProvider = ({ children }) => {
       })
       .catch(() => {
         clearToken();
-        window.location.href = "/shenmay/login";
+        window.location.href = "/login";
       })
       .finally(() => setLoading(false));
   }, []);

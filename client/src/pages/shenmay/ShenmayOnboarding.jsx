@@ -36,7 +36,7 @@ const UserPill = ({ admin }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleLogout = () => { clearToken(); navigate("/shenmay/login"); };
+  const handleLogout = () => { clearToken(); navigate("/login"); };
 
   return (
     <div style={{ position: "relative" }} ref={ref}>
@@ -54,7 +54,7 @@ const UserPill = ({ admin }) => {
       {open && (
         <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 6, width: 200, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 8, boxShadow: "0 8px 24px -12px rgba(26,29,26,0.2)", zIndex: 50, overflow: "hidden" }}>
           <Link
-            to="/shenmay/dashboard"
+            to="/dashboard"
             onClick={() => setOpen(false)}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.ink, textDecoration: "none" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = T.paperDeep)}
@@ -96,11 +96,11 @@ const UserPillMobile = ({ admin }) => {
       </button>
       {open && (
         <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 6, width: 180, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 8, zIndex: 50, overflow: "hidden" }}>
-          <Link to="/shenmay/dashboard" onClick={() => setOpen(false)}
+          <Link to="/dashboard" onClick={() => setOpen(false)}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.ink, textDecoration: "none" }}>
             <LayoutDashboard size={14} color={T.mute} /> Dashboard
           </Link>
-          <button onClick={() => { clearToken(); navigate("/shenmay/login"); }}
+          <button onClick={() => { clearToken(); navigate("/login"); }}
             style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", fontSize: 13, color: T.danger, background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
             <LogOut size={14} /> Log out
           </button>
@@ -121,7 +121,7 @@ const ShenmayOnboarding = () => {
 
   useEffect(() => {
     const token = getToken();
-    if (!token) { navigate("/shenmay/login"); return; }
+    if (!token) { navigate("/login"); return; }
 
     setInitialLoading(true);
     getMe()
@@ -136,7 +136,7 @@ const ShenmayOnboarding = () => {
         Object.entries(keyMap).forEach(([apiKey, idx]) => { if (steps[apiKey] === true) done.add(idx); });
         setCompletedSteps(done);
 
-        if (steps.widget === true || steps.install_widget === true) { navigate("/shenmay/dashboard", { replace: true }); return; }
+        if (steps.widget === true || steps.install_widget === true) { navigate("/dashboard", { replace: true }); return; }
         const resumeStep = STEPS.findIndex((_, i) => !done.has(i));
         setActiveStep(resumeStep >= 0 ? resumeStep : 0);
       })
@@ -194,7 +194,7 @@ const ShenmayOnboarding = () => {
         {/* Brand + user pill */}
         <div style={{ padding: "28px 28px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+            <Link to="/dashboard" style={{ textDecoration: "none" }}>
               <ShenmayWordmark size={24} />
             </Link>
             {admin && <UserPill admin={admin} />}
@@ -263,7 +263,7 @@ const ShenmayOnboarding = () => {
         {/* Skip to dashboard */}
         {anyComplete && (
           <div style={{ padding: 20, borderTop: `1px solid ${T.paperEdge}` }}>
-            <Link to="/shenmay/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+            <Link to="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
               Skip to dashboard <ArrowRight size={13} />
             </Link>
           </div>
@@ -278,7 +278,7 @@ const ShenmayOnboarding = () => {
           <style>{`@media (min-width: 768px) { .shenmay-onboarding-mobile-header { display: none !important; } }`}</style>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+              <Link to="/dashboard" style={{ textDecoration: "none" }}>
                 <ShenmayWordmark size={20} />
               </Link>
               <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.teal, padding: "3px 8px", background: "rgba(15,95,92,0.1)", borderRadius: 4 }}>
@@ -312,7 +312,7 @@ const ShenmayOnboarding = () => {
                 Head to your dashboard to see conversations and manage your customers.
               </Lede>
               <div style={{ marginTop: 32 }}>
-                <Link to="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+                <Link to="/dashboard" style={{ textDecoration: "none" }}>
                   <Button variant="primary" size="lg">Go to dashboard <ArrowRight size={15} /></Button>
                 </Link>
               </div>
@@ -345,7 +345,7 @@ class OnboardingErrorBoundary extends Component {
             </Lede>
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
               <Button variant="ghost" onClick={() => window.location.reload()}>Reload page</Button>
-              <a href="/shenmay/dashboard" style={{ textDecoration: "none" }}>
+              <a href="/dashboard" style={{ textDecoration: "none" }}>
                 <Button variant="primary">Go to dashboard</Button>
               </a>
             </div>

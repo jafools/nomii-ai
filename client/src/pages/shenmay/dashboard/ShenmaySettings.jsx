@@ -174,7 +174,7 @@ const WidgetSection = () => {
         ) : (
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(245,158,11,0.12)", color: "#A6660E" }}>Not yet detected</span>
-            <Link to="/shenmay/onboarding" className="text-xs font-medium hover:underline" style={{ color: "#0F5F5C" }}>→ Installation guide</Link>
+            <Link to="/onboarding" className="text-xs font-medium hover:underline" style={{ color: "#0F5F5C" }}>→ Installation guide</Link>
           </div>
         )}
       </div>
@@ -616,9 +616,9 @@ curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records
       {/* Three-model explainer */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
-          { icon: "📤", label: "CSV Upload", desc: "Upload a spreadsheet from your computer. Good for manual one-time imports.", nav: "/shenmay/dashboard/customers", navLabel: "Go to Customers" },
+          { icon: "📤", label: "CSV Upload", desc: "Upload a spreadsheet from your computer. Good for manual one-time imports.", nav: "/dashboard/customers", navLabel: "Go to Customers" },
           { icon: "🔌", label: "Data API", desc: "Push data programmatically. Set it up once; it syncs automatically.", active: true },
-          { icon: "🔗", label: "Live Connector", desc: "Shenmay calls your system in real time. Data never leaves your servers.", nav: "/shenmay/dashboard/tools", navLabel: "Set up in Tools →" },
+          { icon: "🔗", label: "Live Connector", desc: "Shenmay calls your system in real time. Data never leaves your servers.", nav: "/dashboard/tools", navLabel: "Set up in Tools →" },
         ].map((m) => (
           <div key={m.label} className="rounded-xl p-4" style={{ background: m.active ? "rgba(167,139,250,0.06)" : "#EDE7D7", border: `1px solid ${m.active ? "rgba(167,139,250,0.2)" : "#EDE7D7"}` }}>
             <div className="flex items-center gap-2 mb-2">

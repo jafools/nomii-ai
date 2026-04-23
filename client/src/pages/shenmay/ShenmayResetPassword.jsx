@@ -102,7 +102,7 @@ const ShenmayResetPassword = () => {
                 </Notice>
               </div>
               <div style={{ marginTop: 24 }}>
-                <Link to="/shenmay/login" style={{ width: "100%", textDecoration: "none" }}>
+                <Link to="/login" style={{ width: "100%", textDecoration: "none" }}>
                   <Button variant="primary" size="lg" style={{ width: "100%" }}>
                     Go to sign in <ArrowRight size={15} />
                   </Button>
@@ -139,7 +139,7 @@ const ShenmayResetPassword = () => {
                     <div>{error}</div>
                     {expiredHint && (
                       <div style={{ marginTop: 8 }}>
-                        <Link to="/shenmay/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+                        <Link to="/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
                           Request a new link →
                         </Link>
                       </div>
@@ -153,7 +153,7 @@ const ShenmayResetPassword = () => {
               </form>
 
               <div style={{ marginTop: 28, textAlign: "center" }}>
-                <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+                <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
                   <ArrowLeft size={14} /> Back to sign in
                 </Link>
               </div>

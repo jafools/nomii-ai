@@ -59,7 +59,7 @@ const ShenmaySetup = () => {
       // Self-hosted first-run lands on widget-install step of onboarding
       // (products/customers/api_key/tools are pre-marked complete server-side,
       // so /shenmay/onboarding resumes at install_widget — fixes SH-1/SH-2).
-      navigate("/shenmay/onboarding", { replace: true });
+      navigate("/onboarding", { replace: true });
     } catch (err) {
       setError(err.message || "Setup failed. Please try again.");
     } finally { setLoading(false); }

@@ -74,7 +74,7 @@ function tenantFooterText(tenantEmail) {
 // ── Send verification email ────────────────────────────────────────────────
 
 async function sendVerificationEmail({ to, token, firstName }) {
-  const verifyUrl = `${APP_URL}/shenmay/verify-email?token=${token}`;
+  const verifyUrl = `${APP_URL}/verify-email?token=${token}`;
   const name = firstName || 'there';
 
   const html = `
@@ -132,7 +132,7 @@ async function sendVerificationEmail({ to, token, firstName }) {
 // ── Send welcome email (after verification) ────────────────────────────────
 
 async function sendWelcomeEmail({ to, firstName, companyName }) {
-  const dashboardUrl = `${APP_URL}/shenmay/onboarding`;
+  const dashboardUrl = `${APP_URL}/onboarding`;
   const name = firstName || 'there';
 
   const html = `
@@ -183,7 +183,7 @@ async function sendWelcomeEmail({ to, firstName, companyName }) {
 // ── Send password-reset email ───────────────────────────────────────────────
 
 async function sendPasswordResetEmail({ to, token, firstName }) {
-  const resetUrl = `${APP_URL}/shenmay/reset-password?token=${token}`;
+  const resetUrl = `${APP_URL}/reset-password?token=${token}`;
   const name = firstName || 'there';
 
   const html = `
@@ -240,7 +240,7 @@ async function sendPasswordResetEmail({ to, token, firstName }) {
 // ── Send trial limit reached email ─────────────────────────────────────────
 
 async function sendTrialLimitEmail({ to, firstName, tenantName }) {
-  const pricingUrl = `${APP_URL}/shenmay/dashboard/plans`;
+  const pricingUrl = `${APP_URL}/dashboard/plans`;
   const contactUrl = CONTACT_URL;
   const name = firstName || 'there';
   const company = tenantName || 'your account';
@@ -325,7 +325,7 @@ async function sendTrialLimitEmail({ to, firstName, tenantName }) {
 // ── Send concern raised notification email ─────────────────────────────────
 
 async function sendConcernEmail({ to, firstName, customerName, customerEmail, description, conversationId, tenantEmail }) {
-  const concernUrl = `${APP_URL}/shenmay/dashboard/concerns`;
+  const concernUrl = `${APP_URL}/dashboard/concerns`;
   const name = firstName || 'there';
 
   const html = `
@@ -585,7 +585,7 @@ async function sendDocumentEmail({
 async function sendHumanModeReplyEmail({ to, agentName, customerName, customerEmail, messageSnippet, conversationId, tenantEmail }) {
   const name    = agentName   || 'Agent';
   const cust    = customerName || 'A customer';
-  const dashUrl = `${APP_URL}/shenmay/dashboard/conversations/${conversationId}`;
+  const dashUrl = `${APP_URL}/dashboard/conversations/${conversationId}`;
 
   const html = `
 <!DOCTYPE html>

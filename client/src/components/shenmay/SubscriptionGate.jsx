@@ -115,7 +115,7 @@ export default function SubscriptionGate({ subscription, children }) {
         {loading ? "Loading..." : "View Plans & Upgrade"}
       </button>
 
-      <a href="/shenmay/dashboard/plans" className="text-xs underline" style={{ color: "#6B6B64" }}>
+      <a href="/dashboard/plans" className="text-xs underline" style={{ color: "#6B6B64" }}>
         Compare plans
       </a>
     </div>

@@ -15,11 +15,11 @@ test.describe('Dashboard Navigation', () => {
 
   test.beforeEach(async ({ page }) => {
     // Inject the shared token rather than re-logging in for every test
-    await page.goto('/shenmay/login');
+    await page.goto('/login');
     await page.evaluate((token) => {
       localStorage.setItem('shenmay_portal_token', token);
     }, authToken);
-    await page.goto('/shenmay/dashboard');
+    await page.goto('/dashboard');
     await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
   });
 
@@ -65,13 +65,13 @@ test.describe('Dashboard Navigation', () => {
 
   test('profile page loads', async ({ page }) => {
     // Navigate via URL since profile may not always be in sidebar nav
-    await page.goto('/shenmay/dashboard/profile');
+    await page.goto('/dashboard/profile');
     await page.waitForURL(/\/profile/, { timeout: 10_000 });
     expect(page.url()).toContain('/profile');
   });
 
   test('plans page loads', async ({ page }) => {
-    await page.goto('/shenmay/dashboard/plans');
+    await page.goto('/dashboard/plans');
     await page.waitForURL(/\/plans/, { timeout: 10_000 });
     expect(page.url()).toContain('/plans');
   });
@@ -81,10 +81,10 @@ test.describe('Dashboard Navigation', () => {
     // stays mounted and doesn't re-fire getMe() — which can fail transiently
     // when the cold request hits the prod API mid-test.
     await page.evaluate(() => {
-      window.history.pushState({}, '', '/shenmay/dashboard/nonexistent-page');
+      window.history.pushState({}, '', '/dashboard/nonexistent-page');
       window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
     });
-    // React Router inner catch-all redirects back to /shenmay/dashboard
+    // React Router inner catch-all redirects back to /dashboard
     await page.waitForTimeout(1000);
     expect(page.url()).not.toContain('/login');
   });

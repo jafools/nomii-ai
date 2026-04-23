@@ -66,7 +66,7 @@ const CheckEmailState = ({ email }) => {
         <Button variant="linky" onClick={handleResend} disabled={resending || resent}>
           {resent ? "Sent — check your inbox" : resending ? "Sending…" : "Resend verification email"}
         </Button>
-        <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+        <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
           <ArrowLeft size={14} /> Back to sign in
         </Link>
       </div>
@@ -90,7 +90,7 @@ const ShenmaySignup = () => {
   useEffect(() => {
     fetch("/api/config")
       .then((r) => r.json())
-      .then((d) => { if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/shenmay/login", { replace: true }); })
+      .then((d) => { if (d.deployment === DEPLOYMENT_MODES.SELFHOSTED) navigate("/login", { replace: true }); })
       .catch(() => {});
   }, [navigate]);
 
@@ -114,7 +114,7 @@ const ShenmaySignup = () => {
     try {
       const data = await apiRegister(t.email, t.password, t.firstName, t.lastName, t.companyName, t.vertical, true, form.newsletterOptIn);
       if (data.pending_verification) setPendingEmail(data.email || t.email);
-      else if (data.token) { setToken(data.token); navigate("/shenmay/onboarding"); }
+      else if (data.token) { setToken(data.token); navigate("/onboarding"); }
     } catch (err) {
       const msg = err.message || "Registration failed.";
       if ((msg.toLowerCase().includes("company") && msg.toLowerCase().includes("taken")) || err.code === "company_name_taken") {
@@ -262,7 +262,7 @@ const ShenmaySignup = () => {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 16, borderTop: `1px solid ${T.paperEdge}` }}>
                   {[
                     { key: "tosAccepted", node: (
-                      <>I agree to the <a href="/shenmay/terms" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, borderBottom: `1px solid ${T.teal}40`, textDecoration: "none" }}>Shenmay AI Terms of Service</a> (opens in new tab).</>
+                      <>I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, borderBottom: `1px solid ${T.teal}40`, textDecoration: "none" }}>Shenmay AI Terms of Service</a> (opens in new tab).</>
                     )},
                     { key: "dataRightsConfirmed", node: <>I confirm that I have obtained the necessary rights and consents to upload my customers' personal data to Shenmay AI, and that my use complies with applicable privacy laws (GDPR, CCPA, etc.).</> },
                     { key: "newsletterOptIn",   node: <>I'd like to receive occasional product updates from Shenmay AI.</> },
@@ -283,7 +283,7 @@ const ShenmaySignup = () => {
 
               <p style={{ textAlign: "center", fontSize: 14, color: T.mute, marginTop: 32 }}>
                 Already have an account?&nbsp;{" "}
-                <Link to="/shenmay/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+                <Link to="/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
                   Sign in →
                 </Link>
               </p>

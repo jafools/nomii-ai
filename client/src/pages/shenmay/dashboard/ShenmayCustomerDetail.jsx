@@ -92,7 +92,7 @@ const ShenmayCustomerDetail = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Back + refresh indicator */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button onClick={() => navigate("/shenmay/dashboard/customers")} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: T.sans }}>
+        <button onClick={() => navigate("/dashboard/customers")} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: T.sans }}>
           <ArrowLeft size={15} /> All customers
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -399,7 +399,7 @@ const ConversationRow = ({ conversation: c, onSynced }) => {
 
   return (
     <div className="flex items-center gap-2" style={{ border: "1px solid #EDE7D7", borderRadius: "0.75rem" }}>
-      <Link to={`/shenmay/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-[#F5F1E8]">
+      <Link to={`/dashboard/conversations/${c.id}`} className="flex-1 flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-[#F5F1E8]">
         <div className="text-sm">
           <span className="font-medium text-[#3A3D39]">{c.status}</span>
           <span className="text-[#6B6B64] ml-2">{c.message_count || 0} messages</span>
@@ -729,7 +729,7 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
     try {
       await deleteCustomer(customerId);
       toast({ title: "Customer data has been anonymised and removed." });
-      navigate("/shenmay/dashboard/customers");
+      navigate("/dashboard/customers");
     } catch (err) {
       toast({ title: "Deletion failed", description: err.message, variant: "destructive" });
     } finally {

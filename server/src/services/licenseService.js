@@ -267,7 +267,7 @@ async function checkLicenseOnStartup() {
     console.log('[License] No license key — running in self-hosted trial mode.');
     console.log('[License]   Limits: 20 messages/mo, 1 customer.');
     const appUrl = (process.env.APP_URL || 'https://shenmay.ai').replace(/\/$/, '');
-    console.log(`[License]   Upgrade: ${appUrl}/shenmay/license`);
+    console.log(`[License]   Upgrade: ${appUrl}/license`);
     return;
   }
 
@@ -287,7 +287,7 @@ async function checkLicenseOnStartup() {
       // Dashboard-activated key turned out to be invalid (revoked, expired,
       // network down on first boot, etc). Don't crash — fall back to trial
       // limits and let the owner reactivate from the dashboard.
-      console.warn('[License] Falling back to trial limits. Reactivate from /shenmay/dashboard/plans.');
+      console.warn('[License] Falling back to trial limits. Reactivate from /dashboard/plans.');
       try { await applyPlanLimits('trial'); } catch { /* best-effort */ }
     } else {
       // Env-var path stays strict: an invalid key in .env is almost certainly
