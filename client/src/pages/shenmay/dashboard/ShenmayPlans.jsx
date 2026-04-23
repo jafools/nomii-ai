@@ -324,7 +324,7 @@ const ShenmayPlans = () => {
                   type="text"
                   value={licenseInput}
                   onChange={(e) => setLicenseInput(e.target.value)}
-                  placeholder="NOMII-XXXX-XXXX-XXXX-XXXX"
+                  placeholder="SHENMAY-XXXX-XXXX-XXXX-XXXX"
                   disabled={licenseBusy}
                   spellCheck={false}
                   autoComplete="off"

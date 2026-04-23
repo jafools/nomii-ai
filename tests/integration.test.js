@@ -667,7 +667,7 @@ async function runTests() {
 
     await test('POST /api/license/validate with unknown key → 403', async () => {
       const res = await post(licenseUrl, '/api/license/validate', {
-        license_key: 'NOMII-XXXX-XXXX-XXXX-XXXX',
+        license_key: 'SHENMAY-XXXX-XXXX-XXXX-XXXX',
         instance_id: 'test-instance-1',
       });
       assert(res.status === 403, `Expected 403, got ${res.status}`);
