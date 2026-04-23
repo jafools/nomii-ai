@@ -38,6 +38,10 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
  */
 
 // Auth helpers
+// TODO(Phase 5c): migrate storage key to "shenmay_portal_token".
+// getToken should read new key first, fall back to legacy and migrate in-place;
+// setToken writes only the new key; clearToken removes both.
+// See docs/PHASE_5_CHECKLIST.md §5c.
 /** @returns {string|null} Current portal JWT from localStorage. */
 export const getToken = () => localStorage.getItem("nomii_portal_token");
 /** @param {string} token */
