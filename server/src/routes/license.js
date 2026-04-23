@@ -124,7 +124,7 @@ router.post('/trial', async (req, res, next) => {
 
     // Generate new trial key (14-day expiry)
     const hex         = crypto.randomBytes(8).toString('hex').toUpperCase();
-    const trial_key   = `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
+    const trial_key   = `SHENMAY-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
     const expires_at  = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
     await db.query(

@@ -22,10 +22,12 @@ const { VALID_LICENSE_PLANS } = require('../../config/plans');
 router.use(requirePlatformAuth());
 
 // ── Key generation ─────────────────────────────────────────────────────────────
-// Format: NOMII-XXXX-XXXX-XXXX-XXXX  (readable, copy-pasteable)
+// Format: SHENMAY-XXXX-XXXX-XXXX-XXXX  (readable, copy-pasteable)
+// Legacy NOMII-prefixed keys remain valid (validation does an exact-string DB lookup);
+// only newly issued keys carry the SHENMAY- prefix.
 function generateLicenseKey() {
   const hex = crypto.randomBytes(8).toString('hex').toUpperCase();
-  return `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
+  return `SHENMAY-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
 }
 
 router.get('/', async (req, res, next) => {

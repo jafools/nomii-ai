@@ -20,7 +20,7 @@ const { sendLicenseKeyEmail } = require('../services/emailService');
 
 function generateLicenseKey() {
   const hex = crypto.randomBytes(8).toString('hex').toUpperCase();
-  return `NOMII-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
+  return `SHENMAY-${hex.slice(0,4)}-${hex.slice(4,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}`;
 }
 
 const STRIPE_SECRET_KEY      = process.env.STRIPE_SECRET_KEY;

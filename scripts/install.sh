@@ -293,7 +293,7 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
       ok "Headless: license key set"
     fi
   else
-    ask "License key (NOMII-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
+    ask "License key (SHENMAY-XXXX-XXXX-XXXX-XXXX) [Enter for free trial]:"
     read -r SHENMAY_LICENSE_KEY
     if [ -z "$SHENMAY_LICENSE_KEY" ]; then
       ok "Starting with free trial — 20 messages/mo, 1 customer"
