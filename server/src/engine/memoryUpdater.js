@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Memory Updater Engine (v2)
+ * SHENMAY AI — Memory Updater Engine (v2)
  *
  * Keeps every customer's memory_file and soul_file alive and current.
  * Runs fire-and-forget after each chat exchange — never blocks the response.

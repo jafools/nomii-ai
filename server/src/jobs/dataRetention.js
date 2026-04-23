@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Data Retention Cron Job
+ * SHENMAY AI — Data Retention Cron Job
  *
  * Runs once on server startup, then every 24 hours.
  *

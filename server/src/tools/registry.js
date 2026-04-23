@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Tool Registry
+ * SHENMAY AI — Tool Registry
  *
  * The master list of all tools available to agents.
  * Each entry is a self-contained module with:

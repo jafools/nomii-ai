@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Soul/Memory Encryption Backfill
+ * SHENMAY AI — Soul/Memory Encryption Backfill
  *
  * One-time script to encrypt all existing plain-text soul_file and memory_file
  * rows that pre-date the column-level encryption rollout (Session 18).

@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Audit Logging Middleware
+ * SHENMAY AI — Audit Logging Middleware
  *
  * Provides writeAuditLog() — a fire-and-forget helper that inserts a row into
  * audit_logs. Used by routes that touch sensitive data:

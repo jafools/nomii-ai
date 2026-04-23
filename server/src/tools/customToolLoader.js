@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Custom Tool Loader
+ * SHENMAY AI — Custom Tool Loader
  *
  * At chat time, this module:
  *   1. Loads a tenant's active custom tools from the DB

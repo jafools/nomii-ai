@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Slack & Teams Notification Service
+ * SHENMAY AI — Slack & Teams Notification Service
  *
  * Sends real-time notifications to Slack (Block Kit) and Microsoft Teams
  * (MessageCard) when key conversation events occur.

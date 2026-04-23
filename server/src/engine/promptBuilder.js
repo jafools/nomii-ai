@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Prompt Builder Engine (Industry-Agnostic)
+ * SHENMAY AI — Prompt Builder Engine (Industry-Agnostic)
  *
  * Assembles the system prompt that gives the agent its identity and knowledge.
  * This is the core of Shenmay: before every conversation, the agent reads its

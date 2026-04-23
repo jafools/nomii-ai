@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Tenant Portal Routes
+ * SHENMAY AI — Tenant Portal Routes
  *
  * All routes require a valid portal JWT (issued by /api/onboard/login or /register).
  * These power the tenant dashboard at pontensolutions.com.
@@ -51,7 +51,7 @@ const { validateWebhookUrl }         = require('../utils/validateWebhookUrl');
 const { anonEmailNotLikeGuard, anonEmailLikeMatch } = require('../constants/anonDomains');
 const { envVar }                     = require('../utils/env');
 
-const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret';
+const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'shenmay-dev-secret';
 
 // ── Safe pagination helper ─────────────────────────────────────────────────
 // Prevents NaN / out-of-range from malformed query params

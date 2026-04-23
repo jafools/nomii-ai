@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Custom Tool Handler
+ * SHENMAY AI — Custom Tool Handler
  *
  * Executes custom tools defined by tenants in the custom_tools table.
  * No code ever needs to be written — behaviour is driven entirely by

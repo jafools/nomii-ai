@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Subscription Enforcement Middleware
+ * SHENMAY AI — Subscription Enforcement Middleware
  *
  * Checks tenant subscription status before allowing access to portal
  * and widget routes. Master accounts always pass.

@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Platform Tenant Management Routes
+ * SHENMAY AI — Platform Tenant Management Routes
  *
  * GET    /api/platform/tenants          — List all tenants
  * POST   /api/platform/tenants          — Create new tenant + first admin

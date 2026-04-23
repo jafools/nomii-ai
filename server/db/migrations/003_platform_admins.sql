@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Migration 003: Platform Admins
+-- SHENMAY AI — Migration 003: Platform Admins
 -- Adds a separate table for Shenmay AI platform-level superadmins.
 -- These users are completely separate from tenant users.
 -- They can create/manage tenants but cannot access tenant data.

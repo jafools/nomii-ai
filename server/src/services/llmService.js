@@ -1,5 +1,5 @@
 /**
- * NOMII AI — LLM Service
+ * SHENMAY AI — LLM Service
  *
  * Handles all calls to the Claude API (or mock fallback).
  * Supports per-tenant API keys (BYOK) and a global fallback key (managed AI).

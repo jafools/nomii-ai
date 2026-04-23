@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Authentication & Authorization Middleware
+ * SHENMAY AI — Authentication & Authorization Middleware
  *
  * Provides Express middleware for:
  *   - requireAuth()  — Validates JWT, attaches req.user

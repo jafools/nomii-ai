@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Seed Data: Hope for This Nation
+-- SHENMAY AI — Seed Data: Hope for This Nation
 -- Vertical: Ministry / Traveling Mission Team
 -- Test tenant for embed widget PoC
 -- Run after migrations 001–004

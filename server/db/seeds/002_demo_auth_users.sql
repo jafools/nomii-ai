@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Seed Data: Demo Auth Users
+-- SHENMAY AI — Seed Data: Demo Auth Users
 -- Sets passwords for existing demo users so they can log in.
 -- Run after 001_covenant_trust_demo.sql
 --

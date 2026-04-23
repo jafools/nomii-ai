@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Stripe Webhook Handler
+ * SHENMAY AI — Stripe Webhook Handler
  *
  * Receives Stripe events and updates subscription records accordingly.
  * Mounted at POST /api/stripe/webhook with raw body parsing.

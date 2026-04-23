@@ -1,5 +1,5 @@
 -- ============================================================
--- NOMII AI — Clean All Test Data
+-- SHENMAY AI — Clean All Test Data
 -- Run this once to wipe all test accounts and start fresh
 -- ============================================================
 -- This deletes in dependency order to respect foreign keys.
