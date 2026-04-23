@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Component } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
-import { getMe, clearToken } from "@/lib/shenmayApi";
+import { getMe, clearToken, getToken } from "@/lib/shenmayApi";
 import { Building2, Package, Users, Code, Key, Check, ArrowRight, ChevronDown, LogOut, LayoutDashboard, CheckCircle2, AlertTriangle } from "lucide-react";
 import Step1CompanyProfile from "@/components/shenmay/onboarding/Step1CompanyProfile";
 import Step2Products from "@/components/shenmay/onboarding/Step2Products";
@@ -120,7 +120,7 @@ const ShenmayOnboarding = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("nomii_portal_token");
+    const token = getToken();
     if (!token) { navigate("/shenmay/login"); return; }
 
     setInitialLoading(true);

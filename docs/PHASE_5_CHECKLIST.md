@@ -56,24 +56,25 @@ prefix lookup for each. Manually issue new key via portal → verify
 
 ---
 
-## 5c · localStorage portal token — `nomii_portal_token` → `shenmay_portal_token`
+## 5c · localStorage portal token — `nomii_portal_token` → `shenmay_portal_token` ✅ SHIPPED
 
-Client refactor: write new key, read new-first-then-old-with-migration.
-Old sessions migrate on next page load; no customer action needed.
+**Status:** LIVE. Implemented in feat/phase-5c-localstorage-migration.
+Customer sessions silently migrate on their next portal load; no
+re-login required.
 
-| File | Line | Action |
-|---|---|---|
-| [client/src/lib/shenmayApi.js:42-45](client/src/lib/shenmayApi.js:42) | `getToken`, `setToken`, `clearToken` | Rewrite: write + primary-read `shenmay_portal_token`; fallback-read `nomii_portal_token` → migrate → clear; `clearToken` clears both |
-| [client/src/pages/shenmay/ShenmayOnboarding.jsx:123](client/src/pages/shenmay/ShenmayOnboarding.jsx:123) | Direct `localStorage.getItem` | Replace with `getToken()` from shenmayApi |
-| [LOVABLE_PROMPTS.md](LOVABLE_PROMPTS.md) | Multiple refs to token key | Update all references (doc-only, non-runtime) |
+**Implementation summary:**
 
-**Test plan:** E2E — seed `nomii_portal_token` manually, reload, assert
-`shenmay_portal_token` is set + old key is cleared + session still valid.
-Do NOT flip the E2E suite's direct-localStorage accesses in this PR — the
-suite currently validates the old key path; Phase 5c is the moment it
-becomes the dual-key path.
-**Risk:** 🟡 minor — bad migration logic could strand a session. Mitigate
-with verified in-session migration test + rollback hooks.
+- [client/src/lib/shenmayApi.js:40-71](client/src/lib/shenmayApi.js:40) — `TOKEN_KEY` = `shenmay_portal_token`, `LEGACY_TOKEN_KEY` = `nomii_portal_token`. `getToken()` reads new key first, falls back to legacy with in-place migration (writes new key + clears legacy). `setToken()` writes new key + clears legacy proactively. `clearToken()` removes both.
+- [client/src/pages/shenmay/ShenmayOnboarding.jsx:123](client/src/pages/shenmay/ShenmayOnboarding.jsx:123) — direct `localStorage.getItem` replaced with the `getToken()` helper.
+- E2E helpers + specs intentionally left on direct `nomii_portal_token` access — Playwright isolation gives each test a fresh context, so test-seeded legacy tokens exercise the migration path which is a valuable coverage boost.
+- `LOVABLE_PROMPTS.md` references left for a future doc sweep (non-runtime).
+
+**Verified scenarios:**
+- Fresh user (no tokens) → `getToken()` returns `null`, `isLoggedIn()` false.
+- Post-login with new flow → `setToken(jwt)` writes new key, no legacy key left behind.
+- Returning user with legacy token only → first `getToken()` migrates in place; second call is a single-key hit.
+- Dual-key state (defensive) → new key wins, legacy ignored.
+- Logout → `clearToken()` removes both keys.
 
 ---
 
