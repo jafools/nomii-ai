@@ -192,12 +192,12 @@ test.describe('Widget — Authenticated Session', () => {
     // Simulate SPA login — postMessage to identify user
     await page.evaluate(() => {
       window.postMessage(
-        { type: 'nomii:setUser', email: 'spa-test@example.com', name: 'SPA User' },
+        { type: 'shenmay:setUser', email: 'spa-test@example.com', name: 'SPA User' },
         '*'
       );
     });
 
-    // The widget should send a nomii:identify message into the iframe
+    // The widget should send a shenmay:identify message into the iframe
     // and claim the session. Wait a moment for the claim request.
     await page.waitForTimeout(3000);
 
@@ -231,7 +231,7 @@ test.describe('Widget — Authenticated Session', () => {
 
     // Simulate logout
     await page.evaluate(() => {
-      window.postMessage({ type: 'nomii:setUser', email: '', name: '' }, '*');
+      window.postMessage({ type: 'shenmay:setUser', email: '', name: '' }, '*');
     });
 
     // Widget should reload — panel closes and iframe src resets
@@ -265,7 +265,7 @@ test.describe('Widget — Close Button', () => {
     // Click close button inside the iframe
     await iframe.locator(SEL_WIDGET.closeBtn).click();
 
-    // Panel should close — the iframe posts nomii:close back to parent
+    // Panel should close — the iframe posts shenmay:close back to parent
     await expect(page.locator(SEL_WIDGET.iframeWrap)).not.toHaveClass(/open/, { timeout: 5_000 });
   });
 });

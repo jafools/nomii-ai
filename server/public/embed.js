@@ -1,10 +1,10 @@
 /**
- * NOMII AI — Embed Script  (embed.js)
+ * SHENMAY AI — Embed Script  (embed.js)
  *
  * Drop this on any page:
  *
  *   <script
- *     src="https://your-nomii-server.com/embed.js"
+ *     src="https://your-shenmay-server.com/embed.js"
  *     data-widget-key="your-tenant-widget-key"
  *     data-user-email="user@example.com"
  *     data-user-name="Jane Doe"
@@ -22,8 +22,8 @@
  *       .setAttribute('data-user-email', 'user@example.com');
  *
  *   Option B — postMessage from the host page:
- *     window.postMessage({ type: 'nomii:setUser', email: 'user@example.com', name: 'Jane' }, '*');
- *     window.postMessage({ type: 'nomii:setUser', email: '', name: '' }, '*');  // logout
+ *     window.postMessage({ type: 'shenmay:setUser', email: 'user@example.com', name: 'Jane' }, '*');
+ *     window.postMessage({ type: 'shenmay:setUser', email: '', name: '' }, '*');  // logout
  */
 
 (function () {
@@ -50,7 +50,7 @@
   // Prevent double-init if the embed script is injected more than once
   // (common in React/SPA apps where the component mounts/remounts on navigation).
   // The existing instance's MutationObserver + postMessage listener handles updates.
-  if (document.getElementById('nomii-launcher')) {
+  if (document.getElementById('shenmay-launcher')) {
     return;
   }
 
@@ -62,7 +62,7 @@
   var isRight = position !== 'bottom-left';
   var styles  = [
     /* Launcher bubble */
-    '#nomii-launcher{position:fixed;' + (isRight ? 'right:24px' : 'left:24px') + ';bottom:24px;z-index:2147483646;',
+    '#shenmay-launcher{position:fixed;' + (isRight ? 'right:24px' : 'left:24px') + ';bottom:24px;z-index:2147483646;',
     'display:flex;align-items:center;gap:8px;',
     'background:' + primaryColor + ';color:#fff;',
     'border:none;border-radius:999px;padding:12px 20px;',
@@ -70,23 +70,23 @@
     'cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.25);',
     'transition:transform .15s,box-shadow .15s;}',
 
-    '#nomii-launcher:hover{transform:scale(1.04);box-shadow:0 6px 28px rgba(0,0,0,.32);}',
-    '#nomii-launcher svg{flex-shrink:0;}',
+    '#shenmay-launcher:hover{transform:scale(1.04);box-shadow:0 6px 28px rgba(0,0,0,.32);}',
+    '#shenmay-launcher svg{flex-shrink:0;}',
 
     /* iframe container */
-    '#nomii-iframe-wrap{position:fixed;' + (isRight ? 'right:24px' : 'left:24px') + ';bottom:86px;z-index:2147483647;',
+    '#shenmay-iframe-wrap{position:fixed;' + (isRight ? 'right:24px' : 'left:24px') + ';bottom:86px;z-index:2147483647;',
     'width:380px;height:600px;max-height:calc(100vh - 120px);',
     'border-radius:16px;overflow:hidden;',
     'box-shadow:0 8px 40px rgba(0,0,0,.30);',
     'display:none;transition:opacity .2s;}',
 
-    '#nomii-iframe-wrap.open{display:block;}',
-    '#nomii-iframe{width:100%;height:100%;border:none;border-radius:16px;}',
+    '#shenmay-iframe-wrap.open{display:block;}',
+    '#shenmay-iframe{width:100%;height:100%;border:none;border-radius:16px;}',
 
     /* Responsive — mobile full-screen */
     '@media(max-width:440px){',
-    '#nomii-iframe-wrap{left:0;right:0;bottom:0;width:100%;height:100%;max-height:100%;border-radius:0;}',
-    '#nomii-launcher{right:16px;bottom:16px;}',
+    '#shenmay-iframe-wrap{left:0;right:0;bottom:0;width:100%;height:100%;max-height:100%;border-radius:0;}',
+    '#shenmay-launcher{right:16px;bottom:16px;}',
     '}',
   ].join('');
 
@@ -96,7 +96,7 @@
 
   // ── Launcher button ──────────────────────────────────────────────────────────
   var launcher = document.createElement('button');
-  launcher.id = 'nomii-launcher';
+  launcher.id = 'shenmay-launcher';
   launcher.setAttribute('aria-label', 'Open ' + label);
   launcher.innerHTML =
     '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -108,10 +108,10 @@
 
   // ── iframe container ─────────────────────────────────────────────────────────
   var iframeWrap = document.createElement('div');
-  iframeWrap.id = 'nomii-iframe-wrap';
+  iframeWrap.id = 'shenmay-iframe-wrap';
 
   var iframe = document.createElement('iframe');
-  iframe.id    = 'nomii-iframe';
+  iframe.id    = 'shenmay-iframe';
   iframe.title = 'Shenmay AI Chat';
   iframe.allow = 'autoplay';
 
@@ -172,7 +172,7 @@
 
     // Tell the iframe we opened/closed (for focus management)
     try {
-      iframe.contentWindow.postMessage({ type: 'nomii:toggle', open: open }, '*');
+      iframe.contentWindow.postMessage({ type: 'shenmay:toggle', open: open }, '*');
     } catch (_) {}
   }
 
@@ -187,14 +187,14 @@
     if (!fromIframe && !fromSelf) return;
 
     // Allow the widget to close the panel (e.g. a close button inside)
-    if (e.data.type === 'nomii:close') {
+    if (e.data.type === 'shenmay:close') {
       open = true;
       toggleWidget();
     }
 
     // Allow the widget to update the bubble label and color dynamically
     // (e.g. after /session returns the tenant's chat_bubble_name and primary_color)
-    if (e.data.type === 'nomii:updateLabel' && e.data.label) {
+    if (e.data.type === 'shenmay:updateLabel' && e.data.label) {
       var span = launcher.querySelector('span');
       if (span) span.textContent = e.data.label;
       launcher.setAttribute('aria-label', 'Open ' + e.data.label);
@@ -205,9 +205,9 @@
     }
 
     // SPA auth state push via postMessage — host page signals login/logout
-    // Usage: window.postMessage({ type: 'nomii:setUser', email: '...', name: '...' }, '*')
-    // For logout: window.postMessage({ type: 'nomii:setUser', email: '', name: '' }, '*')
-    if (e.data.type === 'nomii:setUser') {
+    // Usage: window.postMessage({ type: 'shenmay:setUser', email: '...', name: '...' }, '*')
+    // For logout: window.postMessage({ type: 'shenmay:setUser', email: '', name: '' }, '*')
+    if (e.data.type === 'shenmay:setUser') {
       var newEmail = e.data.email || '';
       var newName  = e.data.name  || '';
       if (newEmail !== userEmail || newName !== userName) {
@@ -219,7 +219,7 @@
           userName  = newName;
           try {
             iframe.contentWindow.postMessage(
-              { type: 'nomii:identify', email: newEmail, name: newName },
+              { type: 'shenmay:identify', email: newEmail, name: newName },
               '*'
             );
           } catch (_) {
@@ -270,7 +270,7 @@
             userName  = newName;
             try {
               iframe.contentWindow.postMessage(
-                { type: 'nomii:identify', email: newEmail, name: newName },
+                { type: 'shenmay:identify', email: newEmail, name: newName },
                 '*'
               );
             } catch (_) { reloadWidget(); }

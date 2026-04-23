@@ -13,8 +13,8 @@
 - Floating chat bubble with customizable position (bottom-left / bottom-right), colors, and greeting message
 - Full chat UI inside a sandboxed iframe — no CSS conflicts with host page
 - **Anonymous visitor chat** — unauthenticated visitors chat freely; anon sessions use ephemeral `anon_XXXX@visitor.shenmay` records (legacy `@visitor.nomii` still recognised during the Phase 5 rebrand — see [`server/src/constants/anonDomains.js`](server/src/constants/anonDomains.js)) with `is_anonymous: true` JWT; no persistent profile built unless customer already exists in tenant's system; anon records soft-deleted after claim
-- **Seamless auth handoff (session claim)** — the moment a visitor authenticates on the host site, the embed script sends a `nomii:identify` postMessage to the widget (no iframe reload); widget calls `POST /api/widget/session/claim` which migrates the conversation to the real customer via a single `UPDATE conversations SET customer_id` — conversation history preserved, polling continuity maintained, "✓ Signed in as [Name]" banner shown in chat
-- `nomii:setUser` postMessage: login → in-place identity claim; logout → widget reload
+- **Seamless auth handoff (session claim)** — the moment a visitor authenticates on the host site, the embed script sends a `shenmay:identify` postMessage to the widget (no iframe reload); widget calls `POST /api/widget/session/claim` which migrates the conversation to the real customer via a single `UPDATE conversations SET customer_id` — conversation history preserved, polling continuity maintained, "✓ Signed in as [Name]" banner shown in chat
+- `shenmay:setUser` postMessage: login → in-place identity claim; logout → widget reload
 - `MutationObserver` on script tag for non-SPA sites: watches `data-user-email` / `data-user-name` attribute changes, triggers same login/logout split
 - Widget key authentication — each tenant has a unique key that scopes all conversations
 - Background poll for incoming messages (AI mode: 5s, human takeover mode: 2.5s)
@@ -304,7 +304,7 @@ Every chat exchange triggers three background operations — none block the resp
 | Open follow-ups in system prompt | ✅ Done | `OPEN FOLLOW-UPS` block at top of history; action items surfaced prominently — Session 19 |
 | Conversation search + filter | ✅ Done | Debounced search bar, status/mode pills, unread toggle — Session 20 |
 | Anonymous visitor widget | ✅ Done | Anon sessions with ephemeral records; no profile built unless customer exists — Session 20 |
-| Seamless auth handoff (session claim) | ✅ Done | `nomii:identify` → `POST /session/claim` migrates conversation to real user, no reload — Session 20 |
+| Seamless auth handoff (session claim) | ✅ Done | `shenmay:identify` → `POST /session/claim` migrates conversation to real user, no reload — Session 20 |
 | In-app notification bell | ✅ Done | Bell + dropdown in dashboard; 15s poll; flags + human_reply types; migration 022 — Session 20 |
 | Tool test sandbox (all types) | ✅ Done | Test modal on all active tools; sandbox + real customer modes; escalate always simulated — Session 20 |
 | Privacy Policy + ToS + DPA docs | Planned | Legal documents — requires attorney review before EU tenant onboarding |
