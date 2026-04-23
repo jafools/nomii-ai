@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Shared Plan / Subscription / Notification constants.
+ * SHENMAY AI — Shared Plan / Subscription / Notification constants.
  *
  * Single source of truth used by:
  *   - stripe-webhook.js          (SaaS: apply limits after Stripe checkout)

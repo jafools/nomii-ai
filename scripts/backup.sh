@@ -6,7 +6,7 @@
 # Optional: add to cron for automatic backups.
 #
 # Cron example (daily at 2am):
-#   0 2 * * * /path/to/nomii-ai/scripts/backup.sh >> /var/log/nomii-backup.log 2>&1
+#   0 2 * * * /path/to/shenmay-ai/scripts/backup.sh >> /var/log/shenmay-backup.log 2>&1
 # ============================================================
 
 GREEN='\033[0;32m'
@@ -29,7 +29,7 @@ BACKUP_RETAIN="${BACKUP_RETAIN:-7}"
 mkdir -p "$BACKUP_DIR"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-FILENAME="nomii_backup_${TIMESTAMP}.sql.gz"
+FILENAME="shenmay_backup_${TIMESTAMP}.sql.gz"
 FILEPATH="$BACKUP_DIR/$FILENAME"
 
 echo ""
@@ -55,11 +55,13 @@ else
   exit 1
 fi
 
-# Prune old backups
+# Prune old backups — matches both shenmay_backup_* (current) and nomii_backup_*
+# (legacy pre-rebrand; kept in the glob so old dumps are rotated out of existing
+# backup directories rather than leaked forever).
 echo -n "Pruning old backups (keeping last ${BACKUP_RETAIN})... "
-OLD_COUNT=$(ls -t "$BACKUP_DIR"/nomii_backup_*.sql.gz 2>/dev/null | tail -n +$((BACKUP_RETAIN + 1)) | wc -l | tr -d ' ')
+OLD_COUNT=$(ls -t "$BACKUP_DIR"/shenmay_backup_*.sql.gz "$BACKUP_DIR"/nomii_backup_*.sql.gz 2>/dev/null | tail -n +$((BACKUP_RETAIN + 1)) | wc -l | tr -d ' ')
 if [ "$OLD_COUNT" -gt 0 ]; then
-  ls -t "$BACKUP_DIR"/nomii_backup_*.sql.gz | tail -n +$((BACKUP_RETAIN + 1)) | xargs rm -f
+  ls -t "$BACKUP_DIR"/shenmay_backup_*.sql.gz "$BACKUP_DIR"/nomii_backup_*.sql.gz 2>/dev/null | tail -n +$((BACKUP_RETAIN + 1)) | xargs rm -f
   echo -e "${YELLOW}removed ${OLD_COUNT} old backup(s)${NC}"
 else
   echo "nothing to prune"

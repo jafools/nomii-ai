@@ -5,7 +5,7 @@
 # Pulls the latest compose file + images for a self-hosted install.
 # Safe to run repeatedly; idempotent.
 #
-#   bash ~/nomii/update.sh
+#   bash ~/shenmay/update.sh
 #
 # This script works for installs made via install.sh (the documented
 # customer path), which creates a `.env`-only directory with no git

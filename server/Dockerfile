@@ -10,8 +10,8 @@ RUN npm install --production
 COPY . .
 
 # Run as non-root for security
-RUN addgroup -S nomii && adduser -S nomii -G nomii && chown -R nomii:nomii /app
-USER nomii
+RUN addgroup -S shenmay && adduser -S shenmay -G shenmay && chown -R shenmay:shenmay /app
+USER shenmay
 
 EXPOSE 3001
 

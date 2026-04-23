@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Database Migration Runner
+ * SHENMAY AI — Database Migration Runner
  * Runs SQL migrations in order, skipping already-applied ones.
  */
 

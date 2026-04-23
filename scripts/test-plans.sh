@@ -89,7 +89,7 @@ echo "────────────────────────�
 set_plan "starter" 50 1000 10
 show_plan
 echo ""
-echo "  👉  Now open your dashboard at nomii.pontensolutions.com"
+echo "  👉  Now open your dashboard at shenmay.ai"
 echo "      Go to Plans & Billing — it should show Starter plan."
 echo "      Try adding a 51st customer — the API should block it."
 echo ""

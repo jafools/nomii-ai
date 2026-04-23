@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Seed Demo Auth Users
+ * SHENMAY AI — Seed Demo Auth Users
  *
  * Sets passwords for existing demo users so they can log in.
  * Run after the main seed: npm run db:seed-auth

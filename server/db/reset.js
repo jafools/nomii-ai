@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Database Reset
+ * SHENMAY AI — Database Reset
  * Drops all tables and re-runs migrations + seeds
  */
 

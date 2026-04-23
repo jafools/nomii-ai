@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Stripe Self-Hosted Product Setup
+ * SHENMAY AI — Stripe Self-Hosted Product Setup
  *
  * Creates Stripe products, prices, and payment links for all three
  * self-hosted plans (monthly + annual). Run once from the repo root:
