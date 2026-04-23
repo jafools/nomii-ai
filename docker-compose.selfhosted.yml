@@ -95,16 +95,9 @@ services:
       # Leave blank to start the free trial (20 messages/mo, 1 customer).
       # Purchase a paid license at: https://pontensolutions.com/nomii/license
       # After purchase, paste your key in .env and restart the backend.
-      #
-      # Both SHENMAY_* and NOMII_* are accepted — SHENMAY_* wins if set.
-      # NOMII_* is kept for back-compat with .env files issued before
-      # the Apr 2026 rebrand. See docs/SHENMAY_MIGRATION_PLAN.md Phase 8
-      # (~2026-10-20) for NOMII_* removal timeline.
       SHENMAY_LICENSE_KEY: ${SHENMAY_LICENSE_KEY:-}
-      NOMII_LICENSE_KEY:   ${NOMII_LICENSE_KEY:-}
       # Optional: stable identifier for this instance across restarts.
       SHENMAY_INSTANCE_ID: ${SHENMAY_INSTANCE_ID:-}
-      NOMII_INSTANCE_ID:   ${NOMII_INSTANCE_ID:-}
     ports:
       - "127.0.0.1:3001:3001"
     depends_on:

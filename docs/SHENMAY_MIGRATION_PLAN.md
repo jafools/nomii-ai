@@ -375,21 +375,22 @@ customer-visible effect.
 
 ---
 
-## Phase 8 — Sunset old shims [6–12 months after Phase 5]
+## Phase 8 — Sunset old shims ✅ CLOSED EARLY (v3.0.0, 2026-04-23)
 
-**Goal:** Remove backward-compat code. Simplify the codebase.
+**Originally scheduled:** 6–12 months after Phase 5 (targets Oct 2026 / Apr 2027).
+**Actually closed:** same day as Phase 7, because the protective 6-month timer was guarding nothing — the send-list audit showed **zero real external customers** (33 tenants, all test data). Keeping shims "until customers migrate" is dead weight when there are no customers to migrate.
 
-| Identifier | Sunset trigger | Action |
+| Identifier | Status | Notes |
 |---|---|---|
-| `NOMII_*` env vars | 6 months + telemetry shows 0 deprecation-warning hits | Remove the env shim |
-| `/nomii/*` client-side dual-mount | 12 months | Remove duplicate Route entries; keep server-side 301 permanently |
-| `X-Nomii-Signature` header | 12 months (give customers a year to update webhook handlers) | Stop emitting |
-| `nomii_da_` API key prefix | 90 days after customer notice | Reject `nomii_da_*` keys; customers must rotate |
-| `nomii_portal_token` localStorage fallback | 90 days | Remove read-fallback (sessions expire within) |
-| `[nomii_widget]` WP shortcode | — | Keep indefinitely (cheap, no cost) |
-| `nomii-wordpress-plugin.zip` URL | — | Keep 301 permanently |
+| `NOMII_*` env vars | ✅ REMOVED (v3.0.0) | `server/src/utils/env.js` now reads only `SHENMAY_*`. Hetzner + Proxmox `.env` renamed in lockstep with the deploy. |
+| `/nomii/*` client-side dual-mount | ✅ REMOVED (v3.0.0) | `NomiiToShenmayRedirect` + route deleted from [client/src/App.tsx](client/src/App.tsx). Deep `/nomii/*` links now fall through to `/shenmay/login` (zero customers relied on the deep-path preservation). |
+| `X-Nomii-Signature` header | ✅ REMOVED (v3.0.0) | Only `X-Shenmay-Signature` emitted. Receivers pin on the new name. |
+| `nomii_da_` API key prefix | ✅ REMOVED (v3.0.0) | Verified 0 rows with `nomii_da_*` prefix in prod and staging DBs before removal. |
+| `nomii_portal_token` localStorage fallback | ✅ REMOVED (v3.0.0) | Single-key read only. |
+| `[nomii_widget]` WP shortcode | ⏳ Keep forever | Zero cost to maintain, protects any WP installs in the wild (none known). |
+| `nomii-wordpress-plugin.zip` URL | ⏳ Keep 301 forever | Permanent redirect to the canonical `shenmay-wordpress-plugin.zip`. |
 
-**Output:** Code is Shenmay-only except historical references in docs.
+**Output:** Code is Shenmay-only. Only the two intentionally-permanent items survive.
 
 ---
 

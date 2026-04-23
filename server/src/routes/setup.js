@@ -1,8 +1,8 @@
 /**
- * NOMII AI — First-Run Setup Routes (self-hosted only)
+ * SHENMAY AI — First-Run Setup Routes (self-hosted only)
  *
  * Provides a web-based setup wizard experience on first boot.
- * These endpoints are only active when NOMII_DEPLOYMENT=selfhosted.
+ * These endpoints are only active when SHENMAY_DEPLOYMENT=selfhosted.
  * Once a tenant exists, /complete returns 409 and the routes become inert.
  *
  *   GET  /api/setup/status    — { required: bool }

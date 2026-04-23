@@ -92,10 +92,7 @@ services:
       LLM_HAIKU_MODEL: ${LLM_HAIKU_MODEL:-claude-haiku-4-5-20251001}
       LLM_SONNET_MODEL: ${LLM_SONNET_MODEL:-claude-sonnet-4-20250514}
       PORTAL_URL: ${PORTAL_URL:-https://shenmay.ai}
-      # Both SHENMAY_* and NOMII_* accepted — SHENMAY_* wins if set.
-      # NOMII_* kept for back-compat; removal in Phase 8 (~2026-10-20).
-      SHENMAY_LICENSE_MASTER: ${SHENMAY_LICENSE_MASTER:-}
-      NOMII_LICENSE_MASTER:   ${NOMII_LICENSE_MASTER:-true}
+      SHENMAY_LICENSE_MASTER: ${SHENMAY_LICENSE_MASTER:-true}
     ports:
       - "3001:3001"
     depends_on:

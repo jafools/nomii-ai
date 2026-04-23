@@ -2197,7 +2197,7 @@ router.get('/visitors', async (req, res, next) => {
 // owner activate / change / remove their license from the dashboard without
 // editing .env or restarting Docker.
 //
-// The env-var path (NOMII_LICENSE_KEY in .env) still works and takes
+// The env-var path (SHENMAY_LICENSE_KEY in .env) still works and takes
 // precedence — operators who provisioned via install.sh aren't affected.
 
 function requireSelfHostedDeployment(req, res, next) {
@@ -2226,7 +2226,7 @@ router.post('/license/activate', requireSelfHostedDeployment, async (req, res, n
     }
     if (envVar('LICENSE_KEY')) {
       return res.status(409).json({
-        error: 'A license key is already pinned in SHENMAY_LICENSE_KEY (or legacy NOMII_LICENSE_KEY). Remove it from .env and restart, then re-activate from the dashboard.',
+        error: 'A license key is already pinned in SHENMAY_LICENSE_KEY. Remove it from .env and restart, then re-activate from the dashboard.',
       });
     }
 
@@ -2252,7 +2252,7 @@ router.delete('/license', requireSelfHostedDeployment, async (req, res, next) =>
   try {
     if (envVar('LICENSE_KEY')) {
       return res.status(409).json({
-        error: 'License is pinned in SHENMAY_LICENSE_KEY (or legacy NOMII_LICENSE_KEY). Remove it from .env and restart to deactivate from the dashboard.',
+        error: 'License is pinned in SHENMAY_LICENSE_KEY. Remove it from .env and restart to deactivate from the dashboard.',
       });
     }
     const { deactivateLicense } = require('../services/licenseService');
@@ -3012,9 +3012,6 @@ try { bcrypt = require('bcryptjs'); } catch {
 function generateDataApiKey() {
   // Format: shenmay_da_<32 random hex chars>
   // "shenmay_da_" is 11 chars; prefix stored = first 19 chars (prefix + 8 chars).
-  // Legacy nomii_da_ keys (9-char prefix, 17-char stored prefix) continue to
-  // authenticate via dual-accept in server/src/routes/dataApi.js — customers
-  // don't need to rotate until Phase 8 sunset (target 2026-10-20).
   const randomPart = require('crypto').randomBytes(16).toString('hex');
   return `shenmay_da_${randomPart}`;
 }

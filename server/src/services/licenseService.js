@@ -1,11 +1,11 @@
 /**
- * NOMII AI — Self-Hosted License Service
+ * SHENMAY AI — Self-Hosted License Service
  *
  * Behaviour matrix:
  *
  *   NODE_ENV != 'production'                → skip (dev free pass)
- *   NOMII_DEPLOYMENT != 'selfhosted'        → skip (SaaS VPS — not our concern)
- *   selfhosted + no NOMII_LICENSE_KEY       → trial mode (local limits, no cloud call)
+ *   SHENMAY_DEPLOYMENT != 'selfhosted'      → skip (SaaS VPS — not our concern)
+ *   selfhosted + no SHENMAY_LICENSE_KEY     → trial mode (local limits, no cloud call)
  *   selfhosted + key present, valid         → apply plan limits; schedule 24h heartbeat
  *   selfhosted + key present, invalid       → log error + exit(1)
  *   heartbeat fails (transient network)     → warn only, do NOT crash running instance
@@ -31,7 +31,7 @@
  * @property {number|null}  max_messages_month
  * @property {number|null}  max_customers
  * @property {string|null}  validated_at      ISO timestamp of last successful heartbeat.
- * @property {boolean}      env_var_in_use    True if NOMII_LICENSE_KEY is set in env.
+ * @property {boolean}      env_var_in_use    True if SHENMAY_LICENSE_KEY is set in env.
  */
 
 const https  = require('https');
@@ -46,7 +46,7 @@ const VALIDATE_URL = envVar('LICENSE_VALIDATE_URL',
 const HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 // Stable identifier for this server process.
-// Override with SHENMAY_INSTANCE_ID (or legacy NOMII_INSTANCE_ID) for consistency across restarts.
+// Override with SHENMAY_INSTANCE_ID for consistency across restarts.
 const INSTANCE_ID = envVar('INSTANCE_ID')
   || crypto.createHash('sha256')
        .update(
@@ -292,7 +292,7 @@ async function checkLicenseOnStartup() {
     } else {
       // Env-var path stays strict: an invalid key in .env is almost certainly
       // operator error and should fail loud rather than silently downgrade.
-      console.error('[License] Check NOMII_LICENSE_KEY and internet connectivity.');
+      console.error('[License] Check SHENMAY_LICENSE_KEY and internet connectivity.');
       console.error('[License] Refusing to start.');
       process.exit(1);
     }

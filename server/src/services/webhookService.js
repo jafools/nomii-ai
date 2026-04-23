@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Webhook Delivery Service
+ * SHENMAY AI — Webhook Delivery Service
  *
  * Fires signed HTTPS POST requests to tenant-registered webhook URLs
  * when platform events occur.
@@ -14,10 +14,7 @@
  * Delivery model:
  *   - Fire-and-forget via setImmediate (never blocks the main response)
  *   - One automatic retry after 3 seconds on failure
- *   - HMAC-SHA256 payload signature, emitted in BOTH X-Nomii-Signature and
- *     X-Shenmay-Signature headers (dual-emit for the Phase 5 rebrand;
- *     X-Nomii-Signature sunset target 2026-10-20). Customer receivers
- *     can pin on either header — the value is byte-identical.
+ *   - HMAC-SHA256 payload signature in X-Shenmay-Signature header
  *   - 10 second timeout per attempt
  *   - Consecutive failure counter tracked for monitoring
  *
@@ -81,10 +78,6 @@ async function _deliver(hook, payload, isRetry = false) {
       method:  'POST',
       headers: {
         'Content-Type':        'application/json',
-        // Dual-emit during Phase 5 rebrand. X-Nomii-Signature removed in
-        // Phase 8 (target 2026-10-20) once customers have migrated
-        // their verification code to check X-Shenmay-Signature.
-        'X-Nomii-Signature':   `sha256=${signature}`,
         'X-Shenmay-Signature': `sha256=${signature}`,
         'X-Shenmay-Event':     JSON.parse(payload).event,
         'User-Agent':          'Shenmay-Webhook/1.0',

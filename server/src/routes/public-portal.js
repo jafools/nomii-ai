@@ -6,7 +6,7 @@
  *   Verifies the token with the Lateris Worker, then returns Shenmay licenses
  *   for the authenticated email.
  *
- * Only active when NOMII_LICENSE_MASTER=true (the cloud instance holds the
+ * Only active when SHENMAY_LICENSE_MASTER=true (the cloud instance holds the
  * licenses table).
  */
 

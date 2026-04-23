@@ -32,7 +32,7 @@ async function loginViaAPI(page) {
   // Inject token into localStorage before navigating
   await page.goto('/shenmay/login');
   await page.evaluate((token) => {
-    localStorage.setItem('nomii_portal_token', token);
+    localStorage.setItem('shenmay_portal_token', token);
   }, body.token);
 
   return body;
@@ -42,7 +42,7 @@ async function loginViaAPI(page) {
  * Get widget key from the /me endpoint after portal login.
  */
 async function getWidgetKey(page) {
-  const token = await page.evaluate(() => localStorage.getItem('nomii_portal_token'));
+  const token = await page.evaluate(() => localStorage.getItem('shenmay_portal_token'));
   const res = await page.request.get(`${API_BASE}/api/portal/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -55,7 +55,7 @@ async function getWidgetKey(page) {
  */
 async function logout(page) {
   await page.evaluate(() => {
-    localStorage.removeItem('nomii_portal_token');
+    localStorage.removeItem('shenmay_portal_token');
   });
 }
 

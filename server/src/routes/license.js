@@ -12,7 +12,7 @@
  *   Returns: { trial_key, expires_at, plan: 'trial' }
  *   Rate-limited: 3 trials per email ever, 5 per IP per day.
  *
- * Both endpoints are ONLY active when NOMII_LICENSE_MASTER=true.
+ * Both endpoints are ONLY active when SHENMAY_LICENSE_MASTER=true.
  * Self-hosted instances do not expose these routes.
  */
 
@@ -22,7 +22,7 @@ const db     = require('../db');
 const { envVar } = require('../utils/env');
 
 // Guard: only expose the validation endpoint on the master (cloud) instance.
-// Self-hosted instances must NOT set SHENMAY_LICENSE_MASTER / NOMII_LICENSE_MASTER.
+// Self-hosted instances must NOT set SHENMAY_LICENSE_MASTER.
 const isMaster = envVar('LICENSE_MASTER') === 'true';
 
 router.post('/validate', async (req, res, next) => {

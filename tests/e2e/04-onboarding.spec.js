@@ -51,7 +51,7 @@ test.describe('Onboarding Wizard (authenticated)', () => {
 
   test('onboarding page is protected — redirects unauthenticated users', async ({ page }) => {
     await page.goto('/shenmay/login');
-    await page.evaluate(() => localStorage.removeItem('nomii_portal_token'));
+    await page.evaluate(() => localStorage.removeItem('shenmay_portal_token'));
     await page.goto('/shenmay/onboarding');
     await page.waitForURL(/\/login/, { timeout: 10_000 });
     expect(page.url()).toContain('/login');

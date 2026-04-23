@@ -251,10 +251,10 @@ npx @claude-flow/cli@latest doctor --fix
 ### Architecture
 
 - **Server:** Node.js + Express, PostgreSQL (`shenmay_ai` DB, user `shenmay` — renamed from `nomii_ai`/`nomii` in Phase 7, v2.8.0)
-- **Client:** React (Vite), served via nginx, API calls via `client/src/lib/nomiiApi.js`
+- **Client:** React (Vite), served via nginx, API calls via `client/src/lib/shenmayApi.js`
 - **Widget:** Embeddable chat widget (`server/public/widget.html` + `embed.js`)
 - **Deployment:** Docker Compose on Hetzner Cloud Helsinki (`nomii-prod`)
-- **Three modes:** SaaS, Self-Hosted (`NOMII_DEPLOYMENT=selfhosted`), License Master (`NOMII_LICENSE_MASTER=true`)
+- **Three modes:** SaaS, Self-Hosted (`SHENMAY_DEPLOYMENT=selfhosted`), License Master (`SHENMAY_LICENSE_MASTER=true`)
 
 ### Staging (Proxmox)
 
@@ -364,8 +364,8 @@ also serves Lateris — left as-is.
 
 - `VITE_API_BASE_URL` — build arg for client; defaults to `""` (same-origin) for self-hosted
 - `APP_URL` — used by email service, portal, license service to derive domain/URLs
-- `NOMII_DEPLOYMENT=selfhosted` — enables single-tenant mode
-- `NOMII_LICENSE_MASTER=true` — enables license validation endpoints on SaaS VPS
+- `SHENMAY_DEPLOYMENT=selfhosted` — enables single-tenant mode
+- `SHENMAY_LICENSE_MASTER=true` — enables license validation endpoints on SaaS VPS
 
 ### Marketing-site repo (ponten-solutions) — CRITICAL deploy gotcha
 

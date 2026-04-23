@@ -17,7 +17,7 @@ test.describe('Dashboard Navigation', () => {
     // Inject the shared token rather than re-logging in for every test
     await page.goto('/shenmay/login');
     await page.evaluate((token) => {
-      localStorage.setItem('nomii_portal_token', token);
+      localStorage.setItem('shenmay_portal_token', token);
     }, authToken);
     await page.goto('/shenmay/dashboard');
     await page.waitForURL(/\/dashboard/, { timeout: 15_000 });

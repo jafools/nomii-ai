@@ -195,7 +195,7 @@ if (!isSelfHosted()) {
 // Routes — First-run setup wizard (self-hosted only; inert once tenant exists)
 app.use('/api/setup', require('./routes/setup'));
 
-// Routes — License validation (called by self-hosted instances; only active when NOMII_LICENSE_MASTER=true)
+// Routes — License validation (called by self-hosted instances; only active when SHENMAY_LICENSE_MASTER=true)
 app.use('/api/license', require('./routes/license'));
 
 // Routes — Public license checkout (creates Stripe Checkout Session for self-hosted license purchases)

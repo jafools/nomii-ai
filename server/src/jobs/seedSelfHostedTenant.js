@@ -1,7 +1,7 @@
 /**
- * NOMII AI — Self-Hosted Tenant Seed
+ * SHENMAY AI — Self-Hosted Tenant Seed
  *
- * Called once on startup when NOMII_DEPLOYMENT=selfhosted.
+ * Called once on startup when SHENMAY_DEPLOYMENT=selfhosted.
  * If no tenants exist yet, provisions the single tenant + admin account
  * using values from the environment (written by install.sh).
  *
