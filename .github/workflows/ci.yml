@@ -151,6 +151,20 @@ jobs:
       - name: Validate compose config
         run: docker compose -f docker-compose.selfhosted.yml config >/dev/null
 
+      # The compose file pins ghcr.io/jafools/shenmay-backend:stable, which
+      # only exists once a tagged release has been published. On PR CI
+      # (pre-merge) or at the very first post-Phase-6 publish, that tag may
+      # not exist yet on GHCR, and `docker compose up -d` would fail with
+      # "manifest denied". Pre-build the image locally under the exact tag
+      # the compose expects — compose then finds it cached and skips the
+      # pull (the compose entry has no `pull_policy: always`).
+      #
+      # Once :stable is reliably published for every release cycle, this
+      # step becomes a no-op (the local build just shadows an identical
+      # remote image). Safe to keep as a belt-and-braces guard.
+      - name: Pre-build backend image locally under :stable tag
+        run: docker build -t ghcr.io/jafools/shenmay-backend:stable ./server
+
       - name: Bring up db + backend
         run: docker compose -f docker-compose.selfhosted.yml up -d db backend
 
