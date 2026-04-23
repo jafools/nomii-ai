@@ -305,8 +305,8 @@ const ShenmayPlans = () => {
           {!licenseInfo?.has_license && (
             <Lede style={{ marginTop: 12, fontSize: 14 }}>
               Purchase a license at{" "}
-              <a href="https://pontensolutions.com/nomii/license" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
-                pontensolutions.com/nomii/license
+              <a href="https://pontensolutions.com/shenmay/license" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+                pontensolutions.com/shenmay/license
               </a>
               . You'll receive a key by email — no restart required.
             </Lede>
@@ -347,7 +347,7 @@ const ShenmayPlans = () => {
                   {licenseBusy ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={14} />}
                   {licenseInfo?.has_license ? "Replace license" : "Activate license"}
                 </Button>
-                <a href="https://pontensolutions.com/nomii/license" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <a href="https://pontensolutions.com/shenmay/license" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
                   <Button variant="ghost">Get a license <ExternalLink size={13} /></Button>
                 </a>
               </div>

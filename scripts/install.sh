@@ -344,7 +344,7 @@ CLOUDFLARE_TUNNEL_TOKEN=${CF_TOKEN}
 
 # ── Shenmay License ─────────────────────────────
 # Leave blank for free trial (20 messages/mo, 1 customer).
-# Upgrade at: https://pontensolutions.com/nomii/license
+# Upgrade at: https://pontensolutions.com/shenmay/license
 SHENMAY_LICENSE_KEY=${SHENMAY_LICENSE_KEY}
 ENV
 
