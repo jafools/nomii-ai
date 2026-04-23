@@ -5,9 +5,101 @@
 
 ---
 
-## Last updated: 2026-04-23 morning (**v2.4.0 LIVE on Hetzner** — Phase 5 bundle A deployed to production)
+## Last updated: 2026-04-23 mid-morning (**v2.5.0 LIVE on Hetzner** — Phase 5 6/7 done, only 5e remains in sibling repo)
 
-Continuation of last night's session. Three PRs (#45, #46, #47) that were opened yesterday all merged to main this morning, tagged `v2.4.0`, GHCR built `:2.4.0` / `:stable` / `:latest`, Hetzner deployed. Customer-visible production now runs the Phase 5 dual-emit backend.
+Massive continuous session. Started last night at Phase 5 prep, shipped **two full releases** (v2.4.0 morning + v2.5.0 mid-morning), cleared every housekeeping item, polished the customer-comms email end-to-end. **6 of 7 Phase 5 sub-items now LIVE in production.**
+
+### v2.5.0 — what shipped this release
+
+| PR | Merge commit | Title |
+|---|---|---|
+| [#50](https://github.com/jafools/nomii-ai/pull/50) | `f5baaa4` | `feat(brand): Phase 5c — localStorage portal token migration` |
+| [#51](https://github.com/jafools/nomii-ai/pull/51) | `bc0bcc4` | `feat(brand): Phase 5f — rename WP plugin zip + 301 from legacy URL` |
+
+Tag: `v2.5.0` → GHCR built `:2.5.0` + `:stable` + `:latest` → `ssh nomii@204.168.232.24 "IMAGE_TAG=2.5.0 docker compose pull backend frontend && IMAGE_TAG=2.5.0 docker compose up -d backend frontend"`.
+
+### Customer-visible effect of v2.5.0
+
+Both changes are silent from the customer's perspective:
+
+- **Phase 5c** — the portal JWT now lives under `shenmay_portal_token` in localStorage. Existing sessions (still stored under `nomii_portal_token`) silently migrate on their next portal load via `getToken()`'s read-legacy → write-new → clear-legacy path. No re-login required.
+- **Phase 5f** — the WP plugin download canonical URL is `/downloads/shenmay-wordpress-plugin.zip`. Legacy `/downloads/nomii-wordpress-plugin.zip` 301-redirects at the Express layer (intercepted BEFORE `express.static` so the rename never 404s a legacy caller). WP auto-update follows redirects by default, so existing installs pick up the new filename transparently.
+
+### Phase 5 scoreboard
+
+| Sub | Description | Status |
+|---|---|---|
+| 5a | Webhook `X-Shenmay-Signature` dual-emit | ✅ LIVE (v2.4.0) |
+| 5b | Data API `shenmay_da_*` prefix dual-accept | ✅ LIVE (v2.4.0) |
+| 5c | localStorage portal token migration | ✅ LIVE (v2.5.0) |
+| 5d | `@visitor.shenmay` anon email domain | ✅ LIVE (v2.4.0) |
+| 5e | WP plugin shortcode rename | ⏳ sibling plugin repo, separate session |
+| 5f | WP plugin zip rename + 301 | ✅ LIVE (v2.5.0) |
+| 5g | CSV template filename flip | ✅ LIVE (v2.4.0) |
+
+### Cumulative shipped this session (2026-04-22 evening → 2026-04-23 mid-morning)
+
+**7 PRs merged, 2 production releases, 0 rollbacks.**
+
+| PR | Release | Title |
+|---|---|---|
+| [#45](https://github.com/jafools/nomii-ai/pull/45) | v2.4.0 | E2E Playwright URL sweep |
+| [#46](https://github.com/jafools/nomii-ai/pull/46) | v2.4.0 | Phase 5 prep checklist + TODO markers + Direction B Stripe SVGs |
+| [#47](https://github.com/jafools/nomii-ai/pull/47) | v2.4.0 | Phase 5 bundle A — 5a/5b/5d/5g dual-emit real impl |
+| [#48](https://github.com/jafools/nomii-ai/pull/48) | docs-only | Session-notes wrap for v2.4.0 |
+| [#49](https://github.com/jafools/nomii-ai/pull/49) | docs-only | Customer-comms email polish |
+| [#50](https://github.com/jafools/nomii-ai/pull/50) | v2.5.0 | Phase 5c localStorage migration |
+| [#51](https://github.com/jafools/nomii-ai/pull/51) | v2.5.0 | Phase 5f WP plugin zip + 301 |
+
+### Production state at session handoff
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (200) |
+| Hetzner image | `ghcr.io/jafools/nomii-{backend,frontend}:2.5.0` |
+| Git HEAD on Hetzner | `v2.5.0` (`bc0bcc4`) |
+| `/shenmay/login` | 200 |
+| `/nomii/login` | 200 (backward-compat redirect) |
+| `/api/health` | 200 |
+| `/downloads/nomii-wordpress-plugin.zip` | 301 → `/downloads/shenmay-wordpress-plugin.zip` |
+| `/downloads/shenmay-wordpress-plugin.zip` | 200, 4507 bytes, `application/zip` |
+| Legacy `nomii.pontensolutions.com` | 200 (selective 301 still routing) |
+
+### What's queued
+
+1. **Customer-comms email send** — the polished text is in [docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md](docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md). Austin runs the send-list SQL (33 rows), hands to a one-off send script, blasts. Earliest acceptable: tomorrow Tue–Thu 10am–2pm.
+2. **Phase 5e** — WP plugin shortcode rename (sibling repo, new session).
+3. **Phase 6** — Docker/GHCR/compose rename. Coordinated maintenance window with on-prem customers.
+4. **Phase 7** — DB rename. Depends on Phase 6.
+5. **Phase 8** — sunset shims after 6-month grace window (target 2026-10-20).
+6. **Phase 9** — USPTO ITU + TM registration (strictly LAST per Austin).
+
+### Non-obvious learning this session
+
+- **Express-level 301 > nginx-level 301** for single-file moves — one file to edit, testable in `node --check`, no ops coordination window, redirect intercepts BEFORE `express.static` so the physical file rename can't 404 a legacy caller. The Docker image carries both the renamed file AND the redirect handler, so `docker compose pull + up -d` swaps atomically.
+- **Silent localStorage migration via read-fallback** — the `getToken()` helper reads `shenmay_portal_token` first; if missing, reads `nomii_portal_token`, writes to the new key, removes the old. The user's next page load does the migration transparently — no re-login, no banner, no visible event. E2E Playwright tests (fresh browser context per test) continue to exercise the migration path on every run via their existing `localStorage.setItem('nomii_portal_token', ...)` fixtures.
+- **Sequenced merges behind branch-protection** — after merging PR N, subsequent PRs on a protected-main branch mark MERGEABLE=UNKNOWN / STATUS=BLOCKED until rebased. Recipe: `git rebase origin/main && git push --force-with-lease`. CI re-runs in ~30-60s thanks to cached layers.
+
+### v2.5.0 verification artifacts
+
+```
+$ curl -s -I https://shenmay.ai/downloads/nomii-wordpress-plugin.zip
+HTTP/1.1 301 Moved Permanently
+Content-Length: 73
+[Location header in body]
+
+$ curl -s -I https://shenmay.ai/downloads/shenmay-wordpress-plugin.zip
+HTTP/1.1 200 OK
+Content-Type: application/zip
+Content-Length: 4507
+
+$ ssh nomii@204.168.232.24 "docker inspect nomii-backend --format '{{.Config.Image}}'"
+ghcr.io/jafools/nomii-backend:2.5.0
+```
+
+---
+
+## Previous: 2026-04-23 morning (v2.4.0 release — merged via this same session)
 
 ### What shipped in v2.4.0
 
