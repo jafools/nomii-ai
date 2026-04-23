@@ -1,13 +1,16 @@
 # Phase 5 Checklist — Backend Identifier Dual-Emit
 
 **Parent plan:** `docs/SHENMAY_MIGRATION_PLAN.md` §Phase 5
-**Status:** PLANNED (prep branch `chore/phase-5-prep`, no behavior change yet)
+**Status:** **Phase 5 bundle A (5a/5b/5d/5g) LIVE at v2.4.0 (2026-04-23 morning).**
+Remaining sub-items (5c localStorage, 5e WP shortcode, 5f WP plugin zip) queued.
 **Strategy:** All 7 sub-items are **additive dual-emit / dual-accept** — the
 `nomii` form keeps working, the `shenmay` form becomes canonical, old form
 removed in Phase 8 after 6-month grace window (target sunset 2026-10-20).
-**Customer-comms gate:** Email in `docs/SHENMAY_MIGRATION_PLAN.md:425` MUST
-ship BEFORE any Phase 5 sub-PR merges (once even one sub ships, the
-customer-visible identifier surface changes).
+**Customer-comms gate:** Polished email at
+[`docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md`](./CUSTOMER_COMMS_SHENMAY_EMAIL.md)
+MUST ship BEFORE **5c** (localStorage migration) or **5f** (WP plugin URL
+change) merges. Shipped 5a/5b/5d/5g didn't need the email — all four
+were silent backend additions.
 
 Grep `TODO(Phase 5` to find every touch-point in code.
 

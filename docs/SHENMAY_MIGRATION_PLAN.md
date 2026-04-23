@@ -422,34 +422,15 @@ customer-visible effect.
 
 ---
 
-## Customer communication draft (use before Phase 5 merges)
+## Customer communication email
 
-> **Subject:** Nomii AI is now Shenmay AI
->
-> Hi {first_name},
->
-> A quick note: Nomii is now **Shenmay AI** — same product, same team,
-> same login, new name. Your data, your API keys, your webhooks — all
-> untouched.
->
-> Why? Our previous name was too close to an existing AI product, so we
-> renamed to something uniquely ours. *Shenmay* is how *"Känn mej"*
-> sounds when spoken — Swedish for "know me." It's the whole point of
-> the product.
->
-> **What this means for you:**
->
-> - Your dashboard now lives at `https://shenmay.ai` (the old URL
->   redirects automatically; existing bookmarks + email links keep working)
-> - Your widget embed code is unchanged
-> - Your API keys + webhook signatures are unchanged
-> - Your `.env` vars (self-hosted) keep working; you'll see deprecation
->   warnings encouraging you to rename `NOMII_*` to `SHENMAY_*` at your
->   next maintenance window
->
-> Nothing else moves. Questions → reply to this email.
->
-> — Austin, Shenmay AI
+The polished, send-ready version (HTML + plain-text + send-list SQL +
+pre-send checklist + timing) lives in [`docs/CUSTOMER_COMMS_SHENMAY_EMAIL.md`](./CUSTOMER_COMMS_SHENMAY_EMAIL.md).
+
+**Timing:** ship the email BEFORE Phase 5c (localStorage migration) or 5f
+(WP plugin URL change) merges. The email is NOT a prerequisite for the
+already-shipped Phase 5 bundle A (v2.4.0) — those changes are silent
+backend additions.
 
 ---
 
