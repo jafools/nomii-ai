@@ -37,16 +37,38 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
  * @typedef {"GET"|"POST"|"PUT"|"PATCH"|"DELETE"} HttpMethod
  */
 
-// Auth helpers
-// TODO(Phase 5c): migrate storage key to "shenmay_portal_token".
-// getToken should read new key first, fall back to legacy and migrate in-place;
-// setToken writes only the new key; clearToken removes both.
-// See docs/PHASE_5_CHECKLIST.md §5c.
+// Auth helpers — Phase 5c of docs/SHENMAY_MIGRATION_PLAN.md.
+// Canonical key is `shenmay_portal_token`. Legacy `nomii_portal_token`
+// is migrated in-place on the next getToken() call and then cleared,
+// so a user logging in once after this ships gets silently upgraded —
+// no re-login required. The legacy-read fallback is removed in Phase 8
+// (target sunset 2026-10-20 after the 6-month grace window).
+const TOKEN_KEY        = "shenmay_portal_token";
+const LEGACY_TOKEN_KEY = "nomii_portal_token";
+
 /** @returns {string|null} Current portal JWT from localStorage. */
-export const getToken = () => localStorage.getItem("nomii_portal_token");
+export const getToken = () => {
+  const t = localStorage.getItem(TOKEN_KEY);
+  if (t) return t;
+  const legacy = localStorage.getItem(LEGACY_TOKEN_KEY);
+  if (legacy) {
+    // Migrate in place so the next call is a single-key hit.
+    localStorage.setItem(TOKEN_KEY, legacy);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    return legacy;
+  }
+  return null;
+};
 /** @param {string} token */
-export const setToken = (token) => localStorage.setItem("nomii_portal_token", token);
-export const clearToken = () => localStorage.removeItem("nomii_portal_token");
+export const setToken = (token) => {
+  localStorage.setItem(TOKEN_KEY, token);
+  // Proactively clear the legacy key so a stale value can't resurface.
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+};
+export const clearToken = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+};
 /** @returns {boolean} true when a JWT is present in localStorage. */
 export const isLoggedIn = () => !!getToken();
 
