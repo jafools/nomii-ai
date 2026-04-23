@@ -25,7 +25,7 @@ const db      = require('../db');
 const { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../services/emailService');
 const { isSelfHosted } = require('../config/plans');
 
-const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret';
+const PORTAL_JWT_SECRET = process.env.JWT_SECRET || 'shenmay-dev-secret';
 const PORTAL_JWT_EXPIRY = process.env.JWT_EXPIRY  || '7d';
 
 // Allowed vertical values

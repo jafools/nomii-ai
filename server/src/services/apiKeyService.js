@@ -19,7 +19,7 @@ const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32; // AES-256
 
 function getEncryptionKey() {
-  const secret = process.env.API_KEY_ENCRYPTION_SECRET || process.env.JWT_SECRET || 'nomii-dev-encryption-key';
+  const secret = process.env.API_KEY_ENCRYPTION_SECRET || process.env.JWT_SECRET || 'shenmay-dev-encryption-key';
   // Derive a 32-byte key from the secret using SHA-256
   return crypto.createHash('sha256').update(secret).digest();
 }

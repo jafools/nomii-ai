@@ -1,5 +1,5 @@
 /**
- * NOMII AI — Authentication Service
+ * SHENMAY AI — Authentication Service
  *
  * Handles password hashing, JWT generation, and token validation.
  * Used by auth routes and middleware.
@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const SALT_ROUNDS = 10;
-const JWT_SECRET = process.env.JWT_SECRET || 'nomii-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'shenmay-dev-secret-change-in-production';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
 
 /**
