@@ -5,7 +5,122 @@
 
 ---
 
-## Last updated: 2026-04-23 afternoon (**v3.0.1 LIVE on Hetzner** — Phase 8 CLOSED 5 months early; only Phase 9 + external blockers remain)
+## Last updated: 2026-04-23 evening (**v3.0.6 LIVE on Hetzner** — rebrand 100% code-complete; repo renamed + Hetzner dir renamed + portal.js split 9%; only external Austin-manual items remain)
+
+Second afternoon continuation picked up at v3.0.1 and shipped v3.0.2 → v3.0.6 (five more patch releases, eight more PRs merged, one force-push recovery during a GitHub Actions outage, zero rollbacks). Closed every remaining code-level Nomii string that could be safely flipped without a cross-repo coordination (only `public-portal.js:108 product:'nomii'` is deferred, blocked on the Lovable marketing portal contract). Renamed the GitHub repo to `jafools/shenmay-ai` (Austin's click) + repointed all hardcoded URLs. Renamed `~/nomii-ai` to `~/shenmay-ai` on Hetzner with a `COMPOSE_PROJECT_NAME` pin to preserve the `nomii-ai_pgdata` volume. Extracted 3 bounded sub-routers out of portal.js (license / team / api-key) as the first ~9% cut of the long-overdue portal.js split. Flipped the Cloudflare tunnel display name to "Shenmay-ai" via the dashboard.
+
+### Ship log (evening, continuing from v3.0.1 handoff)
+
+| PR | Tag | Title |
+|---|---|---|
+| [#66](https://github.com/jafools/shenmay-ai/pull/66) | (bundled) | License-key prefix `NOMII-` → `SHENMAY-` (3 generators + 2 UI placeholders + test) |
+| [#67](https://github.com/jafools/shenmay-ai/pull/67) | (bundled) | Anon-visitor domain unification + migration 033 (53 rows on Hetzner) |
+| [#68](https://github.com/jafools/shenmay-ai/pull/68) | **v3.0.2** | File-header JSDoc rebrand (39 files) + dev-secret fallbacks + User-Agent |
+| [#69](https://github.com/jafools/shenmay-ai/pull/69) | **v3.0.3** | Repoint hardcoded URLs to `jafools/shenmay-ai` after repo rename |
+| [#70](https://github.com/jafools/shenmay-ai/pull/70) | **v3.0.4** | Drop `/shenmay/*` route prefix — canonical URLs are `shenmay.ai/login` etc. |
+| [#71](https://github.com/jafools/shenmay-ai/pull/71) | **v3.0.5** | Final shim sunset: WP-plugin URL redirect + `@anonymized.nomii` + migration 034 |
+| [#72](https://github.com/jafools/shenmay-ai/pull/72) | (docs-only) | Repoint docs at `~/shenmay-ai` after Hetzner repo-dir rename |
+| [#73](https://github.com/jafools/shenmay-ai/pull/73) | **v3.0.6** | `refactor(portal)`: extract 3 bounded sub-routers (license / team / api-key) |
+
+### Major operational changes this session
+
+1. **GitHub repo renamed** `jafools/nomii-ai` → `jafools/shenmay-ai`. GitHub auto-redirects the old URL indefinitely (until someone creates a fresh repo at the old name — don't). Both git remotes (Austin's local Windows + Hetzner) updated to `https://github.com/jafools/shenmay-ai.git`. GHCR image names were already `shenmay-*` since Phase 6 — unaffected.
+
+2. **Cloudflare tunnel display name** flipped "Nomii-ai" → "Shenmay-ai" via dashboard (Austin's click, CLAUDE.md updated). Tunnel ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4` unchanged. Underlying `knomi-ai` connector slug is immutable — dashboard name is the customer-visible bit.
+
+3. **Hetzner repo directory renamed** `~/nomii-ai` → `~/shenmay-ai`. CRITICAL WORKAROUND: added `COMPOSE_PROJECT_NAME=nomii-ai` to `~/shenmay-ai/.env` BEFORE the `mv`. Without it, docker-compose would have derived project name from the new dir, orphaning the existing `nomii-ai_pgdata` postgres volume (compose would have silently created a fresh empty `shenmay-ai_pgdata`). Volume name stays `nomii-ai_pgdata` — internal-only, never customer-facing. Brief (~5s) frontend restart during the rename because the nginx bind-mount absolute path changed; backend + db unaffected.
+
+4. **All DB migrations applied pre-deploy:**
+    - Migration 033 on Hetzner: 53 rows on `@visitor.nomii` → `@visitor.shenmay`. Staging was empty (no-op).
+    - Migration 034 on Hetzner: 0 rows affected (nobody has ever requested GDPR erasure). Safety-net migration for future consistency.
+
+### Production state at handoff (v3.0.6)
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (HTTP 200) |
+| Legacy SaaS URL | https://nomii.pontensolutions.com (selective 301 to shenmay.ai) |
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:3.0.6` |
+| Hetzner repo dir | **`~/shenmay-ai/`** (renamed today; `.env` pins `COMPOSE_PROJECT_NAME=nomii-ai`) |
+| Postgres volume | `nomii-ai_pgdata` (kept for continuity — rename needs dump/restore, not worth the cost) |
+| Hetzner `.env` | Backup at `~/shenmay-ai/.env.pre-dir-rename-20260423-142051.bak` |
+| Git HEAD on Hetzner | `v3.0.6` (`fc06770`) |
+| `/api/health` | `{"status":"ok","service":"shenmay-ai"}` |
+| Staging URL | **https://nomii-staging.pontensolutions.com** (HTTP 200) |
+| Cloudflare tunnel | "Shenmay-ai" (ID unchanged; origin points at `http://shenmay-frontend-staging:80`) |
+| Repo | **`github.com/jafools/shenmay-ai`** (renamed from `nomii-ai`; old URL 301s) |
+
+### Deployment-flow changes worth remembering
+
+- **Hetzner SSH pattern is now `cd ~/shenmay-ai && ...`** — all release / migration / log / restart snippets in CLAUDE.md + `docs/RELEASING.md` + `docs/testing.md` updated.
+- **Volume name mismatch is intentional.** Do not `docker volume rename nomii-ai_pgdata shenmay-ai_pgdata` — there's no such docker command. A true volume rename requires a dump + restore window, not worth the cost for an internal-only name.
+- **GHCR push workflow may need manual dispatch on tag push** during Actions outages. Tag `v3.0.6` did not auto-trigger `Publish Docker Images` even though the config specifies `tags: 'v*'` — fixed by `gh workflow run docker-publish.yml --ref v3.0.6`. The `main`-push workflow fired normally (produced `:edge`). Suspect the tag push got lost mid-outage. Keep an eye on future releases; re-dispatch manually if a tag's GHCR image doesn't appear within a few minutes.
+
+### Cutover gotchas worth remembering
+
+- **GitHub Actions had an ~15-minute outage** (500s on dispatch, 504s on GHCR push, pull_request events got stuck "queued"). PR #73's CI wedged until the queue recovered, then succeeded on the original commit. Two empty-nudge commits I pushed never got CI (never triggered), so the PR-head sha was ahead of the only green check. Resolution: reset HEAD back to the green-CI sha, force-push, close-and-reopen the PR to trigger a fresh `pull_request` event. Don't force-push main; only the PR branch.
+- **Force-push on own PR branch is fine** — use `--force-with-lease`. Force-push on `main` or a shared branch is the dangerous case. Austin okayed it once the plan was described.
+- **Empty commit doesn't always trigger Actions** if the prior event is still processing. During an outage, manually dispatching the workflow (`gh workflow run ... --ref <branch>`) with a non-`pull_request` event works, but the resulting run won't be associated to the PR's check rollup — closing + reopening the PR does the association.
+- **React Router prefix strip needed a catch-all back-compat component.** `/shenmay/*` → `/*` with preserved search/hash. The `ShenmayLegacyRedirect` (5 lines + 1 route in `client/src/App.tsx`) handles in-flight verify-email tokens / Stripe success URLs / bookmarks. Belt-and-suspenders only — no real customers affected (Phase 8 zero-customer audit), but cost is zero.
+- **Sed sweep `/shenmay/` → `/`** nearly broke the back-compat route itself. Original App.tsx had `<Route path="/shenmay/*" element={<ShenmayLegacyRedirect />} />` which sed turned into `path="/*"` — which matches EVERY URL. Caught immediately via post-sed grep; restored the prefix on that one line. Lesson: when doing large mechanical replacements, ALWAYS re-read the changed file and grep the tail for one-off regressions before committing.
+- **`ANON_EMAIL_DOMAINS` array was only used inside `anonDomains.js` itself.** Verified via grep before dropping. The public API (`ANON_EMAIL_DOMAIN` singular + 4 helper functions) stayed unchanged — only the plural export was removed.
+
+### Still deferred (explicit scope for future sessions)
+
+1. **License key format rotation** — generators now produce `SHENMAY-XXXX`. Austin's 1 live `NOMII-XXXX` master key still validates (exact-string DB lookup, no prefix check) and can be rotated at leisure via platform-admin issue-then-revoke.
+2. **`product: 'nomii'` JSON field** in `server/src/routes/public-portal.js:108` — cross-repo contract with the Lovable-managed `ponten-solutions` marketing portal. Coordinated flip needed.
+3. **Marketing route paths** `pontensolutions.com/products/nomii-ai` → `/products/shenmay-ai` and `/nomii/license` → `/shenmay/license` in Lovable. Austin's click; once flipped, ~6 client-side URL strings in `client/src/pages/shenmay/` need repointing (currently still linking to the `/nomii/*` paths via outbound `<a href>`).
+4. **Phase 9 USPTO ITU filing** — $700, Class 9 + 42. Austin's call; every day = priority-date loss.
+5. **Customer-comms email blast** — meaningful only once a real external customer exists.
+6. **Volume rename** `nomii-ai_pgdata` → `shenmay-ai_pgdata` — cosmetic-only internal name; requires a maintenance window with pg_dump + volume create + restore. Low priority.
+7. **Further portal.js splitting** — still 3490 LOC. The remaining big sections have route-precedence interactions on `/:id` and `/customers/:id/data/*` patterns; each deserves its own PR with full e2e coverage:
+    - DASHBOARD + CONVERSATIONS + LABELS + CONCERNS (~800 LOC)
+    - CUSTOMERS (~700 LOC)
+    - PRODUCTS (~320 LOC)
+    - TOOLS + WEBHOOKS + CONNECTORS + NOTIFICATIONS (~1000 LOC)
+
+### v3.0.x verification artifacts (evening)
+
+```
+$ curl -s https://shenmay.ai/api/health
+{"status":"ok","service":"shenmay-ai"}
+
+$ ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
+ghcr.io/jafools/shenmay-backend:3.0.6
+
+$ ssh nomii@204.168.232.24 "ls ~ | grep -E 'nomii-ai|shenmay-ai'"
+shenmay-ai
+
+$ ssh nomii@204.168.232.24 "docker inspect shenmay-frontend --format '{{range .Mounts}}{{.Source}}{{end}}'" | grep shenmay
+/home/nomii/shenmay-ai/config/nginx/prod.conf
+
+$ ssh nomii@204.168.232.24 "docker volume ls" | grep pgdata
+nomii-ai_pgdata   ← intentionally preserved via COMPOSE_PROJECT_NAME pin
+
+$ curl -I https://shenmay.ai/login
+HTTP/1.1 200 OK          ← new canonical
+
+$ curl -I https://shenmay.ai/shenmay/login
+HTTP/1.1 200 OK          ← SPA serves index.html; ShenmayLegacyRedirect strips prefix client-side
+
+$ curl -I https://shenmay.ai/downloads/nomii-wordpress-plugin.zip
+HTTP/1.1 404 Not Found   ← legacy WP-plugin URL shim removed
+
+$ curl -I https://shenmay.ai/downloads/shenmay-wordpress-plugin.zip
+HTTP/1.1 200 OK          ← canonical WP-plugin URL
+
+$ wc -l server/src/routes/portal.js
+3490            ← was 3816
+
+$ gh api repos/jafools/shenmay-ai/commits/v3.0.6/check-runs --jq '.check_runs | map({name, conclusion})'
+[{"name":"client-build","conclusion":"success"},{"name":"selfhosted-smoke","conclusion":"success"},{"name":"server-test","conclusion":"success"}]
+```
+
+Full vault writeup: [[projects/nomii/rebrand-complete-v306-apr-23-2026]].
+
+---
+
+## Previous: 2026-04-23 afternoon (**v3.0.1 LIVE on Hetzner** — Phase 8 CLOSED 5 months early; only Phase 9 + external blockers remain)
 
 Continuous afternoon session picked up where the late-morning handoff left off (v2.8.1 shipped). Closed the **entire code-level rebrand** including Phase 8's 5 backward-compat shims that were on a 6-month sunset timer. Bumped to `v3.0.0` (major) then `v3.0.1` (patch cleanup). 5 tags this session, 5 PRs merged, 0 rollbacks. **Discovery that unlocked it:** the send-list SQL audit revealed 33 tenants but **zero real external customers** — every row was disposable-email test data. With 0 customers to protect, the 6-month timer was guarding nothing.
 
