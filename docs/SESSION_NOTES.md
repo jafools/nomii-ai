@@ -5,7 +5,104 @@
 
 ---
 
-## Last updated: 2026-04-22 late-evening (**v2.3.0 LIVE** — Phase 4 URL canon + Direction B visual port deployed to Hetzner)
+## Last updated: 2026-04-23 morning (**v2.4.0 LIVE on Hetzner** — Phase 5 bundle A deployed to production)
+
+Continuation of last night's session. Three PRs (#45, #46, #47) that were opened yesterday all merged to main this morning, tagged `v2.4.0`, GHCR built `:2.4.0` / `:stable` / `:latest`, Hetzner deployed. Customer-visible production now runs the Phase 5 dual-emit backend.
+
+### What shipped in v2.4.0
+
+| PR | Merge commit | Title |
+|---|---|---|
+| [#45](https://github.com/jafools/nomii-ai/pull/45) | `a978974` | `chore(e2e): flip Playwright + pii-blackbox URLs to shenmay canon` |
+| [#47](https://github.com/jafools/nomii-ai/pull/47) | `618a321` | `feat(brand): Phase 5 bundle A — dual-emit webhook header, API prefix, anon domain, CSV name` |
+| [#46](https://github.com/jafools/nomii-ai/pull/46) | `a1794be` | `chore(rebrand): Phase 5 prep — backend identifier checklist + TODO markers` (rebased post-#47 to drop 5a/5b/5d/5g TODOs now obsolete; kept 5c/5f TODOs) |
+
+Tag: `v2.4.0` → GHCR built `:2.4.0` + `:stable` + `:latest` → `ssh nomii@204.168.232.24 "IMAGE_TAG=2.4.0 docker compose pull backend frontend && IMAGE_TAG=2.4.0 docker compose up -d backend frontend"`.
+
+### Production state at session handoff
+
+| | |
+|---|---|
+| Canonical SaaS URL | **https://shenmay.ai** (200) |
+| Hetzner image | `ghcr.io/jafools/nomii-{backend,frontend}:2.4.0` |
+| Git HEAD on Hetzner | `v2.4.0` (`a1794be`) |
+| `/shenmay/login` | 200 |
+| `/nomii/login` | 200 — client-side redirect (backward-compat) |
+| `/api/health` | 200 |
+| Legacy `nomii.pontensolutions.com` | 200 (selective 301) |
+
+### Phase 5 bundle A — what's now live
+
+All four sub-items are additive dual-emit / dual-accept — zero customer action, no breakage.
+
+- **5a** — Outbound webhooks emit BOTH `X-Nomii-Signature` and `X-Shenmay-Signature` with identical HMAC. Portal UI copy at `ShenmaySettings.jsx` (2 spots) presents Shenmay as canonical with legacy-header note.
+- **5b** — Data API bearer middleware dual-accepts `nomii_da_*` AND `shenmay_da_*`. Prefix-length dynamic (9→17 vs 11→19 stored prefix). New keys issued as `shenmay_da_*`. `DATA_API_KEY_PREFIXES` array + `matchKeyPrefix()` helper at [server/src/routes/dataApi.js:84](server/src/routes/dataApi.js:84).
+- **5d** — New anon widget sessions get `@visitor.shenmay`. [server/src/constants/anonDomains.js](server/src/constants/anonDomains.js) is the single source of truth with 3 SQL-fragment helpers + runtime `isAnonVisitorEmail()`. **20 call sites across 6 files** migrated to the helpers via sequenced `replace_all` ops (aliased-first to prevent over-match). Phase 8 sunset is now a 1-line change in the helper instead of a 20-site re-sweep.
+- **5g** — `Step2Products.jsx:152` download filename → `shenmay-products-template.csv`.
+
+### Housekeeping also cleared
+
+- **Stripe product cards** — Direction B replacements committed via #46 (3 SVG source files). Austin already uploaded rendered PNGs to Stripe dashboard.
+- **GH PAT leak (Apr 20 session)** — memory claimed "stripped mid-session"; reality was the PAT was still embedded in `~/ponten-solutions/.git/config` on pontenprox. Fixed: stripped + switched remote to SSH (`git@github.com:jafools/ponten-solutions.git`, auth verified). Austin revoked the old PAT at github.com.
+- **Ponten-solutions stash** — memory said "stashed during PR #3, still to pop". Actually empty + clean, already resolved in a prior session.
+- **ITU filing priority** — Austin corrected: ITU is **dead last** in the rebrand, not parallel. Saved as feedback memory `feedback_itu_filing_last.md`.
+
+### Phase 5 remaining (customer-comms email + 3 sub-items)
+
+Still queued for follow-up sessions:
+
+1. **Customer-comms email** (template at [docs/SHENMAY_MIGRATION_PLAN.md:425](docs/SHENMAY_MIGRATION_PLAN.md:425)) — polish + send. Must ship BEFORE 5c (localStorage) or 5f (WP plugin URL) because those become customer-visible. (v2.4.0 needed NO email — all changes were silent backend additions.)
+2. **Phase 5c** — localStorage portal-token migration. Client-side auth-path change (medium-risk, separate isolated PR). TODO anchor at [client/src/lib/shenmayApi.js:41](client/src/lib/shenmayApi.js:41).
+3. **Phase 5f** — WP plugin zip rename + nginx 301 + Hetzner artifact upload. TODO anchor at [client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:171](client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:171).
+4. **Phase 5e** — WP plugin repo PR adding `[shenmay_widget]` shortcode alongside `[nomii_widget]`. Sibling repo, not this one.
+
+### Non-obvious learning this session
+
+- **Backwards-compat-helper pattern** (captured as wiki concept): any dual-form identifier rollout benefits from a shared helper module with parenthesised SQL-fragment generators + alias-aware column argument. Phase 8 sunset becomes a 1-line change instead of a 20-site sweep. Canonical example: [`server/src/constants/anonDomains.js`](server/src/constants/anonDomains.js). Feedback memory: `feedback_backwards_compat_helper.md`.
+- **Sequenced `replace_all` for alias hazards** — `email NOT LIKE` is a substring of `cu.email NOT LIKE`. Do the aliased form FIRST, then the bare form. Order: `cu.email NOT LIKE` → `email NOT LIKE` → `cu.email LIKE` → `email LIKE`.
+- **Release-flow branch-up-to-date enforcement** — after merging PR #1 of a batch, subsequent PRs get marked MERGEABLE=UNKNOWN / STATUS=BLOCKED until rebased against new main. Simple fix: `git rebase origin/main && git push --force-with-lease`. Then CI re-runs quickly (cached layers) and branch becomes CLEAN again.
+
+Full vault writeup: [[projects/nomii/shenmay-phase5-bundle-a-apr-22-2026]].
+
+---
+
+## Previous: 2026-04-22 late-evening (3 PRs OPEN state — merged this morning as v2.4.0)
+
+### Phase 5 bundle A (PR #47) — what shipped
+
+All four sub-items are additive dual-emit / dual-accept — zero customer-action, no breakage risk.
+
+- **5a — Webhook `X-Shenmay-Signature`** emitted alongside existing `X-Nomii-Signature` (identical HMAC value). Customer receivers pinning on either header keep verifying. Portal UI copy at `ShenmaySettings.jsx:913, 1131` updated.
+- **5b — `shenmay_da_` API key prefix** dual-accept. New keys issued as `shenmay_da_*`; existing `nomii_da_*` keys keep authenticating. Prefix-length handled dynamically (9→17 vs 11→19).
+- **5d — `@visitor.shenmay` anon email domain** for new widget sessions. **New `server/src/constants/anonDomains.js`** is the single source of truth with helpers (`anonEmailNotLikeGuard(col)`, `anonEmailLikeMatch(col)`, `anonEmailIlikeMatch(col)`, `isAnonVisitorEmail(email)`). **20 hand-written call sites across 6 files** migrated to the helpers — biggest risk chunk of the PR, mitigated by the helper pattern.
+- **5g — `shenmay-products-template.csv`** (one-line filename flip in `Step2Products.jsx:152`).
+
+### Housekeeping cleared this session
+
+- **Stripe product cards** — Direction B replacements for the 3 legacy dark-gradient Nomii cards (paper/ink/teal editorial). Austin uploaded the rendered PNGs to Stripe dashboard; source SVGs committed via PR #46.
+- **GH PAT leak (Apr 20 session)** — memory claimed "stripped mid-session"; reality was the PAT was still fully embedded in `~/ponten-solutions/.git/config` on pontenprox. Stripped + switched remote to SSH (`git@github.com:jafools/ponten-solutions.git`, verified auth). Austin revoked the old PAT at github.com.
+- **Ponten-solutions stash** — memory said "stashed during PR #3, still to pop". Actually empty + clean, already resolved in a prior session.
+- **ITU filing priority** — Austin corrected: ITU is **dead last** in the rebrand sequence, not parallel. Saved as feedback memory `feedback_itu_filing_last.md`.
+
+### What's still on Nomii (Phase 5 remaining + Phases 6-9)
+
+Not in this session's 3 PRs — will be separate sub-PRs:
+- **5c** localStorage portal token migration (auth-path-isolated)
+- **5e** WP plugin shortcode (sibling plugin repo)
+- **5f** WP plugin zip rename + nginx 301 (Hetzner artifact upload needed)
+- **Customer-comms email** — template at [docs/SHENMAY_MIGRATION_PLAN.md:425](docs/SHENMAY_MIGRATION_PLAN.md:425); needs polish + send. Must ship before 5c or 5f (but 5a+5b+5d+5g in PR #47 are silent backend additions, no email needed yet)
+
+### Non-obvious learning this session
+
+- **Backwards-compat-helper pattern** (captured as wiki concept in the vault): any dual-form identifier rollout benefits from a shared helper module with parenthesised SQL-fragment generators + alias-aware column argument. Phase 8 sunset becomes a 1-line change instead of a 20-site sweep.
+- **Sequenced `replace_all` for alias hazards** — `email NOT LIKE` is a substring of `cu.email NOT LIKE`. Do the aliased form FIRST, then the bare form. Order: `cu.email NOT LIKE` → `email NOT LIKE` → `cu.email LIKE` → `email LIKE`.
+- **Memory drift** — the PAT-is-stripped claim was wrong. 5-second verification (`ssh pontenprox "cat ~/ponten-solutions/.git/config"`) surfaced the actual state. Double-check stateful claims before acting on them.
+
+Full vault writeup: [[projects/nomii/shenmay-phase5-bundle-a-apr-22-2026]].
+
+---
+
+## Previous: 2026-04-22 late-evening (**v2.3.0 LIVE** — Phase 4 URL canon + Direction B visual port deployed to Hetzner)
 
 Single huge session that landed both the Phase 4 migration and the full SaaS-app visual rebrand to match the Direction B marketing design. Merged, tagged, and deployed.
 
