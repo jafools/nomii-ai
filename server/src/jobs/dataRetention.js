@@ -13,10 +13,9 @@
  *    This is the "pseudonymisation" approach endorsed by GDPR Recital 26.
  *
  * 2. ANONYMOUS SESSION PURGE
- *    Fully deletes customer records for anonymous widget visitors (email ends
- *    with @visitor.nomii or @visitor.shenmay — dual-accept during the Phase 5
- *    rebrand, sunset of the nomii form in Phase 8) that have not interacted
- *    within anon_session_ttl_days (default 30 days).
+ *    Fully deletes customer records for anonymous widget visitors (email
+ *    ends with @visitor.shenmay) that have not interacted within
+ *    anon_session_ttl_days (default 30 days).
  *    Anonymous visitors have no contractual relationship — there is no basis
  *    to retain their data indefinitely.
  *
@@ -152,7 +151,7 @@ async function purgeAnonymousSessions() {
     cutoff.setDate(cutoff.getDate() - tenant.anon_ttl);
 
     // Find anonymous customers who haven't interacted since cutoff
-    // Anonymous customers have email ending in @visitor.nomii or @visitor.shenmay
+    // Anonymous customers have email ending in @visitor.shenmay
     const { rows: anonCustomers } = await db.query(
       `SELECT id FROM customers
        WHERE tenant_id = $1
