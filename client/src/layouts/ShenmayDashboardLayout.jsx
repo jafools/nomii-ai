@@ -105,27 +105,27 @@ function UsageBar({ label, used, limit, pct, nearLimit }) {
 }
 
 const NAV = [
-  { label: "Overview",          icon: LayoutDashboard, to: "/shenmay/dashboard",               end: true },
-  { label: "Conversations",     icon: MessageSquare,   to: "/shenmay/dashboard/conversations",  badge: "conversations" },
-  { label: "Customers",         icon: Users,           to: "/shenmay/dashboard/customers" },
-  { label: "Concerns",          icon: AlertTriangle,   to: "/shenmay/dashboard/concerns",       badge: "concerns" },
-  { label: "AI tools",          icon: Wrench,          to: "/shenmay/dashboard/tools" },
-  { label: "Team",              icon: Users2,          to: "/shenmay/dashboard/team" },
-  { label: "Plans & billing",   icon: Zap,             to: "/shenmay/dashboard/plans" },
-  { label: "Settings",          icon: Settings,        to: "/shenmay/dashboard/settings" },
-  { label: "Profile",           icon: UserCircle,      to: "/shenmay/dashboard/profile" },
+  { label: "Overview",          icon: LayoutDashboard, to: "/dashboard",               end: true },
+  { label: "Conversations",     icon: MessageSquare,   to: "/dashboard/conversations",  badge: "conversations" },
+  { label: "Customers",         icon: Users,           to: "/dashboard/customers" },
+  { label: "Concerns",          icon: AlertTriangle,   to: "/dashboard/concerns",       badge: "concerns" },
+  { label: "AI tools",          icon: Wrench,          to: "/dashboard/tools" },
+  { label: "Team",              icon: Users2,          to: "/dashboard/team" },
+  { label: "Plans & billing",   icon: Zap,             to: "/dashboard/plans" },
+  { label: "Settings",          icon: Settings,        to: "/dashboard/settings" },
+  { label: "Profile",           icon: UserCircle,      to: "/dashboard/profile" },
 ];
 
 const PAGE_TITLES = {
-  "/shenmay/dashboard": "Overview",
-  "/shenmay/dashboard/conversations": "Conversations",
-  "/shenmay/dashboard/customers": "Customers",
-  "/shenmay/dashboard/concerns": "Concerns",
-  "/shenmay/dashboard/tools": "AI tools",
-  "/shenmay/dashboard/team": "Team",
-  "/shenmay/dashboard/plans": "Plans & billing",
-  "/shenmay/dashboard/settings": "Settings",
-  "/shenmay/dashboard/profile": "Profile",
+  "/dashboard": "Overview",
+  "/dashboard/conversations": "Conversations",
+  "/dashboard/customers": "Customers",
+  "/dashboard/concerns": "Concerns",
+  "/dashboard/tools": "AI tools",
+  "/dashboard/team": "Team",
+  "/dashboard/plans": "Plans & billing",
+  "/dashboard/settings": "Settings",
+  "/dashboard/profile": "Profile",
 };
 
 const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage }) => {
@@ -164,12 +164,12 @@ const SidebarContent = ({ shenmayTenant, shenmayUser, badges, handleSignOut, sub
               <UsageBar label="Customers" used={usage.customers_count} limit={usage.customers_limit} pct={usage.customers_pct} nearLimit={usage.near_customer_limit} />
               <UsageBar label="Messages · this month" used={usage.messages_used} limit={usage.messages_limit} pct={usage.messages_pct} nearLimit={usage.near_message_limit} />
               {(usage.near_customer_limit || usage.near_message_limit) && !usage.customer_limit_reached && !usage.message_limit_reached && (
-                <NavLink to="/shenmay/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.warning, textDecoration: "none", marginTop: 6 }}>
+                <NavLink to="/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.warning, textDecoration: "none", marginTop: 6 }}>
                   Approaching limit · upgrade →
                 </NavLink>
               )}
               {(usage.customer_limit_reached || usage.message_limit_reached) && (
-                <NavLink to="/shenmay/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.danger, textDecoration: "none", marginTop: 6 }}>
+                <NavLink to="/dashboard/plans" style={{ display: "block", fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500, color: T.danger, textDecoration: "none", marginTop: 6 }}>
                   Limit reached · upgrade →
                 </NavLink>
               )}
@@ -297,8 +297,8 @@ const ShenmayDashboardLayout = () => {
 
   const handleNotifNavigate = (n) => {
     setNotifOpen(false);
-    if (n.resource_type === "conversation" && n.resource_id) navigate(`/shenmay/dashboard/conversations/${n.resource_id}`);
-    else navigate("/shenmay/dashboard/concerns");
+    if (n.resource_type === "conversation" && n.resource_id) navigate(`/dashboard/conversations/${n.resource_id}`);
+    else navigate("/dashboard/concerns");
   };
 
   const fetchBadges = useCallback(async () => {
@@ -320,7 +320,7 @@ const ShenmayDashboardLayout = () => {
   useEffect(() => { fetchBadges(); }, [location.pathname, fetchBadges]);
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const handleSignOut = () => { clearToken(); setShenmayUser(null); navigate("/shenmay/login", { replace: true }); };
+  const handleSignOut = () => { clearToken(); setShenmayUser(null); navigate("/login", { replace: true }); };
 
   const pageTitle =
     PAGE_TITLES[location.pathname] ||
@@ -328,7 +328,7 @@ const ShenmayDashboardLayout = () => {
     "Dashboard";
 
   const sidebarProps = { shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage: usageData };
-  const isConversationsList = location.pathname.startsWith("/shenmay/dashboard/conversations") && !location.pathname.includes("/conversations/");
+  const isConversationsList = location.pathname.startsWith("/dashboard/conversations") && !location.pathname.includes("/conversations/");
 
   return (
     <div className="shenmay-scope" style={{ minHeight: "100vh", display: "flex", background: T.paper, color: T.ink, fontFamily: T.sans }}>
@@ -455,7 +455,7 @@ const ShenmayDashboardLayout = () => {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <NavLink to="/shenmay/dashboard/plans" style={{ fontSize: 12, fontWeight: 500, padding: "8px 14px", borderRadius: 6, background: T.paper, color: T.ink, textDecoration: "none", letterSpacing: "0.01em" }}>
+              <NavLink to="/dashboard/plans" style={{ fontSize: 12, fontWeight: 500, padding: "8px 14px", borderRadius: 6, background: T.paper, color: T.ink, textDecoration: "none", letterSpacing: "0.01em" }}>
                 View plans
               </NavLink>
               <a href="https://pontensolutions.com/contact" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 500, padding: "8px 14px", borderRadius: 6, border: `1px solid ${T.paper}66`, color: T.paper, textDecoration: "none", letterSpacing: "0.01em" }}>

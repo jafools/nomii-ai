@@ -9,7 +9,7 @@ const { TEST_EMAIL, TEST_PASSWORD, API_BASE, SEL_LOGIN } = require('./constants'
  * Log in via the login page UI. Returns once the dashboard loads.
  */
 async function loginViaUI(page) {
-  await page.goto('/shenmay/login');
+  await page.goto('/login');
   await page.waitForSelector(SEL_LOGIN.emailInput);
   await page.fill(SEL_LOGIN.emailInput, TEST_EMAIL);
   await page.fill(SEL_LOGIN.passwordInput, TEST_PASSWORD);
@@ -30,7 +30,7 @@ async function loginViaAPI(page) {
   if (!res.ok()) throw new Error(`Login API failed: ${body.error || res.status()}`);
 
   // Inject token into localStorage before navigating
-  await page.goto('/shenmay/login');
+  await page.goto('/login');
   await page.evaluate((token) => {
     localStorage.setItem('shenmay_portal_token', token);
   }, body.token);

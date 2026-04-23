@@ -37,7 +37,7 @@ const ShenmayVerifyEmail = () => {
       .then(() => {
         if (cancelled) return;
         setStatus("success");
-        setTimeout(() => navigate("/shenmay/onboarding", { replace: true }), 1500);
+        setTimeout(() => navigate("/onboarding", { replace: true }), 1500);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -82,7 +82,7 @@ const ShenmayVerifyEmail = () => {
               This verification link has expired or is invalid. Please request a new one.
             </Lede>
             <div style={{ marginTop: 28 }}>
-              <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500 }}>
+              <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.teal, textDecoration: "none", fontWeight: 500 }}>
                 <ArrowLeft size={14} /> Back to sign in
               </Link>
             </div>
@@ -131,7 +131,7 @@ const ShenmayVerifyEmail = () => {
             )}
 
             <div style={{ marginTop: 28 }}>
-              <Link to="/shenmay/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
+              <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: T.mute, textDecoration: "none" }}>
                 <ArrowLeft size={14} /> Back to sign in
               </Link>
             </div>

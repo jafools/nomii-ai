@@ -117,7 +117,7 @@ const ShenmayLicenseSuccess = () => {
         </Card>
 
         <div style={{ textAlign: "center", marginTop: 24 }}>
-          <Link to="/shenmay/login" style={{ fontSize: 13, color: T.mute, textDecoration: "none" }}>
+          <Link to="/login" style={{ fontSize: 13, color: T.mute, textDecoration: "none" }}>
             Back to sign in
           </Link>
         </div>

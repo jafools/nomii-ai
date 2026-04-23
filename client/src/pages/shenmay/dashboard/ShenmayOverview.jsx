@@ -83,12 +83,12 @@ const ShenmayOverview = () => {
   const s = data?.stats || {};
 
   const stats = [
-    { label: "Conversations",        value: s.total_conversations ?? 0,    icon: MessageSquare, link: "/shenmay/dashboard/conversations" },
-    { label: "Customers · 30 days",  value: s.active_customers_30d ?? 0,   icon: TrendingUp,    link: "/shenmay/dashboard/customers" },
-    { label: "Total customers",      value: s.total_customers ?? 0,        icon: Users,         link: "/shenmay/dashboard/customers" },
+    { label: "Conversations",        value: s.total_conversations ?? 0,    icon: MessageSquare, link: "/dashboard/conversations" },
+    { label: "Customers · 30 days",  value: s.active_customers_30d ?? 0,   icon: TrendingUp,    link: "/dashboard/customers" },
+    { label: "Total customers",      value: s.total_customers ?? 0,        icon: Users,         link: "/dashboard/customers" },
     { label: "Anonymous visitors",   value: s.anonymous_visitors ?? 0,     icon: UserX,         link: null },
-    { label: "Total messages",       value: s.total_messages ?? 0,         icon: Mail,          link: "/shenmay/dashboard/conversations" },
-    { label: "Open concerns",        value: s.open_concerns ?? 0,          icon: AlertTriangle, link: "/shenmay/dashboard/concerns", emphasis: (s.open_concerns ?? 0) > 0 },
+    { label: "Total messages",       value: s.total_messages ?? 0,         icon: Mail,          link: "/dashboard/conversations" },
+    { label: "Open concerns",        value: s.open_concerns ?? 0,          icon: AlertTriangle, link: "/dashboard/concerns", emphasis: (s.open_concerns ?? 0) > 0 },
   ];
 
   const conversations = (data?.recent_conversations ?? []).slice(0, 10);
@@ -139,7 +139,7 @@ const ShenmayOverview = () => {
           <Notice tone="teal" icon={AlertTriangle} style={{ paddingRight: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
               <div><strong style={{ color: T.ink }}>Your widget hasn't been detected yet.</strong>{" "}Finish onboarding to activate your agent.</div>
-              <Link to="/shenmay/onboarding" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.teal, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.teal}40` }}>
+              <Link to="/onboarding" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.teal, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.teal}40` }}>
                 Complete setup <ArrowUpRight size={13} />
               </Link>
             </div>
@@ -152,7 +152,7 @@ const ShenmayOverview = () => {
           <Notice tone="danger" icon={UserMinus} style={{ paddingRight: 20 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, width: "100%" }}>
               <div>New visitors couldn't connect — your customer limit ({subUsage.customers_limit}) has been reached.</div>
-              <Link to="/shenmay/dashboard/plans" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.danger, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.danger}40` }}>
+              <Link to="/dashboard/plans" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 500, color: T.danger, textDecoration: "none", whiteSpace: "nowrap", borderBottom: `1px solid ${T.danger}40` }}>
                 Upgrade plan <ArrowUpRight size={13} />
               </Link>
             </div>
@@ -212,7 +212,7 @@ const ShenmayOverview = () => {
             kicker="Figure 02 · Last seen"
             title="Recent conversations"
             action={conversations.length > 0 && (
-              <Link to="/shenmay/dashboard/conversations" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 500, color: T.teal, textDecoration: "none", fontFamily: T.mono, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${T.teal}40`, paddingBottom: 1 }}>
+              <Link to="/dashboard/conversations" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 500, color: T.teal, textDecoration: "none", fontFamily: T.mono, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${T.teal}40`, paddingBottom: 1 }}>
                 View all <ArrowUpRight size={12} />
               </Link>
             )}
@@ -234,7 +234,7 @@ const ShenmayOverview = () => {
               return (
                 <div
                   key={id}
-                  onClick={() => navigate(`/shenmay/dashboard/conversations/${id}`)}
+                  onClick={() => navigate(`/dashboard/conversations/${id}`)}
                   style={{
                     display: "flex",
                     alignItems: "center",

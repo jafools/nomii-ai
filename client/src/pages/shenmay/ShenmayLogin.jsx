@@ -101,7 +101,7 @@ const ShenmayLogin = () => {
   // If the user already has a valid token, skip the login page entirely
   useEffect(() => {
     if (isLoggedIn()) {
-      navigate("/shenmay/dashboard", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 
@@ -127,7 +127,7 @@ const ShenmayLogin = () => {
       setToken(data.token);
       const steps = data.tenant?.onboarding_steps;
       const onboardingDone = steps?.install_widget === true || steps?.widget === true;
-      navigate(onboardingDone ? "/shenmay/dashboard" : "/shenmay/onboarding", { replace: true });
+      navigate(onboardingDone ? "/dashboard" : "/onboarding", { replace: true });
     } catch (err) {
       if (err.code === "email_unverified") setUnverified(true);
       else setError(err.message || "Login failed. Please try again.");
@@ -342,7 +342,7 @@ const ShenmayLogin = () => {
               {!isSelfHosted && (
                 <p style={{ marginTop: 32, fontSize: 14, color: MUTE, textAlign: "center" }}>
                   New to Shenmay?&nbsp;{" "}
-                  <Link to="/shenmay/signup" style={{ color: TEAL, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${TEAL}40` }}>
+                  <Link to="/signup" style={{ color: TEAL, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${TEAL}40` }}>
                     Create an account →
                   </Link>
                 </p>

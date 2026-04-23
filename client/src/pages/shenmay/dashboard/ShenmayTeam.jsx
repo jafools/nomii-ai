@@ -131,7 +131,7 @@ const ShenmayTeam = () => {
         {atLimit && (
           <p style={{ fontSize: 12, color: T.danger, margin: "10px 0 0" }}>
             Agent limit reached.{" "}
-            <a href="/shenmay/dashboard/plans" style={{ color: T.danger, textDecoration: "none", borderBottom: `1px solid ${T.danger}40`, fontWeight: 500 }}>
+            <a href="/dashboard/plans" style={{ color: T.danger, textDecoration: "none", borderBottom: `1px solid ${T.danger}40`, fontWeight: 500 }}>
               Upgrade your plan
             </a>{" "}
             to add more agents.

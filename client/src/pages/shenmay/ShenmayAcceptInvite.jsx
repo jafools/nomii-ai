@@ -61,7 +61,7 @@ const ShenmayAcceptInvite = () => {
     try {
       const data = await acceptInvite(token, password, firstName, lastName);
       if (data.error) { setSubmitError(data.error); return; }
-      if (data.token) { setToken(data.token); navigate("/shenmay/dashboard", { replace: true }); }
+      if (data.token) { setToken(data.token); navigate("/dashboard", { replace: true }); }
     } catch (err) {
       setSubmitError(err.message || "Failed to accept invitation. Please try again.");
     } finally { setSubmitting(false); }
@@ -86,7 +86,7 @@ const ShenmayAcceptInvite = () => {
               <AlertTriangle size={26} color={T.danger} style={{ margin: "0 auto 14px" }} />
               <Lede style={{ marginTop: 0 }}>{infoError}</Lede>
               <div style={{ marginTop: 24 }}>
-                <Link to="/shenmay/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+                <Link to="/login" style={{ color: T.teal, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
                   Go to sign in →
                 </Link>
               </div>
@@ -134,7 +134,7 @@ const ShenmayAcceptInvite = () => {
 
         <p style={{ textAlign: "center", fontSize: 13, color: T.mute, marginTop: 24 }}>
           Already have an account?&nbsp;{" "}
-          <Link to="/shenmay/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
+          <Link to="/login" style={{ color: T.teal, textDecoration: "none", fontWeight: 500, borderBottom: `1px solid ${T.teal}40` }}>
             Sign in
           </Link>
         </p>

@@ -265,7 +265,7 @@ npx @claude-flow/cli@latest doctor --fix
 | Image tag | `:edge` — rebuilt on every merge to main, after CI passes |
 | DB | Fresh `shenmay_ai_staging`, user `shenmay`, separate from prod (DB renamed 2026-04-23 in the Phase 6 staging catch-up) |
 | Stack path | `/root/nomii-staging/` (compose + .env + refresh script) |
-| Public routing | Cloudflare tunnel `knomi-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) → `http://shenmay-frontend-staging:80` on shared docker network (origin flipped via dashboard 2026-04-23 afternoon; tunnel display name is still "Nomii-ai" in Cloudflare UI — trivial rename when convenient). |
+| Public routing | Cloudflare tunnel `Shenmay-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`, dashboard display renamed 2026-04-23 PM) → `http://shenmay-frontend-staging:80` on shared docker network. |
 | Old fallback | The old Proxmox Shenmay containers are STOPPED (backup at `/root/backups/knomi_ai_proxmox_final_*.sql`). Lateris and `nomii-cloudflared` are untouched and must stay running. |
 
 Purpose: click through new features at a real prod-shaped URL before cutting

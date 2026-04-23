@@ -211,8 +211,8 @@ async function _post(url, payload) {
 
 function _portalConvUrl(conversationId) {
   return conversationId
-    ? `${PORTAL_URL}/shenmay/dashboard/conversations/${conversationId}`
-    : `${PORTAL_URL}/shenmay/dashboard/conversations`;
+    ? `${PORTAL_URL}/dashboard/conversations/${conversationId}`
+    : `${PORTAL_URL}/dashboard/conversations`;
 }
 
 module.exports = { fireNotifications };

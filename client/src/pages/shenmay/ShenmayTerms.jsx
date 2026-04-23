@@ -28,7 +28,7 @@ const ShenmayTerms = () => (
   <PageShell>
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "56px 32px 80px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 44 }}>
-        <Link to="/shenmay/signup" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 6, border: `1px solid ${T.paperEdge}`, color: T.ink, textDecoration: "none" }}>
+        <Link to="/signup" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 6, border: `1px solid ${T.paperEdge}`, color: T.ink, textDecoration: "none" }}>
           <ArrowLeft size={16} />
         </Link>
         <ShenmayWordmark size={22} />

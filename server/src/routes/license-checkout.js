@@ -60,8 +60,8 @@ router.post('/', async (req, res) => {
     const params = {
       mode:        'subscription',
       line_items:  [{ price: priceId, quantity: 1 }],
-      success_url: `${APP_URL}/shenmay/license/success`,
-      cancel_url:  `${APP_URL}/shenmay/license`,
+      success_url: `${APP_URL}/license/success`,
+      cancel_url:  `${APP_URL}/license`,
       // Metadata on both the session and the subscription so the webhook can detect selfhosted
       metadata:           { product_type: 'selfhosted', plan, interval },
       subscription_data:  { metadata: { product_type: 'selfhosted', plan, interval } },
