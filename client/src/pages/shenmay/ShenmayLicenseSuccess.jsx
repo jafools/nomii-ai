@@ -22,8 +22,8 @@ import {
   PageShell,
 } from "@/components/shenmay/ui/ShenmayUI";
 
-const INSTALL_CMD = `bash <(curl -fsSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh)`;
-const REPO_URL = "https://github.com/jafools/nomii-ai";
+const INSTALL_CMD = `bash <(curl -fsSL https://raw.githubusercontent.com/jafools/shenmay-ai/main/scripts/install.sh)`;
+const REPO_URL = "https://github.com/jafools/shenmay-ai";
 
 const ShenmayLicenseSuccess = () => {
   const [copied, setCopied] = useState(false);
