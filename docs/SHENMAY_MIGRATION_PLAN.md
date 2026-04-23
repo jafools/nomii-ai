@@ -270,8 +270,24 @@ new customers use Shenmay identifiers. Deprecation window announced
 customers at cutover point, so a hard cutover was lower-risk than managing
 dual-publish machinery. Rollback to v2.6.0 works cleanly: that tag's compose
 references the old `nomii-*` image names, which remain on GHCR indefinitely
-(tags are immutable). Proxmox staging rename + Cloudflared tunnel origin
-update deferred to a separate PR.
+(tags are immutable).
+
+**Proxmox staging follow-up (partial, 2026-04-23):** Staging's
+`docker-compose.staging.yml` + `refresh-staging.sh` on pontenprox were
+updated to pull `shenmay-*:edge` (previously frozen at pre-Phase-6
+`nomii-*:edge` — no new pushes to that repo). Staging DB + user renamed
+in-place via the same temp-superuser trick used on Hetzner in Phase 7.
+**Container names on staging are still `nomii-{db,backend,frontend}-staging`**
+because the Cloudflare tunnel `knomi-ai` (ID
+`fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) has `http://nomii-frontend-staging:80`
+hardcoded as its origin, and the tunnel is token-managed (no local config
+file on pontenprox — no shell in the cloudflared image either). Renaming the
+container requires Austin to update the tunnel's Public Hostname origin in
+the Cloudflare dashboard; pairing that with a compose-side sed of
+`container_name: nomii-*-staging` → `shenmay-*-staging` is the remaining
+work. Files backed up at
+`/root/nomii-staging/{docker-compose.staging.yml,refresh-staging.sh}.pre-phase7-2026-04-23.bak`
+on pontenprox for easy rollback.
 
 **Goal:** Container + image names reflect Shenmay. Requires coordination
 with on-prem customers.
