@@ -353,7 +353,7 @@
   #csat-skip:hover { opacity: 1; }
 
   /* ── Privacy & branding bar ── */
-  #nomii-footer-bar {
+  #shenmay-footer-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -362,12 +362,12 @@
     color: var(--text-muted);
     opacity: .55;
   }
-  #nomii-privacy-link {
+  #shenmay-privacy-link {
     color: var(--text-muted);
     text-decoration: none;
     font-size: 10px;
   }
-  #nomii-privacy-link:hover { text-decoration: underline; opacity: 1; }
+  #shenmay-privacy-link:hover { text-decoration: underline; opacity: 1; }
 
   /* ── Loading / error states ── */
   #loading-screen, #error-screen {
@@ -595,8 +595,8 @@
       </svg>
       Request human support
     </button>
-    <div id="nomii-footer-bar">
-      <a id="nomii-privacy-link" href="#" target="_blank" rel="noopener" style="display:none;">Privacy Notice</a>
+    <div id="shenmay-footer-bar">
+      <a id="shenmay-privacy-link" href="#" target="_blank" rel="noopener" style="display:none;">Privacy Notice</a>
       <span></span>
       <span>Powered by <strong style="letter-spacing:.3px;">Shenmay</strong><strong style="color:var(--primary);letter-spacing:.3px;">AI</strong></span>
     </div>
@@ -683,7 +683,7 @@
   var nameInput           = document.getElementById('name-input');
   var nameSubmitBtn       = document.getElementById('name-submit-btn');
   var concernBtn          = document.getElementById('concern-btn');
-  var privacyLink         = document.getElementById('nomii-privacy-link');
+  var privacyLink         = document.getElementById('shenmay-privacy-link');
   var humanBanner         = document.getElementById('human-mode-banner');
 
   // Show privacy link if a URL was passed via embed param

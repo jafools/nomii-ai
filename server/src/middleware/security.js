@@ -27,7 +27,6 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',                                        // Local preview
   'https://shenmay.ai',                                           // Production portal (canonical)
   'https://www.shenmay.ai',                                       // Canonical www host (redirects to apex but may appear as Origin on the redirect itself)
-  'https://nomii.pontensolutions.com',                            // Legacy portal — retained until Shenmay migration Phase 8 sunset
   'https://pontensolutions.com',                                  // Marketing site (license purchase page)
   process.env.FRONTEND_URL,                                       // Override via env
   process.env.FRONTEND_URL_PROD,                                  // Additional override

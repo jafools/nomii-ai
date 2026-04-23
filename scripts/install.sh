@@ -13,7 +13,7 @@ set -e
 
 # ── Headless mode (CI/Ansible/Terraform/automated tests) ─────────────────────
 # Set SHENMAY_NONINTERACTIVE=1 to skip all prompts and use defaults / env vars:
-#   SHENMAY_DIR             — install directory (default: ~/nomii)
+#   SHENMAY_DIR             — install directory (default: ~/shenmay)
 #   SHENMAY_PUBLIC_URL      — public URL (default: http://localhost)
 #   SHENMAY_SMTP_HOST       — SMTP host (default: empty / skip)
 #   SHENMAY_SMTP_PORT       — SMTP port (default: 465)
@@ -56,7 +56,7 @@ else
 fi
 COMPOSE_FILE="docker-compose.selfhosted.yml"
 COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${COMPOSE_FILE}"
-INSTALL_DIR="${SHENMAY_DIR:-$HOME/nomii}"
+INSTALL_DIR="${SHENMAY_DIR:-$HOME/shenmay}"
 TOTAL_STEPS=5
 
 # ── Wrap docker calls so they work right after a fresh install ───────────────
@@ -215,7 +215,7 @@ if [ "${SKIP_CONFIG}" != "1" ]; then
   # ── Public URL ────────────────────────────────
   echo -e "   ${W}Your public URL${NC}"
   echo -e "   ${D}The web address where Shenmay will be accessible."
-  echo -e "   Examples: https://nomii.yourfirm.com  or  http://192.168.1.100${NC}"
+  echo -e "   Examples: https://shenmay.yourfirm.com  or  http://192.168.1.100${NC}"
   if [ "$NONINT" = "1" ]; then
     PUBLIC_URL="${SHENMAY_PUBLIC_URL:-http://localhost}"
     ok "Headless: using $PUBLIC_URL"
