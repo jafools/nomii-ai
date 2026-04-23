@@ -122,11 +122,19 @@ services:
 
   # ============================================
   # Cloudflare Tunnel — exposes backend + frontend
-  # publicly via api.pontensolutions.com
+  # publicly via api.pontensolutions.com (optional).
   # No port forwarding required.
   # Requires CLOUDFLARE_TUNNEL_TOKEN in .env
+  #
+  # Opt-in via the "tunnel" profile so a bare
+  # `docker compose up -d` doesn't try to start it
+  # with a blank token and restart-loop. Hetzner
+  # prod uses Cloudflare Origin CA direct (no tunnel);
+  # on-prem customers who want tunnel-based public
+  # routing run `docker compose --profile tunnel up -d`.
   # ============================================
   cloudflared:
+    profiles: ["tunnel"]
     image: cloudflare/cloudflared:2025.4.0
     container_name: shenmay-cloudflared
     restart: unless-stopped
