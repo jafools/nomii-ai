@@ -7,7 +7,7 @@
 
 set -e
 
-CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
+CONTAINER="${NOMII_DB_CONTAINER:-shenmay-db}"
 # Defaults match the canonical post-rename identity used by both
 # docker-compose.yml (SaaS) and docker-compose.selfhosted.yml.
 # Override only if your install predates the knomi→nomii rename.

@@ -262,7 +262,16 @@ new customers use Shenmay identifiers. Deprecation window announced
 
 ---
 
-## Phase 6 — Docker / GHCR / compose rename [~2 hours coordinated window]
+## Phase 6 — Docker / GHCR / compose rename ✅ SHIPPED (v2.7.0, 2026-04-23)
+
+**Status:** LIVE on Hetzner. Image names cut over to
+`ghcr.io/jafools/shenmay-{backend,frontend}`; container names cut over to
+`shenmay-{db,backend,frontend,cloudflared}`. No dual-publish — no real
+customers at cutover point, so a hard cutover was lower-risk than managing
+dual-publish machinery. Rollback to v2.6.0 works cleanly: that tag's compose
+references the old `nomii-*` image names, which remain on GHCR indefinitely
+(tags are immutable). Proxmox staging rename + Cloudflared tunnel origin
+update deferred to a separate PR.
 
 **Goal:** Container + image names reflect Shenmay. Requires coordination
 with on-prem customers.

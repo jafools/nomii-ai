@@ -51,7 +51,7 @@ echo "=================================================="
 echo ""
 
 # ── Get tenant ID ─────────────────────────────────────────
-TENANT_ID=$(docker exec nomii-db psql -U nomii -d nomii_ai -t -c \
+TENANT_ID=$(docker exec shenmay-db psql -U nomii -d nomii_ai -t -c \
   "SELECT tenant_id FROM tenant_admins WHERE email = '$EMAIL' LIMIT 1;" 2>/dev/null | tr -d ' \n')
 
 if [ -z "$TENANT_ID" ]; then
@@ -104,7 +104,7 @@ if [ "$HTTP_STATUS" = "200" ]; then
   echo ""
   echo "📋  Checking database subscription..."
   echo ""
-  docker exec nomii-db psql -U nomii -d nomii_ai \
+  docker exec shenmay-db psql -U nomii -d nomii_ai \
     -c "SELECT plan, status, max_customers, max_messages_month, max_agents FROM subscriptions WHERE tenant_id = '$TENANT_ID';"
   echo ""
   echo "👉  Refresh your dashboard to confirm the $PLAN plan shows."

@@ -24,8 +24,8 @@ echo "=================================================="
 echo ""
 
 # ── Check DB container is up ─────────────────────────────────
-if ! docker exec nomii-db psql -U nomii -d nomii_ai -c "SELECT 1" > /dev/null 2>&1; then
-  echo "❌  nomii-db container not reachable. Run: docker compose ps"
+if ! docker exec shenmay-db psql -U nomii -d nomii_ai -c "SELECT 1" > /dev/null 2>&1; then
+  echo "❌  shenmay-db container not reachable. Run: docker compose ps"
   exit 1
 fi
 
@@ -33,7 +33,7 @@ echo "✅  Database connection confirmed"
 echo ""
 
 # ── Check if already applied ─────────────────────────────────
-UNREAD_EXISTS=$(docker exec nomii-db psql -U nomii -d nomii_ai -t -c \
+UNREAD_EXISTS=$(docker exec shenmay-db psql -U nomii -d nomii_ai -t -c \
   "SELECT COUNT(*) FROM information_schema.columns
    WHERE table_name = 'conversations' AND column_name = 'unread';" 2>/dev/null | tr -d ' \n')
 
@@ -41,7 +41,7 @@ if [ "$UNREAD_EXISTS" = "1" ]; then
   echo "✅  conversations.unread already exists — migration 014 already applied"
   echo ""
   echo "  If you still see the error, restart the backend:"
-  echo "    docker compose restart nomii-backend"
+  echo "    docker compose restart backend"
   echo ""
   echo "=================================================="
   exit 0
@@ -50,7 +50,7 @@ fi
 echo "⚙️   Applying migration 014..."
 echo ""
 
-docker exec -i nomii-db psql -U nomii -d nomii_ai <<'SQL'
+docker exec -i shenmay-db psql -U nomii -d nomii_ai <<'SQL'
 -- ──────────────────────────────────────────────────────────────
 -- Migration 014 — Unread flags + Multi-agent support
 -- (safe to re-run — all statements are idempotent)
@@ -103,10 +103,10 @@ echo ""
 echo "✅  Migration 014 applied!"
 echo ""
 echo "  Restarting backend to clear any cached query errors..."
-docker compose restart nomii-backend 2>/dev/null || true
+docker compose restart backend 2>/dev/null || true
 echo ""
 echo "  Verifying columns exist:"
-docker exec nomii-db psql -U nomii -d nomii_ai -c \
+docker exec shenmay-db psql -U nomii -d nomii_ai -c \
   "SELECT column_name, data_type FROM information_schema.columns
    WHERE table_name = 'conversations' AND column_name = 'unread'
    UNION ALL
@@ -117,6 +117,6 @@ docker exec nomii-db psql -U nomii -d nomii_ai -c \
    WHERE table_name = 'tenant_admins' AND column_name = 'invite_token';"
 echo ""
 echo "=================================================="
-echo "  Done. Check logs: docker compose logs -f nomii-backend"
+echo "  Done. Check logs: docker compose logs -f backend"
 echo "=================================================="
 echo ""

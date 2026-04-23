@@ -105,12 +105,18 @@ This triggers `.github/workflows/docker-publish.yml`, which builds and pushes
 the backend + frontend images to GHCR with these tags:
 
 ```
-ghcr.io/jafools/nomii-backend:1.2.3      ← note: no "v" prefix on image tags
-ghcr.io/jafools/nomii-backend:1.2
-ghcr.io/jafools/nomii-backend:stable
-ghcr.io/jafools/nomii-backend:latest
-(same 4 tags for nomii-frontend)
+ghcr.io/jafools/shenmay-backend:1.2.3      ← note: no "v" prefix on image tags
+ghcr.io/jafools/shenmay-backend:1.2
+ghcr.io/jafools/shenmay-backend:stable
+ghcr.io/jafools/shenmay-backend:latest
+(same 4 tags for shenmay-frontend)
 ```
+
+> **Phase 6 cutover (2026-04-23):** image names flipped from `nomii-*` to
+> `shenmay-*` at **v2.7.0**. Tags `v2.6.0` and older live on the old
+> `ghcr.io/jafools/nomii-{backend,frontend}` repos indefinitely (GHCR
+> tags are immutable). Rollback to any v2.6.0-or-earlier tag works
+> because those tags' compose files reference the old image names.
 
 > **Git tags vs. Docker image tags:** we push `v1.2.3` to git, but the docker
 > image tag is `1.2.3` (no `v`). This is the docker/metadata-action SemVer
@@ -135,8 +141,8 @@ ssh nomii@204.168.232.24 "cd ~/nomii-ai && git fetch --tags && git checkout v1.2
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
 
 # Confirm Hetzner is running exactly the GHCR tag, not a stray local build:
-ssh nomii@204.168.232.24 "docker inspect nomii-backend --format '{{.Config.Image}}'"
-#  → ghcr.io/jafools/nomii-backend:1.2.3
+ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
+#  → ghcr.io/jafools/shenmay-backend:1.2.3
 ```
 
 Keep SaaS on the exact version tag (not `:stable` and not `main`). That way
@@ -145,7 +151,7 @@ reproduce any production issue by running the same image tag locally.
 
 ## On-prem customer experience
 
-Customers' `docker-compose.selfhosted.yml` pins `ghcr.io/jafools/nomii-backend:stable`
+Customers' `docker-compose.selfhosted.yml` pins `ghcr.io/jafools/shenmay-backend:stable`
 (and `:stable` for frontend). After you cut a tag, they'll get the new image
 next time they run:
 
@@ -251,7 +257,7 @@ Every new migration SQL file must use `IF NOT EXISTS` / `ADD COLUMN IF NOT
 EXISTS` / similar guards — our migration runner treats those as success on
 re-run, which is what keeps boot-time idempotency working. If you can't make
 a migration idempotent (e.g. a one-shot data backfill), split it into a
-separate out-of-band script and run it manually via `docker exec nomii-db
+separate out-of-band script and run it manually via `docker exec shenmay-db
 psql …`.
 
 ---

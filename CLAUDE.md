@@ -278,9 +278,9 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 | Server | CPX22, Helsinki (hel1), `204.168.232.24`, EUR 12.61/mo |
 | SSH | `ssh nomii@204.168.232.24` (key-only, root disabled) |
 | Repo | `~/nomii-ai/` |
-| DB container | `nomii-db` (postgres:16.9-alpine), internal only |
-| Backend | `nomii-backend`, port 3001 bound to 127.0.0.1 |
-| Frontend | `nomii-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
+| DB container | `shenmay-db` (postgres:16.9-alpine), internal only |
+| Backend | `shenmay-backend`, port 3001 bound to 127.0.0.1 |
+| Frontend | `shenmay-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
 | DB credentials | `nomii:nomii_prod_2026 / nomii_ai` |
 | SSL | Cloudflare Full (Strict), Origin CA cert valid until 2041 |
 | Firewall | UFW: SSH (22), HTTP (80), HTTPS (443) only |
@@ -291,6 +291,12 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 > 1. Merge PRs to `main` (CI must be green)
 > 2. Cut a tag: `git tag v1.2.3 && git push origin v1.2.3` — this rebuilds `:stable` on GHCR for on-prem customers
 > 3. SSH to Hetzner and check out the tag (below) — keeps SaaS and on-prem on the same SHA
+
+> **One-time cutover note (v2.7.0, Phase 6):** the first deploy after the
+> Shenmay container rename requires `docker compose down` BEFORE `git checkout`
+> so the old `nomii-*`-named containers get removed cleanly before the new
+> `shenmay-*`-named ones come up. Named volume `pgdata:` persists, so DB data
+> is safe. Subsequent deploys are back to the standard pattern below.
 
 ```bash
 # Standard deploy — pull the GHCR image matching the tag you just cut:
@@ -303,10 +309,10 @@ ssh nomii@204.168.232.24 "cd ~/nomii-ai && git checkout main && git pull && IMAG
 ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
 
 # Confirm Hetzner is running the exact GHCR tag:
-ssh nomii@204.168.232.24 "docker inspect nomii-backend --format '{{.Config.Image}}'"
+ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
 
 # Run a migration:
-ssh nomii@204.168.232.24 "docker exec -i nomii-db psql -U nomii -d nomii_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
+ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U nomii -d nomii_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
 
 # View backend logs:
 ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=100"

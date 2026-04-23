@@ -18,7 +18,7 @@ set -e
 
 BACKUP_DIR="${HOME}/db-backups"
 RETAIN_DAYS="${RETAIN_DAYS:-14}"
-DB_CONTAINER="${DB_CONTAINER:-nomii-db}"
+DB_CONTAINER="${DB_CONTAINER:-shenmay-db}"
 DB_USER="${DB_USER:-nomii}"
 DB_NAME="${DB_NAME:-nomii_ai}"
 
