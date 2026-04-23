@@ -168,11 +168,8 @@ const Step4InstallWidget = ({ shenmayTenant, setShenmayTenant, markComplete, adv
 
         {info.showDownload && (
           <>
-            {/* TODO(Phase 5f): switch to /downloads/shenmay-wordpress-plugin.zip
-                once the artifact is uploaded + nginx 301 from the old name is wired.
-                See docs/PHASE_5_CHECKLIST.md §5f. */}
             <a
-              href={`${API_ORIGIN}/downloads/nomii-wordpress-plugin.zip`}
+              href={`${API_ORIGIN}/downloads/shenmay-wordpress-plugin.zip`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold mb-4 transition-all duration-200 hover:shadow-lg hover:shadow-[#0F5F5C]/20"
               style={{ background: "linear-gradient(135deg, #0F5F5C 0%, #083A38 100%)", color: "#F5F1E8" }}
               download
