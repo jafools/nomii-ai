@@ -119,9 +119,9 @@ over-purge in retention.
 ## 5e · WordPress shortcode — `[nomii_widget]` + `[shenmay_widget]`
 
 The WP plugin source is NOT in this repo (lives in the
-`nomii-wordpress-plugin.zip` build artifact). In-repo work is
-documentation-only; the shortcode rename happens in a separate PR
-against the WP plugin repo, coordinated with 5f's zip rename.
+`shenmay-wordpress-plugin.zip` build artifact, which is now the
+canonical filename post-5f). In-repo work is documentation-only; the
+shortcode rename happens in a separate PR against the WP plugin repo.
 
 | File | Line | Action |
 |---|---|---|
@@ -135,23 +135,38 @@ plugin supports both.
 
 ---
 
-## 5f · WP plugin zip — `nomii-wordpress-plugin.zip` → `shenmay-wordpress-plugin.zip`
+## 5f · WP plugin zip — `nomii-wordpress-plugin.zip` → `shenmay-wordpress-plugin.zip` ✅ SHIPPED
 
-Publish the new-named zip at `/downloads/shenmay-wordpress-plugin.zip`
-alongside the existing one. Add a permanent 301 from the old URL so WP
-update checks on existing installs keep resolving.
+**Status:** LIVE. The physical zip is renamed in the repo (`git mv`), the
+canonical URL is `/downloads/shenmay-wordpress-plugin.zip`, and the
+legacy URL is 301-redirected at the Express layer (intercepted BEFORE
+the static middleware so the redirect wins).
 
-| File | Line | Action |
-|---|---|---|
-| [client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:172](client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:172) | Download button href | Point to `shenmay-wordpress-plugin.zip` |
-| config/nginx/prod.conf (`/downloads/` blocks at lines 79, 145, 219, 283) | `/downloads/` | Add `location = /downloads/nomii-wordpress-plugin.zip { return 301 /downloads/shenmay-wordpress-plugin.zip; }` inside each `/downloads/` block (permanent, per Phase 8 rule "keep indefinitely") |
-| [LOVABLE_PROMPTS.md:148](LOVABLE_PROMPTS.md:148) | Onboarding copy | Update to new filename |
-| [FEATURES.md:237](FEATURES.md:237) | Docs | Update |
-| Hetzner ops | — | Upload `shenmay-wordpress-plugin.zip` artifact to `/downloads/` + keep `nomii-*.zip` in place (nginx serves 301 from it to the new name) |
+**Implementation summary:**
 
-**Test plan:** `curl -I https://shenmay.ai/downloads/nomii-wordpress-plugin.zip`
-→ 301 to new URL. `curl -I .../shenmay-wordpress-plugin.zip` → 200.
-**Risk:** 🟢 zero — 301 preserves existing WP auto-update behavior.
+- [server/public/downloads/shenmay-wordpress-plugin.zip](server/public/downloads/shenmay-wordpress-plugin.zip) — renamed from `nomii-wordpress-plugin.zip` via `git mv` (history preserved).
+- [server/src/index.js:138-143](server/src/index.js:138) — explicit `app.get('/downloads/nomii-wordpress-plugin.zip', ...)` returning 301 to the canonical path, added BEFORE the `express.static` middleware so it intercepts first.
+- [client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:170](client/src/components/shenmay/onboarding/Step4InstallWidget.jsx:170) — download button href flipped to the canonical filename; removed the TODO anchor comment.
+- `FEATURES.md:237` + `LOVABLE_PROMPTS.md:148` — doc URLs updated with legacy-301 note.
+
+**Notes on WP auto-update:**
+
+WordPress's plugin auto-update mechanism issues a GET for the plugin zip; any `fetch`/`wp_remote_get` call follows redirects by default, so the 301 is transparent to existing WP installs. No customer action required. The plugin internals (shortcode + settings page) are unchanged — those are Phase 5e's territory, in the sibling WP plugin repo.
+
+**Phase 8 sunset (target 2026-10-20):**
+
+1. Delete the `app.get('/downloads/nomii-wordpress-plugin.zip', ...)` handler from `server/src/index.js`.
+2. Any remaining WP installs still requesting the legacy URL will get a 404. By then we expect ~100% to be calling the canonical URL directly (most WP plugin update cycles run ≥ weekly).
+
+**Test plan (post-deploy):**
+`curl -I https://shenmay.ai/downloads/nomii-wordpress-plugin.zip` → 301 to canonical URL.
+`curl -I https://shenmay.ai/downloads/shenmay-wordpress-plugin.zip` → 200.
+
+**Risk:** 🟢 zero — 301 preserves existing WP auto-update behavior; redirect is intercepted BEFORE `express.static` so the rename can't 404 a legacy caller.
+
+**Ops (not required for this PR):** none — the physical file rename lives inside the Docker image, so `docker compose pull + up -d` on the tag swap handles it atomically. No separate SSH step.
+
+**Note on original plan:** The original checklist proposed doing the 301 at the nginx layer (4 server blocks) plus a pre-deploy `cp` on Hetzner. The Express-level redirect is simpler (one file, testable in `node --check`), survives any future nginx re-config, and avoids the ops coordination window. Nginx would still work if we ever re-add it for perf; not needed today given the `/downloads/` route already proxies to the backend.
 
 ---
 

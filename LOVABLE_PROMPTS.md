@@ -145,7 +145,7 @@ Paste this first. It sets up the shared API layer everything else uses.
 >
 > Below it, a platform selector with icon tabs. Show instructions for each:
 >
-> **WordPress** (show first — most common): "Install our WordPress plugin — no coding needed." Download button linking to `https://api.pontensolutions.com/downloads/nomii-wordpress-plugin.zip`. Steps: 1. Download the plugin. 2. Go to WordPress Admin → Plugins → Add New → Upload Plugin. 3. Select the downloaded zip and click Install Now. 4. Activate the plugin. 5. Go to Settings → Shenmay AI, paste your Widget Key, and save.
+> **WordPress** (show first — most common): "Install our WordPress plugin — no coding needed." Download button linking to `https://shenmay.ai/downloads/shenmay-wordpress-plugin.zip` (the legacy `.../nomii-wordpress-plugin.zip` URL 301-redirects until 2026-10-20). Steps: 1. Download the plugin. 2. Go to WordPress Admin → Plugins → Add New → Upload Plugin. 3. Select the downloaded zip and click Install Now. 4. Activate the plugin. 5. Go to Settings → Shenmay AI, paste your Widget Key, and save.
 >
 > **Webflow**: "Go to Site Settings → Custom Code → Footer Code. Paste this before `</body>`:" Show copy-able code snippet.
 >

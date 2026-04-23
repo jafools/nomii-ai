@@ -234,7 +234,7 @@ Every chat exchange triggers three background operations — none block the resp
 ## Integrations & Distribution
 
 ### WordPress Plugin
-- Full plugin at `https://api.pontensolutions.com/downloads/nomii-wordpress-plugin.zip`
+- Full plugin at `https://shenmay.ai/downloads/shenmay-wordpress-plugin.zip` (legacy `…/downloads/nomii-wordpress-plugin.zip` URL 301-redirects; sunset 2026-10-20)
 - Admin settings page: widget key, position, colors, greeting, auto-embed toggle
 - `[nomii_widget]` shortcode with per-page attribute overrides
 - Sitewide auto-embed via `wp_footer` hook
