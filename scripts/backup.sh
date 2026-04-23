@@ -14,7 +14,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-CONTAINER="${NOMII_DB_CONTAINER:-nomii-db}"
+CONTAINER="${NOMII_DB_CONTAINER:-shenmay-db}"
 DB_USER="${NOMII_DB_USER:-nomii}"
 DB_NAME="${NOMII_DB_NAME:-nomii_ai}"
 

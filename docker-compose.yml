@@ -15,7 +15,7 @@ services:
   # ============================================
   db:
     image: postgres:16.9-alpine
-    container_name: nomii-db
+    container_name: shenmay-db
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -43,9 +43,9 @@ services:
   # to a specific version (e.g. v1.0.3); :stable tracks the latest
   # tagged release.
   backend:
-    image: ghcr.io/jafools/nomii-backend:${IMAGE_TAG:-stable}
+    image: ghcr.io/jafools/shenmay-backend:${IMAGE_TAG:-stable}
     pull_policy: always
-    container_name: nomii-backend
+    container_name: shenmay-backend
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -110,9 +110,9 @@ services:
   # so the client makes same-origin API calls — nginx (inside frontend)
   # proxies /api/* to the backend container over the docker network.
   frontend:
-    image: ghcr.io/jafools/nomii-frontend:${IMAGE_TAG:-stable}
+    image: ghcr.io/jafools/shenmay-frontend:${IMAGE_TAG:-stable}
     pull_policy: always
-    container_name: nomii-frontend
+    container_name: shenmay-frontend
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -128,7 +128,7 @@ services:
   # ============================================
   cloudflared:
     image: cloudflare/cloudflared:2025.4.0
-    container_name: nomii-cloudflared
+    container_name: shenmay-cloudflared
     restart: unless-stopped
     logging: *default-logging
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}

@@ -18,8 +18,15 @@
 #   See docs/RELEASING.md for the full procedure.
 #
 # Images are published to:
-#   ghcr.io/jafools/nomii-backend
-#   ghcr.io/jafools/nomii-frontend
+#   ghcr.io/jafools/shenmay-backend
+#   ghcr.io/jafools/shenmay-frontend
+#
+# Legacy ghcr.io/jafools/nomii-{backend,frontend} images were published
+# through v2.6.0. Those tags remain on GHCR (immutable) so rolling back
+# to v2.6.0 still works — checking out that tag pulls the old compose
+# which references the old image names. Phase 6 of the Shenmay rebrand
+# (2026-04-23) cut new releases over to shenmay-* names. No dual-publish
+# (no real customers at the cutover point).
 # ============================================================
 
 name: Publish Docker Images
@@ -34,8 +41,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/nomii-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/nomii-frontend
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/shenmay-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/shenmay-frontend
 
 jobs:
   build-and-push:
@@ -142,7 +149,7 @@ jobs:
           TOKEN: ${{ secrets.PACKAGES_PAT || secrets.GITHUB_TOKEN }}
           OWNER: ${{ needs.build-and-push.outputs.owner }}
         run: |
-          for pkg in nomii-backend nomii-frontend; do
+          for pkg in shenmay-backend shenmay-frontend; do
             echo "Setting ${pkg} → public"
             http_code=$(curl -s -o /tmp/gh_resp.json -w "%{http_code}" \
               -X PATCH \

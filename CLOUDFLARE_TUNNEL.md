@@ -21,7 +21,7 @@ Cloudflare Edge (terminates TLS, free)
 cloudflared container (in your Docker network)
       │  internal Docker network
       ▼
-nomii-backend:3001
+shenmay-backend:3001
 ```
 
 ---
@@ -75,7 +75,7 @@ docker compose up -d
 docker compose ps
 ```
 
-You should see: `nomii-db`, `nomii-backend`, `nomii-frontend`, **`nomii-cloudflared`** — all `Up`.
+You should see: `shenmay-db`, `shenmay-backend`, `shenmay-frontend`, **`shenmay-cloudflared`** — all `Up`.
 
 Check the tunnel is connected:
 

@@ -27,7 +27,7 @@ services:
   # ── Database ──────────────────────────────────────────────
   db:
     image: postgres:16.9-alpine
-    container_name: nomii-db
+    container_name: shenmay-db
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -48,8 +48,8 @@ services:
     # Customers pin to :stable — this tag only moves on a tagged release
     # (see docs/RELEASING.md). Use :v1.2.3 to pin to a specific version,
     # or :edge to track the latest main commit (not recommended for prod).
-    image: ghcr.io/jafools/nomii-backend:stable
-    container_name: nomii-backend
+    image: ghcr.io/jafools/shenmay-backend:stable
+    container_name: shenmay-backend
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -113,8 +113,8 @@ services:
 
   # ── Frontend ──────────────────────────────────────────────
   frontend:
-    image: ghcr.io/jafools/nomii-frontend:stable
-    container_name: nomii-frontend
+    image: ghcr.io/jafools/shenmay-frontend:stable
+    container_name: shenmay-frontend
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -139,7 +139,7 @@ services:
   cloudflared:
     profiles: ["tunnel"]
     image: cloudflare/cloudflared:2025.4.0
-    container_name: nomii-cloudflared
+    container_name: shenmay-cloudflared
     restart: unless-stopped
     logging: *default-logging
     command:
