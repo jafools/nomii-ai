@@ -140,14 +140,6 @@ app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), requir
 
 app.use(express.json({ limit: '10mb' }));
 
-// Phase 5f: legacy WP-plugin download URL → 301 to the canonical
-// Shenmay-branded filename. Must come BEFORE express.static so the
-// redirect intercepts before the static middleware 404s. Sunset in
-// Phase 8 (target 2026-10-20) per docs/SHENMAY_MIGRATION_PLAN.md.
-app.get('/downloads/nomii-wordpress-plugin.zip', (req, res) => {
-  res.redirect(301, '/downloads/shenmay-wordpress-plugin.zip');
-});
-
 // Serve embed.js and widget.html from /server/public (cross-origin OK — handled per-route)
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

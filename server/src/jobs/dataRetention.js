@@ -240,7 +240,7 @@ async function processErasureQueue() {
  */
 async function anonymizeCustomer(customerId, tenantId, requestedBy) {
   const anonName  = '[deleted]';
-  const anonEmail = `deleted_${customerId}@anonymized.nomii`;
+  const anonEmail = `deleted_${customerId}@anonymized.shenmay`;
 
   // 1. Anonymise PII on the customer row
   await db.query(
