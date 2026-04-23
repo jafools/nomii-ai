@@ -19,8 +19,8 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
-      POSTGRES_DB: nomii_ai
-      POSTGRES_USER: nomii
+      POSTGRES_DB: shenmay_ai
+      POSTGRES_USER: shenmay
       # SECRETS FAIL FAST (Finding #1 — audit 2026-04-17).
       # The `:?` form refuses to start the container when the var is unset or
       # empty, eliminating the silent fallback to a committed dev value.
@@ -28,7 +28,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nomii -d nomii_ai"]
+      test: ["CMD-SHELL", "pg_isready -U shenmay -d shenmay_ai"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://nomii:${DB_PASSWORD:?DB_PASSWORD must be set in .env}@db:5432/nomii_ai}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://shenmay:${DB_PASSWORD:?DB_PASSWORD must be set in .env}@db:5432/shenmay_ai}
       PORT: 3001
       # Required secrets fail-fast (Finding #1 — audit 2026-04-17).
       # Values are single-quoted because the `?` message contains colons,

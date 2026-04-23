@@ -250,7 +250,7 @@ npx @claude-flow/cli@latest doctor --fix
 
 ### Architecture
 
-- **Server:** Node.js + Express, PostgreSQL (`nomii_ai` DB, user `nomii`)
+- **Server:** Node.js + Express, PostgreSQL (`shenmay_ai` DB, user `shenmay` — renamed from `nomii_ai`/`nomii` in Phase 7, v2.8.0)
 - **Client:** React (Vite), served via nginx, API calls via `client/src/lib/nomiiApi.js`
 - **Widget:** Embeddable chat widget (`server/public/widget.html` + `embed.js`)
 - **Deployment:** Docker Compose on Hetzner Cloud Helsinki (`nomii-prod`)
@@ -263,7 +263,7 @@ npx @claude-flow/cli@latest doctor --fix
 | Host | Proxmox VM at `10.0.100.2` (LAN only) — SSH alias `pontenprox` |
 | Public URL | https://nomii-staging.pontensolutions.com |
 | Image tag | `:edge` — rebuilt on every merge to main, after CI passes |
-| DB | Fresh `nomii_ai_staging`, user `nomii`, separate from prod |
+| DB | Fresh `nomii_ai_staging`, user `nomii`, separate from prod (staging DB rename deferred — see Phase 6 staging follow-up) |
 | Stack path | `/root/nomii-staging/` (compose + .env + refresh script) |
 | Public routing | Cloudflare tunnel `knomi-ai` (ID `fb2cb466-3f4f-46f8-8a0c-2b45c549bbe4`) → `http://nomii-frontend-staging:80` on shared docker network |
 | Old fallback | The old Proxmox Shenmay containers are STOPPED (backup at `/root/backups/knomi_ai_proxmox_final_*.sql`). Lateris and `nomii-cloudflared` are untouched and must stay running. |
@@ -281,7 +281,7 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 | DB container | `shenmay-db` (postgres:16.9-alpine), internal only |
 | Backend | `shenmay-backend`, port 3001 bound to 127.0.0.1 |
 | Frontend | `shenmay-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
-| DB credentials | `nomii:nomii_prod_2026 / nomii_ai` |
+| DB credentials | user `shenmay` / db `shenmay_ai` (password in `~/nomii-ai/.env` on Hetzner) |
 | SSL | Cloudflare Full (Strict), Origin CA cert valid until 2041 |
 | Firewall | UFW: SSH (22), HTTP (80), HTTPS (443) only |
 
@@ -312,7 +312,7 @@ ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
 ssh nomii@204.168.232.24 "docker inspect shenmay-backend --format '{{.Config.Image}}'"
 
 # Run a migration:
-ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U nomii -d nomii_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
+ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai < ~/nomii-ai/server/db/migrations/031_whatever.sql"
 
 # View backend logs:
 ssh nomii@204.168.232.24 "cd ~/nomii-ai && docker compose logs backend --tail=100"

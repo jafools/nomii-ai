@@ -47,7 +47,7 @@ function parseEnvFile(filePath) {
 
 function makeTestDbUrl(baseUrl) {
   // Replace the database name at the end of the URL with <name>_test
-  // e.g. postgresql://user:pass@host:5432/nomii_ai  →  .../nomii_ai_test
+  // e.g. postgresql://user:pass@host:5432/shenmay_ai  →  .../shenmay_ai_test
   try {
     const u = new URL(baseUrl);
     const dbName = u.pathname.replace(/^\//, '');
@@ -64,7 +64,7 @@ const rawDbUrl =
   process.env.TEST_DATABASE_URL ||
   process.env.DATABASE_URL ||
   serverEnv.DATABASE_URL ||
-  'postgresql://nomii:nomii_dev_2026@localhost:5432/nomii_ai';
+  'postgresql://shenmay:shenmay_dev_2026@localhost:5432/shenmay_ai';
 
 const TEST_DB = makeTestDbUrl(rawDbUrl);
 

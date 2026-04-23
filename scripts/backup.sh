@@ -15,8 +15,8 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 CONTAINER="${NOMII_DB_CONTAINER:-shenmay-db}"
-DB_USER="${NOMII_DB_USER:-nomii}"
-DB_NAME="${NOMII_DB_NAME:-nomii_ai}"
+DB_USER="${NOMII_DB_USER:-shenmay}"
+DB_NAME="${NOMII_DB_NAME:-shenmay_ai}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
