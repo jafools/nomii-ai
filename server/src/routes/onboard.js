@@ -205,17 +205,16 @@ router.post('/register', async (req, res, next) => {
       );
     }
 
-    // ── Send verification email ─────────────────────────────────────────────
-    try {
-      await sendVerificationEmail({
-        to:        admin.email,
-        token:     verificationToken,
-        firstName: admin.first_name,
-      });
-    } catch (emailErr) {
-      // Don't fail registration if email send fails — log and continue
-      console.error('[Onboard] Failed to send verification email:', emailErr.message);
-    }
+    // ── Send verification email (fire-and-forget) ─────────────────────────
+    // Awaiting the SMTP send blocks the HTTP response — a 30s One.com
+    // transient delay turns into a Cloudflare 504 and a broken signup.
+    // The user doesn't need delivery confirmation inline (the "check your
+    // email" message sets the right expectation); errors go to logs.
+    sendVerificationEmail({
+      to:        admin.email,
+      token:     verificationToken,
+      firstName: admin.first_name,
+    }).catch(err => console.error('[Onboard] Verification email failed:', err.message));
 
     console.log(`[Onboard] New tenant registered (pending verification): ${company_name} <${email}>`);
 
@@ -370,11 +369,12 @@ router.post('/resend-verification', async (req, res, next) => {
       [newToken, newExpires, admin.id]
     );
 
-    await sendVerificationEmail({
+    // Fire-and-forget — don't hold the response for SMTP.
+    sendVerificationEmail({
       to:        email.toLowerCase(),
       token:     newToken,
       firstName: admin.first_name,
-    });
+    }).catch(err => console.error('[Onboard] Resend verification email failed:', err.message));
 
     res.json({ ok: true, message: 'A new verification link has been sent to your email.' });
 
@@ -513,11 +513,14 @@ router.post('/forgot-password', async (req, res, next) => {
       [resetToken, resetExpires, admin.id]
     );
 
-    await sendPasswordResetEmail({
+    // Fire-and-forget — the response is identical for "email sent" and
+    // "no such account" anyway (to prevent enumeration); don't let SMTP
+    // latency leak a timing side-channel either.
+    sendPasswordResetEmail({
       to:        email.toLowerCase(),
       token:     resetToken,
       firstName: admin.first_name,
-    });
+    }).catch(err => console.error('[Onboard] Password reset email failed:', err.message));
 
     res.json(successMsg);
   } catch (err) { next(err); }
