@@ -23,6 +23,13 @@ on:
         description: 'Number of consecutive runs per mode'
         required: true
         default: '5'
+  schedule:
+    # Nightly drift-detection against main. 07:00 UTC = 03:00 ET.
+    # Public repo, so Actions minutes are free. Failure notifies the
+    # repo admin via GitHub's default email — wire a Slack webhook
+    # later if richer alerting is needed. Matrix is still [1..5] on
+    # each mode, so a scheduled run is a full 10-cell 5× proof.
+    - cron: '0 7 * * *'
 
 jobs:
 

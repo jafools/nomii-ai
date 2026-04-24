@@ -47,7 +47,7 @@ Austin: "Nah fam i want both SaaS and On prem E2E testing to be done until both 
 | main HEAD | `d8c821d` (PR #83 squash) |
 | Release tag | `v3.2.0` pushed; GHCR builds `:stable` + `:3.2.0` + `:3.2` + `:v3.2.0` |
 | Staging | `nomii-staging.pontensolutions.com` auto-refreshes to `:edge` within 5 min (main build already running) |
-| Hetzner prod | Still on `v3.1.5`/`cf8ee20`. **Not yet deployed**. No functional regressions in v3.2.0 for customers — this is test-infra + a single `GLOBAL_RATE_LIMIT_MAX` env passthrough on backend. Safe to deploy when convenient. |
+| Hetzner prod | **Live on `v3.2.0`/`d8c821d`** (backend + frontend both `ghcr.io/jafools/shenmay-*:3.2.0`). Deployed Apr 24 late morning UTC. `/api/health` green externally + internally. |
 
 ### Deploy v3.2.0 to Hetzner (when Austin is ready)
 
@@ -64,9 +64,9 @@ ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
 
 ### Open queue for next session
 
-1. **Deploy v3.2.0 to Hetzner** — one-line SSH above. ~2 min.
-2. **UptimeRobot** — still on the list. `/api/health` + Resend bounce webhook. 15-min quick win.
-3. **Nightly dispatch of `e2e-repeatability`** — add a `schedule:` trigger (cron) to catch drift without manual dispatch. Pair with a Slack/email alert on `repeatability-verdict` fail.
+1. ~~**Deploy v3.2.0 to Hetzner**~~ — ✔ done Apr 24 late-morning. Prod on `:3.2.0`.
+2. **UptimeRobot** — still on the list. `/api/health` + Resend bounce webhook. 15-min quick win. Needs Austin login; not automatable in-session.
+3. ~~**Nightly dispatch of `e2e-repeatability`**~~ — ✔ schedule trigger added (nightly 07:00 UTC / 03:00 ET). Slack webhook deferred — GitHub's default admin-email notification is sufficient for drift detection; re-open if noise or missed alerts become an issue.
 4. **Spec tagging** — migrate the `test.skip(isOnprem(), ...)` pattern to Playwright `@saas` / `@onprem` tags when we outgrow ~10 specs. Cleaner than per-test skip() calls.
 5. **Stripe test-card spec** — _if_ we ever reverse the "no real-card smoke" decision, the missing piece is driving checkout.stripe.com in Playwright (the MCP blocker doesn't apply here). Add `06b-stripe-checkout.spec.js` at that time.
 6. **Everything from last session's queue** — GTM channel decision, docs/EMAIL.md, portal-table sweep cron, volume rename, NOMII- master-key rotation, Phase 9 USPTO ITU.
