@@ -35,7 +35,16 @@ require('dotenv').config({ path: './server/.env' });
 const REMOTE_BASE = process.env.PLAYWRIGHT_BASE_URL;
 const LOCAL_PORT  = Number(process.env.VITE_PORT) || 5173;
 const LOCAL_URL   = `http://localhost:${LOCAL_PORT}`;
-const IS_REMOTE   = !!REMOTE_BASE && !/^https?:\/\/(localhost|127\.0\.0\.1)/i.test(REMOTE_BASE);
+const MODE        = (process.env.PLAYWRIGHT_MODE || 'local').toLowerCase();
+
+// Skip the webServer blocks whenever a base URL was provided OR the mode
+// says we're hitting an external stack. On-prem sets PLAYWRIGHT_BASE_URL
+// to http://localhost (compose is listening on :80), which the regex below
+// would otherwise mistake for "local" and try to spin up server+client.
+const EXTERNAL_STACK =
+  !!REMOTE_BASE ||
+  MODE === 'onprem' ||
+  MODE === 'saas-staging';
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -68,8 +77,10 @@ module.exports = defineConfig({
   ],
 
   /* Start server + client locally only. Skipped when PLAYWRIGHT_BASE_URL
-   * points at a remote host (we're not going to `npm run dev` on staging). */
-  webServer: IS_REMOTE ? undefined : [
+   * is set or when PLAYWRIGHT_MODE points at an already-running stack
+   * (on-prem compose, staging, etc.) — we're not going to `npm run dev`
+   * against a pre-existing server. */
+  webServer: EXTERNAL_STACK ? undefined : [
     {
       command: 'cd server && npm run dev',
       port: Number(process.env.PORT) || 3001,

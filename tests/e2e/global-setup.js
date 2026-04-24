@@ -21,6 +21,12 @@ module.exports = async () => {
     return;
   }
 
+  const mode = (process.env.PLAYWRIGHT_MODE || 'local').toLowerCase();
+  if (mode === 'onprem' || mode === 'saas-staging') {
+    console.log(`[E2E globalSetup] PLAYWRIGHT_MODE=${mode} — DB is inside the target stack; skipping local seed.`);
+    return;
+  }
+
   const base = process.env.PLAYWRIGHT_BASE_URL || '';
   const isRemote = /^https?:\/\/(?!localhost|127\.0\.0\.1)/i.test(base);
   if (isRemote) {
