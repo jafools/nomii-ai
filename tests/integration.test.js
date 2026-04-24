@@ -90,6 +90,7 @@ const BASE_ENV = {
   API_KEY_ENCRYPTION_SECRET: serverEnv.API_KEY_ENCRYPTION_SECRET || 'test-encryption-key-32-chars-long-12345',
   LOGIN_RATE_LIMIT_MAX:      '200',
   WIDGET_SESSION_RATE_LIMIT_MAX: '200',
+  PORTAL_RATE_LIMIT_MAX:     '500',
 };
 
 console.log(`Test DB: ${PG.host}:${PG.port}/${PG.database} (user: ${PG.user})`);
@@ -306,6 +307,9 @@ async function cleanupDb() {
   const pool = getPool();
   try {
     await pool.query(`
+      DELETE FROM portal_sessions;
+      DELETE FROM portal_login_tokens;
+      DELETE FROM portal_rate_limits;
       DELETE FROM notifications;
       DELETE FROM licenses;
       DELETE FROM subscriptions;
@@ -780,6 +784,129 @@ async function runTests() {
       );
       assert(res.status === 200, `Expected 200, got ${res.status}`);
       assert(res.body.license.is_active === true, 'Expected license to be active again');
+    });
+
+    // ── Customer Portal (magic-link + session) ────────────────────────────────
+    // Exercises the Shenmay-native portal at /api/public/portal/*.
+    // Uses the license issued above (customer@example.com, reactivated) as the
+    // "has-licenses" email. Uses an unrelated address for enumeration-defense.
+
+    let portalSessionToken = null;
+
+    await test('POST /api/public/portal/request-login with malformed body → 400', async () => {
+      const res = await post(licenseUrl, '/api/public/portal/request-login', {});
+      assert(res.status === 400, `Expected 400, got ${res.status}`);
+      assert(res.body.ok === false, 'Expected ok:false');
+    });
+
+    await test('POST /api/public/portal/request-login with invalid email → 400', async () => {
+      const res = await post(licenseUrl, '/api/public/portal/request-login', { email: 'not-an-email' });
+      assert(res.status === 400, `Expected 400, got ${res.status}`);
+      assert(res.body.error === 'invalid_email', `Expected invalid_email, got ${res.body.error}`);
+    });
+
+    await test('POST /api/public/portal/request-login for email WITH license → 200 ok + token created', async () => {
+      const res = await post(licenseUrl, '/api/public/portal/request-login', {
+        email: 'customer@example.com',
+      });
+      assert(res.status === 200, `Expected 200, got ${res.status}`);
+      assert(res.body.ok === true, 'Expected ok:true');
+
+      // Verify a token was persisted (the email goes to stdout in dev since SMTP isn't configured)
+      const { rows } = await getPool().query(
+        `SELECT COUNT(*)::int AS n FROM portal_login_tokens WHERE email = $1 AND consumed_at IS NULL`,
+        ['customer@example.com']
+      );
+      assert(rows[0].n === 1, `Expected 1 unconsumed token, got ${rows[0].n}`);
+    });
+
+    await test('POST /api/public/portal/request-login for email WITHOUT license → 200 ok + NO token (enumeration defense)', async () => {
+      const res = await post(licenseUrl, '/api/public/portal/request-login', {
+        email: 'stranger@example.com',
+      });
+      assert(res.status === 200, `Expected 200, got ${res.status}`);
+      assert(res.body.ok === true, 'Expected ok:true');
+
+      // No token should have been created for this email
+      const { rows } = await getPool().query(
+        `SELECT COUNT(*)::int AS n FROM portal_login_tokens WHERE email = $1`,
+        ['stranger@example.com']
+      );
+      assert(rows[0].n === 0, `Expected 0 tokens for stranger, got ${rows[0].n}`);
+    });
+
+    await test('POST /api/public/portal/verify with invalid token → 400', async () => {
+      const res = await post(licenseUrl, '/api/public/portal/verify', {
+        token: 'definitely-not-a-real-token',
+      });
+      assert(res.status === 400, `Expected 400, got ${res.status}`);
+      assert(res.body.error === 'invalid_token', `Expected invalid_token, got ${res.body.error}`);
+    });
+
+    await test('POST /api/public/portal/verify with valid token → 200 + session_token', async () => {
+      // Fetch the token we know exists for customer@example.com
+      const { rows } = await getPool().query(
+        `SELECT token FROM portal_login_tokens
+          WHERE email = $1 AND consumed_at IS NULL
+          ORDER BY created_at DESC LIMIT 1`,
+        ['customer@example.com']
+      );
+      assert(rows[0], 'Expected a token in the DB for customer@example.com');
+
+      const res = await post(licenseUrl, '/api/public/portal/verify', {
+        token: rows[0].token,
+      });
+      assert(res.status === 200, `Expected 200, got ${res.status}`);
+      assert(res.body.ok === true, 'Expected ok:true');
+      assert(res.body.session_token, 'Expected session_token in response');
+      assert(res.body.email === 'customer@example.com', `Expected customer@example.com, got ${res.body.email}`);
+      portalSessionToken = res.body.session_token;
+    });
+
+    await test('POST /api/public/portal/verify same token again → 400 (single-use)', async () => {
+      const { rows } = await getPool().query(
+        `SELECT token FROM portal_login_tokens
+          WHERE email = $1 ORDER BY created_at DESC LIMIT 1`,
+        ['customer@example.com']
+      );
+      const res = await post(licenseUrl, '/api/public/portal/verify', { token: rows[0].token });
+      assert(res.status === 400, `Expected 400 for already-consumed token, got ${res.status}`);
+    });
+
+    await test('GET /api/public/portal/licenses without Authorization → 401 missing_auth', async () => {
+      const res = await get(licenseUrl, '/api/public/portal/licenses');
+      assert(res.status === 401, `Expected 401, got ${res.status}`);
+      assert(res.body.error === 'missing_auth', `Expected missing_auth, got ${res.body.error}`);
+    });
+
+    await test('GET /api/public/portal/licenses with invalid Bearer → 401 invalid_session', async () => {
+      const res = await get(licenseUrl, '/api/public/portal/licenses', 'bogus-session-token');
+      assert(res.status === 401, `Expected 401, got ${res.status}`);
+      assert(res.body.error === 'invalid_session', `Expected invalid_session, got ${res.body.error}`);
+    });
+
+    await test('GET /api/public/portal/licenses with valid session → 200 + licenses list', async () => {
+      assert(portalSessionToken, 'No portal session token from verify step');
+      const res = await get(licenseUrl, '/api/public/portal/licenses', portalSessionToken);
+      assert(res.status === 200, `Expected 200, got ${res.status}`);
+      assert(res.body.email === 'customer@example.com', `Expected email, got ${res.body.email}`);
+      assert(res.body.product === 'shenmay', `Expected product:'shenmay', got ${res.body.product}`);
+      assert(Array.isArray(res.body.licenses), 'Expected licenses array');
+      assert(res.body.licenses.length === 1, `Expected 1 license, got ${res.body.licenses.length}`);
+      assert(res.body.licenses[0].status === 'active', `Expected active license, got ${res.body.licenses[0].status}`);
+    });
+
+    await test('POST /api/public/portal/logout → 200 ok + session revoked', async () => {
+      assert(portalSessionToken, 'No portal session token');
+      const res = await post(licenseUrl, '/api/public/portal/logout', {}, portalSessionToken);
+      assert(res.status === 200, `Expected 200, got ${res.status}`);
+      assert(res.body.ok === true, 'Expected ok:true');
+    });
+
+    await test('GET /api/public/portal/licenses after logout → 401 invalid_session', async () => {
+      assert(portalSessionToken, 'No portal session token');
+      const res = await get(licenseUrl, '/api/public/portal/licenses', portalSessionToken);
+      assert(res.status === 401, `Expected 401 after logout, got ${res.status}`);
     });
 
     await stopServer(licenseProc);

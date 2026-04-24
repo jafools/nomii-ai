@@ -5,7 +5,89 @@
 
 ---
 
-## Last updated: 2026-04-23 evening (**v3.0.6 LIVE on Hetzner** — rebrand 100% code-complete; repo renamed + Hetzner dir renamed + portal.js split 9%; only external Austin-manual items remain)
+## Last updated: 2026-04-23 late-evening (Shenmay-only portal overnight build — **3 PRs OPEN awaiting Austin AM review**)
+
+Austin hit the portal at `pontensolutions.com/license` with `ajaces@gmail.com` expecting to see his Shenmay licenses; no email arrived. Investigation uncovered a latent architecture bug: the portal is Kaldryn-Worker-gated at the auth step (the Worker's `email_index` KV is populated ONLY by Kaldryn Stripe webhooks; Shenmay licenses live in Postgres on Hetzner and never touch the Worker). Any Shenmay-only customer would silently fail to get a magic-link email. Zero customer impact (per Phase 8, no real customers exist yet) but unacceptable before onboarding anyone.
+
+Austin's call: the portal is now **Shenmay-only**; Kaldryn moves to its own infra. He went to bed; this session built the fix overnight.
+
+### Overnight work — 3 PRs open
+
+| # | Repo | Branch | Status | What |
+|---|---|---|---|---|
+| [75](https://github.com/jafools/shenmay-ai/pull/75) | shenmay-ai | `chore/shenmay-license-url-flip` | CI pending | Flip outbound `<a href>` `/nomii/license` → `/shenmay/license` in 4 files (ShenmayPlans x2, ShenmaySetup x1, compose + install.sh comments). Unrelated to the portal-auth work but opened earlier in the session; can merge independently. |
+| [76](https://github.com/jafools/shenmay-ai/pull/76) | shenmay-ai | `feat/shenmay-portal-auth` | **LANDED after 1 rate-limit fix** | Shenmay-native magic-link + session auth. Migration 035 (`portal_login_tokens` + `portal_sessions` + `portal_rate_limits`). New endpoints `POST /api/public/portal/{request-login,verify,logout}` + `GET /api/public/portal/licenses` (Bearer). Legacy `POST /licenses` kept alive (Shenmay-session-first, Worker-proxy fallback) for cutover safety. 13 new integration tests. +616 / −62. |
+| [7](https://github.com/jafools/ponten-solutions/pull/7) | ponten-solutions | `feat/shenmay-only-portal` | Lovable-synced, pending Austin Publish | Rip Kaldryn out of the customer portal. `portalApi.ts` rewritten to call `nomii.pontensolutions.com/api/public/portal/*` directly. `CustomerPortal.tsx` single Shenmay list, filters to `status==='active'` per "ONLY valid" requirement. `LicenseVerify.tsx` brand-string swap. `docs/portal-api.md` v2.0 contract (Shenmay-only). −183 LOC net. |
+
+### **IN THE MORNING — do these 4 things in order**
+
+**1) Merge Shenmay backend PR #76.**
+```bash
+gh pr checks 76   # should be all green after the rate-limit fix
+gh pr merge 76 --squash
+```
+Don't auto-merge earlier; CI is flaky when multiple checks queue together. One human review.
+
+**2) Cut a release tag.**
+```bash
+cd ~/Documents/Work/Nomii\ AI
+git fetch origin --tags && git checkout main && git pull origin main
+git tag v3.1.0
+git push origin v3.1.0
+```
+v3.1.0 = new feature surface (magic-link portal auth) = minor bump. Wait ~2 min for `Publish Docker Images` to build `:3.1.0` + `:stable` on GHCR (watch `gh run list --workflow docker-publish.yml --limit 1`).
+
+**3) Deploy to Hetzner + ensure `SHENMAY_LICENSE_MASTER=true` is set.**
+```bash
+# Sanity-check env vars FIRST — if SHENMAY_LICENSE_MASTER isn't set, add it:
+ssh nomii@204.168.232.24 "grep SHENMAY_LICENSE_MASTER ~/shenmay-ai/.env || echo NOT SET"
+# If NOT SET, add it:
+ssh nomii@204.168.232.24 "echo 'SHENMAY_LICENSE_MASTER=true' >> ~/shenmay-ai/.env"
+
+# Deploy:
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout v3.1.0 && IMAGE_TAG=3.1.0 docker compose pull backend frontend && IMAGE_TAG=3.1.0 docker compose up -d backend frontend"
+
+# Verify migration 035 ran + endpoints respond:
+ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai -c '\\dt portal_*'"
+# expect: portal_login_tokens | portal_rate_limits | portal_sessions
+
+curl -s -X POST https://nomii.pontensolutions.com/api/public/portal/request-login \
+  -H 'Content-Type: application/json' -d '{"email":"austin.ponten@gmail.com"}'
+# expect: {"ok":true}
+```
+Note: `austin.ponten@gmail.com` has a starter license in the DB but `is_active=false` — reactivate it via platform-admin OR use platform-admin to issue a fresh test license to any email you own before proceeding to step 4.
+
+**4) Publish the Lovable PR.**
+- Open https://lovable.dev in your browser
+- Find the ponten-solutions project
+- Go to Version History
+- The commit `a742423 feat(portal): Shenmay-only customer license portal` should be there already (sync is ~seconds after push)
+- Click Publish on that version
+
+Then end-to-end smoke:
+- Go to https://pontensolutions.com/license
+- Enter the email with a valid Shenmay license
+- Magic link should arrive from `hello@pontensolutions.com` within 30s
+- Click → redirects to dashboard → shows only Shenmay active licenses
+
+### Safety nets if anything goes wrong
+
+- **If PR #76 CI is still red:** check `gh run view <id> --log-failed | grep -B1 -A3 '✗'`. Only fix we made was raising `portalLookupLimiter` default from 10→30/min. Any new failure is most likely DB-state leakage between tests.
+- **If Hetzner deploy fails migration 035:** `SHENMAY_LICENSE_MASTER` gate blocks everything; if tables weren't created, manually: `ssh nomii@204.168.232.24 "docker exec -i shenmay-db psql -U shenmay -d shenmay_ai < ~/shenmay-ai/server/db/migrations/035_portal_auth.sql"`.
+- **If curl smoke returns `{"error":"not_available"}`:** `SHENMAY_LICENSE_MASTER=true` wasn't set → add it to `.env` + `docker compose up -d --force-recreate backend`.
+- **If Lovable portal loads but says "Something went wrong":** browser devtools → network tab → look for 404/500 against `nomii.pontensolutions.com/api/public/portal/*`. If 404 on all paths, backend isn't on v3.1.0 yet. If CORS error, `pontensolutions.com` should already be in `ALLOWED_ORIGINS` ([security.js:30](server/src/middleware/security.js:30)).
+- **Worst case — rollback:** `ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git checkout v3.0.6 && IMAGE_TAG=3.0.6 docker compose up -d backend frontend"`. Migrations are additive (no down-migration needed); v3.0.6 ignores the new tables.
+
+### Deferred follow-ups (not blocking)
+
+- **Remove legacy POST /licenses** — Once Lovable has Published and we've confirmed no calls are hitting the old shape, drop it from `public-portal.js` in a cleanup PR. The Worker fallback inside that handler can go away too.
+- **Kaldryn Worker portal cleanup** — With Lovable no longer calling `laterisworker/portal/*`, those handlers become dead code. Kaldryn-repo PR at some point.
+- **Portal table sweep cron** — `portal_login_tokens` + `portal_sessions` + `portal_rate_limits` entries past their expiry can be periodically pruned. Low urgency (tables stay tiny).
+- **PR #75 (license-URL flip)** — wholly independent of the portal-auth work. Merge + tag separately whenever.
+
+---
+
+## Previous: 2026-04-23 evening (**v3.0.6 LIVE on Hetzner** — rebrand 100% code-complete; repo renamed + Hetzner dir renamed + portal.js split 9%; only external Austin-manual items remain)
 
 Second afternoon continuation picked up at v3.0.1 and shipped v3.0.2 → v3.0.6 (five more patch releases, eight more PRs merged, one force-push recovery during a GitHub Actions outage, zero rollbacks). Closed every remaining code-level Nomii string that could be safely flipped without a cross-repo coordination (only `public-portal.js:108 product:'nomii'` is deferred, blocked on the Lovable marketing portal contract). Renamed the GitHub repo to `jafools/shenmay-ai` (Austin's click) + repointed all hardcoded URLs. Renamed `~/nomii-ai` to `~/shenmay-ai` on Hetzner with a `COMPOSE_PROJECT_NAME` pin to preserve the `nomii-ai_pgdata` volume. Extracted 3 bounded sub-routers out of portal.js (license / team / api-key) as the first ~9% cut of the long-overdue portal.js split. Flipped the Cloudflare tunnel display name to "Shenmay-ai" via the dashboard.
 
