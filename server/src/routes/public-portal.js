@@ -12,17 +12,11 @@
  * licenses have their own portal infra. An email with zero Shenmay licenses
  * gets the enumeration-safe `{ok:true}` response with no actual email sent.
  *
- * Legacy — kept alive for the Lovable cutover window:
- *   POST /api/public/portal/licenses        { session_token }      → list licenses
- *     Still proxies session verification to the old Lateris Worker. Remove
- *     once Lovable's CustomerPortal has been republished to use GET + Bearer.
- *
  * Gate: only active when SHENMAY_LICENSE_MASTER=true (cloud instance only).
  */
 
 const express  = require('express');
 const crypto   = require('crypto');
-const https    = require('https');
 const db       = require('../db');
 const { envVar } = require('../utils/env');
 const { sendPortalMagicLinkEmail } = require('../services/emailService');
@@ -39,8 +33,6 @@ const RATE_LIMIT_PER_IP    = 20;  // requests/hour
 
 const PUBLIC_PORTAL_URL =
   (process.env.PUBLIC_PORTAL_URL || 'https://pontensolutions.com/license').replace(/\/$/, '');
-
-const LEGACY_WORKER_URL = 'https://laterisworker.ajaces.workers.dev/portal/licenses';
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 
@@ -163,13 +155,14 @@ router.post('/request-login', async (req, res) => {
   }
 
   const verifyUrl = `${PUBLIC_PORTAL_URL}/verify?token=${encodeURIComponent(token)}`;
-  try {
-    await sendPortalMagicLinkEmail({ to: email, verifyUrl });
-  } catch (err) {
+
+  // Fire-and-forget the email send so the response returns immediately.
+  // The token is already persisted; if SMTP transient-fails, the user
+  // can request a new link rather than the request handler hanging long
+  // enough for Cloudflare to 504. SMTP errors land in the logs.
+  sendPortalMagicLinkEmail({ to: email, verifyUrl }).catch((err) => {
     console.error('[Portal] magic-link send failed:', err.message);
-    // Don't leak the failure to the client — the token is still in the DB,
-    // it just won't get delivered. Operator sees the error in logs.
-  }
+  });
 
   return res.status(200).json({ ok: true });
 });
@@ -326,110 +319,6 @@ router.post('/logout', async (req, res) => {
   }
 
   return res.status(200).json({ ok: true });
-});
-
-// ── LEGACY POST /licenses (Worker-proxy) — keep until Lovable cutover ────────
-// Retained so that any in-flight Lovable session issued against the Worker
-// keeps working until ponten-solutions republishes with the new GET flow.
-// Remove once the new GET /licenses is in the live Lovable bundle.
-
-function legacyVerifyViaWorker(sessionToken) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(LEGACY_WORKER_URL);
-    const reqHttp = https.request({
-      hostname: parsed.hostname,
-      path:     parsed.pathname,
-      method:   'GET',
-      headers:  { Authorization: `Bearer ${sessionToken}` },
-      timeout:  10000,
-    }, (r) => {
-      let data = '';
-      r.on('data', (c) => { data += c; });
-      r.on('end', () => {
-        try   { resolve({ status: r.statusCode, body: JSON.parse(data) }); }
-        catch { resolve({ status: r.statusCode, body: {} }); }
-      });
-    });
-    reqHttp.on('error',   reject);
-    reqHttp.on('timeout', () => { reqHttp.destroy(); reject(new Error('worker timeout')); });
-    reqHttp.end();
-  });
-}
-
-router.post('/licenses', async (req, res) => {
-  if (!isLicenseMaster()) return res.status(404).json({ error: 'not_available' });
-
-  const { session_token } = req.body || {};
-  if (!session_token || typeof session_token !== 'string') {
-    return res.status(400).json({ error: 'missing_session_token' });
-  }
-
-  // Prefer Shenmay-native session; fall back to Worker-proxy for legacy clients.
-  let email = null;
-  try {
-    const { rows } = await db.query(
-      `SELECT email FROM portal_sessions
-        WHERE session_token = $1
-          AND revoked_at IS NULL
-          AND expires_at > NOW()`,
-      [session_token]
-    );
-    if (rows[0]) email = rows[0].email;
-  } catch (err) {
-    console.error('[Portal] legacy session lookup failed:', err.message);
-  }
-
-  if (!email) {
-    // Fall back to old Worker flow.
-    let workerResp;
-    try {
-      workerResp = await legacyVerifyViaWorker(session_token);
-    } catch (err) {
-      console.error('[Portal] Worker verification failed:', err.message);
-      return res.status(502).json({ error: 'upstream_error' });
-    }
-    if (workerResp.status === 401 || workerResp.status === 403) {
-      return res.status(401).json({ error: 'invalid_session' });
-    }
-    if (workerResp.status === 429) {
-      return res.status(429).json({ error: 'rate_limited' });
-    }
-    if (workerResp.status !== 200) {
-      return res.status(502).json({ error: 'upstream_error' });
-    }
-    email = workerResp.body?.email;
-    if (!email) return res.status(502).json({ error: 'upstream_error' });
-    email = normalizeEmail(email);
-  }
-
-  try {
-    const { rows } = await db.query(
-      `SELECT id, license_key, plan, issued_to_email, issued_at,
-              expires_at, is_active, instance_id, last_ping_at
-         FROM licenses
-        WHERE LOWER(issued_to_email) = $1
-        ORDER BY issued_at DESC`,
-      [email]
-    );
-
-    const licenses = rows.map((r) => ({
-      license_id:  String(r.id),
-      license_key: r.license_key,
-      plan:        r.plan,
-      status:      !r.is_active
-        ? 'revoked'
-        : (r.expires_at && new Date(r.expires_at) < new Date() ? 'expired' : 'active'),
-      issued_at:    r.issued_at?.toISOString() ?? null,
-      expires_at:   r.expires_at?.toISOString() ?? null,
-      instance_id:  r.instance_id ?? null,
-      last_ping_at: r.last_ping_at?.toISOString() ?? null,
-    }));
-
-    return res.json({ email, product: 'shenmay', licenses });
-  } catch (err) {
-    console.error('[Portal] legacy DB query failed:', err.message);
-    return res.status(500).json({ error: 'internal_error' });
-  }
 });
 
 module.exports = router;
