@@ -244,15 +244,13 @@ test.describe('Widget — Authenticated Session', () => {
     // The real assertion of this test is the post-logout launcher presence
     // (below). The pre-check here is just "widget loaded SOMETHING".
     //
-    // When the widget session limiter fires during batched runs the widget
-    // renders a "We'll be right with you" capacity screen. That matches the
-    // text locator but the <h3> is detached-but-not-visible in some CSS
-    // paths, which confuses Playwright's .or().first() resolution. Check
-    // capacity state explicitly, skip if it fired, otherwise assert the
-    // normal widget surface.
-    const capacityElem = iframe.getByText(/right with you|at capacity|currently/i);
-    const inCapacity = await capacityElem.count().then((n) => n > 0).catch(() => false);
-    test.skip(inCapacity, 'Widget session rate limit fired — post-logout flow not testable in capacity mode.');
+    // Customer-limit-reached flips `#capacity-screen` to display:flex. The
+    // element is always in the DOM, so a naive text-regex count() match was
+    // returning true on every run and skipping the test unconditionally.
+    // isVisible() on the id is visibility-aware and matches the actual
+    // trigger condition.
+    const inCapacity = await iframe.locator('#capacity-screen').isVisible().catch(() => false);
+    test.skip(inCapacity, 'Customer seat limit reached — post-logout flow not testable in capacity mode.');
 
     const chatReady    = iframe.locator('#chat-wrapper');
     const agentScreen  = iframe.locator('#agent-name-screen.visible');
@@ -280,16 +278,14 @@ test.describe('Widget — Close Button', () => {
 
     const iframe = page.frameLocator(SEL_WIDGET.iframe);
 
-    // If the widget session limiter fires during batched runs, the iframe
-    // shows the "at capacity" UI which has no close button — the close-flow
-    // we're exercising here simply isn't reachable. That's correct product
-    // behaviour, not a regression; skip rather than fail.
+    // If the tenant hits its customer seat limit the iframe shows the
+    // "at capacity" UI which has no close button — the close-flow we're
+    // exercising here simply isn't reachable. That's correct product
+    // behaviour, not a regression; skip rather than fail. Checking the
+    // id's visibility (not a text regex) avoids the always-in-DOM trap.
     await page.waitForTimeout(2500);
-    const atCapacity = await iframe
-      .getByText(/right with you|at capacity|currently/i)
-      .isVisible()
-      .catch(() => false);
-    test.skip(atCapacity, 'Widget session rate limit fired — close-button flow unavailable in capacity mode.');
+    const atCapacity = await iframe.locator('#capacity-screen').isVisible().catch(() => false);
+    test.skip(atCapacity, 'Customer seat limit reached — close-button flow unavailable in capacity mode.');
 
     await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
 

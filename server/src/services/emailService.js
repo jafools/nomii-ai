@@ -26,6 +26,16 @@ let _transporter = null;
 
 function getTransporter() {
   if (!_transporter) {
+    // No SMTP creds → jsonTransport no-op. Keeps CI + local dev from
+    // hitting a real provider for code paths that fire-and-forget mail
+    // (stripe webhook, password reset, etc.) and avoids noisy 550 auth
+    // warnings when the key simply isn't provisioned in the environment.
+    // Real sends in prod still require SMTP_USER + SMTP_PASS.
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log('[Email] SMTP_USER/SMTP_PASS not set — using jsonTransport (no real sends)');
+      _transporter = nodemailer.createTransport({ jsonTransport: true });
+      return _transporter;
+    }
     _transporter = nodemailer.createTransport({
       host:   process.env.SMTP_HOST   || 'send.one.com',
       port:   parseInt(process.env.SMTP_PORT || '587'),
