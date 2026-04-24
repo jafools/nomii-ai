@@ -104,6 +104,7 @@ router.get('/me', async (req, res, next) => {
          t.onboarding_steps, t.widget_verified_at, t.is_active,
          t.llm_api_key_last4, t.llm_api_key_validated,
          t.pii_tokenization_enabled,
+         t.anonymous_only_mode,
          a.id AS admin_id, a.email, a.first_name, a.last_name, a.role
        FROM tenants t
        JOIN tenant_admins a ON a.tenant_id = t.id
@@ -136,6 +137,7 @@ router.get('/me', async (req, res, next) => {
         llm_api_key_last4:   r.llm_api_key_last4 || null,
         llm_api_key_validated: r.llm_api_key_validated || false,
         pii_tokenization_enabled: r.pii_tokenization_enabled !== false,
+        anonymous_only_mode: r.anonymous_only_mode === true,
       },
       admin: {
         id:         r.admin_id,
@@ -252,6 +254,42 @@ router.put('/settings/privacy', async (req, res, next) => {
     });
 
     res.json({ ok: true, pii_tokenization_enabled });
+  } catch (err) { next(err); }
+});
+
+// PUT /api/portal/settings/anonymous-only-mode  — owner-only tenant-wide widget
+// privacy posture. When ON, the widget ignores any host-page identity and
+// always runs anonymously. See migration 036. Disables per-customer memory /
+// continuity for every visitor on this tenant.
+router.put('/settings/anonymous-only-mode', async (req, res, next) => {
+  try {
+    if (req.portal.role !== 'owner') {
+      return res.status(403).json({ error: 'Only the account owner can change privacy settings.' });
+    }
+    const { anonymous_only_mode } = req.body || {};
+    if (typeof anonymous_only_mode !== 'boolean') {
+      return res.status(400).json({ error: 'anonymous_only_mode (boolean) is required.' });
+    }
+
+    await db.query(
+      `UPDATE tenants SET anonymous_only_mode = $1, updated_at = NOW() WHERE id = $2`,
+      [anonymous_only_mode, req.portal.tenant_id]
+    );
+
+    writeAuditLog({
+      actorType   : 'admin',
+      actorId     : req.portal.admin_id,
+      actorEmail  : req.portal.email,
+      tenantId    : req.portal.tenant_id,
+      eventType   : 'privacy.anonymous_only_mode.toggle',
+      resourceType: 'tenant',
+      resourceId  : req.portal.tenant_id,
+      description : `Owner ${anonymous_only_mode ? 'ENABLED anonymous-only mode (widget forces anon sessions for all visitors)' : 'disabled anonymous-only mode'}`,
+      req,
+      success     : true,
+    });
+
+    res.json({ ok: true, anonymous_only_mode });
   } catch (err) { next(err); }
 });
 

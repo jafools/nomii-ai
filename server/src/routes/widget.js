@@ -105,14 +105,13 @@ router.post('/session', async (req, res, next) => {
       return res.status(400).json({ error: 'widget_key is required' });
     }
 
-    const isAnonymous = !email || email.trim() === '';
-
     // 1. Resolve tenant
     const { rows: tenantRows } = await db.query(
       `SELECT id, name, agent_name, slug, primary_color, secondary_color,
               vertical, vertical_config, compliance_config,
               base_soul_template, llm_provider, llm_model,
-              chat_bubble_name, website_url
+              chat_bubble_name, website_url,
+              anonymous_only_mode
        FROM tenants
        WHERE widget_api_key = $1 AND is_active = true`,
       [widget_key]
@@ -123,6 +122,13 @@ router.post('/session', async (req, res, next) => {
     }
 
     const tenant = tenantRows[0];
+
+    // If the tenant has anonymous-only mode on, ignore any email/display_name
+    // the host page passed in and route into the anonymous branch. This is the
+    // privacy-first posture for regulated verticals — no per-customer records,
+    // no memory, no cross-session continuity.
+    const anonymousOnlyMode = tenant.anonymous_only_mode === true;
+    const isAnonymous = anonymousOnlyMode || !email || email.trim() === '';
 
     let customer;
     let isNew = false;
@@ -342,6 +348,7 @@ router.post('/session', async (req, res, next) => {
     res.json({
       token:           widgetToken,
       conversation_id: conversationId,
+      anonymous_only:  anonymousOnlyMode,
       customer: {
         first_name:     customer.first_name,
         customer_name:  customerName,
@@ -409,7 +416,8 @@ router.post('/session/claim', async (req, res, next) => {
       `SELECT id, name, agent_name, slug, primary_color, secondary_color,
               vertical, vertical_config, compliance_config,
               base_soul_template, llm_provider, llm_model,
-              chat_bubble_name, website_url
+              chat_bubble_name, website_url,
+              anonymous_only_mode
        FROM tenants
        WHERE widget_api_key = $1 AND is_active = true`,
       [widget_key]
@@ -423,6 +431,16 @@ router.post('/session/claim', async (req, res, next) => {
 
     if (anonSession.tenant_id !== tenant.id) {
       return res.status(403).json({ error: 'Session/tenant mismatch' });
+    }
+
+    // Anonymous-only mode: refuse to identify. Widget stays on its anon
+    // token — the catch in widget.html checks for this error code and
+    // keeps the session running instead of reloading.
+    if (tenant.anonymous_only_mode === true) {
+      return res.status(403).json({
+        error: 'anonymous_only_mode',
+        message: 'This tenant has anonymous-only mode enabled — identification is disabled.',
+      });
     }
 
     // 3. Find or create the authenticated customer
