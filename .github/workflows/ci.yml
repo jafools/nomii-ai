@@ -187,6 +187,11 @@ jobs:
       # SHENMAY_LICENSE_MASTER: enables the /api/public/portal/* routes so
       # the portal-magic-link spec can hit them.
       SHENMAY_LICENSE_MASTER: 'true'
+      # Resend webhook signing secret — exercises the real Svix verifier
+      # in the bounce-webhook spec (not the dev-mode bypass). The base64
+      # portion decodes to 32 bytes — any nontrivial value works since
+      # the spec signs and verifies with this same secret.
+      RESEND_WEBHOOK_SECRET: whsec_YzFhMmIzYzRkNWU2ZjdnOGg5aTBqMWsybDNtNG41bzZwN3E4cjlzMA==
       # Playwright-internal
       PLAYWRIGHT_MODE: saas-ci
 

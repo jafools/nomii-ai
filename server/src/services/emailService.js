@@ -24,6 +24,40 @@ const nodemailer = require('nodemailer');
 // new TCP/TLS handshake per email. Lazily created on first use.
 let _transporter = null;
 
+// Check the Resend-webhook-populated deny-list before every send. Lazy
+// db require to keep the module importable in contexts (CLI seed scripts,
+// tests) where the DB pool may not be initialised.
+async function isSuppressed(email) {
+  if (!email || typeof email !== 'string') return false;
+  try {
+    const db = require('../db');
+    const { rows } = await db.query(
+      'SELECT 1 FROM email_suppressions WHERE email = LOWER($1) LIMIT 1',
+      [email],
+    );
+    return rows.length > 0;
+  } catch (err) {
+    // If the suppression table doesn't exist yet (pre-migration-037 env)
+    // or the DB is down, fail open — a missed suppression is better than
+    // blocking all outbound mail.
+    return false;
+  }
+}
+
+// Wrap `transporter.sendMail` so every send checks the suppression list
+// first. Applied once on creation so call sites don't need to change.
+function wrapSendMail(transporter) {
+  const orig = transporter.sendMail.bind(transporter);
+  transporter.sendMail = async function (opts) {
+    if (opts && typeof opts.to === 'string' && await isSuppressed(opts.to)) {
+      console.log(`[Email] skipping send — ${opts.to} is on the suppression list`);
+      return { skipped: true, reason: 'suppressed', envelope: { to: [opts.to] } };
+    }
+    return orig(opts);
+  };
+  return transporter;
+}
+
 function getTransporter() {
   if (!_transporter) {
     // No SMTP creds → jsonTransport no-op. Keeps CI + local dev from
@@ -33,10 +67,10 @@ function getTransporter() {
     // Real sends in prod still require SMTP_USER + SMTP_PASS.
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log('[Email] SMTP_USER/SMTP_PASS not set — using jsonTransport (no real sends)');
-      _transporter = nodemailer.createTransport({ jsonTransport: true });
+      _transporter = wrapSendMail(nodemailer.createTransport({ jsonTransport: true }));
       return _transporter;
     }
-    _transporter = nodemailer.createTransport({
+    _transporter = wrapSendMail(nodemailer.createTransport({
       host:   process.env.SMTP_HOST   || 'send.one.com',
       port:   parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true', // false by default (STARTTLS on 587)
@@ -47,7 +81,7 @@ function getTransporter() {
       pool: true,           // enable connection pooling
       maxConnections: 3,    // max simultaneous connections
       maxMessages: 50,      // messages per connection before reconnecting
-    });
+    }));
   }
   return _transporter;
 }

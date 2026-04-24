@@ -140,6 +140,9 @@ app.use((req, res, next) => {
 // Stripe webhook needs raw body BEFORE json parsing
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), require('./routes/stripe-webhook'));
 
+// Resend webhook (bounces / complaints) — Svix-signed, needs raw body too
+app.use('/api/webhooks/resend', express.raw({ type: 'application/json' }), require('./routes/webhook-resend'));
+
 app.use(express.json({ limit: '10mb' }));
 
 // Serve embed.js and widget.html from /server/public (cross-origin OK — handled per-route)

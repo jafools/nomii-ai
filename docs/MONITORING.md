@@ -101,25 +101,56 @@ real teams would notice.
 
 ---
 
-## Resend bounce / complaint webhook (future follow-up)
+## Resend bounce / complaint webhook
 
-**Not implemented yet** — no server-side receiver exists. Placeholder here so
-this is a one-step change when the time comes.
+Live as of v3.3.3. `POST /api/webhooks/resend` receives Resend events,
+verifies the Svix signature, and writes hard-bounced / complained addresses
+into the `email_suppressions` table. The transporter wrapper in
+`server/src/services/emailService.js` consults that table before every send
+so we don't keep hammering a dead address and torch Resend's rate-limit
+bucket on our whole account.
 
-1. Add `POST /api/webhooks/resend` to `server/src/routes/` — Resend signs
-   webhook bodies with `Svix-Signature`; verify before trusting. Schema:
-   <https://resend.com/docs/dashboard/webhooks/event-types>.
-2. On `email.bounced` / `email.complained` events, log + flag the recipient
-   so the app can stop sending to persistently-bouncing addresses (avoids
-   Resend rate-limiting our whole account).
-3. Wire the endpoint into UptimeRobot as a *heartbeat* monitor (inverse of
-   normal — expect a ping every N minutes, alert if silent). UptimeRobot's
-   free tier doesn't have heartbeat, so this step needs the paid plan or a
-   self-hosted Uptime Kuma.
+### Resend dashboard setup (one-time, Austin)
 
-Gate this on: first real customer hits a bounce + we discover we had no
-visibility. Until then, Resend's dashboard at `resend.com` is the source of
-truth and Austin checks it when something smells off.
+1. Open <https://resend.com/webhooks> → **Add Endpoint**.
+2. **Endpoint URL:** `https://shenmay.ai/api/webhooks/resend`
+3. **Events to send:** check `email.bounced` and `email.complained`
+   (leave the rest off until we decide we want analytics rows).
+4. Save. Copy the generated signing secret (starts with `whsec_`).
+5. SSH to Hetzner and drop the secret into `.env`:
+   ```bash
+   ssh nomii@204.168.232.24 'cd ~/shenmay-ai && printf "\nRESEND_WEBHOOK_SECRET=whsec_...\n" >> .env && docker compose up -d backend'
+   ```
+6. Back in Resend, click **Send test event** → the "Events" tab should
+   show `200 OK` within a second. Confirm nothing landed in
+   `email_suppressions` (test events don't count as real bounces).
+
+While `RESEND_WEBHOOK_SECRET` is unset the handler runs in dev-mode
+bypass: requests are accepted without signature verification. Fine for
+staging; make sure prod has it set before pointing a real Resend webhook
+at it.
+
+### What gets suppressed, what doesn't
+
+- `email.bounced` with `bounce.type === 'hard'` (or `'Permanent'`) →
+  inserted with `reason = 'bounce'`.
+- `email.complained` → inserted with `reason = 'complaint'`. One spam
+  complaint is enough to stop sending; recovery is manual via
+  `DELETE FROM email_suppressions WHERE email = '...'`.
+- Soft bounces (`bounce.type === 'soft'`) are acknowledged but **not**
+  suppressed — they often recover and blanket-blocking them would mask
+  transient outages.
+- `email.delivered` / `sent` / `opened` / `clicked` are acked as 200 so
+  Resend doesn't retry, but not stored. Wire them up later if we want
+  engagement metrics.
+
+### Future: UptimeRobot heartbeat
+
+Free-tier UptimeRobot doesn't have heartbeat monitoring (alert on
+*silence*). When we outgrow the free tier, or stand up Uptime Kuma, add
+an inverse monitor so a prolonged gap in Resend event traffic — which
+would suggest webhook delivery is broken — pages instead of silently
+rotting. Not urgent; Resend dashboard already surfaces delivery failures.
 
 ---
 
