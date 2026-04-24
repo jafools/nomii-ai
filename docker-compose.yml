@@ -72,6 +72,10 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      # Resend webhook signing secret (populated by email bounces/complaints).
+      # When unset on prod the /api/webhooks/resend handler refuses requests
+      # outright (400 webhook_secret_unset_in_production) — see webhook-resend.js.
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
       APP_URL: ${APP_URL:-https://shenmay.ai}
       MASTER_EMAIL: ${MASTER_EMAIL:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}

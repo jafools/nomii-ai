@@ -73,6 +73,10 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      # Resend webhook signing secret — optional on self-hosted (most operators
+      # don't run a Resend account). When unset, the /api/webhooks/resend
+      # handler refuses unsigned requests in production.
+      RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
       MASTER_EMAIL: ${MASTER_EMAIL:-}
       JWT_EXPIRY: ${JWT_EXPIRY:-7d}
       LLM_HAIKU_MODEL: ${LLM_HAIKU_MODEL:-claude-haiku-4-5-20251001}
