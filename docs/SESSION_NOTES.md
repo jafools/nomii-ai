@@ -5,7 +5,69 @@
 
 ---
 
-## Last updated: 2026-04-24 evening (E2E harness sprint — **v3.2.0 TAGGED**, 5× SaaS + 5× on-prem all green, customer-ready)
+## Last updated: 2026-04-24 third session (**v3.3.0 SHIPPED** — anonymous-only mode + widget anon-claim SQL fix)
+
+Started as a root-directory cleanup ask, ended with a shipped minor-version release covering a latent production bug and a net-new privacy feature. Two PRs merged clean, release gate 10/10 green, Hetzner on `:3.3.0` ~30 min after the last code change. 34 tenants on prod, 0 flipped — default-OFF preserved.
+
+### Ship log
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [shenmay #86](https://github.com/jafools/shenmay-ai/pull/86) | `3e943c4` | Nightly cron on `e2e-repeatability.yml` (07:00 UTC) + `SESSION_NOTES.md` prod-state update. CI-only; no customer behaviour change. |
+| [shenmay #87](https://github.com/jafools/shenmay-ai/pull/87) | `b49360e` | **Fix:** `POST /api/widget/session/claim` was silently 500'ing on every anon→authenticated handoff due to a SET on `conversations.updated_at` — a column that never existed in migration 001. Orphaning anon chat history under the anon customer row. Present since the initial schema. One-line SQL fix + DB-backed hardening of the existing UI-only test. |
+| [shenmay #88](https://github.com/jafools/shenmay-ai/pull/88) | `32837c6` | **Feature:** Tenant-wide "Anonymous-only mode" toggle. When ON, the widget forces anonymous sessions for every visitor regardless of host-page identity. Migration 036 + `/session` silently routes to anon + `/session/claim` returns 403 `anonymous_only_mode` + widget catches that error and stays on anon + owner-only Settings card + new E2E spec 10. Default OFF. |
+| **v3.3.0** | tag at `32837c6` | Annotated tag pushed, GHCR rebuilt `:3.3.0` / `:3.3` / `:stable` / `:v3.3.0` / `:latest`. |
+| E2E Repeatability Proof run [24888812489](https://github.com/jafools/shenmay-ai/actions/runs/24888812489) | against `32837c6` | **10/10 green** (5× saas-repeat + 5× onprem-repeat + verdict). Includes the new `10-anonymous-only-mode.spec.js` running 5× on each mode. Release gate cleared before tagging per the CLAUDE.md rule. |
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `32837c6` (PR #88 squash) |
+| Release tag | `v3.3.0` pushed; GHCR `:stable` + `:3.3.0` + `:3.3` + `:v3.3.0` + `:latest` published |
+| Staging | Auto-refreshes to `:edge` within 5 min; nightly 07:00 UTC dispatch of `e2e-repeatability` now active from PR #86 |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.0`** (both backend + frontend), containers recreated 12:16 UTC. Migration 036 applied. Internal + external `/api/health` green. |
+| Tenant state | 34 tenants on prod, 0 with `anonymous_only_mode=true`. Zero customer-visible change until an owner flips the toggle. |
+
+### What landed this session
+
+1. **Root-directory housekeeping** — 34 shell-fragment garbage files deleted (byproducts of Git Bash misinterpreting pipes across prior Claude sessions; all zero-byte except one 70-byte file containing `which.exe` stderr). 2 legit design handoffs archived to `raw-sources/assets/` in Austin's Obsidian vault (Direction-B Shenmay mockup + hero handoff zip). 3 redundant Stripe `.png` exports deleted (`.svg` sources already tracked).
+2. **Widget `updated_at` production bug** — see PR #87 above. Surfaced during an investigation into why `e2e-saas` was completing in 1m45s (suspected silent test-skipping — honest answer: 64 tests ran, Playwright's just that fast). But the backend log showed `[WebServer] error: column "updated_at" of relation "conversations" does not exist`. Traced to `server/src/routes/widget.js:505`. Fix + test hardening.
+3. **Anonymous-only mode feature** — see PR #88 above. Austin's idea mid-session: *"a setting in the Dashboard to ONLY spawn Branded AI agents… give customers the option to not store any data ever on their customers who perhaps request it."* V1 scope is tenant-level only; per-customer opt-in deferred until real signal.
+4. **Release all the way to prod** — PR #87 merged → PR #88 rebase + merge → release gate 10/10 → `v3.3.0` tag → GHCR build → Hetzner checkout + migrate + deploy + verify.
+
+### Three latent test-coverage issues surfaced but NOT fixed this session
+
+1. **`03-widget.spec.js:208` self-skips every CI run.** The SPA-logout-reloads-widget test has a runtime `test.skip(inCapacity, …)` that fires because the widget-session rate limiter blows through during batched runs. Currently zero coverage despite appearing green. Fix: bump `WIDGET_SESSION_RATE_LIMIT_MAX` in CI env or restructure so the test doesn't burn through the quota.
+2. **`06-stripe-upgrade.spec.js` fires real Resend email in CI.** Returns `550 Authentication required` (no Resend creds in the CI env), test passes because the assertion is on license creation — not email send. Should mock the email call in test mode or feature-flag it off under `LLM_PROVIDER=mock`.
+3. **On-prem `afterAll` cleanup noise.** On SaaS-only specs that skip in on-prem mode, the `afterAll` hooks still run and log empty `[spec] cleanup failed:` lines. Low priority — just noise. Guard cleanup on `hasDbAccess()` or the spec-level skip condition.
+
+### Decisions / closed loops (DO NOT re-raise)
+
+- **Manual UI smoke of the Settings toggle** — skipped this session. The 5×5 release gate already ran the new spec 5 times on each mode. The remaining gap (portal toggle click → save → widget behaviour in a real browser) needs Austin's login — not automatable. Default-OFF means zero customer blast radius if there's a render issue. Any owner flipping the toggle will catch it.
+- **Per-customer opt-in** as part of anonymous-only — deferred. V1 is tenant-level. Austin explicitly agreed that mixing both in v1 muddles the UX.
+- **Widget-side visible privacy indicator to end users** — deferred. Response already carries `anonymous_only: true`; UI disclosure is a small follow-up if we want it visible.
+
+### Open queue for next session
+
+1. **UptimeRobot** — `/api/health` + Resend bounce webhook. Needs Austin login; not automatable in-session. I can draft the monitor config for paste-in.
+2. **Fix the 3 latent test issues above.** Widget SPA-logout self-skip is highest value — it's currently a false-green. ~30 min.
+3. **Volume rename** (`nomii-ai_pgdata` → `shenmay-ai_pgdata` on Hetzner). Destructive, needs maintenance window.
+4. **NOMII- master-key rotation** — Austin's one live master key still on the old prefix.
+5. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+6. **Anonymous-only mode follow-ups** (deferred, low urgency until signal): per-customer opt-in, widget-side visible privacy indicator, optional sweep of existing customers when first flipped.
+7. **Spec tagging** — migrate `test.skip(isOnprem(), …)` to Playwright `@saas` / `@onprem` tags once we outgrow ~10 specs. We're at 10 now.
+
+### Gotchas captured this session (memory + vault)
+
+- **Main-agent edit-on-main-branch slip.** When editing a workflow file, I initially targeted the main repo's working tree instead of the worktree — caught by `git status` showing a modification on the `main` branch. `git checkout <file>` reverted; re-applied to the worktree path. Same hazard as `feedback_subagent_commit_to_branch.md`, applies to the main agent equally.
+- **`gh pr merge --auto` not enabled on this repo.** Queueing auto-merge fails with `Auto merge is not allowed for this repository`. Fall-back: `gh run watch <id>` blocks until CI completes, then `gh pr merge --squash --delete-branch`. Local-branch-delete fails when the worktree has it checked out — remote gets deleted, local stays until worktree is torn down.
+- **Fast CI run times are not inherently suspicious.** 58 Playwright tests in 58s is roughly the warm-stack expected rate. Look at the total-tests + skipped line in the log tail, not at wall time, when assessing coverage.
+- **UI-only assertions mask silent backend failures.** Spec 03's auth-handoff test passed every run despite a 500 on every call — the widget kept rendering the anon session, and `#chat-wrapper` was visible either way. Fix pattern: add a DB-backed check when exercising state that's invisible in the UI.
+
+---
+
+## Previous: 2026-04-24 evening (E2E harness sprint — **v3.2.0 TAGGED**, 5× SaaS + 5× on-prem all green, customer-ready)
 
 Austin: "Nah fam i want both SaaS and On prem E2E testing to be done until both are customer ready. Go crazy." Sprint executed end-to-end in one session: 4 Playwright specs → 9 specs, 0 CI coverage → 2 CI jobs + 10-cell repeatability matrix, all green. `v3.2.0` pushed. GHCR `:stable` will rebuild automatically; Hetzner deploy is Austin-pick-the-moment (command at the bottom of this section).
 
