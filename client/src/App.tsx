@@ -34,9 +34,26 @@ const queryClient = new QueryClient();
 // On first visit, check whether first-run setup is needed (self-hosted only).
 // If the backend returns { required: true }, redirect to the setup wizard.
 // Non-selfhosted deployments return 404 for this endpoint, which we ignore.
+// On SaaS (shenmay.ai), unauthenticated visitors hitting the root should
+// see the marketing page at pontensolutions.com/products/shenmay-ai — NOT
+// a bare /login form. The login wall is a conversion killer for anyone
+// who typed "shenmay.ai" into a browser or clicked a Google result.
+//
+// Existing sessions (valid portal token in localStorage) continue through
+// the normal setup-status check below so they land on their dashboard.
+// Self-hosted hostnames and staging hosts are unaffected.
+const MARKETING_URL = 'https://pontensolutions.com/products/shenmay-ai';
+
 const SetupRedirect = () => {
   const navigate = useNavigate();
   useEffect(() => {
+    if (
+      window.location.hostname === 'shenmay.ai' &&
+      !localStorage.getItem('shenmay_portal_token')
+    ) {
+      window.location.replace(MARKETING_URL);
+      return;
+    }
     fetch("/api/setup/status")
       .then(r => r.ok ? r.json() : { required: false })
       .then(({ required }) => navigate(required ? "/setup" : "/login", { replace: true }))
