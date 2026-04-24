@@ -5,7 +5,66 @@
 
 ---
 
-## Last updated: 2026-04-24 third session (**v3.3.0 SHIPPED** — anonymous-only mode + widget anon-claim SQL fix)
+## Last updated: 2026-04-24 fourth session (**v3.3.1 LIVE** — dad-demo polish sprint: server lint, portal.js + settings splits)
+
+Prompt: "Alright, what else needs to be done before I show this to my critical Software engineer of a father?" — turned into a three-PR polish sprint with single-tag release. Zero behavioural change; pure review-surface improvements. Prod on Hetzner `:3.3.1` 12 min after the last PR merged.
+
+### Ship log (Apr 24 late afternoon)
+
+| Tag / PR | Where | What |
+|---|---|---|
+| [shenmay #90](https://github.com/jafools/shenmay-ai/pull/90) | main @ 0be617a | `chore(polish)`: server ESLint 9 flat config (loose, mirrors `client/eslint.config.js`), root `lint` + `lint:server` + `lint:client` scripts, `server-test` CI job now fails on lint errors. Auto-fixed 7 `prefer-const` warnings (destructured `let`s never reassigned). README.md rewritten to match post-rebrand reality (drops refs to deleted `CustomerChat.jsx`/`AdvisorDashboard.jsx`, gitignored handoff docs, old `nomii-ai/` tree layout). `.claude/worktrees/` added to `.gitignore` so isolation-mode agents don't dirty `git status`. |
+| [shenmay #91](https://github.com/jafools/shenmay-ai/pull/91) | main @ abf36f6 | `refactor(portal)`: extracted `/api/portal/products/*` (7 routes) into `server/src/routes/portal/products-routes.js` (343 LOC). portal.js **3,528 → 3,204 LOC** (-324). Promoted `markStepComplete` helper to `server/src/utils/onboarding.js` — previously duplicated identically in portal.js AND portal/api-key-routes.js; the third would-be copy in products-routes.js was the forcing function. 5×5 e2e-repeatability against PR branch: 10/10 green ([run 24893281064](https://github.com/jafools/shenmay-ai/actions/runs/24893281064)). |
+| [shenmay #92](https://github.com/jafools/shenmay-ai/pull/92) | main @ a4c1f96 | `refactor(settings)`: split ShenmaySettings.jsx **1,873 → 36 LOC**. 11 per-panel files under `client/src/pages/shenmay/dashboard/settings/` (CompanyProfile, WidgetSection, ProductsSection, AgentSoulSection, DataApiSection, WebhooksSection, LabelsSection, ConnectorsSection, EmailTemplatesSection, PrivacySection, AnonymousOnlySection) + `_shared.js` for the 3 shared inline-style tokens. Biggest remaining section = WebhooksSection at 430 LOC (under the 500-LOC CLAUDE.md guideline). |
+| **v3.3.1** | shenmay-ai tag | `git tag -a v3.3.1 … && git push origin v3.3.1` — **single** annotated tag covering both refactors (vs. v3.3.1 + v3.3.2 for each PR separately). Reasoning: both PRs are pure no-op refactors with zero customer-facing change; one tag reduces release noise for on-prem customers. GHCR publish run [24893953078](https://github.com/jafools/shenmay-ai/actions/runs/24893953078) green → `:stable` + `:latest` + `:3.3.1` + `:3.3`. |
+| Release gate (final) | main @ a4c1f96 | 5×5 e2e-repeatability dispatched against main AFTER both PRs merged — **10/10 cells + verdict green** ([run 24893720429](https://github.com/jafools/shenmay-ai/actions/runs/24893720429)). PR B's earlier 5×5 was valid for that PR alone; re-ran fresh against the combined state before tagging, per the release-gate rule. |
+
+### Production state at handoff (v3.3.1)
+
+| | |
+|---|---|
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:3.3.1` |
+| Hetzner `git checkout` | `v3.3.1` (`a4c1f96`) |
+| `/api/health` internal | `{"status":"ok","service":"shenmay-ai","timestamp":"2026-04-24T14:13:48.509Z"}` |
+| `/api/health` external | green via https://shenmay.ai/api/health |
+| Behaviour vs v3.3.0 | identical — zero behavioural change in the sprint |
+
+### Shape-of-the-codebase wins for the "show it to dad" test
+
+- Server now lints on every PR; mirrors the client's existing lint gate.
+- portal.js down from 3,528 → 3,204 LOC (four inline sections remain: customers ~650, conversations/dashboard ~790, billing ~145, visitors ~54 — each a candidate for its own future PR).
+- ShenmaySettings.jsx down from 1,873 → 36 LOC. Biggest client file is now ShenmayTools.jsx at 1,109 LOC — next candidate if the pattern extends.
+- README.md no longer links to files that don't exist.
+- `.claude/worktrees/` ignored.
+
+### Decisions / closed loops (DO NOT re-raise)
+
+- **Console.log migration to a proper logger** — considered during sprint #90 scoping, declined. Existing `console.log('[Tag] …')` prefixed style is a legitimate structured-text logging choice for a pre-Series-A Node app; a half-migrated logger is *worse* than consistent `[Tag]` calls. Revisit when we wire an aggregator (pino/winston + JSON) — which needs a real log sink first (Loki, Datadog, etc.), not worth abstracting pre-need.
+- **Single v3.3.1 tag instead of v3.3.1 + v3.3.2 for each refactor PR** — judgment call, fewer on-prem release notifications for zero behaviour change. Captured in vault.
+- **Per-section files each import the full monolith preamble** — unused imports don't lint-fail under the client's loose config and Vite tree-shakes them out of the bundle (gzip size unchanged post-split). A follow-up PR can tighten per-section imports if the dad-audit flags it.
+
+### Open queue (priority order)
+
+1. **UptimeRobot** — still on the list. `/api/health` + Resend bounce webhook. 15-min quick win. Needs Austin login; not automatable in-session.
+2. **Further portal.js splits** — customers (~650 LOC), conversations/dashboard (~790 LOC), billing (~145 LOC). Each its own PR + 5×5 gate.
+3. **ShenmayTools.jsx split** — next-biggest client file (1,109 LOC). Same pattern as PR #92.
+4. **Per-section import tightening** in `client/src/pages/shenmay/dashboard/settings/` — cosmetic follow-up to #92; drops unused import noise.
+5. **GTM channel decision** — upstream of all remaining tech work. Austin-only.
+6. **`docs/EMAIL.md`** — no email design doc; worth writing while template decisions are fresh.
+7. **Portal table sweep cron** — `portal_login_tokens` / `portal_sessions` / `portal_rate_limits`. Cosmetic.
+8. **Volume rename** `nomii-ai_pgdata` → `shenmay-ai_pgdata` — internal-only, needs dump/restore window.
+9. **Austin's 1 NOMII- master-key rotation** — at leisure.
+10. **Phase 9 USPTO ITU filing** — $700, priority-date-sensitive, external admin.
+
+### Gotchas captured this session
+
+- **`cd server` in bash after a `git checkout` can put you in `/c/Users/ajace/Documents/Work/Nomii AI/server` already** — running `cd server` from there errors. Always check `pwd` before cd'ing when chaining shell commands.
+- **Stray files named `0`, `p`, `l.startsWith(needle))`, `{,` appeared in the project root during the session** from mis-quoted bash heredocs. Cleaned mid-sprint; easy to miss on `git status` if ignored. Future: watch for suspicious 0-byte files at the root after any multi-line bash command.
+- **`CHANGELOG.md` still missing** — initial dad-scan report flagged it as nice-to-have; not shipped in this sprint. Consider for the next polish window.
+
+---
+
+## Previous: 2026-04-24 third session (**v3.3.0 SHIPPED** — anonymous-only mode + widget anon-claim SQL fix)
 
 Started as a root-directory cleanup ask, ended with a shipped minor-version release covering a latent production bug and a net-new privacy feature. Two PRs merged clean, release gate 10/10 green, Hetzner on `:3.3.0` ~30 min after the last code change. 34 tenants on prod, 0 flipped — default-OFF preserved.
 
