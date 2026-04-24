@@ -93,7 +93,7 @@ services:
       SHENMAY_DEPLOYMENT: selfhosted
       # ── Shenmay License ─────────────────────────────────────
       # Leave blank to start the free trial (20 messages/mo, 1 customer).
-      # Purchase a paid license at: https://pontensolutions.com/nomii/license
+      # Purchase a paid license at: https://pontensolutions.com/shenmay/license
       # After purchase, paste your key in .env and restart the backend.
       SHENMAY_LICENSE_KEY: ${SHENMAY_LICENSE_KEY:-}
       # Optional: stable identifier for this instance across restarts.

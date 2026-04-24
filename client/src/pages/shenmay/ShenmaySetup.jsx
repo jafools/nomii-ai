@@ -251,7 +251,7 @@ const ShenmaySetup = () => {
 
               <p style={{ textAlign: "center", fontSize: 12, marginTop: 28, color: T.mute, lineHeight: 1.6 }}>
                 Starting on the free trial — 20 messages/mo, 1 customer.&nbsp;{" "}
-                <a href="https://pontensolutions.com/nomii/license" target="_blank" rel="noopener noreferrer"
+                <a href="https://pontensolutions.com/shenmay/license" target="_blank" rel="noopener noreferrer"
                   style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
                   Upgrade anytime
                 </a>
