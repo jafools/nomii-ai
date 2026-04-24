@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "lint": "eslint .",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
     "db:reset": "node db/reset.js",
@@ -13,6 +14,11 @@
     "db:seed-widget": "node db/seed-widget.js",
     "db:seed-hftn": "node db/seed-hftn.js",
     "db:seed-test-admin": "node db/seed-test-admin.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "eslint": "^9.32.0",
+    "globals": "^15.15.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
