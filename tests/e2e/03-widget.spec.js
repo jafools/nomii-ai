@@ -2,6 +2,8 @@
 const { test, expect } = require('@playwright/test');
 const { API_BASE, SEL_WIDGET } = require('./helpers/constants');
 const { loginViaAPI, getWidgetKey } = require('./helpers/auth');
+const { hasDbAccess } = require('./helpers/mode');
+const db = require('./helpers/db');
 
 /**
  * Widget E2E tests
@@ -182,6 +184,10 @@ test.describe('Widget — Authenticated Session', () => {
   });
 
   test('SPA auth handoff via postMessage updates widget session', async ({ page }) => {
+    // Per-run email so concurrent/repeat runs don't collide on DB assertions
+    // and so the cleanup in afterAll can target only this run's rows.
+    const testEmail = `spa-test-${Date.now()}@example.com`;
+
     // Start as anonymous
     await page.setContent(hostPageHTML());
     await page.locator(SEL_WIDGET.launcher).click();
@@ -190,12 +196,12 @@ test.describe('Widget — Authenticated Session', () => {
     await expect(iframe.locator('#chat-wrapper')).toBeVisible({ timeout: 15_000 });
 
     // Simulate SPA login — postMessage to identify user
-    await page.evaluate(() => {
+    await page.evaluate((email) => {
       window.postMessage(
-        { type: 'shenmay:setUser', email: 'spa-test@example.com', name: 'SPA User' },
+        { type: 'shenmay:setUser', email, name: 'SPA User' },
         '*'
       );
-    });
+    }, testEmail);
 
     // The widget should send a shenmay:identify message into the iframe
     // and claim the session. Wait a moment for the claim request.
@@ -203,6 +209,26 @@ test.describe('Widget — Authenticated Session', () => {
 
     // Widget should still be functional
     await expect(iframe.locator('#chat-wrapper')).toBeVisible();
+
+    // ── DB-backed verification ─────────────────────────────────
+    // UI-only assertions above can't catch a silent backend failure
+    // (widget.js POST /session/claim threw once on `conversations.updated_at`
+    // not existing; the UI kept rendering the anon session). Prove the
+    // claim actually ran: there must be at least one conversation owned
+    // by the customer row with this test email — meaning the UPDATE
+    // conversations SET customer_id succeeded.
+    if (hasDbAccess()) {
+      const rows = await db.query(
+        `SELECT c.id
+           FROM conversations c
+           JOIN customers cu ON cu.id = c.customer_id
+          WHERE cu.email = $1
+          ORDER BY c.created_at DESC
+          LIMIT 1`,
+        [testEmail]
+      );
+      expect(rows.length).toBeGreaterThan(0);
+    }
   });
 
   test('SPA logout reloads widget to anonymous mode', async ({ page }) => {
