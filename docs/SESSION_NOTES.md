@@ -5,7 +5,42 @@
 
 ---
 
-## Last updated: 2026-04-24 third session (**v3.3.0 SHIPPED** — anonymous-only mode + widget anon-claim SQL fix)
+## Last updated: 2026-04-24 fifth session (E2E harness hardening — **PR #94 merged, no tag**)
+
+Quick follow-up on the three latent test-coverage issues flagged in the v3.3.0 session notes below. Shipped as a single test+infra PR, no customer behaviour change, no release tag.
+
+### Ship log (Apr 24 fifth session)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [shenmay #94](https://github.com/jafools/shenmay-ai/pull/94) | `6dbb9e0` | Test-harness hardening: (1) fixed widget capacity-skip false-green in `03-widget.spec.js` — the two skip guards used `.count() > 0` on a regex that also matched the always-in-DOM hidden `#capacity-screen`, so `SPA logout reloads widget to anonymous mode` + `close button inside iframe closes the panel` were skip-green every CI run. Switched to `iframe.locator('#capacity-screen').isVisible()` — both tests now actually execute (log shows 3.6s + 2.8s runtime). (2) `emailService.getTransporter()` now returns nodemailer's `jsonTransport` no-op when `SMTP_USER`/`SMTP_PASS` unset — kills the CI 550 warn noise from stripe-upgrade's fire-and-forget license email (Hetzner still has real creds). (3) Guarded `afterAll` cleanup (+ `beforeAll` seed in spec 8) in specs 05/06/08 on `hasDbAccess()` — no more empty `[spec] cleanup failed:` lines in the on-prem-e2e log. 5 files changed, +38/-18. Merged 5-checks-green. |
+
+### Diagnosis divergence worth capturing
+
+The v3.3.0 post-mortem blamed the widget self-skip on `WIDGET_SESSION_RATE_LIMIT_MAX`. That was wrong — the rate limiter returns a plain JSON error, not the capacity screen. `#capacity-screen` is only flipped on by `customer_limit_reached` (subscription seat limit), and the TEST_ADMIN's `master` plan is in `UNRESTRICTED_PLANS`, so it can never actually fire in CI. The real bug was the `.count()` matcher itself matching always-in-DOM hidden elements. Kept the capacity-skip branch in place (it's real in a prod tenant near its seat limit) but made it actually visibility-aware.
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `6dbb9e0` (PR #94 squash) |
+| Release tag | still `v3.3.0` — no new tag (test-harness only) |
+| Staging | Auto-refreshes to `:edge` within 5 min; nightly e2e-repeatability cron still active from PR #86 |
+| Hetzner prod | Unchanged — still on `:3.3.0` |
+
+### Still-open queue for next session
+
+1. **UptimeRobot** — `/api/health` + Resend bounce webhook. Needs Austin login; not automatable in-session.
+2. **Volume rename** (`nomii-ai_pgdata` → `shenmay-ai_pgdata` on Hetzner). Destructive, needs maintenance window.
+3. **NOMII- master-key rotation** — Austin's one live master key still on the old prefix.
+4. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+5. **Anonymous-only mode follow-ups** (deferred, low urgency until signal): per-customer opt-in, widget-side visible privacy indicator, optional sweep of existing customers when first flipped.
+6. **Spec tagging** — migrate `test.skip(isOnprem(), …)` to Playwright `@saas` / `@onprem` tags once we outgrow ~10 specs. We're at 10 now.
+7. **Optional**: dispatch 5×5 `e2e-repeatability.yml` against main to reconfirm the harness with the new widget coverage + jsonTransport fallback before the next customer-behavioural tag.
+
+---
+
+## Previous: 2026-04-24 third session (**v3.3.0 SHIPPED** — anonymous-only mode + widget anon-claim SQL fix)
 
 Started as a root-directory cleanup ask, ended with a shipped minor-version release covering a latent production bug and a net-new privacy feature. Two PRs merged clean, release gate 10/10 green, Hetzner on `:3.3.0` ~30 min after the last code change. 34 tenants on prod, 0 flipped — default-OFF preserved.
 
