@@ -1252,7 +1252,19 @@
         }),
       });
 
-      if (!resp.ok) throw new Error('claim_failed');
+      if (!resp.ok) {
+        // Peek at the error body — the tenant may have anonymous-only mode
+        // enabled, in which case we should NOT reload (reload would re-init
+        // as anon anyway and the next postMessage would loop). Stay on the
+        // current anon session silently.
+        var errBody = await resp.json().catch(function () { return {}; });
+        if (errBody && errBody.error === 'anonymous_only_mode') {
+          console.info('[Shenmay] Tenant is in anonymous-only mode — staying on anonymous session.');
+          startBackgroundPoll();
+          return;
+        }
+        throw new Error(errBody.error || 'claim_failed');
+      }
       var data = await resp.json();
 
       // ── Swap session state ────────────────────────────────────────────────

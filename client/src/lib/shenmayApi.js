@@ -204,6 +204,17 @@ export const updateCompany = (data) => apiRequest("PUT", "/api/portal/company", 
  */
 export const updatePrivacySettings = (enabled) =>
   apiRequest("PUT", "/api/portal/settings/privacy", { pii_tokenization_enabled: enabled });
+
+/**
+ * Toggle the per-tenant anonymous-only widget mode. When ON, the widget
+ * ignores any host-page identity and runs every visitor as anonymous —
+ * no persistent customer record, no cross-session memory. Owner-only.
+ * @param {boolean} enabled
+ * @returns {Promise<{ok: true, anonymous_only_mode: boolean}>}
+ */
+export const updateAnonymousOnlyMode = (enabled) =>
+  apiRequest("PUT", "/api/portal/settings/anonymous-only-mode", { anonymous_only_mode: enabled });
+
 export const getProducts = () => apiRequest("GET", "/api/portal/products");
 export const addProduct = (data) => apiRequest("POST", "/api/portal/products", data);
 export const updateProduct = (id, data) => apiRequest("PUT", `/api/portal/products/${id}`, data);
