@@ -5,7 +5,71 @@
 
 ---
 
-## Last updated: 2026-04-23 late-evening (Shenmay-only portal overnight build — **3 PRs OPEN awaiting Austin AM review**)
+## Last updated: 2026-04-24 morning (Shenmay-only portal **LIVE end-to-end on `:3.1.3`** — 4 prod tags, 2 Lovable Publishes, 0 rollbacks)
+
+Morning runbook executed cleanly + bonus polish + cleanup queue closed. Austin signed in at https://pontensolutions.com/license with `ajaces@gmail.com` and saw his SHENMAY-7285 trial license rendering with the proper Shenmay wordmark.
+
+### Ship log (Apr 24 morning, single sitting)
+
+| Tag | PR | What |
+|---|---|---|
+| **v3.1.0** | [#76](https://github.com/jafools/shenmay-ai/pull/76) | Shenmay-native magic-link + Bearer portal auth (overnight build) |
+| **v3.1.1** | [#77](https://github.com/jafools/shenmay-ai/pull/77) | Direction B palette refactor across all 10 transactional email templates |
+| v3.1.2 | [#75](https://github.com/jafools/shenmay-ai/pull/75) | `/nomii/license` → `/shenmay/license` outbound href flip (4 files) |
+| **v3.1.3** | [#78](https://github.com/jafools/shenmay-ai/pull/78) | Fire-and-forget magic-link send + drop legacy `POST /licenses` Worker-proxy (−118 LOC) |
+
+(v3.1.2 superseded by v3.1.3 — Hetzner only deployed v3.1.3 since #75 + #78 land together at that SHA.)
+
+**+ 2 ponten-solutions Publishes (Lovable):**
+- [#7](https://github.com/jafools/ponten-solutions/pull/7) — Shenmay-only `CustomerPortal.tsx` + `portalApi.ts` (rip Kaldryn, point at `nomii.pontensolutions.com/api/public/portal/*`)
+- [#8](https://github.com/jafools/ponten-solutions/pull/8) — Replace bare "Shenmay" word + small icon with `<ShenmayWordmark>` (italic Shen · teal dot · roman may · AI superscript) in dashboard + login headers
+
+**+ 3 inline ops fixes (no PR — config only):**
+- Hetzner `.env`: `SMTP_PORT 465 → 587` (Hetzner blocks outbound 465 — captured as `wiki/concepts` memory)
+- Hetzner `.env`: `SMTP_SECURE true → false` (STARTTLS instead of implicit SSL)
+- Hetzner `.env`: `SMTP_FROM "Nomii AI" → "Shenmay AI"` (sender name was the loudest spam tell)
+- Backups left at `~/shenmay-ai/.env.pre-smtp-587-bak-20260424-080904`
+
+### Production state at handoff (v3.1.3)
+
+| | |
+|---|---|
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:3.1.3` |
+| Hetzner `git checkout` | `v3.1.3` (`e84ef05`) |
+| `/api/health` | `{"status":"ok","service":"shenmay-ai"}` |
+| Migration applied | `035_portal_auth.sql` (3 new tables: `portal_login_tokens` + `portal_sessions` + `portal_rate_limits`) |
+| Portal endpoint surface | 4 routes, all Shenmay-native: `POST /request-login`, `POST /verify`, `GET /licenses` (Bearer), `POST /logout` (Bearer). Legacy Worker-proxy `POST /licenses` removed. |
+| SMTP | Working — One.com via 587 STARTTLS. Hetzner blocks 465 outbound (latent bug pre-Apr-24, no real-customer impact since no one had been emailing). |
+| Lovable customer portal | Live at https://pontensolutions.com/license — Shenmay-only, ShenmayWordmark branded, calls Shenmay backend directly (no Worker in path) |
+| Test license issued | `SHENMAY-7285-AD1A-130D-E9DD` (trial, `ajaces@gmail.com`, expires 2026-05-08) for end-to-end smoke validation |
+
+### One unsolved smoke-quality nag
+
+Austin said "ngl this email looks like spam" before the v3.1.1 palette refactor. Sender-name flip + Direction B palette greatly improved it visually but **deeper spam-scoring concerns remain unaddressed:**
+1. **SPF / DKIM / DMARC** for `pontensolutions.com` — Gmail/Outlook score sender-domain authentication regardless of body design. Worth checking the DNS state next session.
+2. The `Inter` font won't load reliably in Outlook desktop / older Gmail web — falls back to Helvetica. Cosmetic, not deliverability.
+
+### Gotchas captured this morning (saved as memory + vault)
+
+- **Hetzner blocks SMTP 465** → use `SMTP_PORT=587` + `SMTP_SECURE=false` (memory: `reference_hetzner_smtp_587.md`).
+- **`await transporter.sendMail`** in any Express handler is a 504 risk if SMTP transient-slows. Pattern is fire-and-forget with `.catch()` for logging. Now fixed for `request-login`; same risk exists in any other place `await transporter.sendMail` appears in `emailService.js` callers — audit when convenient.
+- **Lovable Version History "Publish" picks the displayed entry, not the latest commit.** Austin clicked Publish on `5c8bea5` (latest auto-synced) before our portal PR was merged into ponten-solutions main; the bundle hash didn't change post-Publish. Have to merge the Lovable PR on GitHub FIRST so it gets a sync entry, THEN Publish on that specific entry.
+- **PR rebase needed when ANY other PR merges first.** GitHub's `gh pr merge` rejects out-of-date PRs even with no file conflict — `git rebase origin/main && git push --force-with-lease` is the unblock.
+
+### Open queue for next session (no urgency)
+
+1. **SPF / DKIM / DMARC audit** for `pontensolutions.com` outbound from `hello@pontensolutions.com`. Most impactful next-step for email deliverability.
+2. **`docs/EMAIL.md`** — no email design doc exists; would help future template work.
+3. **Audit other `await transporter.sendMail` callers** — concern, human-mode-reply, agent-invite, license-key, document, password-reset, welcome, verification, trial-limit. Same fire-and-forget pattern applies.
+4. **Portal table sweep cron** — `portal_login_tokens` + `portal_sessions` + `portal_rate_limits` rows past expiry. Tables stay tiny without it; cosmetic.
+5. **Volume rename** `nomii-ai_pgdata` → `shenmay-ai_pgdata` — internal-only cosmetic; needs dump/restore window.
+6. **License key rotation** — Austin still has 1 live `NOMII-` master key in DB. Rotate via platform-admin issue-then-revoke at leisure.
+7. **Phase 9 USPTO ITU filing** — $700, Class 9 + 42. Every day = priority-date loss.
+8. **Marketing route paths** `pontensolutions.com/products/nomii-ai` → `/products/shenmay-ai` and `/nomii/license` → `/shenmay/license` already done in Lovable; the Shenmay app's outbound `<a href>` strings repointed in v3.1.2 (#75 closed it).
+
+---
+
+## Previous: 2026-04-23 late-evening (Shenmay-only portal overnight build — **3 PRs OPEN awaiting Austin AM review**)
 
 Austin hit the portal at `pontensolutions.com/license` with `ajaces@gmail.com` expecting to see his Shenmay licenses; no email arrived. Investigation uncovered a latent architecture bug: the portal is Kaldryn-Worker-gated at the auth step (the Worker's `email_index` KV is populated ONLY by Kaldryn Stripe webhooks; Shenmay licenses live in Postgres on Hetzner and never touch the Worker). Any Shenmay-only customer would silently fail to get a magic-link email. Zero customer impact (per Phase 8, no real customers exist yet) but unacceptable before onboarding anyone.
 
