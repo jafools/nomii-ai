@@ -128,7 +128,6 @@ test.describe('Stripe upgrade — webhook-driven, no real card', () => {
   });
 
   test('SaaS subscription webhook promotes a tenant from trial → growth', async ({ request }) => {
-    test.skip(!tenantId, 'No tenantId available — TEST_ADMIN login did not return one.');
     const apiBase = `http://localhost:${process.env.PORT || 3001}`;
 
     // Use a separate synthetic tenant so we don't disturb the master-tier
