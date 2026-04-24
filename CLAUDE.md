@@ -279,7 +279,7 @@ a release. See `docs/RELEASING.md` for the full pre-release workflow.
 |-----------|--------|
 | Server | CPX22, Helsinki (hel1), `204.168.232.24`, EUR 12.61/mo |
 | SSH | `ssh nomii@204.168.232.24` (key-only, root disabled) |
-| Repo | `~/shenmay-ai/` (renamed from `~/nomii-ai` 2026-04-23 PM; `.env` pins `COMPOSE_PROJECT_NAME=nomii-ai` so the existing `nomii-ai_pgdata` postgres volume stays bound — flipping the project name would orphan it) |
+| Repo | `~/shenmay-ai/` (renamed from `~/nomii-ai` 2026-04-23); `.env` sets `COMPOSE_PROJECT_NAME=shenmay-ai` after the Apr 24 volume rename (`nomii-ai_pgdata` → `shenmay-ai_pgdata` via pg_dump/restore, 60s downtime, zero `nomii-*` artifacts remain on prod) |
 | DB container | `shenmay-db` (postgres:16.9-alpine), internal only |
 | Backend | `shenmay-backend`, port 3001 bound to 127.0.0.1 |
 | Frontend | `shenmay-frontend` (nginx), ports 80+443 with Cloudflare Origin CA |
@@ -376,7 +376,7 @@ The sibling `jafools/ponten-solutions` repo (checked out at `~/ponten-solutions`
 A successful `git push origin main` is step 1 of 2. Step 2 is Austin publishing in Lovable. Don't mark a ponten-solutions task complete until Austin confirms "published" AND a bundle-hash curl-grep of `pontensolutions.com` shows the new content (HTTP 200 is NOT sufficient — Vite SPAs return 200 for every route):
 
 ```bash
-NEW_BUNDLE=$(curl -s https://pontensolutions.com/products/nomii-ai \
+NEW_BUNDLE=$(curl -s https://pontensolutions.com/products/shenmay-ai \
   | grep -oE 'src="/assets/[^"]+\.js"' | head -1 | sed 's/src="//;s/"$//')
 curl -s "https://pontensolutions.com${NEW_BUNDLE}" \
   | grep -c "<unique-string-from-latest-commit>"

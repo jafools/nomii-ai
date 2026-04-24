@@ -6,7 +6,7 @@ import { ArrowRight, Mail, CheckCircle, AlertTriangle, ArrowLeft } from "lucide-
 import ShenmayWordmark from "@/components/shenmay/ShenmayWordmark";
 import ShenmaySeal from "@/components/shenmay/ShenmaySeal";
 
-// ── Direction B palette (matches pontensolutions.com/products/nomii-ai) ──
+// ── Direction B palette (matches pontensolutions.com/products/shenmay-ai) ──
 const INK = "#1A1D1A";
 const INK_SOFT = "#3A3D39";
 const PAPER = "#F5F1E8";

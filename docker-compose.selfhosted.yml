@@ -6,7 +6,7 @@
 # container registry — no source code required.
 #
 # Quick start:
-#   curl -sSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/jafools/shenmay-ai/main/scripts/install.sh | bash
 #
 # Manual start (after creating your .env):
 #   docker compose -f docker-compose.selfhosted.yml up -d
