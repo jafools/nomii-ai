@@ -965,9 +965,13 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
           const customerName = [row.cust_first, row.cust_last].filter(Boolean).join(' ') || 'Customer';
           const tenantEmail = { email_from_name: row.email_from_name, email_reply_to: row.email_reply_to, email_footer: row.email_footer };
 
+          // Fire-and-forget — the customer's widget POST is waiting on this
+          // handler; SMTP latency must not block their chat message ack.
+          // The in-app notification below ensures the advisor sees the reply
+          // even if email delivery is delayed or fails outright.
           if (row.agent_email) {
             // Notify the specific agent who took over
-            await sendHumanModeReplyEmail({
+            sendHumanModeReplyEmail({
               to: row.agent_email,
               agentName:    [row.agent_first, row.agent_last].filter(Boolean).join(' '),
               customerName,
@@ -975,7 +979,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
               messageSnippet: sanitized,
               conversationId: conversation_id,
               tenantEmail,
-            });
+            }).catch(err => console.error('[Widget] Human-mode reply email failed:', err.message));
           } else {
             // No specific agent assigned — notify all tenant admins
             const { rows: adminRows } = await db.query(
@@ -983,7 +987,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
               [tenant_id]
             );
             for (const admin of adminRows) {
-              await sendHumanModeReplyEmail({
+              sendHumanModeReplyEmail({
                 to: admin.email,
                 agentName:    admin.first_name,
                 customerName,
@@ -991,7 +995,7 @@ router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (
                 messageSnippet: sanitized,
                 conversationId: conversation_id,
                 tenantEmail,
-              });
+              }).catch(err => console.error('[Widget] Human-mode reply email failed:', err.message));
             }
           }
           // In-app notification so advisor sees the reply even if email is delayed

@@ -108,22 +108,23 @@ router.post('/invite', async (req, res, next) => {
       ]
     );
 
-    // Send invite email
+    // Send invite email (fire-and-forget — don't hold the portal UI on SMTP)
     const inviteUrl = `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/accept-invite?token=${inviteToken}`;
     try {
       const { sendAgentInviteEmail } = require('../../services/emailService');
       const { rows: tenantRows } = await db.query('SELECT name FROM tenants WHERE id = $1', [req.portal.tenant_id]);
       const tenantName = tenantRows[0]?.name || 'your team';
-      await sendAgentInviteEmail({
+      sendAgentInviteEmail({
         to:          email.toLowerCase().trim(),
         firstName:   first_name || null,
         inviterName: req.portal.first_name ? `${req.portal.first_name}` : null,
         tenantName,
         inviteUrl,
-      });
-    } catch (emailErr) {
-      console.error('[Team] Invite email failed:', emailErr.message);
-      // Don't fail the request — token is still in DB
+      }).catch(err => console.error('[Team] Invite email failed:', err.message));
+    } catch (prepErr) {
+      // Tenant-name fetch failed — log and continue; token is already in DB,
+      // so the invite link still works, the email just won't go out.
+      console.error('[Team] Invite email setup failed:', prepErr.message);
     }
 
     res.json({ ok: true, agent: newAgent[0], invite_url: inviteUrl });
