@@ -5,7 +5,68 @@
 
 ---
 
-## Last updated: 2026-04-24 morning (Shenmay-only portal **LIVE end-to-end on `:3.1.3`** — 4 prod tags, 2 Lovable Publishes, 0 rollbacks)
+## Last updated: 2026-04-24 afternoon (First-customer hardening — **v3.1.4 + v3.1.5 LIVE**, Resend SMTP swap, broken signup-CTA fix Published)
+
+Austin: "Whats next on the agenda before I get my first paying customers?" Closed four hardening loops in one afternoon sitting. Marketing → signup → authenticated-session funnel is now end-to-end unblocked with strong auth signals for transactional email.
+
+### Ship log (Apr 24 afternoon)
+
+| Tag / PR | Where | What |
+|---|---|---|
+| **v3.1.4** | shenmay-ai prod | PR [#80](https://github.com/jafools/shenmay-ai/pull/80) — Fire-and-forget for 6 remaining `await sendMail` callers: `onboard.js` signup-verification + resend-verification + password-reset, `widget.js` human-mode-reply × 2, `team-routes.js` agent-invite. Each was a 504 risk if SMTP transient-slowed. `send_document.js` deliberately left awaited (agent-tool loop, not HTTP response path). |
+| Hetzner `.env` | no PR — config only | SMTP transport swapped **One.com → Resend**. 3-var flip in `.env` (`SMTP_HOST=smtp.resend.com`, `SMTP_USER=resend`, `SMTP_PASS=re_…`), zero code change thanks to nodemailer's SMTP-interface compatibility. Backup at `~/shenmay-ai/.env.pre-resend-20260424-075046.bak`. Resend was already configured in DNS from a past session — DKIM TXT at `resend._domainkey.pontensolutions.com` + `send.pontensolutions.com` SES return-path — but the app was never pointed at it. Post-swap auth verified via magic-link email headers: **`dkim=pass` (selector `resend`) + `dkim=pass` (amazonses.com, bonus) + `spf=pass` + `dmarc=pass`**. Response time 321ms (was 30s+ on flaky One.com days). |
+| **v3.1.5** | shenmay-ai prod | PR [#81](https://github.com/jafools/shenmay-ai/pull/81) — `shenmay.ai/` apex redirect for unauthenticated SaaS visitors → `https://pontensolutions.com/products/shenmay-ai`. 17-line change in [client/src/App.tsx:37-61](client/src/App.tsx:37) `SetupRedirect`. Closes the "type brand into browser bar → drop on login wall" conversion killer. Existing sessions (token in localStorage), staging, self-hosted, legacy `nomii.pontensolutions.com` all unaffected by design. |
+| [ponten #9](https://github.com/jafools/ponten-solutions/pull/9) | marketing (Lovable) | Fixed the **single biggest conversion leak** — all 5 "Start free trial" CTAs on `/products/shenmay-ai` were pointing at `https://shenmay.ai/nomii/signup`, which fell through the Shenmay React Router catch-all to `/login`. Zero signups possible from the marketing page since the v3.0.4 rebrand. Flipped to `https://shenmay.ai/signup` (3 direct refs + 1 dynamic pricing-tier CTA). Same PR renamed `public/nomii-ai-overview.docx` → `shenmay-ai-overview.docx`. Required two Lovable Publish attempts (first one picked wrong Version History entry — captured gotcha is now twice-realized). Bundle-hash verified post-second-Publish: all 5 CTAs resolve to `shenmay.ai/signup` in production. |
+
+### Production state at handoff (v3.1.5)
+
+| | |
+|---|---|
+| Hetzner image | `ghcr.io/jafools/shenmay-{backend,frontend}:3.1.5` |
+| Hetzner `git checkout` | `v3.1.5` (`cf8ee20`) |
+| `/api/health` | `{"status":"ok","service":"shenmay-ai","timestamp":"2026-04-24T08:20:54.433Z"}` |
+| SMTP | Resend via `smtp.resend.com:587` STARTTLS. `dkim=pass` triple-auth verified end-to-end. |
+| Marketing → signup funnel | UNBLOCKED end-to-end. `pontensolutions.com/products/shenmay-ai` → "Start free trial" → `shenmay.ai/signup` → signup form renders → (Stripe test-mode E2E already closed Apr 20). |
+| Apex brand URL | `shenmay.ai/` (unauthenticated) → `pontensolutions.com/products/shenmay-ai` (302 via client-side replace). Authenticated sessions continue to dashboard. |
+
+### Decisions / closed loops (DO NOT re-raise)
+
+- **Real-card Stripe smoke test** — Austin declined, has negative Stripe balance from prior card→refund non-refundable-fee cycle. Trust test-mode E2E + let first real customer be the smoke. Captured as `feedback_no_real_card_smoke.md`.
+- **Resend API key rotation** — key appeared in chat transcript during the swap. Austin accepted the risk ("I don't think this will leak"). Do NOT re-raise unless concrete compromise signal (Resend dashboard shows unknown sends, bounce spike, etc.). Captured in `reference_resend_transactional_email.md`.
+- **DMARC tightening `p=none` → `p=quarantine`** — deferred indefinitely per Austin. Do NOT re-propose unless spoofing incident or deliverability regression.
+
+### Honest E2E coverage answer (from Austin's direct question)
+
+"Have we tried E2E for both SaaS and on-prem successfully, like, 5 times in a row?" Answer: **no, not even once automated.** What exists:
+- 4 Playwright specs (login/dashboard/widget/onboarding) — **local-only, broken locally** due to missing TEST_ADMIN seed (known blocker, memory `feedback_playwright_local_env.md`)
+- `npm test` (tokenizer unit + server integration) — in CI, Postgres fixture
+- `selfhosted-smoke` CI job — only pings `/api/health`, not a real E2E
+- Manual SaaS walk-throughs — unscripted, not repeatable
+
+The `/nomii/signup` CTA bug fixed today is a perfect example of what an automated E2E would have caught: one `expect(href).toMatch(/\/signup$/)` in a marketing-page spec would have failed on every CI run since the v3.0.4 rebrand.
+
+**Sprint scoped for next session — see [[projects/nomii/e2e-harness-sprint-plan]] in vault.** Austin: "I want you to knock it out of the park." Estimate: ~1 solid day of work.
+
+### Open queue for next session (priority order)
+
+1. **E2E harness sprint** — top priority. Full plan at `[[projects/nomii/e2e-harness-sprint-plan]]`. Goal: 5 consecutive clean runs SaaS + on-prem before first customer.
+2. **Uptime monitoring** — UptimeRobot on `/api/health` + Resend bounce alerts. 15-min quick win. Covers the "prod dies at 3am, find out from a customer DM" gap.
+3. **GTM channel decision** — upstream of all remaining tech work. Cold outreach / ProductHunt / warm network / content? Austin-only decision.
+4. **`docs/EMAIL.md`** — no email design doc; worth writing while template decisions are fresh.
+5. **Portal table sweep cron** — `portal_login_tokens` / `portal_sessions` / `portal_rate_limits`. Cosmetic.
+6. **Volume rename** `nomii-ai_pgdata` → `shenmay-ai_pgdata` — internal-only, needs dump/restore window.
+7. **Austin's 1 NOMII- master-key rotation** — at leisure.
+8. **Phase 9 USPTO ITU filing** — $700, priority-date-sensitive, external admin.
+
+### Gotchas captured this session (memory + vault)
+
+- **Lovable Publish picks displayed entry (SECOND occurrence today — lesson is hardened).** First Publish attempt on PR #9's merge entry didn't change the bundle because Lovable Version History was still pointing at a pre-PR entry. Clicking the merge-commit entry explicitly before Publish is non-negotiable. Verify via bundle-filename-hash change + grep for the new content.
+- **One.com DKIM requires support ticket for external DNS.** One.com auto-DKIM only works when nameservers are theirs. For Cloudflare-NS domains, they sign with selectors `rsa1` + `ed1` but public keys are never published externally → `dkim=permerror`. The "fix via One.com" path is a support email, 24-72hr turnaround. Switching to Resend (self-serve DNS-verified DKIM) took 5 minutes instead.
+- **Resend already configured on `pontensolutions.com` — app was just never using it.** Past-Austin had set up Resend domain verification at some point. Only needed an API key from Resend dashboard + 3 env-var flips. DNS (DKIM TXT + SES subdomain) already in place.
+
+---
+
+## Previous: 2026-04-24 morning (Shenmay-only portal **LIVE end-to-end on `:3.1.3`** — 4 prod tags, 2 Lovable Publishes, 0 rollbacks)
 
 Morning runbook executed cleanly + bonus polish + cleanup queue closed. Austin signed in at https://pontensolutions.com/license with `ajaces@gmail.com` and saw his SHENMAY-7285 trial license rendering with the proper Shenmay wordmark.
 
