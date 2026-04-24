@@ -5,7 +5,48 @@
 
 ---
 
-## Last updated: 2026-04-24 fifth session (E2E harness hardening — **PR #94 merged, no tag**)
+## Last updated: 2026-04-24 fifth session (**v3.3.2 SHIPPED** — E2E harness + deep health + UptimeRobot live)
+
+Three PRs merged, one release tag cut, one infra change deployed to Hetzner, three UptimeRobot monitors live on prod.
+
+### Ship log (Apr 24 fifth session)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [shenmay #94](https://github.com/jafools/shenmay-ai/pull/94) | `6dbb9e0` | Test-harness hardening. Widget `.count()` on hidden `#capacity-screen` was firing skip every CI run → `SPA logout reloads widget` + `close button inside iframe` had zero coverage. Switched to `isVisible()`. emailService falls back to nodemailer `jsonTransport` when SMTP creds missing (kills CI 550 warn noise). afterAll cleanup in specs 05/06/08 guarded on `hasDbAccess()`. |
+| [shenmay #95](https://github.com/jafools/shenmay-ai/pull/95) | `2f26807` | Session-notes entry for PR #94. |
+| [shenmay #96](https://github.com/jafools/shenmay-ai/pull/96) | `7439e00` | `/api/health` now runs `SELECT 1` and returns 503 on DB failure (was hardcoded 200). `docs/MONITORING.md` refreshed: primary URL `nomii.pontensolutions.com` → `shenmay.ai`, keyword `ok` → `shenmay-ai`, added embed.js monitor, noted Resend bounce webhook as a future follow-up (no server endpoint yet). |
+| **v3.3.2** | tag at `7439e00` | Annotated tag pushed. GHCR rebuilt `:3.3.2` / `:3.3` / `:stable` / `:v3.3.2` / `:latest`. |
+| Hetzner deploy | `:3.3.2` live | `docker compose pull backend frontend && up -d` — internal + external `/api/health` green. |
+| UptimeRobot | 3 monitors live | `shenmay.ai/`, `shenmay.ai/api/health`, `shenmay.ai/embed.js`. 5-min interval. 100% uptime at handoff. All 3 currently `HTTP` type — #3 should eventually flip to `Keyword` (`widget-key`) so a Cloudflare error page can't pass as 200. |
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `7439e00` (PR #96 squash) |
+| Release tag | `v3.3.2` pushed; GHCR `:stable` / `:3.3.2` / `:3.3` / `:latest` published |
+| Staging | Auto-refreshes to `:edge` within 5 min |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.2`**. Deep `/api/health` active — DB-down outages now return 503 instead of silently 200. |
+| Monitoring | 3 UptimeRobot monitors (5-min, email alert on 2 consecutive failures). Resend bounce webhook = future |
+
+### Diagnosis divergence worth capturing
+
+The v3.3.0 post-mortem blamed the widget self-skip on `WIDGET_SESSION_RATE_LIMIT_MAX`. That was wrong — the rate limiter returns a plain JSON error, not the capacity screen. `#capacity-screen` is only flipped on by `customer_limit_reached` (subscription seat limit), and TEST_ADMIN's `master` plan is in `UNRESTRICTED_PLANS`, so it can never actually fire in CI. The real bug was `.count()` matching the always-in-DOM hidden element. Kept the capacity-skip branch in place (still real in prod tenants near their seat limit) but made it visibility-aware. Captured as `feedback_playwright_count_always_in_dom.md` in memory.
+
+### Still-open queue for next session
+
+1. **Resend bounce webhook** — add `POST /api/webhooks/resend` handler + UptimeRobot heartbeat monitor. See `docs/MONITORING.md` for the 3-step plan. Gate on first real bounce.
+2. **UptimeRobot monitor #3 type flip** — currently plain HTTP, should be Keyword with `widget-key`. 30 seconds in the UI.
+3. **Volume rename** (`nomii-ai_pgdata` → `shenmay-ai_pgdata` on Hetzner). Destructive, needs maintenance window.
+4. **NOMII- master-key rotation** — Austin's one live master key still on the old prefix.
+5. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+6. **Anonymous-only mode follow-ups** (deferred, low urgency until signal): per-customer opt-in, widget-side visible privacy indicator, optional sweep of existing customers when first flipped.
+7. **Spec tagging** — migrate `test.skip(isOnprem(), …)` to Playwright `@saas` / `@onprem` tags once we outgrow ~10 specs. We're at 10 now.
+
+---
+
+## Previous: 2026-04-24 fifth session (E2E harness hardening — initial draft before tagging)
 
 Quick follow-up on the three latent test-coverage issues flagged in the v3.3.0 session notes below. Shipped as a single test+infra PR, no customer behaviour change, no release tag.
 
