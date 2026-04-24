@@ -65,7 +65,14 @@ services:
       NODE_ENV: production
       LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-3}
       WIDGET_SESSION_RATE_LIMIT_MAX: ${WIDGET_SESSION_RATE_LIMIT_MAX:-6}
+      WIDGET_CHAT_RATE_LIMIT_MAX: ${WIDGET_CHAT_RATE_LIMIT_MAX:-10}
+      GLOBAL_RATE_LIMIT_MAX: ${GLOBAL_RATE_LIMIT_MAX:-150}
+      PORTAL_RATE_LIMIT_MAX: ${PORTAL_RATE_LIMIT_MAX:-30}
       REGISTER_RATE_LIMIT_MAX: ${REGISTER_RATE_LIMIT_MAX:-3}
+      DATA_API_RATE_LIMIT: ${DATA_API_RATE_LIMIT:-120}
+      # PII tokenizer kill-switch — defaults to enabled; set to 'false' or '0'
+      # to bypass for debugging. Code path: server/src/services/llmService.js
+      PII_TOKENIZER_ENABLED: ${PII_TOKENIZER_ENABLED:-true}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_SECURE: ${SMTP_SECURE:-true}
