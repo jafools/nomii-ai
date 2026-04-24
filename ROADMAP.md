@@ -14,7 +14,7 @@ Run `scripts/install.sh` on a fresh Ubuntu VM (local or cloud) and validate the 
 | Step | Command / Notes |
 |------|----------------|
 | **Fresh VM** | Ubuntu 22.04 LTS, 2 vCPU, 4GB RAM minimum |
-| **Run installer** | `curl -sSL https://raw.githubusercontent.com/jafools/nomii-ai/main/scripts/install.sh \| bash` |
+| **Run installer** | `curl -sSL https://raw.githubusercontent.com/jafools/shenmay-ai/main/scripts/install.sh \| bash` |
 | **Verify trial mode** | Login with seeded admin, send 20 messages, confirm limit is enforced |
 | **Verify license upgrade** | Issue a trial key via VPS platform admin → paste in `.env` → restart → confirm plan upgrades |
 | **Check email** | SMTP config via installer; verify verification email + welcome email arrive |
