@@ -5,10 +5,16 @@
 # pushes to main. Jobs must pass before a PR can merge
 # (enforced via GitHub branch protection).
 #
-# Two parallel jobs:
-#   - client-build  — vite build + vitest + eslint (no DB needed)
-#   - server-test   — spins up Postgres, runs migrations, runs
-#                     the integration test suite
+# Parallel jobs:
+#   - client-build     — vite build + vitest + eslint (no DB needed)
+#   - server-test      — spins up Postgres, runs migrations, runs
+#                        the integration test suite
+#   - e2e-saas         — spins up Postgres + full stack + runs
+#                        Playwright specs (the SaaS customer journey)
+#   - selfhosted-smoke — brings up docker-compose.selfhosted.yml + curls
+#                        /api/health (compose YAML + env-wiring check)
+#   - onprem-e2e       — runs the Playwright suite against the self-hosted
+#                        stack (full on-prem customer journey)
 # ============================================================
 
 name: CI
@@ -119,6 +125,110 @@ jobs:
 
       - name: Run integration tests
         run: npm test
+
+  # ── Playwright E2E — SaaS customer journey ─────────────────────
+  # Spins up Postgres, migrates, seeds a deterministic TEST_ADMIN,
+  # starts server + client via Playwright's webServer blocks, then
+  # runs every spec in tests/e2e/. The Vite dev proxy routes
+  # /api/* to the backend (same pattern as nginx in self-hosted).
+  e2e-saas:
+    name: e2e-saas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16.9-alpine
+        env:
+          POSTGRES_USER: shenmay
+          POSTGRES_PASSWORD: shenmay_ci_2026
+          POSTGRES_DB: shenmay_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U shenmay -d shenmay_ai_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # Server env
+      DATABASE_URL: postgresql://shenmay:shenmay_ci_2026@localhost:5432/shenmay_ai_test
+      TEST_DATABASE_URL: postgresql://shenmay:shenmay_ci_2026@localhost:5432/shenmay_ai_test
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long-1234
+      WIDGET_JWT_SECRET: ci-widget-secret-at-least-32-chars-long-1234
+      API_KEY_ENCRYPTION_SECRET: ci-encryption-key-32-chars-long-12345
+      LLM_PROVIDER: mock
+      PORT: 3001
+      VITE_PORT: 5173
+      # E2E harness env (the seed + globalSetup pick these up)
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      # Playwright-internal
+      PLAYWRIGHT_MODE: saas-ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Migrate test DB
+        working-directory: server
+        run: npm run db:migrate
+
+      - name: Run Playwright suite
+        run: npx playwright test
+
+      - name: Upload HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-saas
+          path: tests/e2e/report/
+          retention-days: 7
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-saas
+          path: test-results/
+          retention-days: 7
 
   # ── Self-hosted compose smoke test ─────────────────────────────
   # Catches things like YAML syntax breaks, missing env refs, mismatched
