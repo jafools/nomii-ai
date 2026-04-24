@@ -170,6 +170,9 @@ jobs:
       LOGIN_RATE_LIMIT_MAX: '100'
       REGISTER_RATE_LIMIT_MAX: '100'
       WIDGET_SESSION_RATE_LIMIT_MAX: '100'
+      WIDGET_CHAT_RATE_LIMIT_MAX: '200'
+      GLOBAL_RATE_LIMIT_MAX: '2000'
+      PORTAL_RATE_LIMIT_MAX: '200'
       # Stripe: dummy key so the webhook handler can construct the SDK.
       # No real API calls are made — the self-hosted + subscription update
       # code paths hit DB only. Webhook signature verification is skipped
@@ -376,6 +379,9 @@ jobs:
           LOGIN_RATE_LIMIT_MAX=100
           REGISTER_RATE_LIMIT_MAX=100
           WIDGET_SESSION_RATE_LIMIT_MAX=100
+          WIDGET_CHAT_RATE_LIMIT_MAX=200
+          GLOBAL_RATE_LIMIT_MAX=2000
+          PORTAL_RATE_LIMIT_MAX=200
           EOF
 
       - name: Pre-build backend image under :stable tag

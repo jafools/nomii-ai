@@ -106,10 +106,12 @@ const loginLimiter = makeRateLimiter({
   message: { error: 'Too many login attempts. Try again in 15 minutes.' },
 });
 
-// Global safety net: 150 req/min per IP (catches all other endpoints)
+// Global safety net: 150 req/min per IP (catches all other endpoints).
+// Override via GLOBAL_RATE_LIMIT_MAX env var — needed in CI where the full
+// E2E suite shares an IP and can easily exceed the default.
 const globalLimiter = makeRateLimiter({
   windowMs: 60 * 1000,
-  max:      150,
+  max:      parseInt(process.env.GLOBAL_RATE_LIMIT_MAX || '150', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many requests. Please slow down.' },

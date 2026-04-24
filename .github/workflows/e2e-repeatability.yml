@@ -64,6 +64,9 @@ jobs:
       LOGIN_RATE_LIMIT_MAX: '200'
       REGISTER_RATE_LIMIT_MAX: '200'
       WIDGET_SESSION_RATE_LIMIT_MAX: '200'
+      WIDGET_CHAT_RATE_LIMIT_MAX: '500'
+      GLOBAL_RATE_LIMIT_MAX: '5000'
+      PORTAL_RATE_LIMIT_MAX: '500'
       STRIPE_SECRET_KEY: sk_test_dummy_for_ci
       SHENMAY_LICENSE_MASTER: 'true'
       PLAYWRIGHT_MODE: saas-ci
@@ -177,6 +180,9 @@ jobs:
           LOGIN_RATE_LIMIT_MAX=200
           REGISTER_RATE_LIMIT_MAX=200
           WIDGET_SESSION_RATE_LIMIT_MAX=200
+          WIDGET_CHAT_RATE_LIMIT_MAX=500
+          GLOBAL_RATE_LIMIT_MAX=5000
+          PORTAL_RATE_LIMIT_MAX=500
           EOF
 
       - name: Pre-build images under :stable
