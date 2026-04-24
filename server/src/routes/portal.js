@@ -2518,51 +2518,9 @@ router.use('/webhooks',   require('./portal/webhooks-routes'));
 
 
 
-// ── GET /api/portal/notifications ─────────────────────────────────────────
-// Returns the 30 most recent notifications for this tenant (newest first).
-// Includes unread_count so the bell badge can update without iterating.
-router.get('/notifications', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT id, type, title, body, resource_type, resource_id,
-              customer_name, read_at, created_at
-       FROM notifications
-       WHERE tenant_id = $1
-       ORDER BY created_at DESC
-       LIMIT 30`,
-      [req.portal.tenant_id]
-    );
-    const unread_count = rows.filter(n => !n.read_at).length;
-    res.json({ notifications: rows, unread_count });
-  } catch (err) { next(err); }
-});
-
-
-// ── PATCH /api/portal/notifications/mark-read ─────────────────────────────
-// Body: { ids?: string[] }
-//   ids omitted → mark ALL unread notifications as read
-//   ids provided → mark only those specific IDs as read
-router.patch('/notifications/mark-read', async (req, res, next) => {
-  try {
-    const { ids } = req.body || {};
-    if (Array.isArray(ids) && ids.length > 0) {
-      await db.query(
-        `UPDATE notifications
-         SET read_at = NOW()
-         WHERE tenant_id = $1 AND id = ANY($2::uuid[]) AND read_at IS NULL`,
-        [req.portal.tenant_id, ids]
-      );
-    } else {
-      await db.query(
-        `UPDATE notifications
-         SET read_at = NOW()
-         WHERE tenant_id = $1 AND read_at IS NULL`,
-        [req.portal.tenant_id]
-      );
-    }
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-});
+// NOTIFICATIONS — extracted to ./portal/notifications-routes.js
+// Bell-icon notifications list + mark-read. req.portal set by parent.
+router.use('/notifications', require('./portal/notifications-routes'));
 
 
 module.exports = router;
