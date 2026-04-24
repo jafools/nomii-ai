@@ -2,6 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const { TEST_EMAIL, TEST_PASSWORD, SEL_LOGIN } = require('./helpers/constants');
 const { loginViaUI, loginViaAPI, logout } = require('./helpers/auth');
+const { isOnprem } = require('./helpers/mode');
 
 test.describe('Login & Logout', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,7 +20,10 @@ test.describe('Login & Logout', () => {
     await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.passwordInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.submitBtn)).toBeVisible();
-    await expect(page.locator(SEL_LOGIN.signupLink)).toBeVisible();
+    // Sign-up link is hidden in self-hosted (registration is disabled there).
+    if (!isOnprem()) {
+      await expect(page.locator(SEL_LOGIN.signupLink)).toBeVisible();
+    }
   });
 
   test('shows error on empty form submit', async ({ page }) => {
@@ -81,6 +85,7 @@ test.describe('Login & Logout', () => {
   });
 
   test('signup link navigates to registration page', async ({ page }) => {
+    test.skip(isOnprem(), 'Sign-up link is hidden in self-hosted mode (registration disabled).');
     await page.goto('/login');
     await page.click(SEL_LOGIN.signupLink);
     await page.waitForURL(/\/signup/);

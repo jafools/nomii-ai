@@ -25,7 +25,8 @@ module.exports = {
     passwordInput: '#password',
     submitBtn: 'button[type="submit"]',
     errorMsg: '[data-testid="login-error"]',
-    forgotLink: 'button:has-text("Forgot password?")',
+    // Direction B rebrand shortened this to just "Forgot?"
+    forgotLink: 'button:has-text("Forgot?"), button:has-text("Forgot password?")',
     signupLink: 'a[href="/signup"]',
   },
 
