@@ -164,6 +164,14 @@ jobs:
       # E2E harness env (the seed + globalSetup pick these up)
       TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
       TEST_ADMIN_PASSWORD: E2ETestPass!234
+      # Stripe: dummy key so the webhook handler can construct the SDK.
+      # No real API calls are made — the self-hosted + subscription update
+      # code paths hit DB only. Webhook signature verification is skipped
+      # (STRIPE_WEBHOOK_SECRET intentionally unset).
+      STRIPE_SECRET_KEY: sk_test_dummy_for_ci
+      # SHENMAY_LICENSE_MASTER: enables the /api/public/portal/* routes so
+      # the portal-magic-link spec can hit them.
+      SHENMAY_LICENSE_MASTER: 'true'
       # Playwright-internal
       PLAYWRIGHT_MODE: saas-ci
 
@@ -290,6 +298,159 @@ jobs:
           echo "Backend never became healthy. Dumping logs:"
           docker compose -f docker-compose.selfhosted.yml logs backend
           exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.selfhosted.yml down -v
+
+  # ── Playwright E2E — On-prem customer journey ──────────────────
+  # Brings up the full self-hosted stack (db + backend + frontend) via
+  # docker-compose.selfhosted.yml, runs the setup wizard endpoint to
+  # provision a tenant, then runs the Playwright suite against it.
+  #
+  # Frontend is published on :80 (nginx), backend bound 127.0.0.1:3001.
+  # Specs that don't apply to self-hosted (SaaS signup, Stripe subs,
+  # public portal) skip themselves via PLAYWRIGHT_MODE=onprem guards.
+  #
+  # The backend image is pre-built locally under :stable so compose
+  # doesn't 401 on GHCR — same pattern as `selfhosted-smoke` above.
+  onprem-e2e:
+    name: onprem-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      PLAYWRIGHT_MODE: onprem
+      PLAYWRIGHT_BASE_URL: http://localhost
+      # Signal to globalSetup: skip DB seed (the stack's DB is inside
+      # Docker, we can't reach it from the runner's pg module anyway).
+      PLAYWRIGHT_SKIP_SEED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Write compose .env
+        run: |
+          cat > .env <<'EOF'
+          DB_PASSWORD=onprem_e2e_db_password_32_chars_01
+          JWT_SECRET=onprem_e2e_jwt_secret_at_least_32_ch
+          WIDGET_JWT_SECRET=onprem_e2e_widget_secret_at_least_32
+          API_KEY_ENCRYPTION_SECRET=onprem_e2e_api_key_encryption_32_ch1
+          APP_URL=http://localhost
+          FRONTEND_URL=http://localhost
+          LLM_PROVIDER=mock
+          EOF
+
+      - name: Pre-build backend image under :stable tag
+        run: docker build -t ghcr.io/jafools/shenmay-backend:stable ./server
+
+      - name: Pre-build frontend image under :stable tag
+        run: docker build -t ghcr.io/jafools/shenmay-frontend:stable ./client
+
+      - name: Compose up (db + backend + frontend)
+        run: docker compose -f docker-compose.selfhosted.yml up -d db backend frontend
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+              echo "backend healthy after $((i*3))s"
+              break
+            fi
+            sleep 3
+          done
+          curl -sf http://127.0.0.1:3001/api/health || (
+            echo "Backend never became healthy. Dumping logs:"
+            docker compose -f docker-compose.selfhosted.yml logs backend
+            exit 1
+          )
+
+      - name: Wait for frontend on :80
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost/ >/dev/null 2>&1; then
+              echo "frontend healthy after $((i*2))s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Frontend never came up. Dumping logs:"
+          docker compose -f docker-compose.selfhosted.yml logs frontend
+          exit 1
+
+      - name: Provision TEST_ADMIN via setup wizard endpoint
+        run: |
+          set -e
+          # Self-hosted first-run: POST /api/setup/complete creates the tenant
+          # and admin in one shot. This replaces the SaaS-side seed script —
+          # setup itself IS the seed here.
+          RESPONSE=$(curl -s -X POST http://localhost/api/setup/complete \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "companyName": "Shenmay On-Prem E2E",
+              "email": "'"$TEST_ADMIN_EMAIL"'",
+              "password": "'"$TEST_ADMIN_PASSWORD"'",
+              "anthropicApiKey": "sk-ant-onprem-e2e-dummy-0123456789abcdef"
+            }')
+          echo "Setup response: $RESPONSE"
+          # Must contain a portal JWT (`token:`) to prove the tenant was created.
+          echo "$RESPONSE" | grep -q '"token":"' || {
+            echo "Setup /complete did not return a JWT — aborting."
+            docker compose -f docker-compose.selfhosted.yml logs backend
+            exit 1
+          }
+
+      - name: Confirm setup flipped to not-required
+        run: |
+          STATUS=$(curl -s http://localhost/api/setup/status)
+          echo "status: $STATUS"
+          echo "$STATUS" | grep -q '"required":false' || {
+            echo "Setup status still reports required=true"
+            exit 1
+          }
+
+      - name: Run Playwright (on-prem subset)
+        run: npx playwright test
+
+      - name: Upload HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-onprem
+          path: tests/e2e/report/
+          retention-days: 7
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.selfhosted.yml logs --tail=200
 
       - name: Tear down
         if: always()
