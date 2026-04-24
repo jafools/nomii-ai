@@ -39,6 +39,10 @@ test.describe('Signup funnel — /signup → verify → /onboarding', () => {
   });
 
   test.afterAll(async () => {
+    // beforeEach skips in on-prem / no-DB mode, but afterAll still fires.
+    // Skip the cleanup entirely there — the pg pool would just ECONNREFUSE
+    // and leave an empty `[spec] cleanup failed:` warn in the log.
+    if (!hasDbAccess()) return;
     try {
       await dbHelper.cleanupBySuffix(DISAMBIGUATOR);
     } catch (err) {
