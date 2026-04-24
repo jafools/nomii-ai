@@ -437,14 +437,22 @@ jobs:
             exit 1
           }
 
-      - name: Bump subscription to master so trial caps don't trip specs
+      - name: Bump subscription to master + force mock LLM provider
         run: |
           # The setup wizard creates a 'trial' sub with 20 msg/mo. The widget
           # spec sends a handful of messages — fine for one run, but the 5x
           # repeatability matrix would cross the cap. Bump to master here so
           # every cell starts clean.
+          #
+          # Also force tenants.llm_provider='mock' — without this, the tenant
+          # defaults to 'claude' (migration 001), the widget's chat call
+          # resolveApiKey()s the dummy sk-ant-onprem-e2e key we seeded via
+          # the setup wizard, and Anthropic 401s the request. `generateMock
+          # Response` only fires when the tenant column is 'mock' OR tenant
+          # is null AND env LLM_PROVIDER=mock.
           docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
-            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);"
+            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);
+             UPDATE tenants SET llm_provider='mock';"
 
       - name: Run Playwright (on-prem subset)
         run: npx playwright test

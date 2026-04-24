@@ -72,22 +72,28 @@ async function seed() {
   // ── 1. Tenant upsert ────────────────────────────────────────────────────
   // We key on the pinned UUID, not the unique name, so repeat runs are
   // a no-op even if the name happens to collide (it shouldn't).
+  // llm_provider pinned to 'mock' so the widget spec's chat messages get
+  // a canned reply instead of trying to call Anthropic (the `tenant.llm_
+  // provider` column overrides env LLM_PROVIDER in llmService.js:386).
   await db.query(
     `INSERT INTO tenants (
        id, name, slug, agent_name, vertical,
        primary_color, secondary_color,
        widget_api_key, is_active,
-       onboarding_steps
+       onboarding_steps,
+       llm_provider
      ) VALUES ($1, $2, $3, 'E2E Assistant', 'other',
                '#0F5F5C', '#84C7C4',
                $4, true,
-               '{"company": true, "products": true, "customers": true, "widget": true, "test": true}'::jsonb)
+               '{"company": true, "products": true, "customers": true, "widget": true, "test": true}'::jsonb,
+               'mock')
      ON CONFLICT (id) DO UPDATE SET
        name              = EXCLUDED.name,
        slug              = EXCLUDED.slug,
        is_active         = true,
        widget_api_key    = EXCLUDED.widget_api_key,
        onboarding_steps  = EXCLUDED.onboarding_steps,
+       llm_provider      = 'mock',
        updated_at        = NOW()`,
     [TEST_TENANT_ID, TEST_COMPANY, TEST_SLUG, TEST_WIDGET_KEY]
   );

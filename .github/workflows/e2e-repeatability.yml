@@ -201,10 +201,11 @@ jobs:
             -d '{"companyName":"Shenmay Repeat E2E","email":"'"$TEST_ADMIN_EMAIL"'","password":"'"$TEST_ADMIN_PASSWORD"'","anthropicApiKey":"sk-ant-onprem-repeat-dummy-0123456789abcdef"}' \
             | grep -q '"token":"' || { docker compose -f docker-compose.selfhosted.yml logs backend; exit 1; }
 
-      - name: Bump subscription to master (avoid trial cap across 5 cells)
+      - name: Bump sub + force mock LLM (avoid trial cap + Anthropic 401)
         run: |
           docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
-            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);"
+            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);
+             UPDATE tenants SET llm_provider='mock';"
 
       - name: Run full suite (attempt ${{ matrix.run }} / 5)
         run: npx playwright test
