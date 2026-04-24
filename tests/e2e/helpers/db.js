@@ -16,12 +16,16 @@
  * teardown, which releases connections automatically.
  */
 
-const { Pool } = require('pg');
-
+// pg is lazily required inside getPool() so specs can `require('./db')`
+// in environments that don't have DB access (e.g. onprem-e2e, which
+// doesn't install server deps and relies on mode.hasDbAccess() skipping
+// the DB-dependent tests). Without the lazy require, merely importing
+// this module would crash the worker before any test.skip() could fire.
 let pool = null;
 
 function getPool() {
   if (pool) return pool;
+  const { Pool } = require('pg');
   const connectionString =
     process.env.DATABASE_URL ||
     process.env.TEST_DATABASE_URL ||
