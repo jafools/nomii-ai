@@ -5,7 +5,83 @@
 
 ---
 
-## Last updated: 2026-04-24 afternoon (First-customer hardening — **v3.1.4 + v3.1.5 LIVE**, Resend SMTP swap, broken signup-CTA fix Published)
+## Last updated: 2026-04-24 evening (E2E harness sprint — **v3.2.0 TAGGED**, 5× SaaS + 5× on-prem all green, customer-ready)
+
+Austin: "Nah fam i want both SaaS and On prem E2E testing to be done until both are customer ready. Go crazy." Sprint executed end-to-end in one session: 4 Playwright specs → 9 specs, 0 CI coverage → 2 CI jobs + 10-cell repeatability matrix, all green. `v3.2.0` pushed. GHCR `:stable` will rebuild automatically; Hetzner deploy is Austin-pick-the-moment (command at the bottom of this section).
+
+### Ship log (Apr 24 evening)
+
+| Tag / PR | Where | What |
+|---|---|---|
+| [shenmay #83](https://github.com/jafools/shenmay-ai/pull/83) | shenmay-ai main | Squash-merged as `d8c821d`. 9 commits squashed (phased 1→5 + four CI fix rounds). 1819/-18 LOC. Branch deleted. |
+| **v3.2.0** | shenmay-ai tag | `git tag -a v3.2.0 ... && git push origin v3.2.0` → GHCR rebuild triggered. Annotation summarises the sprint. |
+| E2E Repeatability Proof run [24883018506](https://github.com/jafools/shenmay-ai/actions/runs/24883018506) | GH Actions | `workflow_dispatch` against main @ d8c821d. 10 cells: 5× saas-repeat + 5× onprem-repeat + 1 verdict. **ALL GREEN.** This is Austin's "5 times in a row" bar cleared. |
+
+### What's in the harness now
+
+- **9 specs** across `tests/e2e/` — 4 existing (login/dashboard/widget/onboarding) refreshed to post-rebrand copy + 5 new:
+  - `05-signup-funnel.spec.js` — /signup → DB-read verify token → /onboarding → /dashboard
+  - `06-stripe-upgrade.spec.js` — webhook-driven, no real card (synthesises `checkout.session.completed` + `invoice.paid` events, asserts `SHENMAY-*` keys + subscription promotion)
+  - `07-marketing-ctas.spec.js` — **the regression-killer**: crawls `pontensolutions.com/products/shenmay-ai` via Chromium, asserts zero `/nomii/*` hrefs + ≥1 `shenmay.ai/signup` CTA + HEAD-probes every absolute shenmay.ai link. Would have auto-caught the Apr 24 `/nomii/signup` CTA bug.
+  - `08-portal-magic-link.spec.js` — full request-login → DB-read token → verify → /licenses → logout cycle + enumeration-defense pin
+  - `09-onprem-setup.spec.js` — on-prem-only: setup-status, /api/health service=shenmay-ai, embed.js content-type, portal-routes-404-in-selfhosted, registration-disabled-returns-403
+- **2 CI jobs** in `.github/workflows/ci.yml` (run on every PR + main push):
+  - `e2e-saas` — Postgres service → migrate → globalSetup seeds TEST_ADMIN → spin up server+client via Playwright webServer blocks → run full suite
+  - `onprem-e2e` — `docker-compose.selfhosted.yml` up → `/api/setup/complete` provisions admin → SQL bump to master tier + `llm_provider='mock'` → run suite with `PLAYWRIGHT_MODE=onprem` (SaaS-only specs skip themselves)
+- **5×5 repeatability workflow** in `.github/workflows/e2e-repeatability.yml` — `workflow_dispatch` only. 10 parallel cells + a `repeatability-verdict` summary that fails closed if any cell failed. Re-run this once per sprint to catch drift before tagging a release.
+- **Helpers**: `tests/e2e/helpers/db.js` (lazy pg pool + typed token lookups + idempotent license seeder + suffix-based cleanup with prod-refuse guard); `tests/e2e/helpers/mode.js` (`isOnprem()` / `isSaasCi()` / `hasDbAccess()` for spec-level guards); `tests/e2e/global-setup.js` (runs the seed unless PLAYWRIGHT_MODE=onprem/staging).
+
+### Load-bearing fixes along the way
+
+- `server/db/seed-test-admin.js` — idempotent UPSERT of tenant + admin + master-sub, keyed on pinned UUIDs. Refuses to run against DBs that look like production. Sets `llm_provider='mock'` so widget tests get canned responses.
+- `client/vite.config.ts` — added Vite dev proxy for `/api`, `/widget`, `/embed.js`, `/health` → :3001. Mirrors the nginx proxy self-hosted uses; previously the 4 existing UI specs silently 404'd in dev because the client made relative API calls against :5173 with no proxy.
+- `server/src/index.js` — exposed `GLOBAL_RATE_LIMIT_MAX` env var (was hardcoded to 150/min, tripped the batched suite). Now matches the existing override pattern for LOGIN/REGISTER/WIDGET_SESSION.
+- `docker-compose.selfhosted.yml` — passes `GLOBAL_RATE_LIMIT_MAX` / `WIDGET_CHAT_RATE_LIMIT_MAX` / `PORTAL_RATE_LIMIT_MAX` into the backend container.
+- `package.json` — added `pg` to root devDeps so specs can require it from the root Playwright runner.
+- Spec assertions refreshed to match Direction B rebrand copy (login h1 is "Welcome back." not "Sign in to Shenmay AI"; "Forgot?" not "Forgot password?"; on-prem `/signup` hides the sign-up link).
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `d8c821d` (PR #83 squash) |
+| Release tag | `v3.2.0` pushed; GHCR builds `:stable` + `:3.2.0` + `:3.2` + `:v3.2.0` |
+| Staging | `nomii-staging.pontensolutions.com` auto-refreshes to `:edge` within 5 min (main build already running) |
+| Hetzner prod | Still on `v3.1.5`/`cf8ee20`. **Not yet deployed**. No functional regressions in v3.2.0 for customers — this is test-infra + a single `GLOBAL_RATE_LIMIT_MAX` env passthrough on backend. Safe to deploy when convenient. |
+
+### Deploy v3.2.0 to Hetzner (when Austin is ready)
+
+```bash
+ssh nomii@204.168.232.24 "cd ~/shenmay-ai && git fetch --tags && git checkout v3.2.0 && IMAGE_TAG=3.2.0 docker compose pull backend frontend && IMAGE_TAG=3.2.0 docker compose up -d backend frontend"
+ssh nomii@204.168.232.24 "curl -s http://127.0.0.1:3001/api/health"
+```
+
+### Decisions / closed loops (DO NOT re-raise)
+
+- **Real-card Stripe smoke in CI** — still out; spec 06 does the webhook simulation instead. Matches Austin's prior "no real-card smoke" decision (memory `feedback_no_real_card_smoke.md`).
+- **Email-inbox integration test** — skipped in favour of DB-direct token reads from `portal_login_tokens` / `email_verification_tokens`. Fast, deterministic, CI-friendly. Deliverability itself is covered by Resend's dashboard (memory `reference_resend_transactional_email.md`).
+- **Running specs against the live staging URL** — deferred. The per-PR + nightly `e2e-saas` job is backed by its own CI Postgres; running against shared staging would pollute `shenmay_ai_staging` and race against the 5-min refresh timer. If we decide otherwise later, the config supports it (set `PLAYWRIGHT_BASE_URL=https://nomii-staging.pontensolutions.com` + `PLAYWRIGHT_SKIP_SEED=1` + pre-seed the staging DB out-of-band).
+
+### Open queue for next session
+
+1. **Deploy v3.2.0 to Hetzner** — one-line SSH above. ~2 min.
+2. **UptimeRobot** — still on the list. `/api/health` + Resend bounce webhook. 15-min quick win.
+3. **Nightly dispatch of `e2e-repeatability`** — add a `schedule:` trigger (cron) to catch drift without manual dispatch. Pair with a Slack/email alert on `repeatability-verdict` fail.
+4. **Spec tagging** — migrate the `test.skip(isOnprem(), ...)` pattern to Playwright `@saas` / `@onprem` tags when we outgrow ~10 specs. Cleaner than per-test skip() calls.
+5. **Stripe test-card spec** — _if_ we ever reverse the "no real-card smoke" decision, the missing piece is driving checkout.stripe.com in Playwright (the MCP blocker doesn't apply here). Add `06b-stripe-checkout.spec.js` at that time.
+6. **Everything from last session's queue** — GTM channel decision, docs/EMAIL.md, portal-table sweep cron, volume rename, NOMII- master-key rotation, Phase 9 USPTO ITU.
+
+### Gotchas captured this session (memory + vault)
+
+- **Lovable SPAs return empty HTML to raw curl** — the React app mounts into `<div id="root">` in JS. Marketing-CTA specs MUST navigate via Chromium (Playwright) or Headless Chrome; `request.get()` sees the shell and asserts "shenmay" on empty content.
+- **`tenant.llm_provider` overrides env `LLM_PROVIDER`** — default tenant row has `llm_provider='claude'` (migration 001). Env `LLM_PROVIDER=mock` alone is not enough for the widget spec to get mock responses; the test seed pins the column to 'mock' too. On-prem CI does the same via post-setup SQL.
+- **Vite dev has no default proxy** — if the client uses relative `/api/...` fetches and lives on :5173, those 404 unless a proxy is set. Now wired permanently in `client/vite.config.ts`.
+- **Playwright `require('pg')` resolution** — specs run from the root; root `node_modules/pg` must exist. Added `pg` to root devDeps + lazy-require inside `getPool()` so onprem-mode specs that skip DB access don't crash at import time.
+- **`LOGIN_RATE_LIMIT_MAX` is only one of several.** Full suite needs `REGISTER_`, `WIDGET_SESSION_`, `WIDGET_CHAT_`, `PORTAL_`, and `GLOBAL_` bumped. The last one didn't exist as an env var before today — the hardcoded 150/min global limiter was the invisible cap. Now parameterised.
+
+---
+
+## Previous: 2026-04-24 afternoon (First-customer hardening — **v3.1.4 + v3.1.5 LIVE**, Resend SMTP swap, broken signup-CTA fix Published)
 
 Austin: "Whats next on the agenda before I get my first paying customers?" Closed four hardening loops in one afternoon sitting. Marketing → signup → authenticated-session funnel is now end-to-end unblocked with strong auth signals for transactional email.
 
