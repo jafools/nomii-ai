@@ -78,6 +78,13 @@ services:
       # handler refuses unsigned requests in production.
       RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
       MASTER_EMAIL: ${MASTER_EMAIL:-}
+      # First-boot tenant branding — seedSelfHostedTenant.js reads this
+      # to name the default tenant on fresh installs. If unset the tenant
+      # gets called "My Company" and the operator renames in the UI later.
+      TENANT_NAME: ${TENANT_NAME:-}
+      # Optional tunable knobs (fallbacks in code match these defaults)
+      DATA_API_RATE_LIMIT: ${DATA_API_RATE_LIMIT:-120}
+      PII_TOKENIZER_ENABLED: ${PII_TOKENIZER_ENABLED:-true}
       JWT_EXPIRY: ${JWT_EXPIRY:-7d}
       LLM_HAIKU_MODEL: ${LLM_HAIKU_MODEL:-claude-haiku-4-5-20251001}
       LLM_SONNET_MODEL: ${LLM_SONNET_MODEL:-claude-sonnet-4-20250514}

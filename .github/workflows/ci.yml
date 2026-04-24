@@ -125,6 +125,13 @@ jobs:
         working-directory: server
         run: npm run lint
 
+      # Env-var forwarding lint — catches process.env.X usages in
+      # server/src that aren't wired into either compose file. Prevents
+      # the PR #98 class of bug where a new env var works locally but
+      # is invisible in the Hetzner container. No deps, no DB.
+      - name: Lint env forwarding (compose)
+        run: node scripts/check-env-forwarding.js
+
       - name: Run migrations against test DB
         working-directory: server
         run: npm run db:migrate
