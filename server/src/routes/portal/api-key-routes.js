@@ -19,18 +19,7 @@ const router  = require('express').Router();
 const db      = require('../../db');
 const { encrypt, decrypt, getLast4 } = require('../../services/apiKeyService');
 const { validateApiKey }             = require('../../services/llmService');
-
-// Local copy of the onboarding-step helper from portal.js. Kept inline rather
-// than imported to keep this sub-router self-contained — the helper is ~3 lines
-// and the only cross-file consumer right now.
-async function markStepComplete(tenantId, step) {
-  await db.query(
-    `UPDATE tenants
-     SET onboarding_steps = onboarding_steps || $1::jsonb
-     WHERE id = $2`,
-    [JSON.stringify({ [step]: true }), tenantId]
-  );
-}
+const { markStepComplete }           = require('../../utils/onboarding');
 
 // POST /api/portal/api-key  — save + validate a BYOK API key
 router.post('/', async (req, res, next) => {
