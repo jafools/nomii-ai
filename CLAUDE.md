@@ -35,6 +35,8 @@
 2. **Merging to main does NOT ship to customers.** It ships to staging only. Tagging is the deploy act.
 3. **Release = `git tag vX.Y.Z && git push origin vX.Y.Z`** + manual Hetzner SSH to check out the tag. Never "just push main to Hetzner".
 
+**Release gate for reliability-critical tags (since v3.2.0):** dispatch `.github/workflows/e2e-repeatability.yml` against `main` before cutting the tag and require 10/10 green cells (5× SaaS + 5× on-prem). Per-PR `e2e-saas` + `onprem-e2e` green is a 1× commit signal; the 5× matrix is the release signal. Skip only for pure docs / infra changes with zero customer-journey code-path impact.
+
 **Where things live:**
 
 | | URL | Image tag | Host |
