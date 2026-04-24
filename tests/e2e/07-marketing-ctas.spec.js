@@ -33,64 +33,55 @@ const PRODUCTION_APP = 'https://shenmay.ai';
 test.describe('Marketing CTAs — regression guard', () => {
   test.describe.configure({ mode: 'serial' });
 
-  let marketingHtml = '';
   let reachable = false;
   let links = [];
+  let renderedText = '';
 
-  test.beforeAll(async () => {
-    const ctx = await request.newContext({ timeout: 15_000 });
+  test.beforeAll(async ({ browser }) => {
+    // Lovable SPAs ship a near-empty index.html and rehydrate in JS —
+    // raw fetches return a document with just `<div id="root"></div>`.
+    // Use a real Chromium to render the page, so assertions see the
+    // actual content customers see.
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
     try {
-      const res = await ctx.get(MARKETING_URL);
-      if (res.ok()) {
-        marketingHtml = await res.text();
-        reachable = true;
-      } else {
-        console.warn(`[marketing-ctas] ${MARKETING_URL} returned ${res.status()} — skipping`);
-      }
+      await page.goto(MARKETING_URL, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+      // SPA mount + Direction B page is long — wait for visible headings.
+      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
+      renderedText = (await page.textContent('body').catch(() => '')) || '';
+      links = await page.$$eval('a[href]', (anchors) =>
+        anchors.map((a) => a.getAttribute('href') || ''),
+      );
+      reachable = renderedText.length > 200; // sanity: non-trivial content
     } catch (err) {
       console.warn(`[marketing-ctas] ${MARKETING_URL} unreachable (${err.message}) — skipping`);
     } finally {
-      await ctx.dispose();
+      await page.close();
+      await ctx.close();
     }
   });
 
   test.beforeEach(async () => {
-    test.skip(!reachable, 'Marketing site unreachable — regression guard skipped (not a regression).');
+    test.skip(!reachable, 'Marketing site unreachable or empty — regression guard skipped.');
   });
 
   test('marketing page contains the Shenmay wordmark', async () => {
-    // Sanity check: we're on a Shenmay-branded page, not the 404 page of
-    // a different Lovable project.
-    expect(marketingHtml.toLowerCase()).toContain('shenmay');
+    // Sanity check: we're on a Shenmay-branded page after JS rehydration.
+    expect(renderedText.toLowerCase()).toContain('shenmay');
   });
 
-  test('no CTA points at a /nomii/* path (hard regression guard)', async ({ page }) => {
-    await page.goto(MARKETING_URL, { waitUntil: 'domcontentloaded' });
-    // SPA needs a beat for React Router / Lovable framework to mount.
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-    const hrefs = await page.$$eval('a[href]', (anchors) =>
-      anchors.map((a) => (a).getAttribute('href') || ''),
-    );
-    links = hrefs;
-
-    const nomiiLeaks = hrefs.filter((h) => /\/nomii(\/|$)/i.test(h));
+  test('no CTA points at a /nomii/* path (hard regression guard)', async () => {
+    const nomiiLeaks = links.filter((h) => /\/nomii(\/|$)/i.test(h));
     if (nomiiLeaks.length > 0) {
       console.error('[marketing-ctas] /nomii/* leaks found:', nomiiLeaks);
     }
     expect(nomiiLeaks).toEqual([]);
   });
 
-  test('at least one CTA points at shenmay.ai/signup', async ({ page }) => {
-    await page.goto(MARKETING_URL, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-
-    const signupLinks = await page.$$eval('a[href]', (anchors) =>
-      anchors
-        .map((a) => (a).getAttribute('href') || '')
-        .filter((h) => /shenmay\.ai\/signup(\b|\/|$)/i.test(h) || h === '/signup'),
+  test('at least one CTA points at shenmay.ai/signup', async () => {
+    const signupLinks = links.filter((h) =>
+      /shenmay\.ai\/signup(\b|\/|$)/i.test(h) || h === '/signup',
     );
-
     expect(signupLinks.length, 'Expected at least one "Start free trial" style CTA').toBeGreaterThan(0);
   });
 

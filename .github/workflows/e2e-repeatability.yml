@@ -61,6 +61,9 @@ jobs:
       VITE_PORT: 5173
       TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
       TEST_ADMIN_PASSWORD: E2ETestPass!234
+      LOGIN_RATE_LIMIT_MAX: '200'
+      REGISTER_RATE_LIMIT_MAX: '200'
+      WIDGET_SESSION_RATE_LIMIT_MAX: '200'
       STRIPE_SECRET_KEY: sk_test_dummy_for_ci
       SHENMAY_LICENSE_MASTER: 'true'
       PLAYWRIGHT_MODE: saas-ci
@@ -171,6 +174,9 @@ jobs:
           APP_URL=http://localhost
           FRONTEND_URL=http://localhost
           LLM_PROVIDER=mock
+          LOGIN_RATE_LIMIT_MAX=200
+          REGISTER_RATE_LIMIT_MAX=200
+          WIDGET_SESSION_RATE_LIMIT_MAX=200
           EOF
 
       - name: Pre-build images under :stable

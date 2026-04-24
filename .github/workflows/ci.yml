@@ -164,6 +164,12 @@ jobs:
       # E2E harness env (the seed + globalSetup pick these up)
       TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
       TEST_ADMIN_PASSWORD: E2ETestPass!234
+      # Rate-limit headroom for the full suite (default 3 is way too low for
+      # the number of logins a full Playwright run does — every describe's
+      # beforeAll burns one). 100 is comfortable headroom for 5× repeat runs.
+      LOGIN_RATE_LIMIT_MAX: '100'
+      REGISTER_RATE_LIMIT_MAX: '100'
+      WIDGET_SESSION_RATE_LIMIT_MAX: '100'
       # Stripe: dummy key so the webhook handler can construct the SDK.
       # No real API calls are made — the self-hosted + subscription update
       # code paths hit DB only. Webhook signature verification is skipped
@@ -367,6 +373,9 @@ jobs:
           APP_URL=http://localhost
           FRONTEND_URL=http://localhost
           LLM_PROVIDER=mock
+          LOGIN_RATE_LIMIT_MAX=100
+          REGISTER_RATE_LIMIT_MAX=100
+          WIDGET_SESSION_RATE_LIMIT_MAX=100
           EOF
 
       - name: Pre-build backend image under :stable tag

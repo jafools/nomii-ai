@@ -133,7 +133,12 @@ test.describe('Stripe upgrade — webhook-driven, no real card', () => {
     // Use a separate synthetic tenant so we don't disturb the master-tier
     // TEST_ADMIN (its sub is 'master', and this flow writes 'growth' which
     // would break the other specs).
-    const synthTenantUuid = `00000000-0000-4000-a000-${DISAMBIGUATOR.slice(-12).padStart(12, '0')}`;
+    //
+    // DISAMBIGUATOR is base36 (alphanumeric), but UUIDs need hex-only in
+    // the last segment. Hash the disambiguator to 12 hex chars.
+    const crypto = require('crypto');
+    const hexSuffix = crypto.createHash('sha1').update(DISAMBIGUATOR).digest('hex').slice(0, 12);
+    const synthTenantUuid = `00000000-0000-4000-a000-${hexSuffix}`;
     const stripeSubId     = `sub_test_${DISAMBIGUATOR}`;
     const stripeCustomer  = `cus_test_${DISAMBIGUATOR}`;
 

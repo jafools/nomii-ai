@@ -35,14 +35,15 @@ test.describe('On-prem customer journey', () => {
     expect(body.required).toBe(false);
   });
 
-  test('/api/health is healthy and reports service=shenmay', async ({ baseURL, request }) => {
+  test('/api/health is healthy and reports a shenmay-family service id', async ({ baseURL, request }) => {
     const res = await request.get(`${baseURL}/api/health`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body.status || body.ok || 'ok').toBeTruthy();
-    // service field was flipped to 'shenmay' in v2.8.1 — this spec pins it.
+    // service field is 'shenmay-ai' post-Phase-7 rename — pin the prefix
+    // so future rename touches this spec explicitly.
     if (body.service) {
-      expect(body.service).toBe('shenmay');
+      expect(body.service).toMatch(/^shenmay(-ai)?$/);
     }
   });
 
