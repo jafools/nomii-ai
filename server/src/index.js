@@ -216,9 +216,22 @@ const portalLookupLimiter = makeRateLimiter({
 app.use('/api/public/portal', portalLookupLimiter);
 app.use('/api/public/portal', require('./routes/public-portal'));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'shenmay-ai', timestamp: new Date().toISOString() });
+// Health check — probes the DB so a disconnected-but-nginx-up outage
+// actually fails the check (previously hardcoded 200 OK regardless). Kept
+// extremely cheap (single SELECT 1, no pool warm-up work).
+app.get('/api/health', async (req, res) => {
+  const db = require('./db');
+  try {
+    await db.query('SELECT 1');
+    res.json({ status: 'ok', service: 'shenmay-ai', timestamp: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({
+      status: 'degraded',
+      service: 'shenmay-ai',
+      error: 'db_unreachable',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Deployment config — consumed by the frontend to toggle SaaS vs self-hosted UI
