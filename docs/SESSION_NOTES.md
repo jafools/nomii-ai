@@ -5,7 +5,57 @@
 
 ---
 
-## Last updated: 2026-04-24 fifth session (**v3.3.2 SHIPPED** — E2E harness + deep health + UptimeRobot live)
+## Last updated: 2026-04-24 fifth session (**v3.3.2 → v3.3.4 SHIPPED** — harness + health + UptimeRobot + Resend webhook all live)
+
+Six PRs, three release tags, three Hetzner deploys. Started as a test-harness cleanup, ended with a full customer-deliverability suppression pipeline live on prod.
+
+### Ship log (Apr 24 fifth session, full)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [shenmay #94](https://github.com/jafools/shenmay-ai/pull/94) | `6dbb9e0` | Test-harness hardening. Widget `.count()` on hidden `#capacity-screen` was firing skip every CI run → two tests had zero coverage. Switched to `isVisible()`. emailService `jsonTransport` fallback when SMTP creds missing. afterAll guards on `hasDbAccess()` in specs 05/06/08. |
+| [shenmay #95](https://github.com/jafools/shenmay-ai/pull/95) | `2f26807` | Session-notes entry for PR #94. |
+| [shenmay #96](https://github.com/jafools/shenmay-ai/pull/96) | `7439e00` | `/api/health` now runs `SELECT 1` and returns 503 on DB failure. `docs/MONITORING.md` refreshed for shenmay.ai + added `/embed.js` monitor config. |
+| [shenmay #97](https://github.com/jafools/shenmay-ai/pull/97) | `53b147a` | Session-notes entry for v3.3.2. |
+| **v3.3.2** | tag at `7439e00` | GHCR rebuilt; Hetzner deployed. Deep `/api/health` live. |
+| [shenmay #98](https://github.com/jafools/shenmay-ai/pull/98) | `9e0fe56` | Resend bounce/complaint webhook. Migration 037 `email_suppressions` table. `POST /api/webhooks/resend` with inline Svix verification (no SDK dep). Transporter wrapper auto-skips suppressed recipients across all 10 existing `sendMail` call sites. Spec 11 covers signed/tampered/soft paths. `docs/MONITORING.md` Resend section flipped from future-follow-up to live. |
+| **v3.3.3** | tag at `9e0fe56` | GHCR rebuilt; Hetzner deployed. Migration 037 applied automatically. Webhook endpoint reachable. |
+| [shenmay #99](https://github.com/jafools/shenmay-ai/pull/99) | `a388f28` | **Hotfix.** Webhook's dev-mode bypass (unset `RESEND_WEBHOOK_SECRET`) was accepting unsigned POSTs on prod — an attacker could insert arbitrary suppression rows, blocking legitimate mail. Gated bypass on `NODE_ENV !== 'production'`. Prod + unset secret → 400 `webhook_secret_unset_in_production`. |
+| **v3.3.4** | tag at `a388f28` | GHCR rebuilt; Hetzner deployed. External curl confirms bare POST now 400s. Window closed. |
+| UptimeRobot | 3 monitors live | `shenmay.ai/`, `/api/health`, `/embed.js`. 5-min, alert-after-2-failures, email. 100% uptime at handoff. |
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `a388f28` (PR #99 squash) |
+| Release tag | `v3.3.4` pushed; GHCR `:stable` / `:3.3.4` / `:3.3` / `:latest` published |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.4`**. Migrations 036 + 037 applied. Internal + external `/api/health` green. Webhook endpoint returns 400 on unsigned POSTs until `RESEND_WEBHOOK_SECRET` is set. |
+| Monitoring | UptimeRobot 3/3 green |
+
+### What Austin needs to do next (≤ 10 min total)
+
+1. **Configure Resend webhook in the dashboard** — 6-step recipe in [`docs/MONITORING.md`](MONITORING.md#resend-dashboard-setup-one-time-austin):
+   - `resend.com/webhooks` → Add Endpoint
+   - URL: `https://shenmay.ai/api/webhooks/resend`
+   - Events: `email.bounced` + `email.complained` only
+   - Copy the `whsec_...` secret
+   - SSH Hetzner: `cd ~/shenmay-ai && printf "\nRESEND_WEBHOOK_SECRET=whsec_...\n" >> .env && docker compose up -d backend`
+   - Back in Resend dashboard → Send test event → confirm 200 OK
+2. **Optional** (30 sec): flip UptimeRobot monitor #3 (`/embed.js`) from HTTP → Keyword with keyword `widget-key` in its settings.
+
+### Still-open queue for next session
+
+1. **Volume rename** (`nomii-ai_pgdata` → `shenmay-ai_pgdata` on Hetzner). Destructive, needs maintenance window.
+2. **NOMII- master-key rotation** — Austin's one live master key still on the old prefix.
+3. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+4. **Spec tagging** — migrate `test.skip(isOnprem(), …)` to Playwright `@saas` / `@onprem` tags once we outgrow ~10 specs. We're at 11 now.
+5. **Anonymous-only mode follow-ups** (deferred, low urgency until signal).
+6. **Future deliverability UI** — dashboard view for `email_suppressions` (remove-by-email). Single SQL `DELETE` works fine until this matters.
+
+---
+
+## Previous: 2026-04-24 fifth session interim (v3.3.2)
 
 Three PRs merged, one release tag cut, one infra change deployed to Hetzner, three UptimeRobot monitors live on prod.
 
