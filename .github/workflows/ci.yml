@@ -437,6 +437,15 @@ jobs:
             exit 1
           }
 
+      - name: Bump subscription to master so trial caps don't trip specs
+        run: |
+          # The setup wizard creates a 'trial' sub with 20 msg/mo. The widget
+          # spec sends a handful of messages — fine for one run, but the 5x
+          # repeatability matrix would cross the cap. Bump to master here so
+          # every cell starts clean.
+          docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
+            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);"
+
       - name: Run Playwright (on-prem subset)
         run: npx playwright test
 
