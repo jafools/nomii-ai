@@ -56,3 +56,6 @@ ruvector.db
 
 # Runtime lock for Claude Code scheduled tasks
 .claude/scheduled_tasks.lock
+
+# Claude Code ephemeral worktrees (isolation-mode agents check out here)
+.claude/worktrees/

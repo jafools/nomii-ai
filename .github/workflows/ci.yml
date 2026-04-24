@@ -119,6 +119,12 @@ jobs:
         working-directory: server
         run: npm ci
 
+      # Flat ESLint config at server/eslint.config.js — loose by design
+      # (see comment header there). Warnings are allowed; errors fail the build.
+      - name: Lint server
+        working-directory: server
+        run: npm run lint
+
       - name: Run migrations against test DB
         working-directory: server
         run: npm run db:migrate

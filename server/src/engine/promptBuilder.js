@@ -328,7 +328,7 @@ function buildLifePlanBlock(memory) {
   const plan = memory.life_plan || memory.goals || {};
 
   // Generic approach: iterate over all plan sections dynamically
-  let sections = [];
+  const sections = [];
 
   for (const [key, value] of Object.entries(plan)) {
     if (typeof value === 'object' && value !== null) {

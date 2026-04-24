@@ -152,7 +152,7 @@ router.post('/session', async (req, res, next) => {
       // ── Authenticated visitor ─────────────────────────────────────────────────
       const normalizedEmail = email.toLowerCase().trim();
 
-      let { rows: customerRows } = await db.query(
+      const { rows: customerRows } = await db.query(
         `SELECT id, first_name, last_name, email, soul_file, memory_file,
                 onboarding_status, onboarding_categories_completed
          FROM customers
@@ -240,7 +240,7 @@ router.post('/session', async (req, res, next) => {
     }
 
     // 2. Find or create open conversation
-    let { rows: convRows } = await db.query(
+    const { rows: convRows } = await db.query(
       `SELECT id FROM conversations
        WHERE customer_id = $1 AND status = 'active'
        ORDER BY created_at DESC LIMIT 1`,
@@ -446,7 +446,7 @@ router.post('/session/claim', async (req, res, next) => {
     // 3. Find or create the authenticated customer
     const normalizedEmail = email.toLowerCase().trim();
 
-    let { rows: customerRows } = await db.query(
+    const { rows: customerRows } = await db.query(
       `SELECT id, first_name, last_name, email, soul_file, memory_file,
               onboarding_status, onboarding_categories_completed
        FROM customers

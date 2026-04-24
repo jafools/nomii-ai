@@ -248,7 +248,7 @@ router.post('/customers/:external_id/records', requireDataApiKey, async (req, re
 
     // Upsert records
     let inserted = 0;
-    let errors   = [];
+    const errors   = [];
 
     for (const rec of records) {
       const { category, label, value, secondary_value, metadata, value_type } = rec;

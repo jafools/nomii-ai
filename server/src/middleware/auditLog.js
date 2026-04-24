@@ -55,8 +55,8 @@ const db = require('../db');
 function writeAuditLog(opts) {
   // Normalise: accept (db, opts) signature or just (opts) with db from require
   // This lets callers pass the db pool explicitly (useful in tests / multi-db setups)
-  let pool = db;
-  let params = opts;
+  const pool = db;
+  const params = opts;
 
   // setImmediate ensures this never blocks the calling request
   setImmediate(async () => {
