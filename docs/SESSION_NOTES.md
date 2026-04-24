@@ -5,7 +5,61 @@
 
 ---
 
-## Last updated: 2026-04-24 fifth session (**v3.3.2 → v3.3.4 SHIPPED** — harness + health + UptimeRobot + Resend webhook all live)
+## Last updated: 2026-04-24 fifth session (**v3.3.2 → v3.3.5 SHIPPED** + env-forwarding lint + 5×5 green + volume rename)
+
+Full shift — 9 PRs, 4 release tags, 4 Hetzner deploys, 3 UptimeRobot monitors live, Resend bounce pipeline end-to-end, env-forwarding lint blocking the PR #98 bug class, 10/10 release gate green, and the final `nomii-*` filesystem artifact (the pgdata volume) renamed to `shenmay-ai_pgdata`.
+
+### Ship log (Apr 24 fifth session, full)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [shenmay #94](https://github.com/jafools/shenmay-ai/pull/94) | `6dbb9e0` | Harness hardening: widget capacity-skip false-green fix + emailService `jsonTransport` fallback + afterAll guards on `hasDbAccess()`. |
+| [shenmay #95](https://github.com/jafools/shenmay-ai/pull/95) | `2f26807` | Session notes for PR #94. |
+| [shenmay #96](https://github.com/jafools/shenmay-ai/pull/96) | `7439e00` | `/api/health` → `SELECT 1` (503 on DB fail) + MONITORING.md refresh. |
+| [shenmay #97](https://github.com/jafools/shenmay-ai/pull/97) | `53b147a` | Session notes for v3.3.2. |
+| **v3.3.2** | tag at `7439e00` | Deep health live on Hetzner. |
+| [shenmay #98](https://github.com/jafools/shenmay-ai/pull/98) | `9e0fe56` | Resend bounce webhook: migration 037 `email_suppressions` + inline Svix verify + transporter wrapper monkey-patches `sendMail` to check suppression list + spec 11. |
+| **v3.3.3** | tag at `9e0fe56` | Webhook live on Hetzner. |
+| [shenmay #99](https://github.com/jafools/shenmay-ai/pull/99) | `a388f28` | Hotfix: refuse dev-mode bypass in production. |
+| **v3.3.4** | tag at `a388f28` | Webhook bypass-gate live. |
+| [shenmay #100](https://github.com/jafools/shenmay-ai/pull/100) | `c4a6a6d` | Session notes for v3.3.2→v3.3.4. |
+| [shenmay #101](https://github.com/jafools/shenmay-ai/pull/101) | `edc87c5` | Fix: forward `RESEND_WEBHOOK_SECRET` through docker-compose to the backend container (miss from PR #98). |
+| **v3.3.5** | tag at `edc87c5` | Webhook in full signed-verification mode on prod. |
+| [shenmay #102](https://github.com/jafools/shenmay-ai/pull/102) | `028fb52` | Env-forwarding lint: `scripts/check-env-forwarding.js` runs in `server-test` CI. Found 5 real compose misses on first run (fixed in same PR): `TENANT_NAME` (onprem), `WIDGET_CHAT/GLOBAL/PORTAL_RATE_LIMIT_MAX` (SaaS), `DATA_API_RATE_LIMIT` + `PII_TOKENIZER_ENABLED` (both). |
+| 5×5 release gate | `028fb52` | [Run 24909519863](https://github.com/jafools/shenmay-ai/actions/runs/24909519863) — 10/10 green (5× saas-repeat + 5× onprem-repeat + verdict). |
+| Volume rename (manual) | on Hetzner | `nomii-ai_pgdata` → `shenmay-ai_pgdata`. pg_dump → stop → flip `COMPOSE_PROJECT_NAME=nomii-ai` → `=shenmay-ai` in .env → up db on fresh volume → restore → up backend/frontend → verify → delete old volume. Downtime ~60s. 34/34 tenants preserved. Backup retained at `~/volume-rename-backup-20260424-201225.sql` on Hetzner as rollback artifact. |
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `028fb52` (PR #102 squash) |
+| Release tag | `v3.3.5` pushed (last customer-facing tag) |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.5`**. Volume now `shenmay-ai_pgdata`. Docker project now `shenmay-ai`. Internal + external `/api/health` green. |
+| Database | 34 tenants preserved across volume migration; migration 037 applied; Resend webhook signature-verification active |
+| Monitoring | UptimeRobot 3/3 green; Resend bounce pipeline end-to-end |
+| CI | `e2e-saas` + `onprem-e2e` + `server-test` (now with env-forwarding lint) + `selfhosted-smoke` + `client-build` — all green at HEAD. 5×5 release gate freshly cleared. |
+| Unreleased on main | PR #102 (CI lint + compose env plumbing) — no customer behaviour, rides the next tag for free |
+
+### Austin-side items that are DONE this session
+
+- ✅ Resend dashboard webhook endpoint configured; `RESEND_WEBHOOK_SECRET` set on Hetzner
+- ✅ UptimeRobot 3 monitors created + email alert contact
+- ✅ Volume rename executed (no Austin intervention needed — Claude had SSH)
+
+### Still-open queue for next session
+
+1. **UptimeRobot monitor #3 type flip** (~30 sec) — plain HTTP → Keyword with `widget-key`.
+2. **NOMII- master-key rotation** — Austin needs to locate the live key first.
+3. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+4. **Spec tagging migration** — `test.skip(isOnprem(), …)` → Playwright `@saas` / `@onprem` tags. Defer until we outgrow 11 specs.
+5. **Anonymous-only mode follow-ups** — per-customer opt-in, visible privacy indicator. No signal yet.
+6. **Dashboard UI for `email_suppressions`** — remove-by-email. Not needed until a real bounce + an unbounce case happens.
+7. **Housekeeping**: delete `~/volume-rename-backup-20260424-201225.sql` on Hetzner after ~1 week of prod-healthy runtime.
+
+---
+
+## Previous: 2026-04-24 fifth session interim (v3.3.2 → v3.3.4)
 
 Six PRs, three release tags, three Hetzner deploys. Started as a test-harness cleanup, ended with a full customer-deliverability suppression pipeline live on prod.
 
