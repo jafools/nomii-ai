@@ -5,7 +5,106 @@
 
 ---
 
-## Last updated: 2026-04-24 fifth session (**v3.3.2 → v3.3.5 SHIPPED** + env-forwarding lint + 5×5 green + volume rename)
+## Last updated: 2026-04-24 fifth session — FULL WRAP (**v3.3.2 → v3.3.5 SHIPPED** + massive refactor pile on main unreleased)
+
+Austin went to bed after the volume rename; I kept flying through three more autonomous legs (ShenmayTools split, nomii-ref sweep, orphan-doc delete, env-forwarding lint + real-miss fixes, dispatch 5×5, four portal.js splits). Ended at 17 PRs merged, 4 release tags, 4 Hetzner deploys, 1 volume rename, 0 rollbacks, every 5×5 gate 10/10 green.
+
+### Full ship log (Apr 24 fifth session)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#94](https://github.com/jafools/shenmay-ai/pull/94) | `6dbb9e0` | Harness hardening (widget false-green fix, jsonTransport fallback, afterAll guards) |
+| [#95](https://github.com/jafools/shenmay-ai/pull/95) | `2f26807` | Session notes wrap for PR #94 |
+| [#96](https://github.com/jafools/shenmay-ai/pull/96) | `7439e00` | Deep `/api/health` + `MONITORING.md` refresh |
+| [#97](https://github.com/jafools/shenmay-ai/pull/97) | `53b147a` | Session notes wrap for v3.3.2 |
+| **v3.3.2** | tag at `7439e00` | Deep-health live |
+| [#98](https://github.com/jafools/shenmay-ai/pull/98) | `9e0fe56` | Resend bounce webhook + migration 037 + transporter wrapper + spec 11 |
+| **v3.3.3** | tag at `9e0fe56` | Webhook live |
+| [#99](https://github.com/jafools/shenmay-ai/pull/99) | `a388f28` | Hotfix: refuse dev-mode webhook bypass in production |
+| **v3.3.4** | tag at `a388f28` | Bypass-gate live |
+| [#100](https://github.com/jafools/shenmay-ai/pull/100) | `c4a6a6d` | Session notes wrap v3.3.2 → v3.3.4 |
+| [#101](https://github.com/jafools/shenmay-ai/pull/101) | `edc87c5` | Forward `RESEND_WEBHOOK_SECRET` to backend container (missed from #98) |
+| **v3.3.5** | tag at `edc87c5` | Webhook in full signed-verification mode |
+| [#102](https://github.com/jafools/shenmay-ai/pull/102) | `028fb52` | Env-forwarding CI lint + 5 real compose misses fixed |
+| 5×5 dispatch | against `028fb52` | 10/10 green — confirms no drift from all the infra churn |
+| Volume rename (manual) | on Hetzner | `nomii-ai_pgdata` → `shenmay-ai_pgdata` via dump/restore — 60s downtime, 34/34 tenants preserved. Backup at `~/volume-rename-backup-20260424-201225.sql` on Hetzner. |
+| [#103](https://github.com/jafools/shenmay-ai/pull/103) | | Session notes wrap after volume rename |
+| [#104](https://github.com/jafools/shenmay-ai/pull/104) | `828f935` | Flipped 5 stale `nomii-ai` refs (CLAUDE.md pin sentence, install URLs, palette comments) |
+| [#105](https://github.com/jafools/shenmay-ai/pull/105) | `66a1ce2` | Deleted pre-Hetzner orphan docs `SESSION_HANDOFF.md` + `CLAUDE_CODE_SETUP.md` (−2,168 LOC) |
+| [#106](https://github.com/jafools/shenmay-ai/pull/106) | `c7e2af2` | `ShenmayTools.jsx` 1,109 → 194 LOC (split into 9 per-component files under `tools/`) |
+| [#107](https://github.com/jafools/shenmay-ai/pull/107) | `c755cbe` | portal.js connectors + webhooks extracted — 5×5 green on branch |
+| [#108](https://github.com/jafools/shenmay-ai/pull/108) | `f4b08e5` | portal.js `/tools/*` extracted — 5×5 green on branch |
+| [#109](https://github.com/jafools/shenmay-ai/pull/109) | `93917cb` | portal.js `/notifications/*` extracted — 5×5 green on branch |
+| [#110](https://github.com/jafools/shenmay-ai/pull/110) | `51d0593` | portal.js `/labels/*` CRUD extracted — 5×5 green on branch |
+
+### portal.js progression this session
+
+| After | LOC |
+|---|---:|
+| Baseline (start of session) | 3,203 |
+| #107 integrations extract | 2,936 |
+| #108 tools extract | 2,570 |
+| #109 notifications extract | 2,528 |
+| #110 labels extract | **2,471** |
+
+**Total: −732 LOC, −23% this session.** Plus ShenmayTools.jsx −915 LOC, orphan docs −2,168 LOC, volume-rename cleanup, and the env-forwarding lint's 5 real compose fixes.
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `51d0593` (PR #110 squash) |
+| Release tag shipped to customers | `v3.3.5` at `edc87c5` |
+| **Unreleased on main** | PRs #102 through #110 — 9 PRs of pure infra/refactor/docs. Zero customer behaviour change. Ready to tag `v3.3.6` when Austin wakes up (optional — no urgency, prod works fine on `:3.3.5`). |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.5`**. Volume `shenmay-ai_pgdata`. Docker project `shenmay-ai`. Migrations 036+037 applied. |
+| Monitoring | UptimeRobot 3/3 green, Resend bounce pipeline end-to-end, env-forwarding CI lint active |
+| Sub-routers under `server/src/routes/portal/` | 8 total: `api-key`, `connectors`, `labels`, `license`, `notifications`, `products`, `team`, `tools`, `webhooks` (9 files) |
+
+### Austin-side items complete this session
+
+- ✅ UptimeRobot 3 monitors created + email alert
+- ✅ Resend dashboard webhook endpoint configured
+- ✅ `RESEND_WEBHOOK_SECRET` set on Hetzner + container recreated
+
+### Still-open queue for next session
+
+**Optional**
+1. **Tag `v3.3.6`** covering #102–#110 (pure infra, no urgency — ships free when next customer-behaviour tag cuts)
+2. **UptimeRobot monitor #3 type flip** (plain HTTP → Keyword with `widget-key`, 30 sec in the UI)
+3. **Volume rename backup cleanup** after ~1 week of healthy runtime: `ssh nomii@204.168.232.24 "rm ~/volume-rename-backup-20260424-201225.sql"`
+
+**Substantive**
+4. **portal.js further splits** — largest remaining clusters:
+   - `/customers/*` (~700 LOC, two disjoint blocks) — high blast radius, needs careful work
+   - `/conversations/*` (~500 LOC, two disjoint blocks) — high blast radius
+   - `/concerns` + `/badge-counts` — small remainder of the inbox cluster
+   - `/subscription` + `/billing/*` + `/plans` (~280 LOC) — Stripe-touching, medium risk
+   - `/settings/*` cluster (~350 LOC) — privacy/PII-adjacent, medium risk
+   - `/me` + `/admin/profile` + `/admin/password` — auth-sensitive, highest risk
+5. **`ShenmayPlans.jsx`** (~460 LOC) — next client-side file by size
+6. **Resend bounce webhook UI** — dashboard view for `email_suppressions` (remove-by-email). Gated on first real bounce.
+7. **NOMII- master-key rotation** — Austin needs to locate the live key first
+8. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory
+
+### Captured gotchas this session
+
+- **`.count()` includes hidden DOM** — Playwright lesson from PR #94. Always use `.isVisible()` on a stable id for conditional-UI state detection.
+- **docker-compose `environment:` block is explicit whitelist** — a var in `.env` that isn't listed in the compose `environment:` block never reaches the container. This bit us on `RESEND_WEBHOOK_SECRET` (PR #98 → #99 → #101). Now guarded by `scripts/check-env-forwarding.js` CI lint.
+- **Git Bash `printf '\n...'` can leak stray `n`** — Austin's `.env` ended up with `nRESEND_WEBHOOK_SECRET=...` instead of `RESEND_WEBHOOK_SECRET=...` because of shell-escape quirks. `nano` or `echo >>` is less error-prone than `printf '\n'`.
+- **GitHub 301 repo-rename redirect is a trap** — `jafools/nomii-ai` still 301s to `jafools/shenmay-ai`, so install URLs keep working AFTER a repo rename. Silent-correctness until the redirect rotates. Fix direct references.
+- **Lovable SPA-200-on-every-route** — route-slug probes via curl return 200 for routes that don't exist. For "does this page exist?" checks, grep the bundle hash.
+- **Committing to main locally** — I slipped once this session. Branch protection caught it. Recovery: `git branch <feat>`, `git reset --hard origin/main`, `git checkout <feat>`, push. Clean but avoidable with branch-first discipline.
+
+### What NOT to re-raise
+
+- **Per-customer opt-in on anonymous-only mode** — deferred, Austin explicitly closed this loop during v3.3.0 session
+- **Widget-side visible privacy indicator** — deferred, response carries `anonymous_only: true` already
+- **No real-card Stripe smoke test** — Austin has negative Stripe balance from prior real-card refund cycles; trust test-mode E2E + first real customer is the smoke
+- **`/tools/:toolId/test` 167-LOC handler further split** — already extracted in #108, leave as-is
+
+---
+
+## Previous: 2026-04-24 fifth session interim (v3.3.2 → v3.3.5 + env-forwarding lint + 5×5 green + volume rename)
 
 Full shift — 9 PRs, 4 release tags, 4 Hetzner deploys, 3 UptimeRobot monitors live, Resend bounce pipeline end-to-end, env-forwarding lint blocking the PR #98 bug class, 10/10 release gate green, and the final `nomii-*` filesystem artifact (the pgdata volume) renamed to `shenmay-ai_pgdata`.
 
