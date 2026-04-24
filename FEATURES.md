@@ -2,7 +2,7 @@
 *Last updated: 2026-03-27 (Session 20)*
 
 > Living document. Update this whenever a feature ships or changes.
-> Organized by product area, not by session. For session-by-session history see `SESSION_HANDOFF.md`.
+> Organized by product area, not by session. For session-by-session history see [`docs/SESSION_NOTES.md`](docs/SESSION_NOTES.md).
 
 ---
 

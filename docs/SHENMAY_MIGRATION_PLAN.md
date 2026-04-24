@@ -75,13 +75,16 @@ Merged as [PR #34](https://github.com/jafools/nomii-ai/pull/34) / `5e0a882`.
 - All user-visible brand text swept: docs, READMEs, email templates,
   UI copy, portal/widget brand refs, server startup log, `package.json`
   names, HTML titles + OG/Twitter meta
-- Claude-session source docs: `CLAUDE.md`, `SESSION_HANDOFF.md`,
+- Claude-session source docs: `CLAUDE.md`, `docs/SESSION_NOTES.md`,
   `docs/RELEASING.md`, `Covenant Trust/*` (+ rename
   `NOMII_AI_ARCHITECTURE.md` → `SHENMAY_AI_ARCHITECTURE.md`)
 - CI workflow files + docker-compose comments + nginx comments
 - Tests, scripts, DB migration schema comments
-- Historical rebrand chronology preserved in `SESSION_HANDOFF.md`
-  (Knomi → Nomii on 2026-03-18; Nomii → Shenmay on 2026-04-20)
+- Historical rebrand chronology preserved in the `docs/SESSION_NOTES.md`
+  chain (Knomi → Nomii on 2026-03-18; Nomii → Shenmay on 2026-04-20;
+  earlier hand-off file `SESSION_HANDOFF.md` was deleted 2026-04-24
+  along with the pre-Hetzner `CLAUDE_CODE_SETUP.md` — both superseded
+  by `docs/SESSION_NOTES.md` + `CLAUDE.md` + `docs/RELEASING.md`)
 
 **Backward-compat preserved on purpose (renamed in later phases):**
 
