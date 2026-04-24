@@ -2,6 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const { TEST_EMAIL, TEST_PASSWORD, SEL_LOGIN } = require('./helpers/constants');
 const { loginViaUI, loginViaAPI, logout } = require('./helpers/auth');
+const { isOnprem } = require('./helpers/mode');
 
 test.describe('Login & Logout', () => {
   test.beforeEach(async ({ page }) => {
@@ -12,11 +13,17 @@ test.describe('Login & Logout', () => {
 
   test('login page loads with form fields', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.locator('h1')).toContainText('Sign in to Shenmay AI');
+    // Post-Direction-B rebrand the login H1 is "Welcome back." with a "Sign in"
+    // kicker above it — no single stable heading string to anchor on. Rely on
+    // the form fields instead; if the login page itself were broken they
+    // wouldn't render.
     await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.passwordInput)).toBeVisible();
     await expect(page.locator(SEL_LOGIN.submitBtn)).toBeVisible();
-    await expect(page.locator(SEL_LOGIN.signupLink)).toBeVisible();
+    // Sign-up link is hidden in self-hosted (registration is disabled there).
+    if (!isOnprem()) {
+      await expect(page.locator(SEL_LOGIN.signupLink)).toBeVisible();
+    }
   });
 
   test('shows error on empty form submit', async ({ page }) => {
@@ -56,24 +63,29 @@ test.describe('Login & Logout', () => {
     // Logout — clear token
     await logout(page);
     await page.goto('/dashboard');
-    // Should redirect to login
+    // Should redirect to login — anchor on the visible email input
+    // (brand copy on the heading varies and isn't a stable selector).
     await page.waitForURL(/\/login/, { timeout: 10_000 });
-    await expect(page.locator('h1')).toContainText('Sign in');
+    await expect(page.locator(SEL_LOGIN.emailInput)).toBeVisible({ timeout: 5_000 });
   });
 
   test('forgot password flow shows success message', async ({ page }) => {
     await page.goto('/login');
     await page.click(SEL_LOGIN.forgotLink);
-    // Should show "Reset your password" heading
-    await expect(page.getByText('Reset your password')).toBeVisible();
+    // Post-rebrand copy: "Enter the email on your account" (prompt) +
+    // "reset link is on its way" (success). Any of either is fine.
+    await expect(page.getByText(/reset|email on your account/i).first()).toBeVisible({ timeout: 5000 });
 
     await page.fill('#forgot-email', TEST_EMAIL);
     await page.click('button[type="submit"]');
-    // Should show success message (always shows success to prevent enumeration)
-    await expect(page.getByText('password reset link has been sent')).toBeVisible({ timeout: 10_000 });
+    // Enumeration-safe success text — match any of the current phrasings.
+    await expect(
+      page.getByText(/reset link is on its way|check your inbox|reset link has been sent/i).first()
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test('signup link navigates to registration page', async ({ page }) => {
+    test.skip(isOnprem(), 'Sign-up link is hidden in self-hosted mode (registration disabled).');
     await page.goto('/login');
     await page.click(SEL_LOGIN.signupLink);
     await page.waitForURL(/\/signup/);

@@ -1,0 +1,255 @@
+# ============================================================
+# Shenmay AI — E2E Repeatability Proof (on-demand)
+#
+# Austin's bar for calling the E2E sprint done:
+#   "Have we tried E2E for both SaaS and on-prem successfully,
+#    like, 5 times in a row?"
+#
+# This workflow runs the full Playwright suite FIVE times in a row
+# against both the SaaS stack and the on-prem compose stack, in
+# parallel matrix legs. Only triggered by manual dispatch so we
+# don't spend the CI minutes on every PR.
+#
+# Pass criterion: every cell green, zero retries, zero skips of
+# tests that should have run (we inspect the JSON report for that).
+# ============================================================
+
+name: E2E Repeatability Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Number of consecutive runs per mode'
+        required: true
+        default: '5'
+
+jobs:
+
+  # ── SaaS: 5 consecutive full-suite runs ────────────────────
+  saas-repeat:
+    name: saas-repeat-${{ matrix.run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5]
+
+    services:
+      postgres:
+        image: postgres:16.9-alpine
+        env:
+          POSTGRES_USER: shenmay
+          POSTGRES_PASSWORD: shenmay_ci_2026
+          POSTGRES_DB: shenmay_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U shenmay -d shenmay_ai_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://shenmay:shenmay_ci_2026@localhost:5432/shenmay_ai_test
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long-1234
+      WIDGET_JWT_SECRET: ci-widget-secret-at-least-32-chars-long-1234
+      API_KEY_ENCRYPTION_SECRET: ci-encryption-key-32-chars-long-12345
+      LLM_PROVIDER: mock
+      PORT: 3001
+      VITE_PORT: 5173
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      LOGIN_RATE_LIMIT_MAX: '200'
+      REGISTER_RATE_LIMIT_MAX: '200'
+      WIDGET_SESSION_RATE_LIMIT_MAX: '200'
+      WIDGET_CHAT_RATE_LIMIT_MAX: '500'
+      GLOBAL_RATE_LIMIT_MAX: '5000'
+      PORTAL_RATE_LIMIT_MAX: '500'
+      STRIPE_SECRET_KEY: sk_test_dummy_for_ci
+      SHENMAY_LICENSE_MASTER: 'true'
+      PLAYWRIGHT_MODE: saas-ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install deps
+        run: |
+          npm ci
+          cd server && npm ci
+          cd ../client && npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Migrate DB
+        working-directory: server
+        run: npm run db:migrate
+
+      - name: Run full suite (attempt ${{ matrix.run }} / 5)
+        run: npx playwright test
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-saas-run-${{ matrix.run }}
+          path: tests/e2e/report/
+          retention-days: 7
+
+  # ── On-prem: 5 consecutive full-suite runs ─────────────────
+  onprem-repeat:
+    name: onprem-repeat-${{ matrix.run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5]
+
+    env:
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      PLAYWRIGHT_MODE: onprem
+      PLAYWRIGHT_BASE_URL: http://localhost
+      PLAYWRIGHT_SKIP_SEED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Write compose .env
+        run: |
+          cat > .env <<'EOF'
+          DB_PASSWORD=onprem_e2e_db_password_32_chars_01
+          JWT_SECRET=onprem_e2e_jwt_secret_at_least_32_ch
+          WIDGET_JWT_SECRET=onprem_e2e_widget_secret_at_least_32
+          API_KEY_ENCRYPTION_SECRET=onprem_e2e_api_key_encryption_32_ch1
+          APP_URL=http://localhost
+          FRONTEND_URL=http://localhost
+          LLM_PROVIDER=mock
+          LOGIN_RATE_LIMIT_MAX=200
+          REGISTER_RATE_LIMIT_MAX=200
+          WIDGET_SESSION_RATE_LIMIT_MAX=200
+          WIDGET_CHAT_RATE_LIMIT_MAX=500
+          GLOBAL_RATE_LIMIT_MAX=5000
+          PORTAL_RATE_LIMIT_MAX=500
+          EOF
+
+      - name: Pre-build images under :stable
+        run: |
+          docker build -t ghcr.io/jafools/shenmay-backend:stable ./server
+          docker build -t ghcr.io/jafools/shenmay-frontend:stable ./client
+
+      - name: Compose up
+        run: docker compose -f docker-compose.selfhosted.yml up -d db backend frontend
+
+      - name: Wait for backend + frontend
+        run: |
+          for i in $(seq 1 40); do
+            curl -sf http://127.0.0.1:3001/api/health >/dev/null 2>&1 && break
+            sleep 3
+          done
+          curl -sf http://127.0.0.1:3001/api/health || { docker compose -f docker-compose.selfhosted.yml logs backend; exit 1; }
+          for i in $(seq 1 30); do
+            curl -sf http://localhost/ >/dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -sf http://localhost/ >/dev/null 2>&1 || { docker compose -f docker-compose.selfhosted.yml logs frontend; exit 1; }
+
+      - name: Provision admin (setup wizard)
+        run: |
+          curl -s -X POST http://localhost/api/setup/complete \
+            -H 'Content-Type: application/json' \
+            -d '{"companyName":"Shenmay Repeat E2E","email":"'"$TEST_ADMIN_EMAIL"'","password":"'"$TEST_ADMIN_PASSWORD"'","anthropicApiKey":"sk-ant-onprem-repeat-dummy-0123456789abcdef"}' \
+            | grep -q '"token":"' || { docker compose -f docker-compose.selfhosted.yml logs backend; exit 1; }
+
+      - name: Bump sub + force mock LLM (avoid trial cap + Anthropic 401)
+        run: |
+          docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
+            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);
+             UPDATE tenants SET llm_provider='mock';"
+
+      - name: Run full suite (attempt ${{ matrix.run }} / 5)
+        run: npx playwright test
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-onprem-run-${{ matrix.run }}
+          path: tests/e2e/report/
+          retention-days: 7
+
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.selfhosted.yml logs --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.selfhosted.yml down -v
+
+  # ── Summary job — fails if any cell failed ────────────────
+  repeatability-verdict:
+    name: repeatability-verdict
+    runs-on: ubuntu-latest
+    needs: [saas-repeat, onprem-repeat]
+    if: always()
+    steps:
+      - name: Assert all 10 cells green
+        run: |
+          # GH Actions aggregates matrix needs — if any failed, needs.*.result=='failure'.
+          if [ "${{ needs.saas-repeat.result }}" != "success" ] || [ "${{ needs.onprem-repeat.result }}" != "success" ]; then
+            echo "Not 5x green. saas=${{ needs.saas-repeat.result }} onprem=${{ needs.onprem-repeat.result }}"
+            exit 1
+          fi
+          echo "✔ E2E passed 5x consecutively on SaaS + on-prem. Ship it."

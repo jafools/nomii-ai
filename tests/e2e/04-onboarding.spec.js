@@ -1,5 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const { isOnprem } = require('./helpers/mode');
 
 /**
  * Onboarding Wizard E2E tests
@@ -16,6 +17,10 @@ const { test, expect } = require('@playwright/test');
  */
 
 test.describe('Signup Page', () => {
+  test.beforeEach(async () => {
+    test.skip(isOnprem(), 'Signup page content is SaaS-only (self-hosted redirects to /login).');
+  });
+
   test('signup page loads with registration form', async ({ page }) => {
     await page.goto('/signup');
     // Should have heading and form fields

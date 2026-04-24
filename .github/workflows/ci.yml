@@ -5,10 +5,16 @@
 # pushes to main. Jobs must pass before a PR can merge
 # (enforced via GitHub branch protection).
 #
-# Two parallel jobs:
-#   - client-build  — vite build + vitest + eslint (no DB needed)
-#   - server-test   — spins up Postgres, runs migrations, runs
-#                     the integration test suite
+# Parallel jobs:
+#   - client-build     — vite build + vitest + eslint (no DB needed)
+#   - server-test      — spins up Postgres, runs migrations, runs
+#                        the integration test suite
+#   - e2e-saas         — spins up Postgres + full stack + runs
+#                        Playwright specs (the SaaS customer journey)
+#   - selfhosted-smoke — brings up docker-compose.selfhosted.yml + curls
+#                        /api/health (compose YAML + env-wiring check)
+#   - onprem-e2e       — runs the Playwright suite against the self-hosted
+#                        stack (full on-prem customer journey)
 # ============================================================
 
 name: CI
@@ -120,6 +126,127 @@ jobs:
       - name: Run integration tests
         run: npm test
 
+  # ── Playwright E2E — SaaS customer journey ─────────────────────
+  # Spins up Postgres, migrates, seeds a deterministic TEST_ADMIN,
+  # starts server + client via Playwright's webServer blocks, then
+  # runs every spec in tests/e2e/. The Vite dev proxy routes
+  # /api/* to the backend (same pattern as nginx in self-hosted).
+  e2e-saas:
+    name: e2e-saas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16.9-alpine
+        env:
+          POSTGRES_USER: shenmay
+          POSTGRES_PASSWORD: shenmay_ci_2026
+          POSTGRES_DB: shenmay_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U shenmay -d shenmay_ai_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # Server env
+      DATABASE_URL: postgresql://shenmay:shenmay_ci_2026@localhost:5432/shenmay_ai_test
+      TEST_DATABASE_URL: postgresql://shenmay:shenmay_ci_2026@localhost:5432/shenmay_ai_test
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long-1234
+      WIDGET_JWT_SECRET: ci-widget-secret-at-least-32-chars-long-1234
+      API_KEY_ENCRYPTION_SECRET: ci-encryption-key-32-chars-long-12345
+      LLM_PROVIDER: mock
+      PORT: 3001
+      VITE_PORT: 5173
+      # E2E harness env (the seed + globalSetup pick these up)
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      # Rate-limit headroom for the full suite (default 3 is way too low for
+      # the number of logins a full Playwright run does — every describe's
+      # beforeAll burns one). 100 is comfortable headroom for 5× repeat runs.
+      LOGIN_RATE_LIMIT_MAX: '100'
+      REGISTER_RATE_LIMIT_MAX: '100'
+      WIDGET_SESSION_RATE_LIMIT_MAX: '100'
+      WIDGET_CHAT_RATE_LIMIT_MAX: '200'
+      GLOBAL_RATE_LIMIT_MAX: '2000'
+      PORTAL_RATE_LIMIT_MAX: '200'
+      # Stripe: dummy key so the webhook handler can construct the SDK.
+      # No real API calls are made — the self-hosted + subscription update
+      # code paths hit DB only. Webhook signature verification is skipped
+      # (STRIPE_WEBHOOK_SECRET intentionally unset).
+      STRIPE_SECRET_KEY: sk_test_dummy_for_ci
+      # SHENMAY_LICENSE_MASTER: enables the /api/public/portal/* routes so
+      # the portal-magic-link spec can hit them.
+      SHENMAY_LICENSE_MASTER: 'true'
+      # Playwright-internal
+      PLAYWRIGHT_MODE: saas-ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Install client deps
+        working-directory: client
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Migrate test DB
+        working-directory: server
+        run: npm run db:migrate
+
+      - name: Run Playwright suite
+        run: npx playwright test
+
+      - name: Upload HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-saas
+          path: tests/e2e/report/
+          retention-days: 7
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-saas
+          path: test-results/
+          retention-days: 7
+
   # ── Self-hosted compose smoke test ─────────────────────────────
   # Catches things like YAML syntax breaks, missing env refs, mismatched
   # service names, DB-user drift. Doesn't test the backend image content
@@ -180,6 +307,182 @@ jobs:
           echo "Backend never became healthy. Dumping logs:"
           docker compose -f docker-compose.selfhosted.yml logs backend
           exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.selfhosted.yml down -v
+
+  # ── Playwright E2E — On-prem customer journey ──────────────────
+  # Brings up the full self-hosted stack (db + backend + frontend) via
+  # docker-compose.selfhosted.yml, runs the setup wizard endpoint to
+  # provision a tenant, then runs the Playwright suite against it.
+  #
+  # Frontend is published on :80 (nginx), backend bound 127.0.0.1:3001.
+  # Specs that don't apply to self-hosted (SaaS signup, Stripe subs,
+  # public portal) skip themselves via PLAYWRIGHT_MODE=onprem guards.
+  #
+  # The backend image is pre-built locally under :stable so compose
+  # doesn't 401 on GHCR — same pattern as `selfhosted-smoke` above.
+  onprem-e2e:
+    name: onprem-e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      TEST_ADMIN_EMAIL: e2e-admin@shenmay.test
+      TEST_ADMIN_PASSWORD: E2ETestPass!234
+      PLAYWRIGHT_MODE: onprem
+      PLAYWRIGHT_BASE_URL: http://localhost
+      # Signal to globalSetup: skip DB seed (the stack's DB is inside
+      # Docker, we can't reach it from the runner's pg module anyway).
+      PLAYWRIGHT_SKIP_SEED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Write compose .env
+        run: |
+          cat > .env <<'EOF'
+          DB_PASSWORD=onprem_e2e_db_password_32_chars_01
+          JWT_SECRET=onprem_e2e_jwt_secret_at_least_32_ch
+          WIDGET_JWT_SECRET=onprem_e2e_widget_secret_at_least_32
+          API_KEY_ENCRYPTION_SECRET=onprem_e2e_api_key_encryption_32_ch1
+          APP_URL=http://localhost
+          FRONTEND_URL=http://localhost
+          LLM_PROVIDER=mock
+          LOGIN_RATE_LIMIT_MAX=100
+          REGISTER_RATE_LIMIT_MAX=100
+          WIDGET_SESSION_RATE_LIMIT_MAX=100
+          WIDGET_CHAT_RATE_LIMIT_MAX=200
+          GLOBAL_RATE_LIMIT_MAX=2000
+          PORTAL_RATE_LIMIT_MAX=200
+          EOF
+
+      - name: Pre-build backend image under :stable tag
+        run: docker build -t ghcr.io/jafools/shenmay-backend:stable ./server
+
+      - name: Pre-build frontend image under :stable tag
+        run: docker build -t ghcr.io/jafools/shenmay-frontend:stable ./client
+
+      - name: Compose up (db + backend + frontend)
+        run: docker compose -f docker-compose.selfhosted.yml up -d db backend frontend
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+              echo "backend healthy after $((i*3))s"
+              break
+            fi
+            sleep 3
+          done
+          curl -sf http://127.0.0.1:3001/api/health || (
+            echo "Backend never became healthy. Dumping logs:"
+            docker compose -f docker-compose.selfhosted.yml logs backend
+            exit 1
+          )
+
+      - name: Wait for frontend on :80
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost/ >/dev/null 2>&1; then
+              echo "frontend healthy after $((i*2))s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Frontend never came up. Dumping logs:"
+          docker compose -f docker-compose.selfhosted.yml logs frontend
+          exit 1
+
+      - name: Provision TEST_ADMIN via setup wizard endpoint
+        run: |
+          set -e
+          # Self-hosted first-run: POST /api/setup/complete creates the tenant
+          # and admin in one shot. This replaces the SaaS-side seed script —
+          # setup itself IS the seed here.
+          RESPONSE=$(curl -s -X POST http://localhost/api/setup/complete \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "companyName": "Shenmay On-Prem E2E",
+              "email": "'"$TEST_ADMIN_EMAIL"'",
+              "password": "'"$TEST_ADMIN_PASSWORD"'",
+              "anthropicApiKey": "sk-ant-onprem-e2e-dummy-0123456789abcdef"
+            }')
+          echo "Setup response: $RESPONSE"
+          # Must contain a portal JWT (`token:`) to prove the tenant was created.
+          echo "$RESPONSE" | grep -q '"token":"' || {
+            echo "Setup /complete did not return a JWT — aborting."
+            docker compose -f docker-compose.selfhosted.yml logs backend
+            exit 1
+          }
+
+      - name: Confirm setup flipped to not-required
+        run: |
+          STATUS=$(curl -s http://localhost/api/setup/status)
+          echo "status: $STATUS"
+          echo "$STATUS" | grep -q '"required":false' || {
+            echo "Setup status still reports required=true"
+            exit 1
+          }
+
+      - name: Bump subscription to master + force mock LLM provider
+        run: |
+          # The setup wizard creates a 'trial' sub with 20 msg/mo. The widget
+          # spec sends a handful of messages — fine for one run, but the 5x
+          # repeatability matrix would cross the cap. Bump to master here so
+          # every cell starts clean.
+          #
+          # Also force tenants.llm_provider='mock' — without this, the tenant
+          # defaults to 'claude' (migration 001), the widget's chat call
+          # resolveApiKey()s the dummy sk-ant-onprem-e2e key we seeded via
+          # the setup wizard, and Anthropic 401s the request. `generateMock
+          # Response` only fires when the tenant column is 'mock' OR tenant
+          # is null AND env LLM_PROVIDER=mock.
+          docker exec shenmay-db psql -U shenmay -d shenmay_ai -c \
+            "UPDATE subscriptions SET plan='master', status='active', max_customers=99999, max_messages_month=999999, managed_ai_enabled=true WHERE tenant_id = (SELECT id FROM tenants ORDER BY created_at DESC LIMIT 1);
+             UPDATE tenants SET llm_provider='mock';"
+
+      - name: Run Playwright (on-prem subset)
+        run: npx playwright test
+
+      - name: Upload HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-onprem
+          path: tests/e2e/report/
+          retention-days: 7
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.selfhosted.yml logs --tail=200
 
       - name: Tear down
         if: always()

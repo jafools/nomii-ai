@@ -11,7 +11,8 @@
     "db:reset": "node db/reset.js",
     "db:seed-auth": "node db/seed-auth.js",
     "db:seed-widget": "node db/seed-widget.js",
-    "db:seed-hftn": "node db/seed-hftn.js"
+    "db:seed-hftn": "node db/seed-hftn.js",
+    "db:seed-test-admin": "node db/seed-test-admin.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
