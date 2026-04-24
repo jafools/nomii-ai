@@ -518,9 +518,12 @@ router.post('/session/claim', async (req, res, next) => {
     let conversationId = anonConvId;
 
     if (anonConvId) {
+      // `conversations` has no `updated_at` column (migration 001) — setting
+      // it here previously threw `column "updated_at" does not exist` and
+      // failed the claim, silently orphaning the anon conversation.
       await db.query(
         `UPDATE conversations
-         SET customer_id = $1, updated_at = NOW()
+         SET customer_id = $1
          WHERE id = $2 AND customer_id = $3`,
         [realCustomer.id, anonConvId, anonSession.customer_id]
       );
