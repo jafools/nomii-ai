@@ -36,7 +36,18 @@ const RESEND_WEBHOOK_SECRET = process.env.RESEND_WEBHOOK_SECRET;
 const MAX_TIMESTAMP_SKEW_SEC = 5 * 60;
 
 function verifySvixSignature(req) {
-  if (!RESEND_WEBHOOK_SECRET) return { ok: true, reason: 'dev_mode_unsigned' };
+  if (!RESEND_WEBHOOK_SECRET) {
+    // Refuse the dev-mode bypass in production — an unsigned endpoint
+    // lets anyone POST arbitrary suppression rows, which is an
+    // availability attack on our own deliverability (victim@example.com
+    // gets blocked from receiving legitimate mail from us). Forces
+    // operators to wire RESEND_WEBHOOK_SECRET before the webhook is
+    // actually useful.
+    if ((process.env.NODE_ENV || '').toLowerCase() === 'production') {
+      return { ok: false, reason: 'webhook_secret_unset_in_production' };
+    }
+    return { ok: true, reason: 'dev_mode_unsigned' };
+  }
 
   const id   = req.headers['svix-id'];
   const ts   = req.headers['svix-timestamp'];
