@@ -5,7 +5,84 @@
 
 ---
 
-## Last updated: 2026-04-24 fifth session — FULL WRAP (**v3.3.2 → v3.3.5 SHIPPED** + massive refactor pile on main unreleased)
+## Last updated: 2026-04-25 morning — **v3.3.6 + v3.3.7 SHIPPED** — portal.js sub-router cleanout (2,471 → 547 LOC, −78% in one day)
+
+Single coherent session. Austin: "we have time today to kill em all off, go crazy i can monitor the situation today so feel free."  Cleared the entire substantive backlog from yesterday's session-notes queue.
+
+### Headline numbers
+
+| | Start | End | Δ |
+|---|---:|---:|---:|
+| portal.js LOC | 2,471 | **547** | **−1,924 (−78%)** |
+| ShenmayPlans.jsx LOC | 476 | 107 | −369 |
+| Sub-routers under `server/src/routes/portal/` | 9 | **16** | +7 |
+| Production tag | v3.3.5 | **v3.3.7** | +2 |
+| Hetzner deploys | — | 2 | — |
+| 5×5 release gates | — | 1 (10/10 green) | — |
+| PRs merged | — | 8 | — |
+| Rollbacks | — | 0 | — |
+
+### Ship log (Apr 25 morning, single session)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| **v3.3.6** | tag at `092e9ee` | Pure infra/refactor bundle (PRs #102–#111 from yesterday). Pre-existing 5×5 from 07:58Z confirmed 10/10 green before tagging. Hetzner deployed `:3.3.6`. |
+| [#112](https://github.com/jafools/shenmay-ai/pull/112) | `0ac279e` | portal.js `/concerns` + `/badge-counts` → `concerns-routes.js` + `badge-counts-routes.js` (−50 LOC). Warm-up. |
+| [#113](https://github.com/jafools/shenmay-ai/pull/113) | `fb69b0d` | portal.js `/subscription` + `/billing/*` → `subscription-routes.js` + `billing-routes.js`. Stripe init moves with the billing routes. (−135 LOC). `/plans` + `/admin/set-plan` left inline. |
+| [#114](https://github.com/jafools/shenmay-ai/pull/114) | `1b2f0a3` | portal.js `/settings/*` + `/company` + `/email-templates` → 3 sub-routers. bcrypt fallback + `generateDataApiKey` move with settings. Redundant per-handler `requirePortalAuth` on agent-soul/generate-soul dropped. (−278 LOC). |
+| [#115](https://github.com/jafools/shenmay-ai/pull/115) | `0f59ef2` | portal.js `/me` + `/admin/profile/password/set-plan` → `me-routes.js` + `admin-routes.js`. Five orphan imports dropped (DEPLOYMENT_MODES, isSelfHosted, VALID_ADMIN_PLANS, requireActiveSubscription, isWithinCustomerLimit). (−183 LOC). |
+| [#116](https://github.com/jafools/shenmay-ai/pull/116) | `15ecf90` | portal.js `/customers/*` (largest cluster — 11 endpoints, two disjoint blocks) → `customers-routes.js`. Six orphans dropped (csvParse, callClaude, buildTokenizer, BreachError, anonymizeCustomer + the 4 `/customers/:id/data` per-handler `requirePortalAuth`s). Two dead-variable declarations inside `/upload` (`mappedFields`, `handledCols`) dropped. (−725 LOC). |
+| [#117](https://github.com/jafools/shenmay-ai/pull/117) | `1ae47b2` | portal.js `/conversations/*` (last big cluster — 11 endpoints, two disjoint blocks) → `conversations-routes.js`. Conversation-attached label POST/DELETE moved INTO conversations-routes (share `/conversations/:id` prefix, not `/labels`). Eight orphans dropped (decrypt, resolveApiKey, 4× memoryUpdater, writeAuditLog, encryptJson, safeDecryptJson, fireNotifications, envVar, markStepComplete). (−553 LOC). |
+| [#118](https://github.com/jafools/shenmay-ai/pull/118) | `32710dc` | ShenmayPlans.jsx 476 → 107 LOC, mirroring the ShenmayTools split pattern. Seven new files under `client/src/pages/shenmay/dashboard/plans/` (PlanChip, UsageMeter, UpgradeNudge, SelfHostedView 195 LOC, EnterpriseView 31 LOC, SaaSView 101 LOC, _constants 14 LOC). |
+| 5×5 release gate | `32710dc` | [Run 24927446997](https://github.com/jafools/shenmay-ai/actions/runs/24927446997) — 10/10 green + verdict. |
+| **v3.3.7** | tag at `32710dc` | GHCR rebuilt; Hetzner deployed `:3.3.7`. Internal + external `/api/health` green. |
+
+### portal.js progression (single session)
+
+| After | LOC | Δ from prev |
+|---|---:|---:|
+| Baseline (start of session) | 2,471 | — |
+| #112 concerns + badge-counts | 2,421 | −50 |
+| #113 subscription + billing | 2,286 | −135 |
+| #114 settings cluster | 2,008 | −278 |
+| #115 me + admin | 1,825 | −183 |
+| #116 customers | 1,100 | −725 |
+| #117 conversations | **547** | −553 |
+
+### Production state at handoff
+
+| | |
+|---|---|
+| main HEAD | `32710dc` (PR #118 squash) |
+| Release tag | `v3.3.7` (last customer-facing tag) |
+| Hetzner prod | **Live on `ghcr.io/jafools/shenmay-*:3.3.7`**. Internal + external `/api/health` green. |
+| Sub-routers under `server/src/routes/portal/` | 16 total: api-key, admin, badge-counts, billing, company, concerns, connectors, conversations, customers, email-templates, labels, license, me, notifications, products, settings, subscription, team, tools, webhooks (some count multi-file: connectors+webhooks, concerns+badge-counts) |
+| Monitoring | UptimeRobot 3/3 still green, env-forwarding CI lint still active, Resend bounce pipeline still end-to-end |
+| Rollbacks | 0 |
+
+### Still-open queue for next session
+
+**Optional / quick**
+1. `portal.js` is now down to 547 LOC. Remaining inline routes: `/dashboard`, `/analytics`, `/visitors`, `/search`, `/plans`, `/admin/set-plan` (wait, set-plan moved in #115), and the `/email-templates` (no, those moved in #114). Let me re-check at next session — looks small enough that nothing more is worth splitting unless we hit a 3rd-duplicate forcing function.
+2. UptimeRobot monitor #3 type flip (~30 sec) — plain HTTP → Keyword with `widget-key`.
+3. Volume rename backup cleanup on Hetzner once we're ~1 week clean: `rm ~/volume-rename-backup-20260424-201225.sql`.
+
+**Substantive (no urgency)**
+4. **Resend bounce dashboard UI** — `email_suppressions` view with remove-by-email. Gated on first real bounce.
+5. **NOMII- master-key rotation** — Austin needs to locate the live key first.
+6. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+7. **Polygon UK W1 two-flow rebuild** — different repo, vault has full plan at `polygon-uk-w1-two-flow-rebuild-apr25-2026`. Estimated 60–90 min.
+
+### Captured this session
+
+- **Stray-file shell quirk:** Git Bash on Windows generated 0-byte files like `{,`, `{,-`, `0)`, `{})`, `[id` between commands (probably hook-output piped into something with brace-expansion). Defensively `rm -f` them before each `git add -A` so they don't end up staged.
+- **Convention departure pattern:** When extracting a cluster that spans multiple prefixes (e.g. `/subscription` + `/billing/*` + `/plans` + `/admin/set-plan`), prefer two convention-compliant sub-routers + leaving small remainders inline over one root-mounted catch-all that breaks the prefix-per-file convention. Did this for billing — extracted `/subscription` and `/billing/*` separately, left `/plans` + `/admin/set-plan` inline. Then bundled `/admin/set-plan` into `admin-routes.js` later when `/admin/profile`/`/admin/password` got their split (#115) — same prefix at last.
+- **Per-handler `requirePortalAuth` is always redundant** in portal.js sub-routers because the parent applies `router.use(requirePortalAuth)` at line 77. Found 6 instances across this session (2 in settings agent-soul/generate-soul, 4 in customers/:id/data*) — all dropped as no-ops.
+- **portal.js orphan-import sweep accumulates fast** when extracting handlers — by PR #117 we'd dropped 19 orphan imports total across the session. Always grep imports after each split; ESLint's no-unused-vars doesn't trigger on destructured imports here.
+
+---
+
+## Previous: 2026-04-24 fifth session — FULL WRAP (**v3.3.2 → v3.3.5 SHIPPED** + massive refactor pile on main unreleased)
 
 Austin went to bed after the volume rename; I kept flying through three more autonomous legs (ShenmayTools split, nomii-ref sweep, orphan-doc delete, env-forwarding lint + real-miss fixes, dispatch 5×5, four portal.js splits). Ended at 17 PRs merged, 4 release tags, 4 Hetzner deploys, 1 volume rename, 0 rollbacks, every 5×5 gate 10/10 green.
 
