@@ -37,8 +37,8 @@ const router  = require('express').Router();
 const jwt     = require('jsonwebtoken');
 const db      = require('../db');
 const { parse: csvParse } = require('csv-parse/sync');
-const { requireActiveSubscription, getSubscription, isWithinCustomerLimit } = require('../middleware/subscription');
-const { UNRESTRICTED_PLANS, VALID_ADMIN_PLANS, DEPLOYMENT_MODES, isSelfHosted } = require('../config/plans');
+const { getSubscription } = require('../middleware/subscription');
+const { UNRESTRICTED_PLANS } = require('../config/plans');
 const { decrypt } = require('../services/apiKeyService');
 const { resolveApiKey, callClaude, buildTokenizer } = require('../services/llmService');
 const { BreachError } = require('../services/piiTokenizer');
@@ -78,134 +78,15 @@ router.use(requirePortalAuth);
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PROFILE
+// CURRENT-USER + ADMIN ACCOUNT — extracted to sub-routers
+//
+// /me returns the dashboard's bootstrap payload (tenant + admin +
+// subscription + deployment_mode). /admin/profile + /admin/password let
+// the admin update their own account; /admin/set-plan is a master-only
+// override mounted alongside (same /admin prefix).
 // ═══════════════════════════════════════════════════════════════════════════
-
-// GET /api/portal/me
-router.get('/me', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT
-         t.id, t.name, t.slug, t.agent_name, t.vertical,
-         t.primary_color, t.secondary_color,
-         t.widget_api_key, t.website_url, t.company_description, t.logo_url,
-         t.chat_bubble_name,
-         t.onboarding_steps, t.widget_verified_at, t.is_active,
-         t.llm_api_key_last4, t.llm_api_key_validated,
-         t.pii_tokenization_enabled,
-         t.anonymous_only_mode,
-         a.id AS admin_id, a.email, a.first_name, a.last_name, a.role
-       FROM tenants t
-       JOIN tenant_admins a ON a.tenant_id = t.id
-       WHERE t.id = $1 AND a.id = $2`,
-      [req.portal.tenant_id, req.portal.admin_id]
-    );
-
-    if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    const r = rows[0];
-
-    // Load subscription
-    const sub = await getSubscription(req.portal.tenant_id);
-
-    res.json({
-      tenant: {
-        id:                  r.id,
-        name:                r.name,
-        slug:                r.slug,
-        agent_name:          r.agent_name,
-        vertical:            r.vertical,
-        primary_color:       r.primary_color,
-        secondary_color:     r.secondary_color,
-        widget_key:          r.widget_api_key,
-        website_url:         r.website_url,
-        company_description: r.company_description,
-        logo_url:            r.logo_url,
-        chat_bubble_name:    r.chat_bubble_name,
-        onboarding_steps:    r.onboarding_steps,
-        widget_verified:     r.widget_verified_at !== null,
-        llm_api_key_last4:   r.llm_api_key_last4 || null,
-        llm_api_key_validated: r.llm_api_key_validated || false,
-        pii_tokenization_enabled: r.pii_tokenization_enabled !== false,
-        anonymous_only_mode: r.anonymous_only_mode === true,
-      },
-      admin: {
-        id:         r.admin_id,
-        email:      r.email,
-        first_name: r.first_name,
-        last_name:  r.last_name,
-        role:       r.role,
-      },
-      subscription: sub ? {
-        plan:                    sub.plan,
-        status:                  sub.status,
-        max_customers:           sub.max_customers,
-        max_messages_month:      sub.max_messages_month,
-        messages_used_this_month: sub.messages_used_this_month,
-        managed_ai_enabled:      sub.managed_ai_enabled,
-        trial_ends_at:           sub.trial_ends_at,
-        current_period_end:      sub.current_period_end,
-        canceled_at:             sub.canceled_at,
-        stripe_customer_id:      sub.stripe_customer_id || null,
-      } : null,
-      // Lets the dashboard branch its billing UI: SaaS shows Stripe pricing
-      // table; self-hosted shows "Buy a license" + Activate-Key form.
-      deployment_mode: isSelfHosted() ? DEPLOYMENT_MODES.SELFHOSTED : DEPLOYMENT_MODES.SAAS,
-    });
-  } catch (err) { next(err); }
-});
-
-
-// PUT /api/portal/admin/profile  — update admin's own name
-// Body: { first_name?: string, last_name?: string }
-router.put('/admin/profile', async (req, res, next) => {
-  try {
-    const { first_name, last_name } = req.body || {};
-
-    // Guard against non-string payloads (e.g. UI bug submitting {first_name: null}
-    // as a number). COALESCE already handles undefined, but an explicit array or
-    // object would reach the DB as a JSON value which fails the VARCHAR cast.
-    if (first_name !== undefined && first_name !== null && typeof first_name !== 'string') {
-      return res.status(400).json({ error: 'first_name must be a string' });
-    }
-    if (last_name !== undefined && last_name !== null && typeof last_name !== 'string') {
-      return res.status(400).json({ error: 'last_name must be a string' });
-    }
-
-    const cleanFirst = typeof first_name === 'string' ? first_name.trim().slice(0, 100) : null;
-    const cleanLast  = typeof last_name  === 'string' ? last_name.trim().slice(0, 100)  : null;
-
-    await db.query(
-      `UPDATE tenant_admins SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name)
-       WHERE id = $3`,
-      [cleanFirst || null, cleanLast || null, req.portal.admin_id]
-    );
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-});
-
-// PUT /api/portal/admin/password  — change own password
-router.put('/admin/password', async (req, res, next) => {
-  try {
-    const bcrypt = require('bcrypt');
-    const { current_password, new_password } = req.body;
-    if (!current_password || !new_password) {
-      return res.status(400).json({ error: 'current_password and new_password are required' });
-    }
-    if (new_password.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters' });
-    }
-    const { rows } = await db.query(
-      'SELECT password_hash FROM tenant_admins WHERE id = $1',
-      [req.portal.admin_id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Admin not found' });
-    const valid = await bcrypt.compare(current_password, rows[0].password_hash);
-    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
-    const newHash = await bcrypt.hash(new_password, 10);
-    await db.query('UPDATE tenant_admins SET password_hash = $1 WHERE id = $2', [newHash, req.portal.admin_id]);
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-});
+router.use('/me',    require('./portal/me-routes'));
+router.use('/admin', require('./portal/admin-routes'));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SETTINGS / COMPANY / EMAIL TEMPLATES — extracted to sub-routers
@@ -1710,70 +1591,6 @@ router.get('/plans', async (req, res) => {
       },
     ],
   });
-});
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ADMIN PLAN OVERRIDE (for testing without billing)
-// ═══════════════════════════════════════════════════════════════════════════
-
-// POST /api/portal/admin/set-plan
-// Body: { plan, max_customers?, max_messages_month?, managed_ai_enabled? }
-//
-// Only accessible by the master account email (MASTER_EMAIL env var).
-// Lets developers switch their own tenant's plan without going through Stripe.
-//
-router.post('/admin/set-plan', async (req, res, next) => {
-  try {
-    const MASTER_EMAIL = process.env.MASTER_EMAIL || '';
-    if (!MASTER_EMAIL || req.portal.email !== MASTER_EMAIL) {
-      return res.status(403).json({ error: 'Forbidden: master account only' });
-    }
-
-    const { plan, max_customers, max_messages_month, managed_ai_enabled } = req.body;
-
-    if (!plan || !VALID_ADMIN_PLANS.includes(plan)) {
-      return res.status(400).json({ error: `plan must be one of: ${VALID_ADMIN_PLANS.join(', ')}` });
-    }
-
-    // Plan defaults (can be overridden by body params)
-    const planDefaults = {
-      free:         { max_customers: 1,     max_messages_month: 20,    managed_ai_enabled: false },
-      trial:        { max_customers: 1,     max_messages_month: 20,    managed_ai_enabled: false },
-      starter:      { max_customers: 50,    max_messages_month: 1000,  managed_ai_enabled: false },
-      growth:       { max_customers: 250,   max_messages_month: 5000,  managed_ai_enabled: false },
-      professional: { max_customers: 1000,  max_messages_month: 25000, managed_ai_enabled: false },
-      enterprise:   { max_customers: null,  max_messages_month: null,  managed_ai_enabled: true  },
-      master:       { max_customers: null,  max_messages_month: null,  managed_ai_enabled: true  },
-    };
-
-    const defaults = planDefaults[plan];
-    const finalMaxCustomers = max_customers !== undefined ? max_customers : defaults.max_customers;
-    const finalMaxMessages  = max_messages_month !== undefined ? max_messages_month : defaults.max_messages_month;
-    const finalManagedAI    = managed_ai_enabled !== undefined ? managed_ai_enabled : defaults.managed_ai_enabled;
-
-    await db.query(
-      `UPDATE subscriptions SET
-         plan                = $1,
-         status              = 'active',
-         max_customers       = $2,
-         max_messages_month  = $3,
-         managed_ai_enabled  = $4,
-         updated_at          = NOW()
-       WHERE tenant_id = $5`,
-      [plan, finalMaxCustomers, finalMaxMessages, finalManagedAI, req.portal.tenant_id]
-    );
-
-    console.log(`[Admin] Plan override: tenant ${req.portal.tenant_id} → ${plan} by ${req.portal.email}`);
-
-    res.json({
-      ok: true,
-      plan,
-      max_customers:      finalMaxCustomers,
-      max_messages_month: finalMaxMessages,
-      managed_ai_enabled: finalManagedAI,
-    });
-  } catch (err) { next(err); }
 });
 
 
