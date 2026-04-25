@@ -1733,61 +1733,11 @@ router.post('/conversations/bulk', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/portal/concerns  — escalated conversations
-router.get('/concerns', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT c.id AS conversation_id, c.status, c.mode, c.unread, c.created_at,
-              cu.id AS customer_id, cu.first_name, cu.last_name, cu.email,
-              (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message,
-              (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message_at
-       FROM conversations c
-       JOIN customers cu ON c.customer_id = cu.id
-       WHERE cu.tenant_id = $1 AND c.status = 'escalated'
-       ORDER BY c.created_at DESC`,
-      [req.portal.tenant_id]
-    );
-    res.json({ concerns: rows });
-  } catch (err) { next(err); }
-});
-
-// PATCH /api/portal/concerns/:id/resolve  — mark a concern as resolved (ends the escalated conversation)
-router.patch('/concerns/:id/resolve', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `UPDATE conversations
-       SET status = 'ended', unread = FALSE
-       WHERE id = $1
-         AND customer_id IN (SELECT id FROM customers WHERE tenant_id = $2 AND deleted_at IS NULL)
-         AND status = 'escalated'
-       RETURNING id`,
-      [req.params.id, req.portal.tenant_id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Concern not found or already resolved' });
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-});
-
-// GET /api/portal/badge-counts  — unread badge counters for nav
-router.get('/badge-counts', async (req, res, next) => {
-  try {
-    const { rows } = await db.query(
-      `SELECT
-         COUNT(*) FILTER (WHERE c.unread = TRUE AND c.status != 'escalated') AS unread_conversations,
-         COUNT(*) FILTER (WHERE c.status = 'escalated') AS open_concerns,
-         COUNT(*) FILTER (WHERE c.status = 'escalated' AND c.unread = TRUE) AS unread_concerns
-       FROM conversations c
-       JOIN customers cu ON c.customer_id = cu.id
-       WHERE cu.tenant_id = $1`,
-      [req.portal.tenant_id]
-    );
-    res.json({
-      unread_conversations: parseInt(rows[0].unread_conversations) || 0,
-      open_concerns:        parseInt(rows[0].open_concerns)        || 0,
-      unread_concerns:      parseInt(rows[0].unread_concerns)      || 0,
-    });
-  } catch (err) { next(err); }
-});
+// CONCERNS + BADGE-COUNTS — extracted to ./portal/{concerns,badge-counts}-routes.js
+// Inbox-side endpoints: list escalated conversations, mark resolved, and the
+// unread-counters used by nav badges. req.portal set by parent.
+router.use('/concerns',     require('./portal/concerns-routes'));
+router.use('/badge-counts', require('./portal/badge-counts-routes'));
 
 
 // ═══════════════════════════════════════════════════════════════════════════
