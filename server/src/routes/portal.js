@@ -1802,65 +1802,10 @@ router.use('/license', require('./portal/license-routes'));
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SUBSCRIPTION & BILLING
+// SUBSCRIPTION SUMMARY — extracted to ./portal/subscription-routes.js
+// Single GET that returns plan + usage + percentage display data.
 // ═══════════════════════════════════════════════════════════════════════════
-
-// GET /api/portal/subscription  — current plan details + usage
-router.get('/subscription', async (req, res, next) => {
-  try {
-    const sub = await getSubscription(req.portal.tenant_id);
-    if (!sub) return res.status(404).json({ error: 'No subscription found' });
-
-    // Count current customers for limit display
-    const { rows } = await db.query(
-      `SELECT COUNT(*) FROM customers
-       WHERE tenant_id = $1 AND deleted_at IS NULL
-         AND ${anonEmailNotLikeGuard()}`,
-      [req.portal.tenant_id]
-    );
-
-    const customersCount = parseInt(rows[0].count);
-    const messagesUsed   = sub.messages_used_this_month || 0;
-    const isUnrestricted = UNRESTRICTED_PLANS.includes(sub.plan);
-
-    // Percentage helpers (null when plan has no cap)
-    const customerPct = (!isUnrestricted && sub.max_customers)
-      ? Math.min(100, Math.round((customersCount / sub.max_customers) * 100))
-      : null;
-    const messagePct = (!isUnrestricted && sub.max_messages_month)
-      ? Math.min(100, Math.round((messagesUsed / sub.max_messages_month) * 100))
-      : null;
-
-    res.json({
-      subscription: {
-        plan:                    sub.plan,
-        status:                  sub.status,
-        max_customers:           sub.max_customers,
-        max_messages_month:      sub.max_messages_month,
-        messages_used_this_month: messagesUsed,
-        managed_ai_enabled:      sub.managed_ai_enabled,
-        trial_starts_at:         sub.trial_starts_at,
-        trial_ends_at:           sub.trial_ends_at,
-        current_period_start:    sub.current_period_start,
-        current_period_end:      sub.current_period_end,
-        canceled_at:             sub.canceled_at,
-        stripe_customer_id:      sub.stripe_customer_id || null,
-      },
-      usage: {
-        customers_count:       customersCount,
-        customers_limit:       sub.max_customers,
-        customers_pct:         customerPct,
-        near_customer_limit:   customerPct !== null && customerPct >= 80,
-        customer_limit_reached: customerPct !== null && customerPct >= 100,
-        messages_used:         messagesUsed,
-        messages_limit:        sub.max_messages_month,
-        messages_pct:          messagePct,
-        near_message_limit:    messagePct !== null && messagePct >= 80,
-        message_limit_reached: messagePct !== null && messagePct >= 100,
-      },
-    });
-  } catch (err) { next(err); }
-});
+router.use('/subscription', require('./portal/subscription-routes'));
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1875,91 +1820,11 @@ router.use('/api-key', require('./portal/api-key-routes'));
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STRIPE BILLING
+// STRIPE BILLING — extracted to ./portal/billing-routes.js
+// POST /billing/checkout (start upgrade) + POST /billing/portal (manage existing).
+// All STRIPE_* env-var reads + lazy stripe-client init live in the sub-router.
 // ═══════════════════════════════════════════════════════════════════════════
-
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-const STRIPE_PRICE_MAP  = {
-  starter:      process.env.STRIPE_PRICE_STARTER      || null,
-  growth:       process.env.STRIPE_PRICE_GROWTH        || null,
-  professional: process.env.STRIPE_PRICE_PROFESSIONAL  || null,
-};
-const STRIPE_PORTAL_RETURN_URL = process.env.STRIPE_PORTAL_RETURN_URL || `${(process.env.APP_URL || 'https://pontensolutions.com').replace(/\/$/, '')}/dashboard`;
-
-// Helper: get Stripe instance (lazy init)
-let _stripe = null;
-function getStripe() {
-  if (!STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
-  if (!_stripe) _stripe = require('stripe')(STRIPE_SECRET_KEY);
-  return _stripe;
-}
-
-// POST /api/portal/billing/checkout  — create Stripe checkout session
-router.post('/billing/checkout', async (req, res, next) => {
-  try {
-    const stripe = getStripe();
-    const { plan } = req.body;
-
-    if (!plan || !STRIPE_PRICE_MAP[plan]) {
-      return res.status(400).json({ error: 'Invalid plan. Choose: starter, growth, or professional' });
-    }
-
-    const sub = await getSubscription(req.portal.tenant_id);
-
-    // Create or retrieve Stripe customer
-    let stripeCustomerId = sub?.stripe_customer_id;
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: req.portal.email,
-        metadata: { tenant_id: req.portal.tenant_id },
-      });
-      stripeCustomerId = customer.id;
-      await db.query(
-        'UPDATE subscriptions SET stripe_customer_id = $1 WHERE tenant_id = $2',
-        [stripeCustomerId, req.portal.tenant_id]
-      );
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      customer: stripeCustomerId,
-      mode: 'subscription',
-      line_items: [{ price: STRIPE_PRICE_MAP[plan], quantity: 1 }],
-      success_url: STRIPE_PORTAL_RETURN_URL + '?billing=success',
-      cancel_url:  STRIPE_PORTAL_RETURN_URL + '?billing=canceled',
-      metadata: { tenant_id: req.portal.tenant_id, plan },
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    if (err.message === 'Stripe is not configured') {
-      return res.status(503).json({ error: 'Billing is not yet configured. Please contact support.' });
-    }
-    next(err);
-  }
-});
-
-// POST /api/portal/billing/portal  — redirect to Stripe customer portal
-router.post('/billing/portal', async (req, res, next) => {
-  try {
-    const stripe = getStripe();
-    const sub = await getSubscription(req.portal.tenant_id);
-    if (!sub?.stripe_customer_id) {
-      return res.status(400).json({ error: 'No billing account. Start a subscription first.' });
-    }
-
-    const session = await stripe.billingPortal.sessions.create({
-      customer:   sub.stripe_customer_id,
-      return_url: STRIPE_PORTAL_RETURN_URL,
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    if (err.message === 'Stripe is not configured') {
-      return res.status(503).json({ error: 'Billing is not yet configured.' });
-    }
-    next(err);
-  }
-});
+router.use('/billing', require('./portal/billing-routes'));
 
 
 // GET /api/portal/plans  — available plans for the upgrade page
