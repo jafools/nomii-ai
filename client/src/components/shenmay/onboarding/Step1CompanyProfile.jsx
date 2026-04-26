@@ -29,11 +29,30 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
     company_description: shenmayTenant?.company_description || shenmayTenant?.description || "",
   });
   const [saving, setSaving] = useState(false);
+  const [urlError, setUrlError] = useState("");
 
-  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const set = (field) => (e) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    if (field === "website_url") setUrlError("");
+  };
+
+  // Empty URL is allowed (the field isn't required). Non-empty must parse.
+  const isValidUrl = (v) => {
+    if (!v) return true;
+    try {
+      const u = new URL(v.match(/^https?:\/\//i) ? v : `https://${v}`);
+      return Boolean(u.hostname && u.hostname.includes("."));
+    } catch {
+      return false;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isValidUrl(form.website_url.trim())) {
+      setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
+      return;
+    }
     setSaving(true);
     try {
       const data = await updateCompany(form);
@@ -98,7 +117,19 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
 
         <div>
           <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Website URL</label>
-          <input type="url" value={form.website_url} onChange={set("website_url")} placeholder="https://yourcompany.com" className={inp} style={inpStyle} />
+          <input
+            type="url"
+            value={form.website_url}
+            onChange={set("website_url")}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && !isValidUrl(v)) setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
+            }}
+            placeholder="https://yourcompany.com"
+            className={inp}
+            style={{ ...inpStyle, ...(urlError ? { borderColor: "#7A1F1A" } : {}) }}
+          />
+          {urlError && <p className="text-[12px] mt-1.5" style={{ color: "#7A1F1A" }}>{urlError}</p>}
         </div>
 
         <div>

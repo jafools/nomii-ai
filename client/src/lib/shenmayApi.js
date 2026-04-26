@@ -94,7 +94,11 @@ export async function apiRequest(method, path, body) {
 
   const data = await res.json();
   if (!res.ok) {
-    const err = new Error(data.error || "Request failed");
+    // Endpoints may return `{ error: 'machine_code', message: 'human readable' }`
+    // (e.g. /api/portal/api-key returns `api_key_invalid` + the actual reason).
+    // Surface the human one to the user; keep `data.code` on err.code for
+    // existing branching (e.g. `email_unverified`, `company_name_taken`).
+    const err = new Error(data.message || data.error || "Request failed");
     err.code = data.code || null;
     throw err;
   }
@@ -272,8 +276,16 @@ export const getVisitors = () => apiRequest("GET", "/api/portal/visitors");
 export const getAnalytics = (period = "30d") => apiRequest("GET", `/api/portal/analytics?period=${period}`);
 
 export const aiSuggestProducts = (urlOrDescription) => {
-  const isUrl = /^https?:\/\//i.test(urlOrDescription) || urlOrDescription.includes(".");
-  const body = isUrl ? { url: urlOrDescription } : { description: urlOrDescription };
+  // Detect URLs conservatively. Anything with whitespace is a description; a
+  // bare period in prose ("$19/month plan.") used to flip the heuristic into
+  // URL mode and the backend would `new URL("https://We sell two things…")`
+  // and throw. Now require either an explicit scheme or a no-whitespace token
+  // that matches a domain shape.
+  const trimmed = (urlOrDescription || "").trim();
+  const looksLikeUrl =
+    /^https?:\/\//i.test(trimmed) ||
+    (!/\s/.test(trimmed) && /^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(trimmed));
+  const body = looksLikeUrl ? { url: trimmed } : { description: trimmed };
   return apiRequest("POST", "/api/portal/products/ai-suggest", body);
 };
 

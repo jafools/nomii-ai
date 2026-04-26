@@ -82,10 +82,13 @@ const ShenmaySignup = () => {
   });
   const [error, setError] = useState("");
   const [companyError, setCompanyError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(null);
   const [confirmTouched, setConfirmTouched] = useState(false);
   const navigate = useNavigate();
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
   useEffect(() => {
     fetch("/api/config")
@@ -97,6 +100,7 @@ const ShenmaySignup = () => {
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
     if (k === "companyName") setCompanyError("");
+    if (k === "email") setEmailError("");
     if (k === "confirmPassword" && !confirmTouched) setConfirmTouched(true);
   };
   const strength = getStrength(form.password);
@@ -105,9 +109,10 @@ const ShenmaySignup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); setCompanyError("");
+    setError(""); setCompanyError(""); setEmailError("");
     const t = { firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(), password: form.password, companyName: form.companyName.trim(), vertical: form.vertical };
     if (!t.firstName || !t.lastName || !t.email || !t.password || !t.companyName || !t.vertical) { setError("Please fill in all fields."); return; }
+    if (!isValidEmail(t.email)) { setEmailError("Enter a valid email address."); return; }
     if (t.password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (!form.tosAccepted || !form.dataRightsConfirmed) { setError("Please accept the terms and confirm your data rights before continuing."); return; }
     setLoading(true);
@@ -219,7 +224,22 @@ const ShenmaySignup = () => {
                 </div>
 
                 <Field id="email" label="Work email">
-                  <Input id="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={set("email")} placeholder="jane@yourcompany.com" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    maxLength={255}
+                    value={form.email}
+                    onChange={set("email")}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v && !isValidEmail(v)) setEmailError("Enter a valid email address.");
+                    }}
+                    placeholder="jane@yourcompany.com"
+                    style={emailError ? { borderColor: T.danger } : undefined}
+                  />
+                  {emailError && <div style={{ fontSize: 12, color: T.danger, marginTop: 6 }}>{emailError}</div>}
                 </Field>
 
                 <Field id="password" label="Password">
