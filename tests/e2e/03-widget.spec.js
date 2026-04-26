@@ -309,3 +309,49 @@ test.describe('Widget — Concern/Flag', () => {
     await expect(iframe.locator('#concern-btn')).toBeAttached();
   });
 });
+
+test.describe('Widget — Session refresh', () => {
+  // Verifies the JWT auto-renew endpoint that backstops sendMessage and
+  // pollForMessages when a tab sits idle past the 24h JWT TTL. We can't
+  // realistically wait 24h in a test, so we exercise the endpoint directly:
+  // a still-valid token should refresh successfully; a missing token or a
+  // mismatched widget_key should both 401.
+
+  async function createSession(page) {
+    const resp = await page.request.post(`${API_BASE}/api/widget/session`, {
+      data: { widget_key: widgetKey },
+    });
+    expect(resp.ok(), `session create failed (${resp.status()})`).toBeTruthy();
+    return (await resp.json()).token;
+  }
+
+  test('refresh endpoint returns a fresh token for a valid session', async ({ page }) => {
+    const original = await createSession(page);
+    const resp = await page.request.post(`${API_BASE}/api/widget/session/refresh`, {
+      headers: { Authorization: `Bearer ${original}` },
+      data: { widget_key: widgetKey },
+    });
+    expect(resp.status(), `refresh expected 200, got ${resp.status()}`).toBe(200);
+    const body = await resp.json();
+    expect(body.token, 'refresh response should include a token').toBeTruthy();
+    // Same secret, same payload, same iat second → could be the same string;
+    // assert it's at least a valid-looking JWT.
+    expect(body.token.split('.').length).toBe(3);
+  });
+
+  test('refresh rejects a request with no Authorization header', async ({ page }) => {
+    const resp = await page.request.post(`${API_BASE}/api/widget/session/refresh`, {
+      data: { widget_key: widgetKey },
+    });
+    expect(resp.status()).toBe(401);
+  });
+
+  test('refresh rejects a mismatched widget_key', async ({ page }) => {
+    const original = await createSession(page);
+    const resp = await page.request.post(`${API_BASE}/api/widget/session/refresh`, {
+      headers: { Authorization: `Bearer ${original}` },
+      data: { widget_key: 'definitely-not-a-real-widget-key' },
+    });
+    expect(resp.status()).toBe(401);
+  });
+});

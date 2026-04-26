@@ -60,7 +60,13 @@ async function createNotification(tenantId, { type, title, body, resourceType, r
 }
 
 const WIDGET_JWT_SECRET  = process.env.WIDGET_JWT_SECRET || process.env.JWT_SECRET || 'widget-dev-secret';
-const WIDGET_JWT_EXPIRY  = '2h';
+// Was '2h' — bumped to '24h' so a tab left open overnight doesn't silently
+// 401 on the next message and surface the generic "Sorry, I had trouble
+// responding" error. The widget_api_key already gates session creation, so
+// the JWT TTL is just defense-in-depth against token theft. Combined with
+// /session/refresh, the widget can keep itself authenticated indefinitely
+// for any tab that sends at least one request per 24h.
+const WIDGET_JWT_EXPIRY  = '24h';
 
 
 // ── CORS for widget (cross-origin iframe) ──────────────────────────────────────
@@ -370,6 +376,78 @@ router.post('/session', async (req, res, next) => {
       recent_messages: recentMessages,
     });
 
+  } catch (err) { next(err); }
+});
+
+
+// ── POST /api/widget/session/refresh ──────────────────────────────────────
+//
+// Body: { widget_key }
+// Header: Authorization: Bearer <widget_jwt>  (may be EXPIRED — that's the point)
+//
+// Re-issues a widget JWT with the same payload + a fresh 24h expiry.
+// Verifies signature (so a forged payload is rejected) but ignores expiry.
+// Verifies the widget_key still resolves to the same active tenant the
+// token claims belongs to — so a refresh fails closed if the tenant was
+// disabled, the widget_key was rotated, or the signed payload was crafted
+// to claim a tenant that doesn't match the supplied widget_key.
+//
+// Called transparently by the widget on a 401 from /chat or /poll. The
+// widget retries the failed request with the new token; if the refresh
+// itself fails, the widget surfaces a clear "session expired, refresh
+// the page" message instead of the old generic LLM error.
+//
+router.post('/session/refresh', async (req, res, next) => {
+  try {
+    const { widget_key } = req.body || {};
+    if (!widget_key) {
+      return res.status(400).json({ error: 'widget_key is required' });
+    }
+
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (!token) {
+      return res.status(401).json({ error: 'Widget session token required' });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(token, WIDGET_JWT_SECRET, { ignoreExpiration: true });
+    } catch {
+      return res.status(401).json({ error: 'Invalid widget session token' });
+    }
+
+    if (!payload || payload.widget_session !== true || !payload.tenant_id) {
+      return res.status(401).json({ error: 'Invalid widget session token' });
+    }
+
+    // Confirm the widget_key still belongs to the tenant the token claims,
+    // and the tenant is still active. This is what makes a forged payload
+    // useless: the attacker would also need a widget_key whose tenant_id
+    // matches their forged claim.
+    const { rows } = await db.query(
+      `SELECT id FROM tenants
+        WHERE widget_api_key = $1 AND id = $2 AND is_active = true`,
+      [widget_key, payload.tenant_id]
+    );
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Widget key no longer valid for this session' });
+    }
+
+    const refreshed = jwt.sign(
+      {
+        widget_session:  true,
+        tenant_id:       payload.tenant_id,
+        customer_id:     payload.customer_id,
+        conversation_id: payload.conversation_id,
+        email:           payload.email,
+        is_anonymous:    payload.is_anonymous,
+      },
+      WIDGET_JWT_SECRET,
+      { expiresIn: WIDGET_JWT_EXPIRY }
+    );
+
+    res.json({ token: refreshed });
   } catch (err) { next(err); }
 });
 
