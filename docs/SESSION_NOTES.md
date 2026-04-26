@@ -64,8 +64,8 @@ Single coherent session. Austin: "we have time today to kill em all off, go craz
 
 **Optional / quick**
 1. `portal.js` is now down to 547 LOC. Remaining inline routes: `/dashboard`, `/analytics`, `/visitors`, `/search`, `/plans`, `/admin/set-plan` (wait, set-plan moved in #115), and the `/email-templates` (no, those moved in #114). Let me re-check at next session — looks small enough that nothing more is worth splitting unless we hit a 3rd-duplicate forcing function.
-2. UptimeRobot monitor #3 type flip (~30 sec) — plain HTTP → Keyword with `widget-key`.
-3. Volume rename backup cleanup on Hetzner once we're ~1 week clean: `rm ~/volume-rename-backup-20260424-201225.sql`.
+2. ~~UptimeRobot monitor #3 type flip~~ — **deferred Apr 26**, Austin to do whenever (UI-only, no API key in repo so I can't drive it from here). Endpoint side verified ready: `https://shenmay.ai/embed.js` HTTP 200, contains `widget-key` 9× — Keyword check will match the moment it's flipped.
+3. Volume rename backup cleanup on Hetzner — **recheck on/after May 1** (`~/volume-rename-backup-20260424-201225.sql`, dated Apr 24 20:12; only 2 days old as of Apr 26). Verified file still present. Hold per the "wait ~1 week of healthy runtime" rule.
 
 **Substantive (no urgency)**
 4. **Resend bounce dashboard UI** — `email_suppressions` view with remove-by-email. Gated on first real bounce.
