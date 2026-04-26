@@ -5,7 +5,101 @@
 
 ---
 
-## Last updated: 2026-04-25 morning — **v3.3.6 + v3.3.7 SHIPPED** — portal.js sub-router cleanout (2,471 → 547 LOC, −78% in one day)
+## Last updated: 2026-04-26 evening — **v3.3.8 SHIPPED** — Chrome-MCP deep-test pass surfaces critical /dashboard/settings bug, fixed in ~50 min
+
+Session arc: standard "boot up" → triaged stale queue → first-time signup smoke test (full E2E green except a side-quest widget JWT silent-expiry bug) → Austin asked for a deeper Chrome-MCP-driven test of every button + every onboarding step + every dashboard nav item. Walked it. Surfaced one P0 bug + 6 lower-priority bugs/UX nits.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.7 | **v3.3.8** |
+| PRs merged | — | 5 (#120 #121 #122 #123 + tag) |
+| Critical bugs found | — | 1 (P0, fixed in ~50 min) |
+| Other real bugs surfaced | — | 3 |
+| UX nits surfaced | — | 5 |
+| Test tenants spawned + cleaned | — | 2 |
+| Rollbacks | — | 0 |
+
+### Ship log (Apr 26 evening)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#120](https://github.com/jafools/shenmay-ai/pull/120) | `68ccddb` | docs(session-notes): defer UR monitor flip + park volume backup until May 1 |
+| [#121](https://github.com/jafools/shenmay-ai/pull/121) | `c43c454` | docs(session-notes): drop cross-repo Polygon item from Shenmay queue + guardrail comment |
+| [#122](https://github.com/jafools/shenmay-ai/pull/122) | `0f9c770` | docs(session-notes): drop NOMII- master-key rotation TODO (provision fresh on next use beats rotation) |
+| [#123](https://github.com/jafools/shenmay-ai/pull/123) | `0001ec7` | **fix(settings): move PRESET_COLORS into LabelsSection so /dashboard/settings stops crashing** |
+| **v3.3.8** | tag at `0001ec7` | GHCR rebuilt; Hetzner deployed `:3.3.8`. New bundle hash `index-DoKZYlGp.js`. Internal + external `/api/health` green. |
+
+### The critical bug
+
+`/dashboard/settings` was completely broken on prod v3.3.7 — opened to a pure dark-blue blank page with the React tree throwing `ReferenceError: PRESET_COLORS is not defined`.
+
+Root cause: regression from the v3.3.1 `ShenmaySettings.jsx` 1,873 → 36 LOC split. The `PRESET_COLORS` const (10-color label-swatch palette) was declared at module scope in `WebhooksSection.jsx:425` but the only consumer is `LabelsSection.jsx` (lines 30, 43, 114). LabelsSection had no import. WebhooksSection had ZERO references to it. Vite happens to bundle both into the same chunk so parse-time succeeds, but each module's render closure doesn't see the OTHER module's top-level binding — so the reference fails at render time, not build time. CI's e2e-saas / onprem-e2e specs evidently don't navigate to `/dashboard/settings` post-onboarding.
+
+Fix: move const into LabelsSection.jsx; drop dead declaration from WebhooksSection.jsx. 2 files, 5 insertions, 5 deletions, no behaviour change beyond making the page render.
+
+### Other real bugs surfaced (still open)
+
+1. **"Import with AI" backend treats freeform descriptions as URLs** — Step 2 onboarding. Promised UX is "URL **or** describe what you sell" (per the Import-with-AI panel description), but backend always prepends `https://` and calls `new URL(...)` → throws `Failed to parse URL from https://We sell two things: a $19/month consumer plan...`. Cheap fix: detect spaces/no-dots in input → treat as text instead of URL.
+2. **Anthropic invalid-key error shows raw API code `api_key_invalid`** — Step 4 onboarding. Should be human-readable: "This API key is invalid. Check that you copied the full key from console.anthropic.com."
+3. **Widget JWT 2h silent expiry** — already filed in `project_widget_jwt_silent_expiry_bug.md` pre-session; deep-test reconfirmed via prod nginx access logs (all `/chat` + `/poll` from a 3h-old tab return 401, widget catch-block renders generic "Sorry, I had trouble responding").
+
+### UX nits surfaced
+
+- Inline-error inconsistency: password mismatch + product-form validation render red captions, but invalid email + invalid URL only get the browser-native HTML5 popup (no inline UI signal).
+- `/dashboard/billing` silently redirects to Overview — actual route is `/dashboard/plans`. Add a 301 or fix the sidebar link target.
+- Team page 1/1 trial seats shows full **red** progress bar — implies "over quota" when really just trial-tier. Could be styled more neutral.
+- Default agent name auto-fills as `<Company> Assistant` — works but the customization affordance isn't loud; many users will probably ship the default.
+- Onboarding step 1: invalid URL silently rejected on submit (no inline caption, just the form sits there). Same inconsistency as the email field.
+
+### Surfaces NOT testable from Chrome MCP (need human follow-up)
+
+- **CSV upload** (`mcp__Claude_in_Chrome__file_upload` returns `-32000 Not allowed` — security restriction)
+- **Notification bell** (top-right of dashboard) — skipped, no test data to surface there anyway
+- **Color picker click-to-pick** from native color dialog (set values via JS works; dialog itself is blocked)
+- **Clipboard "Copy" buttons** (MCP can't read clipboard contents to verify)
+- **Cross-origin iframe widget send-button** (typing reaches input via MCP, click doesn't propagate; same class as the existing `feedback_chrome_mcp_react_events.md` Stripe Checkout finding)
+
+### Process improvement to schedule
+
+**Add an e2e spec that navigates every dashboard nav item and asserts `console.error` count == 0.** Would have caught the PRESET_COLORS bug before tag-time. This class of bug (silent runtime ReferenceError) is invisible to type-check + build + most happy-path e2e — only a route-level smoke catches it.
+
+### Captured this session
+
+- **Module-scope consts must move WITH their consumer during file splits** (`feedback_module_scope_const_during_split.md`) — bundler lets parse pass; runtime ReferenceError. Always grep `[A-Z_]{4,}` in new files vs imports. Add the route-smoke e2e spec.
+- **Chrome MCP gotchas batch 2** (`feedback_chrome_mcp_more_gotchas.md`) — Google password popup blocks MCP visibility; `file_upload` blocked; cross-origin iframe send-button needs human assist.
+- **Hot-find diagnostic recipe** when widget shows generic "Sorry, I had trouble responding": backend access logs hide HTTP status codes; check **nginx access log on the FRONTEND container** (`docker compose logs frontend --tail=300 | grep widget/chat`) to see actual status. 401 = JWT expired, 5xx = real error, 2xx = LLM error path (look for `[Widget][chat][llm]` line).
+
+### Still-open queue for next session
+
+**Bugs to fix** (rough priority order)
+1. **Add the route-smoke e2e spec** — process improvement that prevents the next PRESET_COLORS-class bug.
+2. **"Import with AI" URL parse** — fixes the UX promise of "URL or describe".
+3. **Anthropic invalid-key raw error code** — single-string mapping fix.
+4. **Widget JWT 2h silent expiry** — full plan in `project_widget_jwt_silent_expiry_bug.md`.
+5. **Inline-error consistency pass** — invalid email + invalid URL should get red captions like password mismatch does.
+6. **`/dashboard/billing` redirect** — add 301 or fix sidebar link target.
+7. **Team page trial-seat bar styling** — neutral, not red.
+
+**More MCP-testable surfaces to cover** (next deep-test pass)
+- The now-working `/dashboard/settings` page itself on a fresh tenant on v3.3.8 (this session's deep-test was on tenants whose Settings broke; need to validate the rendered page works end-to-end).
+- Email templates UI inside Settings (not yet seen).
+- Webhook config inside Settings.
+- Custom tools (the "+ New tool" button on `/dashboard/tools`).
+- Conversations list with real conversation data (need a tenant that's actually been chatted with).
+
+**Ops / Austin-only**
+- **Rotate the $3-budget Anthropic key** Austin shared this session (in transcript + 2 deleted-tenant DB rows + Cloudflare transit logs). Console → API Keys → revoke.
+- UptimeRobot monitor #3 type flip (still deferred).
+- Volume rename backup cleanup (recheck on/after May 1).
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-25 morning — **v3.3.6 + v3.3.7 SHIPPED** — portal.js sub-router cleanout (2,471 → 547 LOC, −78% in one day)
 
 Single coherent session. Austin: "we have time today to kill em all off, go crazy i can monitor the situation today so feel free."  Cleared the entire substantive backlog from yesterday's session-notes queue.
 
