@@ -69,11 +69,15 @@ Single coherent session. Austin: "we have time today to kill em all off, go craz
 
 **Substantive (no urgency)**
 4. **Resend bounce dashboard UI** — `email_suppressions` view with remove-by-email. Gated on first real bounce.
-5. **NOMII- master-key rotation** — Austin needs to locate the live key first.
-6. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
+5. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
 
 > Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
 > the vault under `projects/`, not here. This file is Shenmay-only.
+
+**Dropped Apr 26:** ~~NOMII- master-key rotation~~ — Austin doesn't actively
+use the master account; will just provision a fresh `SHENMAY-` master if the
+need ever arises. Legacy `NOMII-` validator stays as compat-shim until the
+"sunset on usage" rule trips.
 
 ### Captured this session
 
