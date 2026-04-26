@@ -99,24 +99,25 @@ test.describe('Dashboard Route Smoke', () => {
 
       // Give React a beat to mount the page tree and run any lazy effects
       // that might throw. networkidle covers most of it; this is the buffer.
-      await page.waitForTimeout(500);
+      // Settings is the heaviest page (11 child sections, each with its own
+      // API call) so it benefits from a longer settle window.
+      await page.waitForTimeout(1500);
 
-      // The crash signature in v3.3.7 was an empty body (only the dark-blue
-      // background). Assert SOMETHING in the page besides the layout shell.
+      // When this assertion fails, the actual render-time error is the most
+      // useful clue. Surface console/page errors first so the failure message
+      // includes the actual cause, not just "empty body".
       const bodyTextLength = await page.evaluate(() => document.body.innerText.length);
-      expect(
-        bodyTextLength,
-        `${url} rendered an empty body (likely a render-time crash)`,
-      ).toBeGreaterThan(20);
+      const bodyEmpty      = bodyTextLength <= 20;
 
-      if (consoleErrors.length || pageErrors.length) {
+      if (consoleErrors.length || pageErrors.length || bodyEmpty) {
         const detail = [
-          consoleErrors.length ? `console.error:\n  - ${consoleErrors.join('\n  - ')}` : '',
-          pageErrors.length ? `pageerror:\n  - ${pageErrors.join('\n  - ')}` : '',
+          bodyEmpty ? `body innerText length: ${bodyTextLength} (expected > 20)` : '',
+          consoleErrors.length ? `console.error (${consoleErrors.length}):\n  - ${consoleErrors.join('\n  - ')}` : '',
+          pageErrors.length ? `pageerror (${pageErrors.length}):\n  - ${pageErrors.join('\n  - ')}` : '',
         ]
           .filter(Boolean)
           .join('\n');
-        throw new Error(`${url} produced unfiltered errors:\n${detail}`);
+        throw new Error(`${url} failed render-smoke check:\n${detail}`);
       }
     });
   }
