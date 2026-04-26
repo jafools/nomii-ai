@@ -21,6 +21,14 @@ const INDUSTRIES = [
 
 import { card, inputClass, inputStyle } from "./_shared";
 
+const ALL_EVENTS = [
+  { value: "session.started",  label: "Session started" },
+  { value: "session.ended",    label: "Session ended" },
+  { value: "customer.created", label: "Customer created" },
+  { value: "flag.created",     label: "Flag created" },
+  { value: "concern.raised",   label: "Concern raised" },
+];
+
 const WebhooksSection = () => {
   const [hooks, setHooks]             = useState([]);
   const [loading, setLoading]         = useState(true);
