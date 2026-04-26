@@ -5,7 +5,87 @@
 
 ---
 
-## Last updated: 2026-04-26 evening — **v3.3.8 SHIPPED** — Chrome-MCP deep-test pass surfaces critical /dashboard/settings bug, fixed in ~50 min
+## Last updated: 2026-04-26 night — **v3.3.9 SHIPPED** — full deep-test queue patched + 2 more PRESET_COLORS-class bugs the spec caught on its first run
+
+Session arc: Austin asked to "patch up all of those tasks from the deep-test" → built 4 PRs covering the entire queue from the prior session → **the route-smoke spec immediately caught two more module-scope-binding regressions on `/dashboard/settings` that v3.3.8's PRESET_COLORS fix had unmasked** → bundled the two fixes into the spec PR → merged all 4 → 5×5 gate green → tagged v3.3.9 → deployed to Hetzner.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.8 | **v3.3.9** |
+| PRs merged | — | 4 (#125 #126 #127 #128) |
+| Bugs fixed | — | **9** (7 deep-test items + 2 caught by the new spec) |
+| Real prod-impacting bugs | — | 2 (CONNECTOR_EVENTS + ALL_EVENTS — `/dashboard/settings` was likely broken on v3.3.8 prod, hidden by PRESET_COLORS being the first to throw) |
+| 5×5 release gate | — | 10/10 green + verdict success |
+| Rollbacks | — | 0 |
+| Bundle hash | `index-DoKZYlGp.js` | `index-619Yzz2P.js` |
+
+### Ship log (Apr 26 night)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#125](https://github.com/jafools/shenmay-ai/pull/125) | `4cfa913` | **test(e2e): dashboard route-smoke + 2 fixes it caught (CONNECTOR_EVENTS, ALL_EVENTS)**. New `tests/e2e/12-dashboard-route-smoke.spec.js` walks every dashboard route + asserts 0 console.errors + non-empty body. Failed on first run → caught two more PRESET_COLORS-class regressions in the same Settings sub-section cluster. Both moved into their consumers. |
+| [#126](https://github.com/jafools/shenmay-ai/pull/126) | `e0eefe3` | fix(onboarding): URL detection + human error mapping + inline email/URL validation. Three deep-test items in one PR — Step 2 Import-with-AI no longer flips prose into URL mode; Step 4 Anthropic invalid-key now shows the human message; signup email + Step 1 URL get red-caption inline validation matching the existing `passwordsMismatch` pattern. |
+| [#127](https://github.com/jafools/shenmay-ai/pull/127) | `a0f0153` | fix(widget): silent JWT auto-renew + session-expired UX, bump TTL to 24h. New `POST /api/widget/session/refresh` endpoint, sendMessage/pollForMessages transparently retry on 401, "Your session expired. Please refresh the page to continue chatting." replaces generic LLM error string when refresh fails. 3 new e2e specs cover the endpoint. |
+| [#128](https://github.com/jafools/shenmay-ai/pull/128) | `49ec0ec` | fix(dashboard): redirect /billing → /plans + soften trial seat-meter to amber. Sidebar labels "Plans & billing" but route lives at /plans — now `/dashboard/billing` redirects there instead of falling through to the catch-all. Trial 1/1 seats no longer renders as full-red "over quota"; trial uses amber + "Trial includes 1 seat. Upgrade to invite more agents." Paid-plan-at-limit keeps the strong red signal. |
+| 5×5 release gate | `49ec0ec` | [Run 24966220413](https://github.com/jafools/shenmay-ai/actions/runs/24966220413) — 10/10 green + verdict. |
+| **v3.3.9** | tag at `49ec0ec` | GHCR rebuilt (run 24966288052, success in <60s). Hetzner deployed `:3.3.9`. New bundle hash `index-619Yzz2P.js`. Internal + external `/api/health` green. |
+
+### The unplanned find — v3.3.8 was probably also broken on /dashboard/settings
+
+The route-smoke spec failed instantly on its first CI run with the same pure dark-blue blank page from the v3.3.8 retro screenshot. Two more module-scope-binding bugs from the same v3.3.1 ShenmaySettings.jsx 1,873 → 36 LOC split:
+
+- **`CONNECTOR_EVENTS`** declared in `LabelsSection.jsx:175`, only consumed by `ConnectorsSection.jsx`. Moved to ConnectorsSection; orphan dropped from LabelsSection.
+- **`ALL_EVENTS`** declared in `DataApiSection.jsx:225`, only consumed by `WebhooksSection.jsx`. Moved to WebhooksSection; orphan dropped from DataApiSection.
+
+v3.3.8 fix unmasked these — once `PRESET_COLORS` started resolving, the next module init order would hit one of these and re-crash. The route-smoke spec exists to catch exactly this class of regression and earned its keep on the very first CI run.
+
+### Status of the deep-test queue from the prior session
+
+| # | Item | Outcome |
+|---|---|---|
+| 1 | Add the route-smoke e2e spec | ✅ shipped in #125 (and immediately found 2 more bugs) |
+| 2 | "Import with AI" URL parse | ✅ shipped in #126 |
+| 3 | Anthropic invalid-key raw error code | ✅ shipped in #126 |
+| 4 | Widget JWT 2h silent expiry | ✅ shipped in #127 (auto-renew + UX message + TTL 2h → 24h) |
+| 5 | Inline-error consistency | ✅ shipped in #126 (signup email + Step 1 URL) |
+| 6 | /dashboard/billing redirect | ✅ shipped in #128 |
+| 7 | Team page trial-seat bar styling | ✅ shipped in #128 |
+
+Plus the bonus: 2 more `/dashboard/settings` blank-page bugs (#125).
+
+### Captured this session
+
+- **Module-scope const sweep is recursive** — fixing one orphan const can unmask the next one. After any extraction-class fix, run the route-smoke spec on the affected page, then sweep ALL_CAPS module-scope consts in the cluster (`grep -E "^const [A-Z_]{3,}\\s*="`) against their consumers. Tracked: every settings sub-section file currently has a dead `const INDUSTRIES = [...]` that's only used in CompanyProfile.jsx. Cosmetic — separate PR sometime.
+- **The route-smoke spec is the diagnostic the v3.3.8 retro identified as missing.** Worth its weight on the first run. New rule: every dashboard route gets a `body.innerText.length > 20` + 0 console.errors smoke. New routes added later need to be added to the `DASHBOARD_ROUTES` array in `tests/e2e/12-dashboard-route-smoke.spec.js`.
+- **apiRequest now prefers `data.message` over `data.error`.** Endpoints that want to surface a human-readable string while still keeping a machine code can return `{ error: 'machine_code', message: 'human readable' }`. `err.code` continues to come from `data.code` so existing branching (`email_unverified`, `company_name_taken`) is unaffected.
+- **Widget JWT model:** `widget_api_key` is the gate, JWT TTL is defense-in-depth. With auto-renew wired up, an open tab can refresh indefinitely while the widget_key remains valid — a key rotation is the only thing that forces a "session expired" message. 24h TTL is the new default.
+
+### Still-open queue for next session
+
+**Cosmetic / housekeeping**
+1. **Drop the dead `const INDUSTRIES = [...]`** from 10 of 11 settings sub-section files (only `CompanyProfile.jsx` uses it). No render impact, just clutter from the v3.3.1 split. Single-PR sweep.
+2. **Drop the dead `const INDUSTRIES = [...]`** from `Step1CompanyProfile.jsx` if it's not used there either (haven't checked).
+3. Settings → CompanyProfile.jsx URL field could get the same inline-validation treatment as the onboarding Step 1 URL field in #126. 5-min PR for parity.
+
+**More MCP-testable surfaces to cover** (deferred from prior session)
+- Email templates UI inside Settings (now-rendering page).
+- Webhook config inside Settings.
+- Custom tools (the "+ New tool" button on `/dashboard/tools`).
+- Conversations list with real conversation data.
+
+**Ops / Austin-only**
+- **Rotate the $3-budget Anthropic key** Austin shared in the prior session (transcript + 2 deleted-tenant DB rows + Cloudflare logs). Console → API Keys → revoke. Still on his plate.
+- UptimeRobot monitor #3 type flip (still deferred).
+- Volume rename backup cleanup (recheck on/after May 1).
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-26 evening — **v3.3.8 SHIPPED** — Chrome-MCP deep-test pass surfaces critical /dashboard/settings bug, fixed in ~50 min
 
 Session arc: standard "boot up" → triaged stale queue → first-time signup smoke test (full E2E green except a side-quest widget JWT silent-expiry bug) → Austin asked for a deeper Chrome-MCP-driven test of every button + every onboarding step + every dashboard nav item. Walked it. Surfaced one P0 bug + 6 lower-priority bugs/UX nits.
 
