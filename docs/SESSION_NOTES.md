@@ -71,7 +71,9 @@ Single coherent session. Austin: "we have time today to kill em all off, go craz
 4. **Resend bounce dashboard UI** — `email_suppressions` view with remove-by-email. Gated on first real bounce.
 5. **NOMII- master-key rotation** — Austin needs to locate the live key first.
 6. **Phase 9 USPTO ITU filing** — still parked per the "ITU is LAST" feedback memory.
-7. **Polygon UK W1 two-flow rebuild** — different repo, vault has full plan at `polygon-uk-w1-two-flow-rebuild-apr25-2026`. Estimated 60–90 min.
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
 
 ### Captured this session
 
