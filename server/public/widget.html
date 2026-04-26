@@ -1100,10 +1100,54 @@
   }
 
 
+  // ── Session refresh (silent, on-demand) ───────────────────────────────────
+  //
+  // Called from sendMessage / pollForMessages when an authenticated request
+  // comes back 401. Calls /api/widget/session/refresh with the (expired)
+  // token + the widget_key, swaps in the fresh token on success.
+  //
+  // Returns true on success, false on failure. We treat in-flight refreshes
+  // as a single shared promise so a burst of 401s doesn't spawn N refresh
+  // calls — the second-and-later callers all await the first one.
+  var refreshInFlight = null;
+  var sessionExpired  = false;
+  async function refreshSessionToken() {
+    if (refreshInFlight) return refreshInFlight;
+    if (!sessionToken || !WIDGET_KEY) return false;
+    refreshInFlight = (async function () {
+      try {
+        var resp = await fetch(API_BASE + '/api/widget/session/refresh', {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': 'Bearer ' + sessionToken,
+          },
+          body: JSON.stringify({ widget_key: WIDGET_KEY }),
+        });
+        if (!resp.ok) return false;
+        var data = await resp.json();
+        if (!data.token) return false;
+        sessionToken = data.token;
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+    return refreshInFlight;
+  }
+
+  function markSessionExpired() {
+    sessionExpired = true;
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  }
+
+
   // ── Send message ──────────────────────────────────────────────────────────
   async function sendMessage() {
     var text = inputEl.value.trim();
-    if (!text || isSending || !sessionToken) return;
+    if (!text || isSending || !sessionToken || sessionExpired) return;
 
     isSending = true;
     sendBtn.disabled = true;
@@ -1113,8 +1157,8 @@
     addMessage('user', text);
     showTyping(true);
 
-    try {
-      var resp = await fetch(API_BASE + '/api/widget/chat', {
+    async function postChat() {
+      return fetch(API_BASE + '/api/widget/chat', {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
@@ -1122,6 +1166,23 @@
         },
         body: JSON.stringify({ content: text }),
       });
+    }
+
+    try {
+      var resp = await postChat();
+
+      // JWT expired — refresh once, then retry. Session-expired surfaces a
+      // specific UI message rather than the generic LLM error string.
+      if (resp.status === 401) {
+        var refreshed = await refreshSessionToken();
+        if (!refreshed) {
+          showTyping(false);
+          markSessionExpired();
+          addMessage('agent', 'Your session expired. Please refresh the page to continue chatting.');
+          return;
+        }
+        resp = await postChat();
+      }
 
       var data = await resp.json();
 
@@ -1175,13 +1236,24 @@
   var pollInFlight = false; // prevent concurrent poll calls
 
   async function pollForMessages() {
-    if (!sessionToken || !lastPollTime || pollInFlight) return;
+    if (!sessionToken || !lastPollTime || pollInFlight || sessionExpired) return;
     pollInFlight = true;
     try {
       var resp = await fetch(
         API_BASE + '/api/widget/poll?since=' + encodeURIComponent(lastPollTime),
         { headers: { 'Authorization': 'Bearer ' + sessionToken } }
       );
+      // Token expired — refresh silently and retry once. If refresh fails,
+      // mark the session expired so we stop slamming the server with 401s;
+      // the next sendMessage attempt will surface the user-visible message.
+      if (resp.status === 401) {
+        var refreshed = await refreshSessionToken();
+        if (!refreshed) { markSessionExpired(); return; }
+        resp = await fetch(
+          API_BASE + '/api/widget/poll?since=' + encodeURIComponent(lastPollTime),
+          { headers: { 'Authorization': 'Bearer ' + sessionToken } }
+        );
+      }
       if (!resp.ok) return;
 
       var data = await resp.json();
