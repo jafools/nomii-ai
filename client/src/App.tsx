@@ -131,6 +131,10 @@ const App = () => (
             <Route path="tools" element={<ShenmayTools />} />
             <Route path="team" element={<ShenmayTeam />} />
             <Route path="plans" element={<ShenmayPlans />} />
+            {/* Common-sense URL — sidebar labels the entry "Plans & billing"
+                so guessing /dashboard/billing was sending users to the catch-all
+                redirect to /dashboard with no signal. Land them on /plans. */}
+            <Route path="billing" element={<Navigate to="/dashboard/plans" replace />} />
             <Route path="settings" element={<ShenmaySettings />} />
             <Route path="profile" element={<ShenmayProfile />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

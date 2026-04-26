@@ -117,27 +117,40 @@ const ShenmayTeam = () => {
         )}
       </div>
 
-      {/* Capacity meter */}
-      <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-          <Kicker color={T.mute}>Seats used</Kicker>
-          <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 500, color: atLimit ? T.danger : T.ink, letterSpacing: "0.04em", fontVariantNumeric: "tabular-nums" }}>
-            {agents.length} / {maxAgents}
-          </span>
-        </div>
-        <div style={{ height: 2, borderRadius: 1, background: T.paperEdge, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${capacity}%`, background: atLimit ? T.danger : capacity >= 80 ? T.warning : T.teal, transition: "width 500ms ease" }} />
-        </div>
-        {atLimit && (
-          <p style={{ fontSize: 12, color: T.danger, margin: "10px 0 0" }}>
-            Agent limit reached.{" "}
-            <a href="/dashboard/plans" style={{ color: T.danger, textDecoration: "none", borderBottom: `1px solid ${T.danger}40`, fontWeight: 500 }}>
-              Upgrade your plan
-            </a>{" "}
-            to add more agents.
-          </p>
-        )}
-      </div>
+      {/* Capacity meter — trial 1/1 is the *expected* state, not over-quota,
+          so render in amber instead of red. Paid plans hitting their limit
+          keep the strong red signal because that's a real call-to-action. */}
+      {(() => {
+        const isTrial = plan === "trial";
+        const limitColor = atLimit ? (isTrial ? T.warning : T.danger) : T.ink;
+        const barColor   = atLimit
+          ? (isTrial ? T.warning : T.danger)
+          : capacity >= 80 ? T.warning : T.teal;
+        const captionColor = isTrial ? T.warning : T.danger;
+        return (
+          <div style={{ background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: "16px 20px", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <Kicker color={T.mute}>Seats used</Kicker>
+              <span style={{ fontFamily: T.mono, fontSize: 12, fontWeight: 500, color: limitColor, letterSpacing: "0.04em", fontVariantNumeric: "tabular-nums" }}>
+                {agents.length} / {maxAgents}
+              </span>
+            </div>
+            <div style={{ height: 2, borderRadius: 1, background: T.paperEdge, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${capacity}%`, background: barColor, transition: "width 500ms ease" }} />
+            </div>
+            {atLimit && (
+              <p style={{ fontSize: 12, color: captionColor, margin: "10px 0 0" }}>
+                {isTrial
+                  ? <>Trial includes {maxAgents} seat{maxAgents === 1 ? "" : "s"}. </>
+                  : <>Agent limit reached. </>}
+                <a href="/dashboard/plans" style={{ color: captionColor, textDecoration: "none", borderBottom: `1px solid ${captionColor}40`, fontWeight: 500 }}>
+                  {isTrial ? "Upgrade to invite more agents" : "Upgrade your plan"}
+                </a>{isTrial ? "." : " to add more agents."}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Status messages */}
       {inviteSuccess && (
