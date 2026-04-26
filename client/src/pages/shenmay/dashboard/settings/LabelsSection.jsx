@@ -21,6 +21,11 @@ const INDUSTRIES = [
 
 import { card, inputClass, inputStyle } from "./_shared";
 
+const PRESET_COLORS = [
+  "#0F5F5C", "#2D6A4F", "#60A5FA", "#7A1F1A", "#A78BFA",
+  "#FB923C", "#34D399", "#F472B6", "#94A3B8", "#A6660E",
+];
+
 const LabelsSection = () => {
   const [labels, setLabels]     = useState([]);
   const [loading, setLoading]   = useState(true);
