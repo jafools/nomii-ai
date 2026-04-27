@@ -5,7 +5,97 @@
 
 ---
 
-## Last updated: 2026-04-27 (evening) — **v3.3.15 SHIPPED** — layered widget rate-limits (per-session 30/min + per-tenant 1000/min, defense-in-depth)
+## Last updated: 2026-04-27 (late evening) — **v3.3.16 SHIPPED** — Customer detail deep-test pass (whitespace silent-fail + plural + Overview header)
+
+Session arc: Austin asked to start the next deep-test surface — Customer detail page with Customer Data records (last untested MCP-testable surface from v3.3.15's queue). Walked the full surface against prod v3.3.15 via Chrome MCP on a fresh `shenmay-dt-customer-apr27@mailinator.com` tenant. Surfaced 3 findings — bundled into [#143](https://github.com/jafools/shenmay-ai/pull/143), CI green, 5×5 gate 11/11, tagged **v3.3.16**, deployed to Hetzner, verified all 3 fixes are live in the public bundle. Test tenant cascade-deleted from prod.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.15 | **v3.3.16** |
+| PRs merged | — | 1 (#143) |
+| Surfaces walked | — | Customer detail (header + Soul + Memory + Conversations + Customer Data section + Export + Delete) |
+| Bugs fixed | — | 3 (1 silent-fail validation + 1 plural string + 1 page-title mapping) |
+| 5×5 release gate | — | 11/11 success ([Run 25012531840](https://github.com/jafools/shenmay-ai/actions/runs/25012531840)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | (v3.3.15 server-side change, no bundle delta) | `index-DpDo_SDR.js` |
+
+### Ship log (Apr 27 late evening)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#143](https://github.com/jafools/shenmay-ai/pull/143) | `d1140ba` | fix(dashboard): plug 3 dead-end UX gaps from Apr-27 customer-detail deep test. (1) Drop HTML5 `required` on Category + Label inputs in CustomerDataSection — replace with React-side toast on the early-return so whitespace-only no longer silently no-ops. Same shape as v3.3.12 Profile name bug. (2) Pluralize "1 record"/"N records" in Clear category modal body — pattern already used by the badge two sections up. (3) Sort `PAGE_TITLES` by key length DESC + require exact-segment match in `ShenmayDashboardLayout` — fixes top-bar header showing "Overview" on every detail page (`/dashboard/customers/:id`, `/dashboard/conversations/:id`, etc.) instead of the parent's title. |
+| 5×5 gate v3.3.16 | `d1140ba` | [Run 25012531840](https://github.com/jafools/shenmay-ai/actions/runs/25012531840) — 11/11 success. |
+| **v3.3.16** | tag at `d1140ba` | GHCR rebuilt + Hetzner deployed `:3.3.16`. Bundle `index-DpDo_SDR.js`. |
+
+### What got verified end-to-end
+
+**Pre-fix walk on prod v3.3.15 (Customer Margaret Whitfield, bulk-imported via CSV API):**
+
+| Surface | Result |
+|---|---|
+| Customer detail page initial render (Soul / Memory / Conversations / Customer Data / Export / Delete sections) | ✅ All sections render, zero console errors |
+| Add Record happy path (4 fields filled) | ✅ Toast + record renders, count increments |
+| Add 2nd record same category | ✅ Grouping count updates (Portfolio: 2 records) |
+| Add 3rd record different category | ✅ 2-category render, alphabetical sort (Goals before Portfolio) |
+| Empty submit (HTML5 popup blocks) | ✅ Popup fires |
+| **Whitespace-only submit (`"   "` in Category + Label)** | **❌ FINDING #1 — silent fail. HTML5 `required` accepts whitespace, React `.trim()` early-return rejects with no toast** |
+| Category expand/collapse via header chevron | ✅ |
+| Single-record delete → confirm modal → Cancel | ✅ Modal closes, record intact |
+| Single-record delete → confirm modal → Delete | ✅ Toast + record gone |
+| Click outside modal closes it without action | ✅ |
+| **Clear category confirm body when category has 1 record** | **❌ FINDING #2 — modal says "1 records"** |
+| Clear category → Delete | ✅ Toast + category gone |
+| Page hard-reload preserves all records | ✅ |
+| **Top-bar header on `/dashboard/customers/:id`** | **❌ FINDING #3 — shows "Overview" instead of "Customers" (affects ALL detail pages — confirmed `/dashboard/conversations` shows "Conversations" correctly because it's a list page with an exact PAGE_TITLES entry, but `/dashboard/customers/:id` falls through to the prefix-match bug)** |
+| Console errors during the entire walk | Only Chrome extension noise (MetaMask SES lockdown), zero app-side errors |
+| `/api/portal/customers/*` requests | All 200 |
+
+**Post-fix verification on prod `:3.3.16`:**
+- `/api/health` returns `{"status":"ok"}` ✅
+- `docker inspect shenmay-{backend,frontend}` both show `:3.3.16` ✅
+- Public bundle `index-DpDo_SDR.js` contains string `Category and Label are required` (1 match — the new toast) ✅
+- Public bundle contains 6 occurrences of the longest-match sort pattern (post-minification, the `[a],[b]` sort + `startsWith(k+"/")` together) ✅
+
+### What got captured this session
+
+- **HTML5 `required` + React `.trim()` is a silent-fail trap regardless of whether the React handler has a toast or not.** v3.3.12's Profile bug had a dead toast branch (`required` short-circuited it). Customer Data form's bug was subtler — there WAS no toast, just an early-return — so even with `required` removed the original code would have silently no-op'd. **Lesson: on any required-field form with a `.trim()` check, EITHER drop `required` AND add inline-validation, OR keep `required` and accept that whitespace-only is the only escape hatch (which is bad UX).** Memory entry deferred — captures should reference both the v3.3.12 Profile fix AND this v3.3.16 Customer Data fix.
+- **`PAGE_TITLES` prefix-match-first-key bug is a 2-year-old latent issue.** Every detail page in the dashboard (customers/:id, conversations/:id, future settings/:section, etc.) has been resolving to "Overview" since the layout was written, because `Object.entries(PAGE_TITLES).find(startsWith)` returns the first match — and `/dashboard` is the first key, matching every dashboard URL. Sort by length DESC + exact-segment match (`=== k || startsWith(k + "/")`) is the canonical fix. Worth a memory entry.
+- **Chrome MCP's hover doesn't trigger CSS `:hover` reliably for `opacity-0 group-hover:opacity-100` patterns.** The Customer Data row's X delete button uses this exact pattern and never became visible via `mcp__Claude_in_Chrome__computer` hover action. Workaround: find the button via DOM (`button[title="Delete this record"]`) and `.click()` it directly via JS. Worth a memory entry — this hits us recurring in deep-tests.
+- **Chrome password-save popup intercepts the page document during signup.** Same as `feedback_chrome_mcp_more_gotchas.md`. Recovery: open a new MCP tab and continue from there — the prior signup form submit may or may not have fired. Login attempt verifies. **New gotcha sub-pattern: when the popup hijacks the page, screenshots return "chrome-extension URL of different extension" errors and JS execution silently fails.** New tab is the only fix.
+- **Chrome MCP `form_input` skips React onChange (already a documented gotcha).** Used the value-setter-descriptor JS trick consistently throughout.
+- **`/api/portal/me` is the right portal session endpoint** (not `/api/auth/me`). Returns `{ admin, tenant, subscription, deployment_mode }`. Auth via `Bearer ${localStorage.getItem('shenmay_portal_token')}`. Useful for any future deep-test that needs to grab tenant_id + widget_key in-place.
+- **`POST /api/portal/customers/upload` with `{ csv: "first_name,last_name,email,phone\\nName,Last,e@x.com,+1..." }` seeds a customer in ~50ms** — much faster than CSV file picker (which is blocked by MCP `file_upload` returning -32000) AND much faster than widget chat. **Use this pattern any time a deep-test needs a customer fixture.**
+
+### Cleanup done this session
+
+- ✅ Test tenant `1f7f3f32-ced4-4cc6-806f-b3becf8b7781` (DT Customer Lab / shenmay-dt-customer-apr27@mailinator.com) cascade-deleted from prod via `DELETE FROM tenants WHERE id = ...`.
+
+### Still-open queue for next session
+
+**Code follow-ups from this session**
+1. **Capture the 2 reusable testing patterns as memory entries** — (a) Chrome MCP hover doesn't trigger `:hover` CSS pseudoclass; find DOM elements + `.click()` directly. (b) `/api/portal/customers/upload` JSON CSV is the fastest customer-fixture seeding path.
+2. **Memory entry for the PAGE_TITLES bug** — exact-match → length-DESC sort → require segment match is the canonical fix for any prefix-match dispatch.
+
+**More MCP-testable surfaces** (the queue continues to shrink)
+- Conversations sidebar full coverage (sort/filter chips, take-over button, Reply box) — partially walked Apr 27 PM but only with one conversation
+- Customer detail page **with realistic Soul/Memory data** — once a real conversation exists, exercise the bio fields + family + personality tags + goals/concerns rendering. Today's walk had `No soul data yet` because Margaret was bulk-imported with no conversations.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. Manual GHCR delete via dashboard if you want them GC'd. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (evening) — **v3.3.15 SHIPPED** — layered widget rate-limits (per-session 30/min + per-tenant 1000/min, defense-in-depth)
 
 Session arc: Austin asked to pick up the deferred follow-up from v3.3.14 — the per-IP rate-limit was a bandaid; the real fix is layered limits keyed by session JWT + tenant. Built it in ~50 lines (extracted shared `makeRateLimiter` helper, added 2 new express-rate-limit instances mounted after `requireWidgetAuth`), shipped v3.3.15, verified both layers with two purpose-built load tests on staging.
 
