@@ -127,6 +127,12 @@ const ShenmayCustomers = () => {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "72px 0", gap: 12 }}>
           <Users size={32} color={T.paperEdge} />
           <Lede style={{ marginTop: 0 }}>{debouncedSearch ? `No customers matching "${debouncedSearch}"` : "No customers yet."}</Lede>
+          {!debouncedSearch && (
+            <p style={{ fontSize: 13, color: T.mute, margin: 0, textAlign: "center", maxWidth: 420, lineHeight: 1.5 }}>
+              Customers appear automatically as visitors chat with your agent. To bulk-import a list,{' '}
+              <a href="/onboarding" style={{ color: T.teal, textDecoration: "underline" }}>open setup</a>.
+            </p>
+          )}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
@@ -140,7 +146,7 @@ const ShenmayCustomers = () => {
             return (
               <button
                 key={c.id}
-                onClick={() => navigate(`/shenmay/dashboard/customers/${c.id}`)}
+                onClick={() => navigate(`/dashboard/customers/${c.id}`)}
                 style={{
                   background: "#FFFFFF",
                   border: `1px solid ${T.paperEdge}`,

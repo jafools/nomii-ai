@@ -155,7 +155,7 @@ const ShenmayConcerns = () => {
                     {fmtDate(c.escalated_at || c.created_at)}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <Button variant={isUnread ? "primary" : "ghost"} size="sm" onClick={() => navigate(`/shenmay/dashboard/conversations/${convId}`)}>
+                    <Button variant={isUnread ? "primary" : "ghost"} size="sm" onClick={() => navigate(`/dashboard/conversations/${convId}`)}>
                       <MessageSquarePlus size={12} />
                       {isUnread ? "Jump in" : "View"}
                     </Button>

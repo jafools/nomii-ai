@@ -27,6 +27,7 @@ const SectionCard = ({ kicker, title, children, style }) => (
 
 const PersonalInfo = ({ admin, onUpdated }) => {
   const [form, setForm] = useState({ first_name: "", last_name: "" });
+  const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -35,11 +36,20 @@ const PersonalInfo = ({ admin, onUpdated }) => {
     setForm({ first_name: admin.first_name || "", last_name: admin.last_name || "" });
   }, [admin]);
 
-  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSaved(false); };
+  const set = (k) => (e) => {
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [k]: undefined }));
+    setSaved(false);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.first_name.trim() || !form.last_name.trim()) { toast({ title: "Please fill in both name fields.", variant: "destructive" }); return; }
+    const next = {
+      first_name: form.first_name.trim() ? undefined : "First name is required",
+      last_name:  form.last_name.trim()  ? undefined : "Last name is required",
+    };
+    if (next.first_name || next.last_name) { setErrors(next); return; }
+    setErrors({});
     setSaving(true);
     try {
       await updateProfile({ first_name: form.first_name.trim(), last_name: form.last_name.trim() });
@@ -50,6 +60,8 @@ const PersonalInfo = ({ admin, onUpdated }) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally { setSaving(false); }
   };
+
+  const errStyle = { fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: T.danger, marginTop: 6 };
 
   const role = admin?.role || "admin";
   const roleBadge = {
@@ -64,10 +76,12 @@ const PersonalInfo = ({ admin, onUpdated }) => {
       <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <Field id="first_name" label="First name">
-            <Input id="first_name" type="text" required maxLength={100} value={form.first_name} onChange={set("first_name")} />
+            <Input id="first_name" type="text" maxLength={100} value={form.first_name} onChange={set("first_name")} style={errors.first_name ? { borderColor: T.danger } : undefined} />
+            {errors.first_name && <div style={errStyle}>{errors.first_name}</div>}
           </Field>
           <Field id="last_name" label="Last name">
-            <Input id="last_name" type="text" required maxLength={100} value={form.last_name} onChange={set("last_name")} />
+            <Input id="last_name" type="text" maxLength={100} value={form.last_name} onChange={set("last_name")} style={errors.last_name ? { borderColor: T.danger } : undefined} />
+            {errors.last_name && <div style={errStyle}>{errors.last_name}</div>}
           </Field>
           <Field id="email" label="Email">
             <Input id="email" type="email" readOnly value={admin?.email || ""} style={{ background: T.paperDeep, color: T.mute, cursor: "default" }} tabIndex={-1} />
