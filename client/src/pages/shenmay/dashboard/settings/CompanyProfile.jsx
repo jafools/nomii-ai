@@ -30,6 +30,7 @@ const CompanyProfile = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loadingMe, setLoadingMe] = useState(true);
+  const [urlError, setUrlError] = useState("");
 
   useEffect(() => {
     getMe()
@@ -51,10 +52,29 @@ const CompanyProfile = () => {
       .finally(() => setLoadingMe(false));
   }, []);
 
-  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSaved(false); };
+  const set = (k) => (e) => {
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+    setSaved(false);
+    if (k === "website_url") setUrlError("");
+  };
+
+  // Empty URL is allowed (the field isn't required). Non-empty must parse.
+  const isValidUrl = (v) => {
+    if (!v) return true;
+    try {
+      const u = new URL(v.match(/^https?:\/\//i) ? v : `https://${v}`);
+      return Boolean(u.hostname && u.hostname.includes("."));
+    } catch {
+      return false;
+    }
+  };
 
   const save = async (e) => {
     e.preventDefault();
+    if (!isValidUrl(form.website_url.trim())) {
+      setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
+      return;
+    }
     setSaving(true);
     try {
       const res = await updateCompany(form);
@@ -105,7 +125,19 @@ const CompanyProfile = () => {
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Website URL</label>
-          <input type="url" value={form.website_url} onChange={set("website_url")} className={inputClass} style={inputStyle} />
+          <input
+            type="url"
+            value={form.website_url}
+            onChange={set("website_url")}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && !isValidUrl(v)) setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
+            }}
+            placeholder="https://yourcompany.com"
+            className={inputClass}
+            style={{ ...inputStyle, ...(urlError ? { borderColor: "#7A1F1A" } : {}) }}
+          />
+          {urlError && <p className="text-[12px] mt-1.5" style={{ color: "#7A1F1A" }}>{urlError}</p>}
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Primary Color</label>
