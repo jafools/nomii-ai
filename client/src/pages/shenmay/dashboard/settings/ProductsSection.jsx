@@ -7,17 +7,6 @@ import { Copy, Check, Plus, Trash2, Pencil, X, ChevronUp, Key, AlertTriangle, Re
 import { Link } from "react-router-dom";
 import { TOKENS as T, Kicker, Display, Lede } from "@/components/shenmay/ui/ShenmayUI";
 
-const INDUSTRIES = [
-  { value: "financial", label: "Financial" },
-  { value: "retirement", label: "Retirement" },
-  { value: "ministry", label: "Ministry" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "insurance", label: "Insurance" },
-  { value: "education", label: "Education" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "other", label: "Other" },
-];
-
 
 import { card, inputClass, inputStyle } from "./_shared";
 
