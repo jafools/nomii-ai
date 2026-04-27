@@ -15,6 +15,7 @@ const EmailTemplatesSection = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [replyToError, setReplyToError] = useState("");
 
   useEffect(() => {
     getEmailTemplates()
@@ -27,10 +28,21 @@ const EmailTemplatesSection = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setSaved(false); };
+  const set = (k) => (e) => {
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+    setSaved(false);
+    if (k === "email_reply_to") setReplyToError("");
+  };
+
+  // Empty Reply-To is allowed (the field isn't required). Non-empty must look like an email.
+  const isValidEmail = (v) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!isValidEmail(form.email_reply_to.trim())) {
+      setReplyToError("Enter a valid email address (e.g. support@yourcompany.com).");
+      return;
+    }
     setSaving(true);
     try {
       await updateEmailTemplates(form);
@@ -73,11 +85,26 @@ const EmailTemplatesSection = () => {
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Reply-To Address</label>
-          <input type="email" value={form.email_reply_to} onChange={set("email_reply_to")} maxLength={255}
-            placeholder="e.g. support@yourcompany.com" className={inputClass} style={inputStyle} />
-          <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
-            When recipients hit "Reply", their email goes to this address.
-          </p>
+          <input
+            type="email"
+            value={form.email_reply_to}
+            onChange={set("email_reply_to")}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && !isValidEmail(v)) setReplyToError("Enter a valid email address (e.g. support@yourcompany.com).");
+            }}
+            maxLength={255}
+            placeholder="e.g. support@yourcompany.com"
+            className={inputClass}
+            style={{ ...inputStyle, ...(replyToError ? { borderColor: "#7A1F1A" } : {}) }}
+          />
+          {replyToError ? (
+            <p className="text-[12px] mt-1.5" style={{ color: "#7A1F1A" }}>{replyToError}</p>
+          ) : (
+            <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
+              When recipients hit "Reply", their email goes to this address.
+            </p>
+          )}
         </div>
       </div>
       <div>
