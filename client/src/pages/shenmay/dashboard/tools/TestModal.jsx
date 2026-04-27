@@ -69,7 +69,7 @@ export default function TestModal({ tool, onClose }) {
 
   // Warning copy — context-aware
   const warnText = (() => {
-    const base = "This makes a real API call using your configured key and counts toward your monthly message quota.";
+    const base = "This makes a real API call and counts toward your monthly message quota.";
     if (tool.tool_type === "escalate") {
       return base + " Escalation is always simulated — no flag or email will be created.";
     }
