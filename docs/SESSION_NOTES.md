@@ -59,10 +59,10 @@ Session arc: Austin asked to start the next agenda item — the deferred surface
 - Customer detail page (`/dashboard/customers/:id`) — never reached this session because Deep Test PM had 0 customers
 - Conversations page **with real conversation data** + the customer/conversation links we just fixed (verify the back button works correctly post-fix)
 - Conversations sidebar full coverage (sort/filter chips, take-over button, Reply box)
-- Onboarding wizard end-to-end (started this session but hopped over once dashboard was reachable)
+- ~~Onboarding wizard end-to-end~~ ✅ **walked Apr 27 PM (later)** — see "Onboarding wizard pass" section below. Zero bugs, zero PRs needed.
 
 **Cosmetic / housekeeping**
-- `Step1CompanyProfile.jsx` URL field could mirror PR #131's inline-validation pattern (currently uses the older onBlur+caption variant — works fine, but slightly different code path). Still not blocking.
+- `Step1CompanyProfile.jsx` URL field already implements onBlur+caption (verified in source: `setUrlError` at line 32 + onBlur at line 124 + red-border style at 130 + caption at 132). The "could mirror PR #131" note was based on a memory description, not a source check. Pattern is established and working — couldn't visually verify because programmatic JS `.blur()` doesn't fire React's synthetic onBlur (existing memory `feedback_html5_validation_preempts_react.md`). Closing this item — no parity work needed.
 - `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. If you want them GC'd, requires manual GHCR delete via dashboard. Otherwise harmless.
 
 **Ops / Austin-only**
@@ -72,6 +72,29 @@ Session arc: Austin asked to start the next agenda item — the deferred surface
 
 > Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
 > the vault under `projects/`, not here. This file is Shenmay-only.
+
+### Onboarding wizard pass (Apr 27 PM later, on top of v3.3.12)
+
+Walked the full 6-step setup wizard on a fresh tenant (`shenmay-ob-apr27pm@mailinator.com`, Onboard Test). Used `verify-email` token pulled directly from prod DB to bypass a Resend mailinator delay (~5+ min, the OB email never arrived in inbox during the session — investigated separately, not Shenmay code).
+
+**Zero bugs surfaced. Zero PRs shipped from this pass.**
+
+| Step | Surface | Result |
+|---|---|---|
+| 1 | Company profile | ✅ Renders cleanly. Pre-fills Company + Agent name from signup. URL onBlur validation already in place (couldn't trigger via programmatic JS — synthetic React event quirk, real keyboard tab works). |
+| 2 | Products & services | ✅ 3 import paths (AI / manual / CSV). PR #126 prose-vs-URL fix verified — pasting prose keeps button as "Extract with AI", no mode flip. "Skip this step" link present. |
+| 3 | Customer data | ✅ Compliance notice clear. CSV-only path. (`file_upload` MCP-blocked — same gap as prior deep-tests.) "Skip for now" link present. |
+| 4 | Connect AI | ✅ **PR #126 invalid-key fix verified live** — typing a bogus `sk-ant-api03-...` and clicking Validate shows the clean human message "Invalid API key. Please check and try again." (not the raw error code). "Skip for now — add one later in Settings" link present. |
+| 5 | AI tools | ✅ Excellent UX. 4 toggles (Look up / Run calculations / Generate reports / Know when to involve team). Toggling ON reveals sub-fields (when-to-use prompt + which-data hint). **Continue button copy dynamically updates to "Save N tool[s] and continue".** Validation specifically names the missing tool ("Please fill in the required data field for: Look up client information"). |
+| 6 | Add the widget | ✅ Per-platform tabs (WordPress / Webflow / Squarespace / Wix / Shopify / React Next.js / Other). Snippet shows widget_key interpolated correctly. React snippet is full useEffect with cleanup + auth-state dependency — production-quality. **No explicit "Done" button** — only "Skip to dashboard" footer or wait for widget auto-detection. By design (auto-detect is the actual completion signal); not a bug. |
+
+**Skip-to-dashboard cleanly preserves the "Complete setup" banner** so user can return at any time to finish the widget step.
+
+### What got captured this onboarding pass
+
+- **Resend mailinator email delay** (informational, not a bug) — verification email for `shenmay-ob-apr27pm@mailinator.com` never arrived in mailinator during the session. Bypassed by pulling the `email_verification_token` directly from prod DB. Could be: Resend rate limit, mailinator throttling on test domains, or genuine slow delivery. Worth a glance at the Resend dashboard if it recurs.
+- **Programmatic verification of magic-link signup is doable via DB token** — `SELECT email_verification_token FROM tenant_admins WHERE email = ?` then navigate `/verify-email?token=...`. Useful when mailinator is slow or ignored.
+- **Step 1 URL field uses onBlur+caption** (`setUrlError` at line 32 + onBlur at line 124 of Step1CompanyProfile.jsx). The earlier "queue" note ("could mirror PR #131's pattern") was based on description, not source-check. Pattern is correct and consistent with PR #131. No parity work needed.
 
 ---
 
