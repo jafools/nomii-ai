@@ -52,15 +52,10 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
-// Gracefully degrades: if express-rate-limit is not installed, uses passthrough.
-// Install with: npm install express-rate-limit
-function makeRateLimiter(opts) {
-  try {
-    return require('express-rate-limit')(opts);
-  } catch {
-    return (req, res, next) => next(); // passthrough if package missing
-  }
-}
+// Helper extracted to ./middleware/rate-limit.js so widget.js can use the same
+// install-or-passthrough pattern for its post-auth per-session/per-tenant
+// limiters added in v3.3.15 (defense-in-depth follow-up to v3.3.14).
+const { makeRateLimiter } = require('./middleware/rate-limit');
 
 // Widget session creation: 60 new sessions per 5 min per IP
 // Prevents widget-key scraping and anonymous session flooding while still
