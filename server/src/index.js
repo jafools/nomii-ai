@@ -62,22 +62,33 @@ function makeRateLimiter(opts) {
   }
 }
 
-// Widget session creation: 6 new sessions per 5 min per IP
-// Prevents widget key scraping and anonymous session flooding
-// Override via WIDGET_SESSION_RATE_LIMIT_MAX env var for test environments
+// Widget session creation: 60 new sessions per 5 min per IP
+// Prevents widget-key scraping and anonymous session flooding while still
+// accommodating shared-NAT scenarios (corporate office, mobile carriers,
+// Cloudflare exit pools) where many real visitors share an outbound IP.
+// Override via WIDGET_SESSION_RATE_LIMIT_MAX. Bumped from 6 → 60 in v3.3.14
+// after the Apr 27 PM 50-concurrent load test exposed real customers behind
+// shared NAT could be throttled at single-digit visitor counts.
 const widgetSessionLimiter = makeRateLimiter({
   windowMs: 5 * 60 * 1000,
-  max:      parseInt(process.env.WIDGET_SESSION_RATE_LIMIT_MAX || '6', 10),
+  max:      parseInt(process.env.WIDGET_SESSION_RATE_LIMIT_MAX || '60', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Too many session requests. Please wait a moment.' },
 });
 
-// Widget chat: configurable messages per minute per IP (default 10)
-// Primary cost-protection guard — each message calls the LLM
+// Widget chat: 100 messages per minute per IP
+// Primary cost-protection guard — each message calls the LLM. Bumped from
+// 10 → 100 in v3.3.14 after the Apr 27 PM load test showed 50 concurrent
+// chats from a single IP (= corporate office NAT scenario) hit 0/50 success
+// at the old limit. 100/min/IP still defends against single-attacker abuse
+// while letting realistic NAT traffic through.
+// Tighter per-tenant + per-session limits would be a better defense-in-depth
+// posture (deferred — would require moving the limiter into the route after
+// requireWidgetAuth so we can key by widget_key or session JWT).
 const widgetChatLimiter = makeRateLimiter({
   windowMs: 60 * 1000,
-  max:      parseInt(process.env.WIDGET_CHAT_RATE_LIMIT_MAX || '10', 10),
+  max:      parseInt(process.env.WIDGET_CHAT_RATE_LIMIT_MAX || '100', 10),
   standardHeaders: true,
   legacyHeaders:   false,
   message: { error: 'Message rate limit reached. Please slow down.' },
