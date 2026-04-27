@@ -551,8 +551,14 @@ const ShenmayConversations = () => {
       const list = res.conversations || [];
       setConversations(list);
       setTotal(res.total || list.length);
-      if (!bg && list.length > 0 && !selectedId) {
-        setSelectedId(list[0]._id || list[0].id);
+      // Re-select when the current selection is filtered out — otherwise
+      // the right-panel keeps showing a thread that's no longer in the list.
+      if (!bg) {
+        if (list.length === 0) {
+          setSelectedId(null);
+        } else if (!selectedId || !list.some(c => (c._id || c.id) === selectedId)) {
+          setSelectedId(list[0]._id || list[0].id);
+        }
       }
     } catch (err) {
       if (!bg) setError(err.message || "Failed to load conversations.");
