@@ -322,9 +322,13 @@ const ShenmayDashboardLayout = () => {
 
   const handleSignOut = () => { clearToken(); setShenmayUser(null); navigate("/login", { replace: true }); };
 
+  // Match longest key first so /dashboard/customers/:id resolves to "Customers",
+  // not the bare "/dashboard" → "Overview" prefix.
   const pageTitle =
     PAGE_TITLES[location.pathname] ||
-    Object.entries(PAGE_TITLES).find(([k]) => location.pathname.startsWith(k))?.[1] ||
+    Object.entries(PAGE_TITLES)
+      .sort(([a], [b]) => b.length - a.length)
+      .find(([k]) => location.pathname === k || location.pathname.startsWith(k + "/"))?.[1] ||
     "Dashboard";
 
   const sidebarProps = { shenmayTenant, shenmayUser, badges, handleSignOut, subscription, usage: usageData };

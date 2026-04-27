@@ -455,7 +455,10 @@ const CustomerDataSection = ({ customerId }) => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!form.category.trim() || !form.label.trim()) return;
+    if (!form.category.trim() || !form.label.trim()) {
+      toast({ title: "Category and Label are required.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       await addCustomerDataRecord(customerId, {
@@ -529,7 +532,6 @@ const CustomerDataSection = ({ customerId }) => {
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   placeholder="e.g. portfolio, goals"
-                  required
                   className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
                   style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
@@ -540,7 +542,6 @@ const CustomerDataSection = ({ customerId }) => {
                   value={form.label}
                   onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
                   placeholder="e.g. Account Balance"
-                  required
                   className="w-full rounded-lg px-3 py-2 text-sm text-[#1A1D1A] bg-transparent outline-none"
                   style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
                 />
@@ -668,7 +669,10 @@ const CustomerDataSection = ({ customerId }) => {
             </div>
             <p className="text-sm text-[#6B6B64] mb-6">
               {confirmDelete.type === "category"
-                ? `This will delete all ${records[confirmDelete.category]?.length || 0} records in the "${confirmDelete.category}" category.`
+                ? (() => {
+                    const n = records[confirmDelete.category]?.length || 0;
+                    return `This will delete all ${n} record${n !== 1 ? "s" : ""} in the "${confirmDelete.category}" category.`;
+                  })()
                 : `This will permanently remove the "${confirmDelete.label}" record.`}
             </p>
             <div className="flex justify-end gap-3">
