@@ -71,6 +71,10 @@ const CompanyProfile = () => {
 
   const save = async (e) => {
     e.preventDefault();
+    if (!form.name.trim()) {
+      toast({ title: "Company Name is required", variant: "destructive" });
+      return;
+    }
     if (!isValidUrl(form.website_url.trim())) {
       setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
       return;
@@ -105,7 +109,7 @@ const CompanyProfile = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Name</label>
-          <input type="text" required value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
+          <input type="text" value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Agent Name</label>
