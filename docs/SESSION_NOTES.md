@@ -5,7 +5,98 @@
 
 ---
 
-## Last updated: 2026-04-27 (PM) — **v3.3.12 SHIPPED** — second deep-test pass: Customers / Concerns / Notification bell / Profile / Team
+## Last updated: 2026-04-27 (PM later) — **v3.3.13 + v3.3.14 SHIPPED** — UserPill polish + multi-agent copy + widget rate-limit fix from 50-concurrent load test
+
+Session arc: Austin reviewed the v3.3.12 customer-data verify screenshots and flagged 3 things — (a) UserPill in onboarding shows raw email (truncated, looks weird with long real-customer emails), (b) "your agent" singular copy doesn't match the multi-agent "personal agent per customer" positioning, (c) "will the widget hold up to 50 concurrent sessions on the same site?" Walked through findings, agreed on plan C: ship the small polish bundle first (v3.3.13), then run a real load test on staging to answer the concurrency question with data (v3.3.14 if the data warrants a fix — and it did, hard).
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.12 | **v3.3.14** (jumped 2) |
+| PRs merged | — | 2 (#138 polish, #139 rate-limit + load test) |
+| Release tags pushed | — | 2 (v3.3.13, v3.3.14) |
+| 5×5 release gates | — | 2 (both 11/11 success) |
+| Real prod-impacting bugs found | — | **1 — and it was a hard one** (chat rate-limit 10/min/IP throttled real shared-NAT traffic) |
+| Load tests run | — | 4 (3 baseline failures, 1 confirmed-fix) |
+| Rollbacks | — | 0 |
+| Bundle hash | `index-DAslfMi8.js` | `index-eC-4aVGB.js` (v3.3.13 polish) |
+
+### Ship log (Apr 27 PM later)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#138](https://github.com/jafools/shenmay-ai/pull/138) | `d0bac02` | fix(ui): UserPill shows name instead of email + plural "agents" copy in 4 aggregate-view places. Email moved to title attribute (hover tooltip). Config-view copy stays singular ("Give your agent abilities" etc.). |
+| 5×5 gate v3.3.13 | `d0bac02` | [Run 24997582947](https://github.com/jafools/shenmay-ai/actions/runs/24997582947) — 11/11 success. |
+| **v3.3.13** | tag at `d0bac02` | GHCR rebuilt + Hetzner deployed `:3.3.13`. Bundle `index-eC-4aVGB.js`. |
+| [#139](https://github.com/jafools/shenmay-ai/pull/139) | `0450967` | fix(widget): bump per-IP rate-limit defaults — chat 10→100, session 6→60. Adds `scripts/widget-load-test.js` reusable concurrent load runner. Updates `.env.example` to document both vars. |
+| 5×5 gate v3.3.14 | `0450967` | [Run 24998223128](https://github.com/jafools/shenmay-ai/actions/runs/24998223128) — 11/11 success. |
+| **v3.3.14** | tag at `0450967` | GHCR rebuilt + Hetzner deployed `:3.3.14` + staging force-pulled. |
+
+### What got verified end-to-end
+
+**Polish (v3.3.13):** Build green, CI 5/5, 5×5 11/11, deployed to Hetzner. Visual confirmation deferred (cosmetic — would just verify the strings rendered).
+
+**Load-test sequence (v3.3.14 fix verification):**
+
+| Run | Setting | Result |
+|---|---|---|
+| Baseline (v3.3.13, default chat=10) | 50 concurrent chat from 1 IP | **0/50 OK** — 40× 429 "rate limit", 10× 403 "widget_unavailable" (LoadTest tenant had no subscription row — load-test artifact, not a real bug) |
+| Post-fix (v3.3.14, default chat=100), no subscription | 50 concurrent chat | 50/50 sessions OK; **0/50 chats** — all 50 hit 403 widget_unavailable (subscription gate). **Rate-limit fix confirmed: no 429.** |
+| Post-fix, with trial subscription seeded | 50 concurrent chat | Hit global limiter (150/min/IP) and session limiter window (still mid-test residue). Investigated. |
+| Post-fix, after restart staging backend (clear in-memory rate state) | 50 concurrent chat | **🎉 50/50 sessions + 50/50 chats SUCCEED.** Sessions p99=961ms, chats p99=2145ms wall (LLM round-trip dominates). |
+
+**Final post-fix numbers (50 concurrent, 1 source IP, against staging on `:edge` = v3.3.14):**
+
+```
+Phase 1 (POST /api/widget/session):
+  Wall time:   962 ms (all 50 done)
+  Success:     50/50
+  Per-request: min=519 p50=744 p95=931 p99=961 ms
+
+Phase 2 (POST /api/widget/chat with LLM round-trip):
+  Wall time:   2148 ms (all 50 done)
+  Success:     50/50
+  Per-request: min=1826 p50=1856 p95=2136 p99=2145 ms
+  Reply chars: min=100 p50=121 p95=165
+```
+
+### What got captured this session
+
+- **Per-IP widget rate-limiting was a real prod-impacting issue.** 50 visitors behind any shared-NAT (corporate office, mobile carrier, Cloudflare exit pool) shared the 10/min budget. Bumped to 100/min/IP for chat, 60/5min/IP for session. Documented as a memory: `feedback_per_ip_widget_rate_limit_too_tight.md` (TODO this session).
+- **Defense-in-depth follow-up deferred:** per-IP is the wrong axis for cost protection on a multi-tenant chat product. The right axis is per-session JWT (anti-spam) AND per-tenant widget_key (cost). Doing that requires moving `widgetChatLimiter` from `app.use()` (mounted before `requireWidgetAuth`) into the route handler so we can decode the JWT and key on session_id or widget_key. ~30-line refactor in `index.js` + `widget.js`. Not blocking.
+- **DB pool max=10 is fine for 50 concurrent.** Sessions with default pool=10 hit 519-961ms p99 — well within budget. The pool bump idea from initial planning is **NOT needed** based on the data. Ship-rule: don't change settings without justification from data.
+- **Global rate-limit (150/min/IP) and session rate-limit (100/5min/IP on staging via .env override) are easy to trip during repeat load testing.** A fresh load test on staging needs either (a) `docker compose restart backend` first to clear in-memory rate state, or (b) wait the full 5 min window. Worth a memory.
+- **`scripts/widget-load-test.js` is now in the repo** as the reusable concurrent load runner. Use for any future scale-validation work.
+
+### Cleanup done this session
+
+- ✅ Deleted staging LoadTest tenant (`40596173-bdec-411b-b725-1393e9d6e481`) and its synthetic subscription via cascade.
+
+### Still-open queue for next session
+
+**Code follow-ups from this session**
+1. **Per-tenant + per-session widget rate limiting** (defense-in-depth) — move `widgetChatLimiter` into the route handler after `requireWidgetAuth`, key by widget_key + session_id. Per-IP becomes a wide outer ring (the current 100/min). ~30-line refactor.
+2. **Set `WIDGET_CHAT_RATE_LIMIT_MAX` explicitly in prod and staging .env** — code default is now 100, but prod has session=200 explicit and chat unset. Setting chat=200 explicitly in both .env files would mirror the session pattern and make ops more transparent. (Optional — code default of 100 already handles it.)
+
+**More MCP-testable surfaces** (last batch)
+- Customer detail page **with Customer Data records** (Add Record button never exercised — would test the "+ Add Record" inline-add flow)
+- Conversations sidebar full coverage (sort/filter chips, take-over button, Reply box) — partially walked Apr 27 PM but only with one conversation
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. If you want them GC'd, requires manual GHCR delete via dashboard. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip (still deferred from prior sessions)
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key (still pending)
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (PM) — **v3.3.12 SHIPPED** — second deep-test pass: Customers / Concerns / Notification bell / Profile / Team
 
 Session arc: Austin asked to start the next agenda item — the deferred surfaces deep-test pass (Customers / Concerns / Notification bell / Profile / Team). Spun up a fresh test tenant via Chrome MCP (`shenmay-dt-apr27pm@mailinator.com`), walked all 6 surfaces (the 5 + Plans-via-upgrade-link). All rendered with **zero console errors**. Surfaced 3 findings — bundled into [#135](https://github.com/jafools/shenmay-ai/pull/135), CI green, 5×5 gate 10/10, tagged **v3.3.12**, deployed to Hetzner, verified the new copy is visible. Both Apr 27 test tenants cascade-deleted from prod.
 
