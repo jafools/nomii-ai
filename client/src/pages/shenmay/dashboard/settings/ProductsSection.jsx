@@ -40,7 +40,10 @@ const ProductsSection = () => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      toast({ title: "Product name is required", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       await addProduct({ ...form, name: form.name.trim() });
@@ -63,7 +66,10 @@ const ProductsSection = () => {
   const cancelEdit = () => { setEditingId(null); };
 
   const handleEditSave = async () => {
-    if (!editForm.name.trim()) return;
+    if (!editForm.name.trim()) {
+      toast({ title: "Product name is required", variant: "destructive" });
+      return;
+    }
     setEditSaving(true);
     try {
       await updateProduct(editingId, editForm);
@@ -101,7 +107,7 @@ const ProductsSection = () => {
         <form onSubmit={handleAdd} className="rounded-xl p-5 space-y-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <div>
             <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Name *</label>
-            <input type="text" required maxLength={200} value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
+            <input type="text" maxLength={200} value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
           </div>
           <div>
             <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Description</label>
@@ -141,7 +147,7 @@ const ProductsSection = () => {
                 <div key={pid} className="rounded-xl p-5 space-y-3" style={{ background: "rgba(15,95,92,0.04)", border: "1px solid rgba(15,95,92,0.15)" }}>
                   <div>
                     <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Name *</label>
-                    <input type="text" required value={editForm.name} onChange={setEdit("name")} className={inputClass} style={inputStyle} />
+                    <input type="text" value={editForm.name} onChange={setEdit("name")} className={inputClass} style={inputStyle} />
                   </div>
                   <div>
                     <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Description</label>
