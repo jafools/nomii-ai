@@ -5,7 +5,86 @@
 
 ---
 
-## Last updated: 2026-04-27 (PM later) — **v3.3.13 + v3.3.14 SHIPPED** — UserPill polish + multi-agent copy + widget rate-limit fix from 50-concurrent load test
+## Last updated: 2026-04-27 (evening) — **v3.3.15 SHIPPED** — layered widget rate-limits (per-session 30/min + per-tenant 1000/min, defense-in-depth)
+
+Session arc: Austin asked to pick up the deferred follow-up from v3.3.14 — the per-IP rate-limit was a bandaid; the real fix is layered limits keyed by session JWT + tenant. Built it in ~50 lines (extracted shared `makeRateLimiter` helper, added 2 new express-rate-limit instances mounted after `requireWidgetAuth`), shipped v3.3.15, verified both layers with two purpose-built load tests on staging.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.14 | **v3.3.15** |
+| PRs merged | — | 1 (#141) + 1 docs (this PR) |
+| Release tags pushed | — | 1 (v3.3.15) |
+| 5×5 release gate | — | 11/11 success ([Run 24999911257](https://github.com/jafools/shenmay-ai/actions/runs/24999911257)) |
+| Verification load tests | — | 2 of 2 PASSED |
+| Bundle hash | (unchanged from v3.3.14 — server-side change) | (same) |
+
+### Ship log (Apr 27 evening)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#141](https://github.com/jafools/shenmay-ai/pull/141) (server) + chore commit (compose) | `4be663c` | feat(widget): layered chat rate-limits — per-session 30/min + per-tenant 1000/min via 2 new express-rate-limit instances mounted AFTER `requireWidgetAuth` so they can decode the session JWT and key on `conversation_id` / `tenant_id` rather than IP. Each returns its own JSON error code (`per_session_rate_limit` / `per_tenant_rate_limit`) for distinct widget UX. Per-IP outer ring (100/min from v3.3.14) stays as third defense layer. |
+| | | Refactor: extracted `makeRateLimiter` from `index.js` to `server/src/middleware/rate-limit.js` so widget.js can import the shared install-or-passthrough wrapper. |
+| | | env-forwarding: env-forwarding lint caught the 2 new vars; added `WIDGET_CHAT_PER_SESSION_MAX` + `WIDGET_CHAT_PER_TENANT_MAX` to both compose files. **Bonus:** the existing `WIDGET_SESSION_RATE_LIMIT_MAX` + `WIDGET_CHAT_RATE_LIMIT_MAX` compose `:-` fallbacks were still on the pre-v3.3.14 values (6, 10) — bumped to (60, 100) so a customer running with no .env override actually gets the new code defaults at the container level. |
+| 5×5 gate v3.3.15 | `4be663c` | [Run 24999911257](https://github.com/jafools/shenmay-ai/actions/runs/24999911257) — 11/11 success. |
+| **v3.3.15** | tag at `4be663c` | GHCR rebuilt + Hetzner deployed `:3.3.15` + staging force-pulled. |
+
+### What got verified end-to-end (against staging on `:3.3.15`)
+
+**Test 1: 50 unique sessions, each sends 1 chat (per-session OK at 1<30, per-tenant OK at 50<1000)**
+```
+Phase 1 sessions: 50/50 OK in 908ms wall, p99=872ms
+Phase 2 chats:    50/50 OK in 1138ms wall, p99=1136ms
+                  Reply chars: min=100 p50=121 p95=165
+```
+
+**Test 2: 1 session spams 35 sequential chats (per-session limit kicks in at 31)**
+```
+Session opened: conversation_id=1a64c440-13f2-4a2f-9cf6-815e1de5c85a
+Sequence:       ..............................XXXXX
+OK:             30 / 35
+429:            5
+First 429 at:   message 31
+Error code:     'per_session_rate_limit'  ← the new code, exactly as designed
+```
+
+Both layers behave correctly. Per-tenant 1000/min limit not stress-tested (would need 1000+ messages from many sessions in one minute) but wiring is identical to per-session and verified to compile/run.
+
+### What got captured this session
+
+- **Compose `:-` fallback overrides code defaults at the container level.** A customer running with no .env override gets `compose's` fallback value (e.g. `${WIDGET_CHAT_RATE_LIMIT_MAX:-10}` → env=10), and the code's `process.env.X || '100'` reads "10" (truthy) → fallback "100" never fires. Means **bumping a code default without bumping the compose fallback is silently a no-op for any customer not setting the env.** v3.3.14 ALMOST had this bug — caught by env-forwarding lint when this v3.3.15 PR touched the same area.
+- **env-forwarding lint script earned its keep again.** When PR #139 added `WIDGET_CHAT_RATE_LIMIT_MAX` to .env.example but didn't touch compose files, the lint passed (var was already in compose). When PR #141 added the 2 new caps to widget.js, lint immediately failed CI — pointed at exactly which compose files were missing the wiring.
+- **`req.widgetSession.conversation_id` is the per-session identifier** for keying rate-limits. Each widget session opens its own conversation, so 1:1 with session for the lifetime of the JWT. Don't have to invent a separate `session_id` field.
+
+### Cleanup done this session
+
+- ✅ Staging LoadTest2 tenant cascade-deleted (`f4f8ccfd-de80-46fe-a66c-aa0d7f91c919`).
+
+### Still-open queue for next session
+
+**Code follow-ups**
+1. **Set `WIDGET_CHAT_RATE_LIMIT_MAX` + new caps explicitly in prod and staging .env** — code/compose defaults are now sane (100, 30, 1000), but explicit env in prod .env improves ops transparency. Optional.
+2. **Per-tenant cap stress test** — never exercised the 1000/min path. Would need a script that opens N sessions then fires 1000+ chats round-robin. Low priority — wiring is identical to per-session, which IS verified.
+
+**More MCP-testable surfaces**
+- Customer detail page **with Customer Data records** — Add Record button never exercised.
+- Conversations sidebar full coverage (sort/filter chips, take-over button, Reply box).
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. Manual GHCR delete via dashboard if you want them GC'd. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (PM later) — **v3.3.13 + v3.3.14 SHIPPED** — UserPill polish + multi-agent copy + widget rate-limit fix from 50-concurrent load test
 
 Session arc: Austin reviewed the v3.3.12 customer-data verify screenshots and flagged 3 things — (a) UserPill in onboarding shows raw email (truncated, looks weird with long real-customer emails), (b) "your agent" singular copy doesn't match the multi-agent "personal agent per customer" positioning, (c) "will the widget hold up to 50 concurrent sessions on the same site?" Walked through findings, agreed on plan C: ship the small polish bundle first (v3.3.13), then run a real load test on staging to answer the concurrency question with data (v3.3.14 if the data warrants a fix — and it did, hard).
 
