@@ -130,7 +130,7 @@ const ShenmayOverview = () => {
         <Display size={40} italic style={{ marginTop: 12 }}>
           {shenmayUser?.first_name ? <>Welcome back, {shenmayUser.first_name}.</> : <>Welcome back.</>}
         </Display>
-        <Lede>Here's what's happening with your agent.</Lede>
+        <Lede>Here's what's happening with your agents.</Lede>
       </div>
 
       {/* ── Alerts ────────────────────────────────────────── */}

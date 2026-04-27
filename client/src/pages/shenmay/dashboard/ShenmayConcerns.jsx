@@ -50,7 +50,7 @@ const ShenmayConcerns = () => {
           {loading ? "Loading concerns…" : error ? "Something went wrong." : concerns.length === 0 ? "All clear." : `${concerns.length} open concern${concerns.length === 1 ? "" : "s"}.`}
         </Display>
         <Lede>
-          Conversations your agent escalated and are waiting for you. Jump in, reply, or resolve.
+          Conversations your agents escalated and are waiting for you. Jump in, reply, or resolve.
         </Lede>
       </div>
 
@@ -81,7 +81,7 @@ const ShenmayConcerns = () => {
           </div>
           <Kicker color={T.success}>No open concerns</Kicker>
           <Lede style={{ marginTop: 0, maxWidth: 400 }}>
-            Everything looks good — your agent is handling things well.
+            Everything looks good — your agents are handling things well.
           </Lede>
         </div>
       ) : (
