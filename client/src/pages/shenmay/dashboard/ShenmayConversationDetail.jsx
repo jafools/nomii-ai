@@ -449,8 +449,10 @@ const ShenmayConversationDetail = () => {
           {messages.map((msg, i) => {
             const role    = (msg.role || msg.sender || "").toLowerCase();
             const isAgent = role === "agent" || role === "assistant";
+            // Operator-as-you convention: agent (you) on the right, customer on
+            // the left. Matches the sidebar ThreadView in ShenmayConversations.
             return (
-              <div key={msg.id || i} style={{ display: "flex", justifyContent: isAgent ? "flex-start" : "flex-end", marginBottom: 12 }}>
+              <div key={msg.id || i} style={{ display: "flex", justifyContent: isAgent ? "flex-end" : "flex-start", marginBottom: 12 }}>
                 <div style={{
                   maxWidth: "70%",
                   borderRadius: 14,
@@ -458,8 +460,8 @@ const ShenmayConversationDetail = () => {
                   background: isAgent ? T.ink : T.paperDeep,
                   color: isAgent ? T.paper : T.ink,
                   border: isAgent ? `1px solid ${T.ink}` : `1px solid ${T.paperEdge}`,
-                  borderBottomLeftRadius: isAgent ? 4 : 14,
-                  borderBottomRightRadius: isAgent ? 14 : 4,
+                  borderBottomLeftRadius: isAgent ? 14 : 4,
+                  borderBottomRightRadius: isAgent ? 4 : 14,
                 }}>
                   <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: isAgent ? `${T.paper}88` : T.mute, marginBottom: 4 }}>
                     {isAgent ? agentName : name}
