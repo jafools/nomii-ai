@@ -5,7 +5,77 @@
 
 ---
 
-## Last updated: 2026-04-27 — **v3.3.10 + v3.3.11 SHIPPED** — SaaS deep-test bundle + on-prem deep-test pass + NOMII_* env-var fallback
+## Last updated: 2026-04-27 (PM) — **v3.3.12 SHIPPED** — second deep-test pass: Customers / Concerns / Notification bell / Profile / Team
+
+Session arc: Austin asked to start the next agenda item — the deferred surfaces deep-test pass (Customers / Concerns / Notification bell / Profile / Team). Spun up a fresh test tenant via Chrome MCP (`shenmay-dt-apr27pm@mailinator.com`), walked all 6 surfaces (the 5 + Plans-via-upgrade-link). All rendered with **zero console errors**. Surfaced 3 findings — bundled into [#135](https://github.com/jafools/shenmay-ai/pull/135), CI green, 5×5 gate 10/10, tagged **v3.3.12**, deployed to Hetzner, verified the new copy is visible. Both Apr 27 test tenants cascade-deleted from prod.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.11 | **v3.3.12** |
+| PRs merged | — | 1 (#135) |
+| Surfaces walked | — | 6 (Customers, Concerns, Notification, Profile, Team, Plans) |
+| Bugs fixed | — | 3 (1 UX gap + 4 stale-nav locations + 1 silent-fail validation) |
+| Real prod-impacting bugs | — | 0 (all polish — none crash, broken-back was the worst) |
+| 5×5 release gate | — | 11/11 success ([Run 24992841182](https://github.com/jafools/shenmay-ai/actions/runs/24992841182)) |
+| Rollbacks | — | 0 |
+| Bundle hash | `index-Dfrw0FPh.js` | `index-DAslfMi8.js` |
+
+### Ship log (Apr 27 PM)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#135](https://github.com/jafools/shenmay-ai/pull/135) | `be9a9a4` | fix(dashboard): plug 3 dead-end UX gaps from Apr-27 PM deep-test. Customers empty-state copy + setup link, drop stale `/shenmay/dashboard/...` from 4 internal navs (URL flicker + broken back-button history), Profile name fields drop HTML5 `required` + add React-side inline validation matching the password-mismatch pattern. |
+| 5×5 gate v3.3.12 | `be9a9a4` | [Run 24992841182](https://github.com/jafools/shenmay-ai/actions/runs/24992841182) — 11/11 jobs success. |
+| **v3.3.12** | tag at `be9a9a4` | GHCR rebuilt + Hetzner deployed `:3.3.12`. Bundle `index-DAslfMi8.js`. Internal + external `/api/health` green. Customers empty-state new copy verified visible. |
+
+### What got verified end-to-end (prod, tenant `shenmay-dt-apr27pm@mailinator.com`)
+
+- ✅ `/dashboard/customers` — empty state shows new copy "Customers appear automatically as visitors chat with your agent. To bulk-import a list, **open setup**." with teal underlined link
+- ✅ `/dashboard/concerns` — clean "All clear." empty state with green check
+- ✅ Notification bell dropdown — clean "No notifications yet" panel
+- ✅ `/dashboard/profile` — both Personal Info + Change Password sections render, password mismatch shows correct red caption ("PASSWORDS DON'T MATCH")
+- ✅ `/dashboard/team` — trial-seat amber bar from PR #128 confirmed live (1/1 seats), disabled "Invite agent" button has correct tooltip ("Agent limit reached (1). Upgrade to add more.")
+- ✅ "Upgrade to invite more agents" link → `/dashboard/plans` → renders usage + recommended-next + 3 tier cards
+- ✅ Zero console errors on any of the 6 surfaces
+
+### What got captured this session
+
+- **Stale `/shenmay/dashboard/...` internal navigations** — found 4 places where post-rebrand internal nav still uses the legacy `/shenmay/` prefix. They don't 404 (the `ShenmayLegacyRedirect` route at App.tsx:144 strips the prefix), but they cause visible URL flicker and break browser-back (clicking back goes to `/shenmay/...` which immediately redirects forward). Internal nav should be direct. Worth a future grep on any new internal `to=`/`navigate(` for `/shenmay/` to keep this from regressing.
+- **HTML5 `required` + React toast = silently dead toast branch** — same trap as PR #131. Profile.jsx had a `toast({ title: "Please fill in both name fields..." })` guard that *never fired* in practice because HTML5 `required` short-circuited the form submit and just focused the first invalid field. The user sees focus jump but no message. Standard fix: drop `required`, add React-side inline error caption matching the existing password-mismatch pattern. **Already in vault as feedback memory `feedback_html5_validation_preempts_react.md` from prior session — this entry confirms the same memory applies to `required` (not just `type=email`/`type=url`).**
+- **`tenant_admins` is the table name** (not `admins`) — slow rediscovery. Worth noting if writing future ad-hoc cleanup queries.
+- **Cascade-delete on `tenants` works clean** — single `DELETE FROM tenants WHERE id IN (...)` removed both Apr 27 test tenants and their `tenant_admins` rows in one transaction. No need for a `delete_tenant.js` helper script for this case.
+
+### Cleanup done this session
+
+- ✅ Deleted prod test tenant `shenmay-deeptest-apr27@mailinator.com` (id `f0c48905-427a-461c-bad9-587e6d2e2112`, the still-open item from morning session).
+- ✅ Deleted prod test tenant `shenmay-dt-apr27pm@mailinator.com` (id `10355af8-172c-4c71-b7b0-988576e9b407`, this session's tenant).
+
+### Still-open queue for next session
+
+**More MCP-testable surfaces** (next deep-test pass)
+- Customers page **with real customer data** (need conversation traffic to populate; or onboarding Step 3 CSV import to stage some)
+- Customer detail page (`/dashboard/customers/:id`) — never reached this session because Deep Test PM had 0 customers
+- Conversations page **with real conversation data** + the customer/conversation links we just fixed (verify the back button works correctly post-fix)
+- Conversations sidebar full coverage (sort/filter chips, take-over button, Reply box)
+- Onboarding wizard end-to-end (started this session but hopped over once dashboard was reachable)
+
+**Cosmetic / housekeeping**
+- `Step1CompanyProfile.jsx` URL field could mirror PR #131's inline-validation pattern (currently uses the older onBlur+caption variant — works fine, but slightly different code path). Still not blocking.
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. If you want them GC'd, requires manual GHCR delete via dashboard. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip (still deferred from prior sessions)
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key (still pending)
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 — **v3.3.10 + v3.3.11 SHIPPED** — SaaS deep-test bundle + on-prem deep-test pass + NOMII_* env-var fallback
 
 Session arc: cleared the entire cosmetic queue from v3.3.9 (INDUSTRIES dead-const sweep + Settings → CompanyProfile URL inline-validation parity) → tagged **v3.3.10** → ran a fresh Chrome-MCP deep-test pass on prod (Email Templates / Webhooks / Custom Tools / Conversations) → bundled the surfaced UX gaps into one PR → tagged **v3.3.10** with the polish bundle (#132) → walked the same 4 surfaces on the on-prem test VM (`10.0.100.25`) → caught the silent-revert-to-trial bug from the post-rebrand `envVar()` helper not reading `NOMII_*` → bundled with 3 wording fixes → tagged **v3.3.11** → both Hetzner + on-prem deployed.
 
