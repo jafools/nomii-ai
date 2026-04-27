@@ -129,7 +129,7 @@ const ShenmayCustomers = () => {
           <Lede style={{ marginTop: 0 }}>{debouncedSearch ? `No customers matching "${debouncedSearch}"` : "No customers yet."}</Lede>
           {!debouncedSearch && (
             <p style={{ fontSize: 13, color: T.mute, margin: 0, textAlign: "center", maxWidth: 420, lineHeight: 1.5 }}>
-              Customers appear automatically as visitors chat with your agent. To bulk-import a list,{' '}
+              Customers appear automatically as visitors chat with your agents. To bulk-import a list,{' '}
               <a href="/onboarding" style={{ color: T.teal, textDecoration: "underline" }}>open setup</a>.
             </p>
           )}

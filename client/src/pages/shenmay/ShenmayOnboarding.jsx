@@ -28,7 +28,8 @@ const UserPill = ({ admin }) => {
   const navigate = useNavigate();
 
   const initials = ((admin?.first_name?.[0] || "") + (admin?.last_name?.[0] || "")).toUpperCase() || "?";
-  const email = admin?.email || "";
+  const fullName = `${admin?.first_name || ""} ${admin?.last_name || ""}`.trim();
+  const label = fullName || admin?.email || "";
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -42,12 +43,13 @@ const UserPill = ({ admin }) => {
     <div style={{ position: "relative" }} ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
+        title={admin?.email || ""}
         style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, background: "transparent", border: `1px solid ${T.paperEdge}`, cursor: "pointer", color: T.ink }}
       >
         <div style={{ width: 26, height: 26, borderRadius: "50%", background: T.ink, color: T.paper, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 500, fontFamily: T.sans }}>
           {initials}
         </div>
-        <span style={{ fontSize: 12, color: T.inkSoft, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</span>
+        <span style={{ fontSize: 12, color: T.inkSoft, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
         <ChevronDown size={12} color={T.mute} />
       </button>
 
