@@ -36,6 +36,7 @@ const { getToolDefinitions }                     = require('../tools/registry');
 const { execute: executeTool }                   = require('../tools/executor');
 const { loadCustomTools, toToolDefinition, buildCustomExecutor, buildCombinedExecutor } = require('../tools/customToolLoader');
 const { requireActiveWidgetSubscription, incrementMessageCount, getSubscription, sendLimitNotificationIfNeeded } = require('../middleware/subscription');
+const { makeRateLimiter } = require('../middleware/rate-limit');
 const { sendConcernEmail, sendHumanModeReplyEmail } = require('../services/emailService');
 const { writeAuditLog } = require('../middleware/auditLog');
 const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
@@ -996,7 +997,50 @@ router.get('/poll', requireWidgetAuth, async (req, res, next) => {
 //
 const MAX_MESSAGE_LENGTH = 4000; // ~1000 tokens — blocks stuffing while allowing long messages
 
-router.post('/chat', requireWidgetAuth, requireActiveWidgetSubscription, async (req, res, next) => {
+// ── Layered chat rate limiters (defense-in-depth, v3.3.15) ────────────────────
+// The outer per-IP limiter (`widgetChatLimiter` in index.js) was the only chat
+// throttle through v3.3.14. Per-IP is the wrong axis for a multi-tenant chat
+// product — visitors behind shared NAT all share one bucket — so v3.3.14 had
+// to bump that cap to 100/min/IP just to accommodate realistic shared-NAT
+// traffic. That left two real risk vectors uncovered:
+//
+//   1. A single visitor spamming messages — mitigated below per `conversation_id`
+//      (each widget session gets its own conversation, so this == per-session).
+//   2. A single tenant's widget being abused (cost-protection) — mitigated
+//      below per `tenant_id`.
+//
+// These run AFTER `requireWidgetAuth` so we can read `req.widgetSession` and
+// key on session/tenant rather than IP. Each has its own JSON error code so
+// the widget can render distinct UX.
+//
+// Defaults are deliberately generous — these are anti-abuse backstops, not
+// throttles for normal use. Override via env if your customer pattern is
+// chattier than typical.
+const perSessionChatLimiter = makeRateLimiter({
+  windowMs: 60 * 1000,
+  max:      parseInt(process.env.WIDGET_CHAT_PER_SESSION_MAX || '30', 10),
+  standardHeaders: true,
+  legacyHeaders:   false,
+  keyGenerator: (req) => req.widgetSession?.conversation_id || req.ip,
+  message: { error: 'per_session_rate_limit', message: "You're sending messages too fast. Slow down a moment." },
+});
+
+const perTenantChatLimiter = makeRateLimiter({
+  windowMs: 60 * 1000,
+  max:      parseInt(process.env.WIDGET_CHAT_PER_TENANT_MAX || '1000', 10),
+  standardHeaders: true,
+  legacyHeaders:   false,
+  keyGenerator: (req) => req.widgetSession?.tenant_id || req.ip,
+  message: { error: 'per_tenant_rate_limit', message: 'This chat service is temporarily over capacity. Please try again in a minute.' },
+});
+
+router.post(
+  '/chat',
+  requireWidgetAuth,
+  perSessionChatLimiter,
+  perTenantChatLimiter,
+  requireActiveWidgetSubscription,
+  async (req, res, next) => {
   try {
     const { content } = req.body;
     if (!content || !content.trim()) {
