@@ -394,7 +394,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
           </div>
           <div>
             {convo?.customer_id && !convo?.is_anonymous ? (
-              <Link to={`/shenmay/dashboard/customers/${convo.customer_id}`}
+              <Link to={`/dashboard/customers/${convo.customer_id}`}
                 className="text-[14px] font-semibold text-[#1A1D1A] hover:text-[#0F5F5C] transition-colors flex items-center gap-1">
                 {name}<ExternalLink className="h-3 w-3 opacity-40" />
               </Link>
@@ -416,7 +416,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
             </Button>
           )}
           {conversationId && (
-            <Link to={`/shenmay/dashboard/conversations/${conversationId}`}
+            <Link to={`/dashboard/conversations/${conversationId}`}
               title="Open full conversation"
               className="p-1.5 rounded-lg hover:opacity-70 transition-opacity"
               style={{ color: "#6B6B64" }}>
