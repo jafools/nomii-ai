@@ -5,7 +5,94 @@
 
 ---
 
-## Last updated: 2026-04-27 (late evening) — **v3.3.16 SHIPPED** — Customer detail deep-test pass (whitespace silent-fail + plural + Overview header)
+## Last updated: 2026-04-27 (later late evening) — **v3.3.17 SHIPPED** — Conversations deep-test pass (filter-clears-selection + flipped message alignment)
+
+Session arc: Picked up after v3.3.16 ship — Austin authorized continuing through the deep-test queue. Walked the Conversations sidebar + detail page against prod v3.3.16 via Chrome MCP on a fresh test tenant. Seeded 3 customers + 3 conversations + 12 messages directly via DB (bypassing widget chat which would require an LLM key on this trial tenant). Surfaced 4 findings, 2 fixable in this PR + 2 out-of-scope (backend/schema). **Bonus:** verified the v3.3.16 PAGE_TITLES fix works on `/dashboard/conversations/:id` — top-bar correctly shows "Conversations".
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.16 | **v3.3.17** |
+| PRs merged | — | 1 (#145) |
+| Surfaces walked | — | Conversations sidebar + detail page (search, status pills × 4, mode pills × 3, Unread, bulk-select + Resolve, Take over, Reply box, escalated banner, full-detail navigation) |
+| Bugs fixed | — | 2 (filter-clears-selection + detail-page message alignment flipped) |
+| Bugs flagged out-of-scope | — | 2 (human-reply attribution + bulk Resolve missing `ended_at`) |
+| 5×5 release gate | — | 11/11 success ([Run 25014252235](https://github.com/jafools/shenmay-ai/actions/runs/25014252235)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-DpDo_SDR.js` | `index-O9ew0zlh.js` |
+
+### Ship log (Apr 27 later late evening)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#145](https://github.com/jafools/shenmay-ai/pull/145) | `c908c2c` | fix(conversations): plug 2 UX gaps from Apr-27 conversations deep test. (1) `fetchList` only auto-set `selectedId` when null — now also re-selects when the current selection is filtered out (clears entirely on empty list). Reproduced cleanly: select Sarah (active), click Escalated pill → list shrinks to escalated convo but right-panel kept showing Sarah's thread with actionable Take over button. Operator could mutate an unseen conversation. (2) Message alignment + bubble corner-radius flipped between sidebar ThreadView (agent right, customer left — operator-as-you convention) and detail page (agent left, customer right). Same data, opposite layouts. Flipped detail page to match sidebar. |
+| 5×5 gate v3.3.17 | `c908c2c` | [Run 25014252235](https://github.com/jafools/shenmay-ai/actions/runs/25014252235) — 11/11 success. |
+| **v3.3.17** | tag at `c908c2c` | GHCR rebuilt + Hetzner deployed `:3.3.17`. Bundle `index-O9ew0zlh.js` (verified contains `.some(z=>(z._id||z.id` minified signature of the new Finding #1 fix logic). |
+
+### What got verified end-to-end
+
+Pre-fix walk on prod v3.3.16 (DB-seeded 3 conversations: 1 active+named Sarah Mitchell, 1 escalated+anon, 1 ended+anon+csat=2):
+
+| Surface | Result |
+|---|---|
+| List initial render (3 of 3, statuses, csat thumbs-up, ESCALATED badge, unread dots) | ✅ |
+| Search "sarah" → debounced narrow to 1 of 1 | ✅ |
+| Status pills (Active / Escalated / Ended / All) | ✅ list filters correctly |
+| Mode pills (AI / Human / All modes) | ✅ list filters correctly |
+| Unread toggle | ✅ |
+| Empty-state copy when filters yield nothing | ✅ |
+| **Filter excludes selected → right panel stays stale (Finding #1)** | ❌ → fixed |
+| Open-full-arrow → `/dashboard/conversations/:id` (verifies v3.3.16 PAGE_TITLES fix) | ✅ top-bar shows "Conversations" |
+| Take over button | ✅ banner + handback note + Reply box appear; DB confirms `mode=human` + `human_agent_id` set |
+| Send human reply via Reply box (Enter to send) | ✅ message lands in DB with `role='agent'` |
+| **Detail-page message alignment flipped vs sidebar (Finding #2)** | ❌ → fixed |
+| Sidebar HUMAN green badge after takeover | ✅ |
+| Mode=Human filter shows only Sarah | ✅ |
+| Escalated thread red banner | ✅ |
+| Bulk select via DOM checkbox click | ✅ "2 selected" toolbar appears |
+| Bulk Resolve action | ✅ rows update status; ⚠ but `ended_at` not set (Finding #4 — out of scope) |
+| Console errors during walk | None app-side |
+| `/api/portal/conversations/*` requests | All 200 |
+
+Post-fix on prod `:3.3.17`: `/api/health` ok, both backend + frontend on `:3.3.17`, public bundle `index-O9ew0zlh.js` contains the new `.some(...selectedId)` longest-match signature.
+
+### What got captured this session
+
+- **Don't trust `Object.entries(MAP).find(startsWith)` patterns** OR similar single-pass dispatch tables. Same root issue as v3.3.16's PAGE_TITLES bug. The Conversations selection logic had a sibling pattern: `if (!selectedId) setSelectedId(...)` only auto-set when null, never re-validated whether `selectedId` was still valid. Generalized lesson: **on any state-derived-from-list pattern, always re-validate the existing state against the new list before using it.**
+- **Human-sent reply attribution is a real schema gap.** Take over a conversation, reply as a human — the message goes into DB with `role='agent'` indistinguishable from AI replies. No `human_agent_id` column on `messages` (it's only on `conversations`). Reviewers / QA / auditors looking at the transcript can't tell which agent voice came from a human. **Logged for follow-up — needs a migration adding `messages.sent_by_user_id` plus UI treatment to surface it.**
+- **Bulk Resolve doesn't set `ended_at`.** Backend bug — `bulkConversations(ids, "resolve")` updates `status='ended'` but skips the timestamp. Analytics queries filtering on `ended_at IS NOT NULL` (e.g. "convs ended this week") will miss bulk-resolved convos. **Logged for follow-up.**
+- **Direct DB-seed pattern works for non-LLM-blocked deep-tests.** Trial tenants without a configured LLM API key can't use widget chat (chat endpoint will 500 on LLM call). DB-seeding `customers + conversations + messages` directly is the fastest way to set up a realistic Conversations deep-test fixture. ~5 min from signup-to-walking once the SQL pattern is captured. **Worth a memory entry alongside the customer-CSV-API pattern from yesterday's v3.3.16.**
+- **Some hybrid SQL gotchas:** (a) `customers.onboarding_status` CHECK constraint allows only `pending|in_progress|complete` (NOT "completed" — bit me on first seed). (b) `conversations.session_type` allows `chat|onboarding|review|escalation`. (c) `messages.role` allows `customer|agent|system`. The schema is well-bounded but the discrepancies between "completed" (ConvoDetail page state) and "complete" (DB CHECK) are easy to flip on.
+
+### Cleanup done this session
+
+- ✅ Test tenant `897e3cb9-930d-42d3-80c8-b706d12ba528` (DT Convo Lab / shenmay-dt-convo-apr27@mailinator.com) cascade-deleted from prod via `DELETE FROM tenants WHERE id = ...`.
+
+### Still-open queue for next session
+
+**Out-of-scope findings from this session (deferred to dedicated PRs)**
+1. **Human-reply attribution** — needs `messages.sent_by_user_id` migration + UI treatment to mark human-sent replies as distinct from AI in the transcript view.
+2. **Bulk Resolve missing `ended_at`** — backend fix in `bulkConversations(..., 'resolve')` to set `ended_at = NOW()` alongside `status='ended'`.
+
+**More MCP-testable surfaces** (queue continues to shrink)
+- **`/dashboard/settings` re-walk** — last walked v3.3.8 (when it crashed) → v3.3.9 fixed PRESET_COLORS + 2 unmasked orphans. Lots has shipped since. Settings is heavy (Webhooks, Labels, Connectors, DataApi, EmailTemplates) — high finding-density potential.
+- Customer detail with realistic Soul/Memory data — needs a real chat round-trip first to populate Soul/Memory rendering paths (bio fields + family + personality tags + goals/concerns).
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. Manual GHCR delete via dashboard if you want them GC'd. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (late evening) — **v3.3.16 SHIPPED** — Customer detail deep-test pass (whitespace silent-fail + plural + Overview header)
 
 Session arc: Austin asked to start the next deep-test surface — Customer detail page with Customer Data records (last untested MCP-testable surface from v3.3.15's queue). Walked the full surface against prod v3.3.15 via Chrome MCP on a fresh `shenmay-dt-customer-apr27@mailinator.com` tenant. Surfaced 3 findings — bundled into [#143](https://github.com/jafools/shenmay-ai/pull/143), CI green, 5×5 gate 11/11, tagged **v3.3.16**, deployed to Hetzner, verified all 3 fixes are live in the public bundle. Test tenant cascade-deleted from prod.
 
