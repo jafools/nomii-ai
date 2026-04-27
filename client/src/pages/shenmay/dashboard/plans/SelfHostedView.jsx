@@ -150,7 +150,7 @@ export default function SelfHostedView({ currentPlan, isTrialPlan, usage, licens
 
         {licenseInfo?.env_var_in_use ? (
           <p style={{ fontSize: 12, fontStyle: "italic", color: T.mute, margin: "16px 0 0" }}>
-            Your license is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>SHENMAY_LICENSE_KEY</code> in .env. To change from the dashboard, remove that line and restart, then come back here.
+            Your license is pinned via <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>SHENMAY_LICENSE_KEY</code> in .env (or legacy <code style={{ fontFamily: T.mono, background: T.paperDeep, padding: "2px 6px", borderRadius: 3 }}>NOMII_LICENSE_KEY</code>, both are read). To change from the dashboard, remove that line and restart, then come back here.
           </p>
         ) : (
           <form onSubmit={handleActivateLicense} style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -160,7 +160,7 @@ export default function SelfHostedView({ currentPlan, isTrialPlan, usage, licens
                 type="text"
                 value={licenseInput}
                 onChange={(e) => setLicenseInput(e.target.value)}
-                placeholder="SHENMAY-XXXX-XXXX-XXXX-XXXX"
+                placeholder="SHENMAY-XXXX-XXXX-XXXX-XXXX  (or legacy NOMII-)"
                 disabled={licenseBusy}
                 spellCheck={false}
                 autoComplete="off"

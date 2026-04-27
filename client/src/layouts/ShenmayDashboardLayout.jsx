@@ -443,14 +443,17 @@ const ShenmayDashboardLayout = () => {
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
               <div style={{ width: 26, height: 26, borderRadius: 13, background: T.danger, color: T.paper, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: T.mono, fontWeight: 500 }}>!</div>
               <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, letterSpacing: "-0.005em" }}>Trial limit reached — your agents are paused</p>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, letterSpacing: "-0.005em" }}>
+                  {usageData.message_limit_reached
+                    ? "Trial limit reached — your agents are paused"
+                    : "Trial customer limit reached — new sessions blocked"}
+                </p>
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "rgba(245,241,232,0.7)", lineHeight: 1.5 }}>
                   {usageData.customer_limit_reached && usageData.message_limit_reached
-                    ? "You've used all trial customers and messages."
+                    ? "You've used all trial customers and messages — no new sessions, and no agent replies until you upgrade."
                     : usageData.customer_limit_reached
-                    ? "You've reached the 1-customer trial limit."
-                    : "You've used all 20 trial messages this month."}
-                  {" "}Upgrade to restore service instantly.
+                    ? "You've reached the 1-customer trial limit. Existing conversations keep flowing; new visitors can't start a session until you upgrade."
+                    : "You've used all 20 trial messages this month. Agents stop replying until next month or until you upgrade."}
                 </p>
               </div>
             </div>
