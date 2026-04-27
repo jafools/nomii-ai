@@ -444,6 +444,10 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
         ) : messages.map((msg, i) => {
           const role    = (msg.role || msg.sender || "").toLowerCase();
           const isAgent = role === "agent" || role === "assistant";
+          const isHumanSent = isAgent && !!msg.sent_by_admin_id;
+          const humanName = isHumanSent
+            ? (`${msg.sender_first_name || ""} ${msg.sender_last_name || ""}`.trim() || "Human")
+            : null;
           const content = msg.content || msg.text || msg.message || "";
           const ts      = fmtTime(msg.createdAt || msg.created_at || msg.timestamp);
 
@@ -455,6 +459,7 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
                     background: T.ink,
                     color: T.paper,
                     borderBottomRightRadius: "6px",
+                    borderRight: isHumanSent ? "3px solid #0F5F5C" : undefined,
                   } : {
                     background: T.paperDeep,
                     border: `1px solid ${T.paperEdge}`,
@@ -465,7 +470,10 @@ const ThreadView = ({ conversationId, shenmayTenant }) => {
                   </p>
                 </div>
                 <p className="text-[10px] mt-1 px-1" style={{ color: "#D8D0BD" }}>
-                  {isAgent ? (shenmayTenant?.agent_name || "Agent") : ""}
+                  {isHumanSent && (
+                    <span style={{ display: "inline-block", marginRight: 5, padding: "1px 5px", borderRadius: 3, background: "#0F5F5C", color: "#FFFFFF", fontSize: 9, letterSpacing: "0.06em" }}>HUMAN</span>
+                  )}
+                  {isAgent ? (humanName || (shenmayTenant?.agent_name || "Agent")) : ""}
                   {isAgent && ts ? " · " : ""}{ts}
                 </p>
               </div>
