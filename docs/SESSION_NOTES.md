@@ -5,7 +5,93 @@
 
 ---
 
-## Last updated: 2026-04-26 night — **v3.3.9 SHIPPED** — full deep-test queue patched + 2 more PRESET_COLORS-class bugs the spec caught on its first run
+## Last updated: 2026-04-27 — **v3.3.10 + v3.3.11 SHIPPED** — SaaS deep-test bundle + on-prem deep-test pass + NOMII_* env-var fallback
+
+Session arc: cleared the entire cosmetic queue from v3.3.9 (INDUSTRIES dead-const sweep + Settings → CompanyProfile URL inline-validation parity) → tagged **v3.3.10** → ran a fresh Chrome-MCP deep-test pass on prod (Email Templates / Webhooks / Custom Tools / Conversations) → bundled the surfaced UX gaps into one PR → tagged **v3.3.10** with the polish bundle (#132) → walked the same 4 surfaces on the on-prem test VM (`10.0.100.25`) → caught the silent-revert-to-trial bug from the post-rebrand `envVar()` helper not reading `NOMII_*` → bundled with 3 wording fixes → tagged **v3.3.11** → both Hetzner + on-prem deployed.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.9 | **v3.3.11** (jumped 2) |
+| PRs merged | — | **5** (#130 #131 #132 #133 + docs PR) |
+| Release tags pushed | — | **2** (v3.3.10, v3.3.11) |
+| 5×5 release gates | — | **2** (both 10/10 + verdict success) |
+| Deep-test passes run | — | **2** (SaaS + on-prem) |
+| Surfaces walked | — | 4 SaaS + 4 on-prem + on-prem-only Plans/billing |
+| Bugs fixed | — | 7 (1 P1, 3 UX, 3 wording) |
+| Bugs ruled out | — | 1 ("Unicode mojibake" was Git Bash Windows-locale, not Shenmay) |
+| Rollbacks | — | 0 |
+| Bundle hash | `index-619Yzz2P.js` | `index-Dfrw0FPh.js` |
+
+### Ship log (Apr 27)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#130](https://github.com/jafools/shenmay-ai/pull/130) | `9641989` | chore(settings): drop dead `INDUSTRIES` const from 10 sub-section files. Cosmetic post-v3.3.1 split cleanup; 110 deletions, 0 insertions. CompanyProfile.jsx is the only legit consumer. |
+| [#131](https://github.com/jafools/shenmay-ai/pull/131) | `05f9cc2` | fix(settings): inline URL validation on Settings → CompanyProfile (mirrors #126 onboarding pattern). |
+| **v3.3.10** | tag at `f09c6e8` | GHCR rebuild + Hetzner deploy. Bundle `index-BZFPC8pK.js`. |
+| [#132](https://github.com/jafools/shenmay-ai/pull/132) | `f09c6e8` | fix(settings): plug 3 dead-end UX gaps from Apr-27 SaaS deep-test — Email Templates Reply-To inline validation + Webhooks empty-URL toast + `required` attr + a11y `aria-label` on edit/delete icons. |
+| [#133](https://github.com/jafools/shenmay-ai/pull/133) | `b416dfc` | fix(self-hosted): `envVar()` falls back to `NOMII_<suffix>` when `SHENMAY_<suffix>` unset (P1 surfaced on the on-prem test VM whose .env still had `NOMII_LICENSE_KEY=...`) + license placeholder mentions both prefixes + trial banner headline branches on which limit triggered + Tools sandbox copy drops "using your configured key". |
+| **v3.3.11** | tag at `b416dfc` | GHCR rebuild + Hetzner deploy + on-prem refresh. Bundle `index-Dfrw0FPh.js`. |
+| 5×5 gate v3.3.10 | `49ec0ec` | [Run 24984837746](https://github.com/jafools/shenmay-ai/actions/runs/24984837746) — 10/10 + verdict success. |
+| 5×5 gate v3.3.11 | `b416dfc` | [Run 24986285003](https://github.com/jafools/shenmay-ai/actions/runs/24986285003) — 10/10 + verdict success. |
+
+### What got verified end-to-end
+
+**SaaS deep-test (Chrome MCP, prod tenant `shenmay-deeptest-apr27@mailinator.com`):**
+
+- ✅ `/dashboard/settings` renders cleanly on v3.3.9 → confirms PR #125 fix from prior session held
+- ✅ Email Templates: empty-save → green ✓ (correct: all fields optional). Long valid values persist across reload, footer keeps newlines.
+- ✅ Webhooks happy path: secret reveal, "Active" status, test-ping toast, pause toggle, delete cascade
+- ✅ Custom Tools 3-step wizard: type-pick → name + when-to-use → category → "Tool added" toast → list rendered. Sandbox test against the new tool runs successfully (counts 1 message against trial allowance — fallback Anthropic key in play).
+- ✅ Conversations: real chat 4 round-trips → renders in dashboard with full thread + sidebar preview + status badges + take-over button + filter chips.
+- 🔴 1 P1 false alarm (Unicode mojibake) → diagnosed as Git Bash Windows-locale artifact; bytes from a real browser fetch store as clean UTF-8 (`c3b6` for `ö`). Real customers won't hit this. **Not a Shenmay bug.**
+
+**On-prem deep-test (Chrome MCP via LAN to `10.0.100.25`, refreshed `nomii-*:stable` → `shenmay-*:stable`):**
+
+- ✅ All 4 surfaces render identically to SaaS
+- ✅ PR #132 Webhooks "Endpoint URL is required" toast confirmed live
+- ✅ PR #132 EmailTemplates inline validation **in bundle** (`replyToError` x3 in `index-BZFPC8pK.js`) — programmatic JS `.blur()` doesn't fire React's synthetic onBlur, so visible-test gap is harness-only; real keyboard-tab works.
+- ✅ Plans & billing renders self-hosted-specific "License & usage" view (not SaaS Stripe — gated by `tenants.subscription.plan` + presence of license)
+- ✅ Marketing URL `pontensolutions.com/shenmay/license` returns HTTP 200
+- ✅ NOMII_* env-var fallback **proven via in-container Node REPL**: SHENMAY_ wins when set, NOMII_ fallback when SHENMAY_ unset, fallback when neither.
+
+### What got captured this session
+
+- **HTML5 native validation preempts React onSubmit** (new feedback memory `feedback_html5_validation_preempts_react.md`) — `type="email"` and `type="url"` inputs trigger the browser's native validation popup BEFORE React's submit handler runs. Means PR #126 / #131 / #132 inline-validation fixes only fire via the **onBlur path**, not the submit path. Don't try to test the submit path with invalid input — HTML5 will short-circuit it. Programmatic JS `.blur()` also doesn't reliably fire React's synthetic onBlur — use real keyboard tab navigation OR trust the bundle-grep + production smoke.
+- **Empty-string env vars block `??` fallback** (new feedback memory `feedback_nullish_coalesce_empty_string.md`) — Test 4 of the on-prem env-var verification: `process.env.SHENMAY_FOO = ""` (literal empty string) does NOT fall through to `process.env.NOMII_FOO` because `??` only catches `null`/`undefined`. Edge case in practice (install.sh either sets values or omits entirely) but worth knowing for any future env-var fallback work — use `||` if "empty should fall through too".
+- **On-prem test VM at `10.0.100.25`** (new reference memory `reference_onprem_test_vm.md`) — connection details that took 30 minutes to rediscover from the vault: SSH via `pontenprox` jump, `root@10.0.100.25` (publickey, hostname `nomii`), compose at `/home/jafools/nomii/docker-compose.selfhosted.yml`, project name `nomii`, DB roles still `knomi`/`knomi_ai` (heritage from pre-rebrand install — pinned by DATABASE_URL), default admin `tier2@example.test` (test password reset to `DeepTest2026!` this session), backups left at `/home/jafools/nomii/{docker-compose.selfhosted.yml,.env}.bak.*`.
+- **`docker-publish.yml` does NOT dual-publish `nomii-*`** — confirmed in workflow header. There were no real `nomii-*` GHCR customers at cutover, so the rebrand was a clean cut. Means a customer pulling `ghcr.io/jafools/nomii-backend:stable` today would be silently frozen at the v2.6.0 build. ON-PREM-2 finding ruled out as a non-issue (population is empty).
+
+### Still-open queue for next session
+
+**Code (Shenmay)**
+1. **Test tenant on prod** still live: `shenmay-deeptest-apr27@mailinator.com`, tenant id `f0c48905-427a-461c-bad9-587e6d2e2112`. Has 1 webhook, 1 tool, 1 conversation (4 messages), trial limit reached. Run `delete_tenant.js`-style cleanup script when convenient.
+2. **On-prem test VM** has password reset to `DeepTest2026!` for `tier2@example.test` (was unknown before). Reset back to a real password OR leave for next session's testing. Backups `/home/jafools/nomii/{docker-compose.selfhosted.yml,.env}.bak.*` are harmless.
+3. **Anthropic key rotation** — the $3-budget key Austin shared in the Apr-26 evening session is still on his plate. Console → API Keys → revoke.
+
+**Cosmetic / housekeeping**
+- `Step1CompanyProfile.jsx` URL field could mirror PR #131's inline-validation pattern (currently uses the older onBlur+caption variant — works fine, but slightly different code path). Not blocking.
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. If you want them GC'd, requires manual GHCR delete via dashboard. Otherwise harmless.
+
+**More MCP-testable surfaces (next deep-test pass)**
+- Customers page (CSV import path; `file_upload` MCP-blocked, need human assist)
+- Concerns page
+- Notification bell (top-right of dashboard)
+- Profile / Team pages
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip (still deferred from prior sessions)
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key (still pending)
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-26 night — **v3.3.9 SHIPPED** — full deep-test queue patched + 2 more PRESET_COLORS-class bugs the spec caught on its first run
 
 Session arc: Austin asked to "patch up all of those tasks from the deep-test" → built 4 PRs covering the entire queue from the prior session → **the route-smoke spec immediately caught two more module-scope-binding regressions on `/dashboard/settings` that v3.3.8's PRESET_COLORS fix had unmasked** → bundled the two fixes into the spec PR → merged all 4 → 5×5 gate green → tagged v3.3.9 → deployed to Hetzner.
 
