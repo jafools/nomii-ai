@@ -51,7 +51,9 @@ const WebhooksSection = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.url.trim()) return;
+    if (!form.url.trim()) {
+      toast({ title: "Endpoint URL is required", variant: "destructive" }); return;
+    }
     if (form.event_types.length === 0) {
       toast({ title: "Select at least one event", variant: "destructive" }); return;
     }
@@ -76,7 +78,9 @@ const WebhooksSection = () => {
   };
 
   const handleEditSave = async () => {
-    if (!editForm.url.trim()) return;
+    if (!editForm.url.trim()) {
+      toast({ title: "Endpoint URL is required", variant: "destructive" }); return;
+    }
     if (editForm.event_types.length === 0) {
       toast({ title: "Select at least one event", variant: "destructive" }); return;
     }
@@ -218,6 +222,7 @@ const WebhooksSection = () => {
               <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL <span style={{ color: "#0F5F5C" }}>*</span></label>
               <input
                 type="url"
+                required
                 placeholder="https://your-server.com/hooks/shenmay"
                 value={form.url}
                 onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
@@ -387,6 +392,8 @@ const WebhooksSection = () => {
                       </button>
                       <button
                         onClick={() => startEdit(h)}
+                        aria-label="Edit webhook"
+                        title="Edit webhook"
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
                         style={{ color: "#6B6B64" }}
                       >
@@ -395,6 +402,8 @@ const WebhooksSection = () => {
                       <button
                         onClick={() => handleDelete(h.id)}
                         disabled={deleting[h.id]}
+                        aria-label="Delete webhook"
+                        title="Delete webhook"
                         className="p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-50"
                         style={{ color: "rgba(122,31,26,0.5)" }}
                       >
