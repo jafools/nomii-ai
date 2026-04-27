@@ -242,7 +242,12 @@ router.get('/:id', async (req, res, next) => {
     );
 
     const { rows: messages } = await db.query(
-      'SELECT id, role, content, created_at FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      `SELECT m.id, m.role, m.content, m.created_at, m.sent_by_admin_id,
+              ta.first_name AS sender_first_name, ta.last_name AS sender_last_name
+       FROM messages m
+       LEFT JOIN tenant_admins ta ON m.sent_by_admin_id = ta.id
+       WHERE m.conversation_id = $1
+       ORDER BY m.created_at ASC`,
       [req.params.id]
     );
 
@@ -267,7 +272,12 @@ router.get('/:id/transcript', async (req, res, next) => {
 
     const conv = convRows[0];
     const { rows: messages } = await db.query(
-      'SELECT role, content, created_at FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      `SELECT m.role, m.content, m.created_at, m.sent_by_admin_id,
+              ta.first_name AS sender_first_name, ta.last_name AS sender_last_name
+       FROM messages m
+       LEFT JOIN tenant_admins ta ON m.sent_by_admin_id = ta.id
+       WHERE m.conversation_id = $1
+       ORDER BY m.created_at ASC`,
       [req.params.id]
     );
 
@@ -287,8 +297,16 @@ router.get('/:id/transcript', async (req, res, next) => {
       `═══════════════════════════════════════`,
       '',
       ...messages.map(m => {
-        const speaker  = m.role === 'customer' ? customerName : agentName;
-        const time     = new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        let speaker;
+        if (m.role === 'customer') {
+          speaker = customerName;
+        } else if (m.sent_by_admin_id) {
+          const human = `${m.sender_first_name || ''} ${m.sender_last_name || ''}`.trim() || 'Human agent';
+          speaker = `${human} (human)`;
+        } else {
+          speaker = agentName;
+        }
+        const time = new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         return `[${time}] ${speaker}:\n${m.content}\n`;
       }),
       `═══════════════════════════════════════`,
@@ -412,7 +430,7 @@ router.post('/:id/reply', async (req, res, next) => {
   try {
     const { id }       = req.params;
     const { content }  = req.body;
-    const { tenant_id } = req.portal;
+    const { tenant_id, admin_id } = req.portal;
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'content is required' });
@@ -432,10 +450,10 @@ router.post('/:id/reply', async (req, res, next) => {
     }
 
     const { rows: msgRows } = await db.query(
-      `INSERT INTO messages (conversation_id, role, content)
-       VALUES ($1, 'agent', $2)
-       RETURNING id, role, content, created_at`,
-      [id, content.trim()]
+      `INSERT INTO messages (conversation_id, role, content, sent_by_admin_id)
+       VALUES ($1, 'agent', $2, $3)
+       RETURNING id, role, content, created_at, sent_by_admin_id`,
+      [id, content.trim(), admin_id]
     );
 
     // Update customer last interaction + mark conversation unread so widget poll picks it up

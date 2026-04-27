@@ -449,6 +449,10 @@ const ShenmayConversationDetail = () => {
           {messages.map((msg, i) => {
             const role    = (msg.role || msg.sender || "").toLowerCase();
             const isAgent = role === "agent" || role === "assistant";
+            const isHumanSent = isAgent && !!msg.sent_by_admin_id;
+            const humanName = isHumanSent
+              ? (`${msg.sender_first_name || ""} ${msg.sender_last_name || ""}`.trim() || "Human")
+              : null;
             // Operator-as-you convention: agent (you) on the right, customer on
             // the left. Matches the sidebar ThreadView in ShenmayConversations.
             return (
@@ -460,11 +464,15 @@ const ShenmayConversationDetail = () => {
                   background: isAgent ? T.ink : T.paperDeep,
                   color: isAgent ? T.paper : T.ink,
                   border: isAgent ? `1px solid ${T.ink}` : `1px solid ${T.paperEdge}`,
+                  borderRight: isHumanSent ? "3px solid #0F5F5C" : undefined,
                   borderBottomLeftRadius: isAgent ? 14 : 4,
                   borderBottomRightRadius: isAgent ? 4 : 14,
                 }}>
-                  <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: isAgent ? `${T.paper}88` : T.mute, marginBottom: 4 }}>
-                    {isAgent ? agentName : name}
+                  <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: isAgent ? `${T.paper}88` : T.mute, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    {isHumanSent && (
+                      <span style={{ padding: "1px 5px", borderRadius: 3, background: "#0F5F5C", color: "#FFFFFF", fontSize: 9, letterSpacing: "0.06em" }}>HUMAN</span>
+                    )}
+                    <span>{isAgent ? (humanName || agentName) : name}</span>
                   </div>
                   <p style={{ fontSize: 14, whiteSpace: "pre-wrap", color: isAgent ? T.paper : T.ink, margin: 0, lineHeight: 1.55 }}>
                     {msg.content || msg.text || msg.message || ""}
