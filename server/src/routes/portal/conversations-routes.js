@@ -139,7 +139,8 @@ router.post('/bulk', async (req, res, next) => {
 
     if (action === 'resolve') {
       const { rowCount } = await db.query(
-        `UPDATE conversations SET status = 'ended', unread = FALSE
+        `UPDATE conversations
+         SET status = 'ended', unread = FALSE, ended_at = COALESCE(ended_at, NOW())
          WHERE id = ANY($1::uuid[])`,
         [ownedIds]
       );

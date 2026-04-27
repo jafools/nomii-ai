@@ -34,7 +34,7 @@ router.patch('/:id/resolve', async (req, res, next) => {
   try {
     const { rows } = await db.query(
       `UPDATE conversations
-       SET status = 'ended', unread = FALSE
+       SET status = 'ended', unread = FALSE, ended_at = COALESCE(ended_at, NOW())
        WHERE id = $1
          AND customer_id IN (SELECT id FROM customers WHERE tenant_id = $2 AND deleted_at IS NULL)
          AND status = 'escalated'
