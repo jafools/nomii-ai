@@ -5,7 +5,84 @@
 
 ---
 
-## Last updated: 2026-04-27 (later late evening) — **v3.3.17 SHIPPED** — Conversations deep-test pass (filter-clears-selection + flipped message alignment)
+## Last updated: 2026-04-27 (night) — **v3.3.18 + v3.3.19 + v3.3.20 SHIPPED** — Triple-tag session: Resolve `ended_at` + human-reply attribution + Settings audit
+
+Session arc: Austin came in tired of deep-test fatigue ("when will there be a fully successful one?") and asked to grind through three workstreams in one session: (1) the small bulk-Resolve `ended_at` backend fix flagged out-of-scope from v3.3.17, (2) the bigger human-reply attribution feature (also flagged out-of-scope from v3.3.17 — schema migration + backend wiring + UI), and (3) a `/dashboard/settings` deep-test. Shipped all three as separate releases with separate 5×5 release gates, no rollbacks, no incidents. WS3 used a code-level pattern audit instead of a UI walk — found 3 instances of the documented v3.3.12/v3.3.16 `required` + `.trim()` silent-fail pattern via grep alone, ~10x faster than a fresh-tenant Chrome MCP walk.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.17 | **v3.3.20** |
+| Release tags | — | 3 (v3.3.18, v3.3.19, v3.3.20) |
+| PRs merged | — | 3 (#147, #148, #149) + this docs wrap |
+| 5×5 release gates | — | 3/3 success (each 11/11) |
+| Migrations applied to prod DB | — | 1 (`038_messages_sent_by_admin`) |
+| Bugs flagged out-of-scope from v3.3.17 | 2 | 0 |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-O9ew0zlh.js` | `index-D4uJCw1T.js` |
+
+### Ship log (Apr 27 night)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#147](https://github.com/jafools/shenmay-ai/pull/147) | `84c6be2` | fix(conversations): set `ended_at = COALESCE(ended_at, NOW())` on bulk Resolve + concern resolve. Both portal endpoints (`POST /api/portal/conversations/bulk` action=resolve and `PATCH /api/portal/concerns/:id/resolve`) were leaving `ended_at IS NULL` while flipping `status='ended'`, breaking analytics queries that filter on `ended_at`. Widget side already correct. |
+| 5×5 gate v3.3.18 | `84c6be2` | [Run 25017571288](https://github.com/jafools/shenmay-ai/actions/runs/25017571288) — 11/11 success. |
+| **v3.3.18** | tag at `84c6be2` | GHCR rebuilt + Hetzner deployed `:3.3.18`. |
+| [#148](https://github.com/jafools/shenmay-ai/pull/148) | `2960010` | feat(conversations): per-message human-reply attribution. New migration `038_messages_sent_by_admin.sql` adds `messages.sent_by_admin_id UUID REFERENCES tenant_admins(id) ON DELETE SET NULL` (mirroring the FK shape from migration 013's `conversations.human_agent_id`). `POST /:id/reply` now persists `req.portal.admin_id`. `GET /:id` and `GET /:id/transcript` LEFT JOIN `tenant_admins` to return `sender_first_name + sender_last_name`. Sidebar ThreadView and detail page render human-sent agent bubbles with a green `HUMAN` tag + sender name + 3px green right border. AI replies + customer messages unchanged. Widget poll selects `role + content` only — customer perspective is unchanged. |
+| 5×5 gate v3.3.19 | `2960010` | [Run 25018039550](https://github.com/jafools/shenmay-ai/actions/runs/25018039550) — 11/11 success. |
+| **v3.3.19** | tag at `2960010` | GHCR rebuilt + migration 038 applied to prod DB + Hetzner deployed `:3.3.19`. Verified: `SELECT column_name FROM information_schema.columns WHERE table_name='messages' AND column_name='sent_by_admin_id'` returns the new column, type uuid, nullable yes. |
+| [#149](https://github.com/jafools/shenmay-ai/pull/149) | `506dd79` | fix(settings): plug 3 silent-fail submit paths from Apr-27 deep-test code audit. Same v3.3.12/v3.3.16 shape (HTML5 `required` accepts whitespace, React `.trim()` rejects with bare return → no toast). Sites: (a) `ProductsSection handleAdd` — whitespace name silent no-op, (b) `ProductsSection handleEditSave` — same shape on edit form, (c) `CompanyProfile save()` — `required` on Company Name input but no `.trim()` check, whitespace persists to `tenants.name` breaking the dashboard header + widget greeting. All 3: drop `required` + add toast on the trim() check. |
+| 5×5 gate v3.3.20 | `506dd79` | [Run 25018683461](https://github.com/jafools/shenmay-ai/actions/runs/25018683461) — 11/11 success. |
+| **v3.3.20** | tag at `506dd79` | GHCR rebuilt + Hetzner deployed `:3.3.20`. Bundle `index-D4uJCw1T.js`. |
+
+### What got captured this session
+
+- **Code-level pattern audit can substitute for a fresh-tenant UI walk when the bug shape is well-documented.** WS3 didn't need a new Mailinator signup or a 6-step onboarding walk-through — `grep -E 'required|\.trim\(\)' client/src/pages/shenmay/dashboard/settings` plus a 3-minute read of each handler matched the documented v3.3.12/v3.3.16 pattern shape and pinpointed all 3 sites in <10 minutes. After the second time a fix-shape ships, the third occurrence is faster to find by code review than by UI walk. UI walks remain superior for *new* bug classes; pattern-known bugs prefer the audit.
+- **The silent-fail pattern is now ON ITS THIRD OCCURRENCE.** v3.3.12 (Profile names), v3.3.16 (Customer Data Category/Label), v3.3.20 (Products + CompanyProfile). Promote-on-third-duplicate threshold reached — worth considering a project-wide audit for any `required` text input not paired with a `.trim()`-aware React-side toast in its submit handler. Could be a one-shot grep+fix sweep across the whole client/src tree.
+- **5×5 release gates work fine for 3-back-to-back releases in one session.** Total wall-clock for 3 separate dispatch + green-wait + tag + GHCR rebuild + Hetzner deploy cycles: ~45 min. No process friction. Each cycle is independent and the 5×5 caught nothing problematic. Worth keeping the per-tag separate-gate convention rather than bundling.
+- **Migration ordering matters when adding a new column.** v3.3.19 deploy order on Hetzner: `git checkout v3.3.19` → run migration 038 (adds nullable column, safe under old code) → `compose pull + up -d` (new code starts, queries new column). Doing the migration AFTER `compose up` would risk the new code 500ing for ~2-3s during pull until the column exists. Migration before code-flip is the right pattern.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| v3.3.18: `/api/health` ok, backend on `:3.3.18`, frontend on `:3.3.18` | ✅ |
+| v3.3.19: `/api/health` ok, both containers on `:3.3.19`, `messages.sent_by_admin_id` column present | ✅ |
+| v3.3.20: `/api/health` ok, both containers on `:3.3.20`, bundle `index-D4uJCw1T.js` | ✅ |
+| 3/3 5×5 gates green | ✅ |
+| Console errors during deploys | None |
+| Hetzner Cloudflare Origin CA still valid | ✅ |
+
+### Cleanup done this session
+
+- ✅ All 3 feature/fix branches deleted on remote after squash-merge.
+- ✅ Stray Git Bash quirk files (`{,-`, `{})`, `0)`, `[id`, `{,`) removed before each `git add`.
+- ✅ No test tenants created on prod this session — WS3 used pure code review, not a UI walk.
+
+### Still-open queue for next session
+
+**Code-level audit candidates**
+- Project-wide grep for `required` text inputs not paired with React-side `.trim()` + toast — there may be more sites across `/dashboard/profile`, `/onboarding/step-N`, `/dashboard/team`, etc. The pattern is well-known now; a one-shot sweep would close the door on this bug class.
+
+**More MCP-testable surfaces**
+- Customer detail with realistic Soul/Memory data — still queued. Needs a real chat round-trip first to populate Soul/Memory rendering paths (bio fields + family + personality tags + goals/concerns).
+- A FULL Settings UI walk — this session did code-level only. A fresh-tenant Chrome MCP walk through Webhooks/Labels/Connectors/DataApi/EmailTemplates is still on the table and might surface UI-only issues that grep can't see (rendering, hover states, modal interactions, console errors).
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. Manual GHCR delete via dashboard if you want them GC'd. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (later late evening) — **v3.3.17 SHIPPED** — Conversations deep-test pass (filter-clears-selection + flipped message alignment)
 
 Session arc: Picked up after v3.3.16 ship — Austin authorized continuing through the deep-test queue. Walked the Conversations sidebar + detail page against prod v3.3.16 via Chrome MCP on a fresh test tenant. Seeded 3 customers + 3 conversations + 12 messages directly via DB (bypassing widget chat which would require an LLM key on this trial tenant). Surfaced 4 findings, 2 fixable in this PR + 2 out-of-scope (backend/schema). **Bonus:** verified the v3.3.16 PAGE_TITLES fix works on `/dashboard/conversations/:id` — top-bar correctly shows "Conversations".
 
