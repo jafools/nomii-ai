@@ -49,6 +49,10 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.name.trim()) {
+      toast({ title: "Company name is required", variant: "destructive" });
+      return;
+    }
     if (!isValidUrl(form.website_url.trim())) {
       setUrlError("Enter a valid URL (e.g. https://yourcompany.com).");
       return;
@@ -77,7 +81,7 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Company Name</label>
-          <input type="text" required maxLength={200} value={form.name} onChange={set("name")} placeholder="Acme Financial Services" className={inp} style={inpStyle} />
+          <input type="text" maxLength={200} value={form.name} onChange={set("name")} placeholder="Acme Financial Services" className={inp} style={inpStyle} />
           <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>Your customers will see this name when chatting with your agent.</p>
         </div>
 

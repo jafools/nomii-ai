@@ -69,7 +69,10 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      toast({ title: "Product name is required", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       await addProduct({ ...form, name: form.name.trim() });
@@ -101,7 +104,10 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
   const setEdit = (field) => (e) => setEditForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleEditSave = async () => {
-    if (!editForm.name.trim()) return;
+    if (!editForm.name.trim()) {
+      toast({ title: "Product name is required", variant: "destructive" });
+      return;
+    }
     setEditSaving(true);
     try {
       await updateProduct(editingId, editForm);
@@ -442,7 +448,6 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
               </label>
               <input
                 type="text"
-                required
                 maxLength={200}
                 value={form.name}
                 onChange={set("name")}
