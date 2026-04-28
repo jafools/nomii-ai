@@ -230,7 +230,7 @@ const ShenmayOverview = () => {
               const name = c.is_anonymous ? "Anonymous visitor" : (c.customer_display_name || c.email || "Unknown");
               const msg = c.last_message || "";
               const time = c.last_message_at || "";
-              const statusColor = c.status === "active" ? T.success : c.status === "closed" ? T.mute : T.teal;
+              const statusColor = c.status === "active" ? T.success : c.status === "ended" ? T.mute : T.teal;
               return (
                 <div
                   key={id}
