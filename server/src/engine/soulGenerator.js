@@ -10,7 +10,7 @@
  *   const soul = await generateAgentSoul(tenant, apiKey);
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
+const { chat } = require('../services/llmService');
 
 // ── Industry role descriptions ─────────────────────────────────────────────
 // Used as a fallback if Claude is unavailable
@@ -86,14 +86,20 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 }`;
 
   try {
-    const client = new Anthropic({ apiKey: resolvedKey });
-    const response = await client.messages.create({
-      model:      process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
-      messages:   [{ role: 'user', content: prompt }],
+    // Phase 1a: route through llmService.chat instead of instantiating the
+    // Anthropic SDK directly. Provider stays hardcoded to 'anthropic' here;
+    // Phase 1b makes this provider-aware so soul generation tracks the
+    // tenant's chosen LLM provider per the multi-LLM scoping plan.
+    const rawResp = await chat({
+      provider:     'anthropic',
+      systemPrompt: '',
+      messages:     [{ role: 'user', content: prompt }],
+      model:        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+      maxTokens:    800,
+      apiKey:       resolvedKey,
     });
 
-    const raw = response.content[0]?.text?.trim() || '';
+    const raw = (rawResp || '').trim();
 
     // Strip any markdown code fences if present (handles spaces, CRLF, trailing text)
     const jsonText = raw.replace(/^```[\w\s]*\r?\n/, '').replace(/\r?\n```[\s\S]*$/, '').trim();
