@@ -68,7 +68,7 @@ router.post('/', async (req, res, next) => {
         const { generateAgentSoul } = require('../../engine/soulGenerator');
         const { rows } = await db.query(
           `SELECT name, agent_name, vertical, company_description, website_url,
-                  agent_soul_template
+                  agent_soul_template, llm_provider
            FROM tenants WHERE id = $1`,
           [req.portal.tenant_id]
         );

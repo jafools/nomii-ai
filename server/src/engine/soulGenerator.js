@@ -86,15 +86,19 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 }`;
 
   try {
-    // Phase 1a: route through llmService.chat instead of instantiating the
-    // Anthropic SDK directly. Provider stays hardcoded to 'anthropic' here;
-    // Phase 1b makes this provider-aware so soul generation tracks the
-    // tenant's chosen LLM provider per the multi-LLM scoping plan.
+    // Soul generation follows the tenant's chosen chat provider per the
+    // multi-LLM scoping decision (pure BYOK, no platform-key carve-out).
+    // Customer-facing warning at provider-pick time covers the quality gap.
+    const provider = tenant.llm_provider === 'openai' ? 'openai' : 'anthropic';
+    const fastModel = provider === 'openai'
+      ? (process.env.LLM_OPENAI_MINI_MODEL || 'gpt-4o-mini')
+      : (process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001');
+
     const rawResp = await chat({
-      provider:     'anthropic',
+      provider,
       systemPrompt: '',
       messages:     [{ role: 'user', content: prompt }],
-      model:        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+      model:        fastModel,
       maxTokens:    800,
       apiKey:       resolvedKey,
     });
