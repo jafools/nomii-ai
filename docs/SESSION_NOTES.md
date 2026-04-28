@@ -5,7 +5,89 @@
 
 ---
 
-## Last updated: 2026-04-28 (late evening) — **v3.3.26 SHIPPED** — Tool-builder client-side validation for required config fields
+## Last updated: 2026-04-28 (night) — **v3.3.27 SHIPPED** — Pure BYOK on SaaS + Settings → AI API key UI
+
+Session arc: Austin asked about kicking the platform-key fallback when trial tenants subscribe, and whether we should support any-LLM-provider. After auditing `resolveApiKey` it turned out the leak was wider than thought — Tier 3 (env-var fallback) fired for ANY tenant without a BYOK or `managed_ai_enabled` flag, including paid plans, so paid SaaS customers were transparently spending the platform's `$ANTHROPIC_API_KEY` budget. Austin chose pure BYOK (every plan including trial = BYOK only). Implemented + shipped the close-the-leak path AND realized mid-PR that the friendly "Add your API key in Settings" error message was a lie — there was no Settings → API key section. Added that + an onboarding walkthrough in the same PR so the BYOK story shipped complete. Multi-LLM-provider support deferred to a future phase.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.26 | **v3.3.27** |
+| PRs merged | — | 1 (#163) — feat-not-fix, biggest customer-impact change since v3.3.0 |
+| Files changed | — | 10 (7 backend + 3 frontend, +405 / −45) |
+| New files | — | 1 (`ApiKeySection.jsx`) |
+| 5×5 release gate | — | 11/11 success ([Run 25057407904](https://github.com/jafools/shenmay-ai/actions/runs/25057407904)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-Kv81G5Qa.js` | `index-CdTof1SI.js` |
+| Post-deploy walk | — | 3/3 modes verified live (StepApiKey walkthrough + Settings Mode 3 + Settings Mode 1) |
+
+### Ship log (Apr 28 night)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#163 commit 1](https://github.com/jafools/shenmay-ai/pull/163) | `0c1c8f5` | **Backend pure-BYOK.** New `NoApiKeyError` class in [llmService.js](server/src/services/llmService.js). `resolveApiKey` env-var fallback gated on `isSelfHosted()`. `callClaude` + `callClaudeWithTools` no longer fall back to env on null arg — `resolveApiKey` is now the single source of truth. `getAgentResponse` throws `NoApiKeyError` instead of silent mock. [widget.js:1376](server/src/routes/widget.js) catches it → friendly customer message + tagged `[Widget][chat][no-key] tenant=… conv=…` log. [stripe-webhook.js](server/src/routes/stripe-webhook.js) hard-sets `managed_ai_enabled=false` on every checkout. [plans.js](server/src/config/plans.js) `managed_ai: false` for every plan including enterprise/master. [soulGenerator.js](server/src/engine/soulGenerator.js) drops env-var fallback (rule-based fallback covers null-key case). Conversations force-summarize bails cleanly when no key. |
+| [#163 commit 2](https://github.com/jafools/shenmay-ai/pull/163) | `ce5a998` | **Frontend BYOK UI.** New [ApiKeySection.jsx](client/src/pages/shenmay/dashboard/settings/ApiKeySection.jsx) — three render modes auto-pick from `getMe()` data: (1) `managed_ai_enabled=true` → "Managed AI is active" notice no edit; (2) validated BYOK → last4 + Anthropic·Claude label + Test/Replace/Delete actions; (3) no key → red warning + paste form + collapsible "How do I get an API key?" walkthrough + walkthrough's free-credits + cost-context tip. Self-hosted gets a footnote about env-var fallback. Mounted second in [ShenmaySettings.jsx](client/src/pages/shenmay/dashboard/ShenmaySettings.jsx) right after Company Profile. [StepApiKey.jsx](client/src/components/shenmay/onboarding/StepApiKey.jsx) replaces "Skip for now" with the same collapsible walkthrough + cross-references Settings → AI API key as the rotate/remove path. |
+| 5×5 gate v3.3.27 | `ea9eb67` | [Run 25057407904](https://github.com/jafools/shenmay-ai/actions/runs/25057407904) — 11/11 success (5× saas + 5× onprem + verdict). |
+| **v3.3.27** | tag at `ea9eb67` | GHCR rebuilt + Hetzner deployed `:3.3.27`. Bundle `index-CdTof1SI.js`. Mailinator-signup post-deploy walk: onboarding StepApiKey walkthrough renders all 5 steps + "Skip for now" gone; Settings Mode 3 (no key) renders red warning + paste form + walkthrough; Mode 1 (managed_ai_enabled=true via DB toggle) renders "Managed AI is active for this account." |
+
+### What got captured this session
+
+- **The platform-key fallback leak was wider than expected.** The audit thought it was "trial tenants without BYOK"; it was actually "any tenant without BYOK and without managed_ai_enabled." Since `PLAN_LIMITS[plan].managed_ai` was `false` for trial / starter / growth / professional, **paid SaaS customers** fell through Tier 3 to the env-var key the same as freeloading trials. Austin's instinct was right but the exposure was 3× wider. Bug-class lesson: when a fallback chain has a "default to platform credentials" tier, it leaks for anyone the prior tiers didn't catch — by definition the population that needs the most attention.
+- **A "friendly error" that points to a non-existent UI is a worse lie than a generic error.** Mid-PR realized the friendly "Add your API key in Settings" message we'd just added was technically false — Settings had no such section. Fixing this in a stacked follow-up would have shipped a half-broken story. Adding the Settings section in the same PR (and the onboarding walkthrough) made the release internally coherent. Lesson: when an error message names a destination, verify that destination exists *in the same PR*, not as a follow-up.
+- **The `config_fields`/`getMe()` schema-driven UI pattern keeps paying off.** Like v3.3.26's tool-builder validation drove off the server-supplied `config_fields`, this section's mode selection drives off `tenant.llm_api_key_validated` + `tenant.llm_api_key_last4` + `subscription.managed_ai_enabled` + `deployment_mode` already returned by `/api/portal/me`. Zero new endpoints — pure UI on top of the existing data contract.
+- **Post-deploy walk via Mailinator + DB-skip is the canonical recipe now.** Signed up fresh tenant via prod signup → grabbed verification token from DB → DB-skipped onboarding to dashboard → toggled `managed_ai_enabled` to flip Mode 3 ↔ Mode 1 → DELETE FROM tenants cascade-cleaned. ~6 min end-to-end. The seed-test-admin pattern wouldn't have worked here because we needed to test the **first-touch** flow (no validated key yet) which requires a fresh tenant.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before push | ✅ 2533 modules, +10kB bundle |
+| All 5 PR CI checks | ✅ Green |
+| 5×5 release gate (10 cells + verdict) | ✅ 11/11 green |
+| GHCR `:3.3.27` image rebuild after tag push | ✅ |
+| Hetzner `/api/health` after `compose up -d` | ✅ |
+| Hetzner backend image | ✅ `ghcr.io/jafools/shenmay-backend:3.3.27` |
+| Public bundle hash | ✅ `index-CdTof1SI.js` (was `index-Kv81G5Qa.js`) |
+| Onboarding StepApiKey "How do I get an API key?" expandable | ✅ All 5 steps + cost note + cross-ref to Settings |
+| Onboarding "Skip for now" gone | ✅ Replaced with the walkthrough |
+| Settings → AI API key Mode 3 (no key) | ✅ Red warning + paste form + walkthrough + disabled "Validate & save key" button |
+| Settings → AI API key Mode 1 (managed_ai_enabled=true via DB toggle) | ✅ Green-ringed "Managed AI is active for this account." notice, no edit affordance |
+| Cleanup | ✅ Test tenant `shenmay-byok-walk-v3327@mailinator.com` cascade-deleted |
+
+### Cleanup done this session
+
+- ✅ Branch `fix/pure-byok-no-platform-fallback` deleted on remote.
+- ✅ Test tenant cascade-deleted.
+- ✅ Stray Git Bash quirk files cleaned.
+
+### Still-open queue for next session
+
+**MCP-testable surfaces remaining**
+- AI tools — TestModal (sandbox + real-customer test runs) NOT exercised
+- AI tools — Edit modal flow (saving config changes, deletion) NOT exercised
+- Team — invite flow
+- Plans & billing — Stripe upgrade path
+- **Settings → AI API key Mode 2 (validated BYOK)** — only Mode 1 + Mode 3 walked live; Mode 2 verified via code-review only, not visually. Low risk (simple state-driven render, all paths build green) but worth a 30-sec re-walk next session with a real key.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless)
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- **Rotate the $3-budget Anthropic key** — was already on the queue; now finally safe to rotate since trial freeloaders no longer depend on it
+- Decide whether your master/admin tenant in prod needs `managed_ai_enabled=true` flagged in the DB (currently unknown state — never verified). If false, you'll need a BYOK pasted in Settings to use your own dashboard.
+
+**Future phases**
+- **Multi-LLM provider support** (deferred from this session). Schema is decoratively ready (`tenants.llm_provider`, `llm_api_key_provider`) but the logic is hardcoded to Anthropic. Next phase would be an `Anthropic + OpenAI + OpenAI-compatible adapter` pass, with a small ProviderAdapter interface to normalize tool-call schemas across SDKs. ~2-3 days when prioritized.
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (late evening) — **v3.3.26 SHIPPED** — Tool-builder client-side validation for required config fields
 
 Session arc: After the audit-only Concerns+4-surfaces walk, picked up the AI tools tool-creation flow walk (had been deferred from the Concerns-walk session). Walked the 3-step builder modal across all 5 tool types (`lookup`, `calculate`, `report`, `escalate`, `connect`), surfacing 1 UX gap: Step 3 had no client-side validation for required config fields, so the 3 types with required fields (lookup/calculate/connect) sent empty config to the server, got a 400 with a dev-facing error like `"lookup tools require a data_category in config"`, and that raw string surfaced in the modal's ErrorBanner. Step 2 already had nice friendly validation — Step 3 was the outlier.
 
