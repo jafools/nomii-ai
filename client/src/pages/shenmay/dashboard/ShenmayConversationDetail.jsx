@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getConversation, takeoverConversation, handbackConversation, replyToConversation, downloadTranscript, getLabels, addConversationLabel, removeConversationLabel, scoreConversation } from "@/lib/shenmayApi";
 import { fmtTime } from "@/lib/format";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
@@ -356,29 +356,39 @@ const ShenmayConversationDetail = () => {
         ))}
         <button
           onClick={() => setLabelPickerOpen(v => !v)}
-          disabled={allLabels.length === 0}
+          disabled={labelLoading}
           className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-opacity hover:opacity-80 disabled:opacity-30"
           style={{ background: "#EDE7D7", color: "#6B6B64", border: "1px solid #EDE7D7" }}>
           <Plus size={10} /> Label
         </button>
 
         {/* Label dropdown */}
-        {labelPickerOpen && allLabels.length > 0 && (
-          <div className="absolute left-0 top-8 z-10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
+        {labelPickerOpen && (
+          <div className="absolute left-0 top-8 z-10 rounded-xl shadow-2xl overflow-hidden min-w-[200px]"
             style={{ background: "#141c2e", border: "1px solid #EDE7D7" }}>
-            {allLabels.map(l => {
-              const active = convLabels.some(cl => cl.id === l.id);
-              return (
-                <button key={l.id}
-                  onClick={() => { handleToggleLabel(l); setLabelPickerOpen(false); }}
-                  disabled={labelLoading}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[12px] transition-colors hover:bg-white/5">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: l.color }} />
-                  <span style={{ color: active ? l.color : "#3A3D39" }}>{l.name}</span>
-                  {active && <span className="ml-auto text-[10px]" style={{ color: l.color }}>✓</span>}
-                </button>
-              );
-            })}
+            {allLabels.length === 0 ? (
+              <Link
+                to="/dashboard/settings"
+                onClick={() => setLabelPickerOpen(false)}
+                className="block px-3 py-2.5 text-[12px] transition-colors hover:bg-white/5"
+                style={{ color: "#D8D0BD" }}>
+                No labels yet — manage in Settings →
+              </Link>
+            ) : (
+              allLabels.map(l => {
+                const active = convLabels.some(cl => cl.id === l.id);
+                return (
+                  <button key={l.id}
+                    onClick={() => { handleToggleLabel(l); setLabelPickerOpen(false); }}
+                    disabled={labelLoading}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[12px] transition-colors hover:bg-white/5">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: l.color }} />
+                    <span style={{ color: active ? l.color : "#3A3D39" }}>{l.name}</span>
+                    {active && <span className="ml-auto text-[10px]" style={{ color: l.color }}>✓</span>}
+                  </button>
+                );
+              })
+            )}
           </div>
         )}
       </div>
