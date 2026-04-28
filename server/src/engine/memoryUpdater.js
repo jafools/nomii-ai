@@ -33,6 +33,11 @@ const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const db = require('../db');
 
 const HAIKU = process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001';
+const OPENAI_MINI = process.env.LLM_OPENAI_MINI_MODEL || 'gpt-4o-mini';
+
+function pickFastModel(provider) {
+  return provider === 'openai' ? OPENAI_MINI : HAIKU;
+}
 
 // ─── Session end detection ─────────────────────────────────────────────────────
 
@@ -54,7 +59,7 @@ async function callHaikuForJSON(systemPrompt, userContent, apiKey, maxTokens = 5
     const raw = await callClaude(
       systemPrompt,
       [{ role: 'user', content: userContent }],
-      HAIKU,
+      pickFastModel(opts.provider),
       maxTokens,
       apiKey,
       opts
@@ -490,9 +495,12 @@ async function updateMemoryAfterExchange({
     memoryFile: currentMemory,
     soulFile:   currentSoul,
   });
+  // Provider rides on tokenizerOpts so every Haiku-equivalent sub-call
+  // inherits it without further plumbing. callHaikuForJSON's pickFastModel
+  // picks gpt-4o-mini for openai tenants and Claude Haiku otherwise.
   const tokenizerOpts = tokenizer
-    ? { tokenizer, breachCtx: { tenantId: tenant?.id, conversationId, customerId, callSite: 'memoryUpdater' } }
-    : {};
+    ? { tokenizer, breachCtx: { tenantId: tenant?.id, conversationId, customerId, callSite: 'memoryUpdater' }, provider: tenant?.llm_provider }
+    : { provider: tenant?.llm_provider };
 
   try {
     // ── 1. Fact extraction — every exchange ────────────────────────────────
@@ -600,6 +608,7 @@ async function updateMemoryAfterSession(conversationId, customerId) {
   try {
     const { rows: convRows } = await db.query(
       `SELECT co.*, c.memory_file, c.soul_file, c.first_name,
+              t.id AS tenant_id, t.llm_provider, t.pii_tokenization_enabled,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
               s.managed_ai_enabled
        FROM conversations co
@@ -634,6 +643,7 @@ async function updateMemoryAfterSession(conversationId, customerId) {
       messageCount:    msgRows.length,
       sessionType:     'regular',
       apiKey,
+      tenant:          { id: conv.tenant_id, llm_provider: conv.llm_provider, pii_tokenization_enabled: conv.pii_tokenization_enabled },
       db,
     });
 

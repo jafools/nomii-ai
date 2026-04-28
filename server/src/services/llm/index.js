@@ -15,6 +15,7 @@
  */
 
 const anthropicAdapter = require('./anthropicAdapter');
+const openaiAdapter    = require('./openaiAdapter');
 
 /**
  * Normalize a provider name to its canonical form.
@@ -24,11 +25,13 @@ function normalizeProvider(provider) {
   if (!provider) return 'anthropic';
   const p = String(provider).toLowerCase().trim();
   if (p === 'claude' || p === 'anthropic') return 'anthropic';
+  if (p === 'openai' || p === 'open-ai' || p === 'gpt') return 'openai';
   return p;
 }
 
 const REGISTRY = {
   anthropic: anthropicAdapter,
+  openai:    openaiAdapter,
 };
 
 /**

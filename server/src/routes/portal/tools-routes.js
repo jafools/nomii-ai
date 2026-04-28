@@ -250,7 +250,7 @@ router.post('/:toolId/test', async (req, res, next) => {
 
     // 2. Load tenant for API key resolution
     const { rows: tenantRows } = await db.query(
-      `SELECT t.id, t.name, t.agent_name, t.llm_model, s.managed_ai_enabled,
+      `SELECT t.id, t.name, t.agent_name, t.llm_model, t.llm_provider, s.managed_ai_enabled,
               t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated
        FROM tenants t
        JOIN subscriptions s ON s.tenant_id = t.id
@@ -358,9 +358,12 @@ router.post('/:toolId/test', async (req, res, next) => {
         [{ role: 'user', content: message.trim() }],
         toolDefs,
         testExecutor,
-        tenant.llm_model || 'claude-sonnet-4-20250514',
+        tenant.llm_model || (tenant.llm_provider === 'openai'
+          ? (process.env.LLM_OPENAI_MODEL || 'gpt-4o')
+          : 'claude-sonnet-4-20250514'),
         1024,
-        apiKey
+        apiKey,
+        { provider: tenant.llm_provider }
       );
     } catch (llmErr) {
       return res.status(502).json({ error: `LLM error: ${llmErr.message}` });

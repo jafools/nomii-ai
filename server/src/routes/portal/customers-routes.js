@@ -101,7 +101,9 @@ Sample data (first few rows): ${JSON.stringify(sample_rows?.slice(0, 3) || [])}`
       rawText = await callClaude(
         systemPrompt,
         [{ role: 'user', content: userPrompt }],
-        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        tenant.llm_provider === 'openai'
+          ? (process.env.LLM_OPENAI_MINI_MODEL || 'gpt-4o-mini')
+          : (process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001'),
         512,
         apiKey,
         {
@@ -110,6 +112,7 @@ Sample data (first few rows): ${JSON.stringify(sample_rows?.slice(0, 3) || [])}`
             tenantId: req.portal.tenant_id,
             callSite: 'csv_import_ai_map',
           },
+          provider: tenant.llm_provider,
         }
       );
     } catch (err) {

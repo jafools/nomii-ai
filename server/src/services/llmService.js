@@ -192,10 +192,14 @@ async function validateKey(apiKey, provider = 'anthropic') {
 
 /**
  * @deprecated Use `chat({ provider, ... })` instead. Kept for back-compat.
+ *
+ * Accepts `opts.provider` so call sites can opt into OpenAI dispatch
+ * without migrating to the new function signature. When omitted, defaults
+ * to `'anthropic'` so historical behavior is preserved.
  */
 async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null, opts = {}) {
   return chat({
-    provider: 'anthropic',
+    provider: opts.provider || 'anthropic',
     systemPrompt,
     messages,
     model,
@@ -220,7 +224,7 @@ async function callClaudeWithTools(
   opts = {}
 ) {
   return chatWithTools({
-    provider: 'anthropic',
+    provider: opts.provider || 'anthropic',
     systemPrompt,
     messages,
     tools: toolDefs,
