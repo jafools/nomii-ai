@@ -41,14 +41,15 @@ async function generateAgentSoul(tenant, apiKey = null) {
     website_url:         website     = '',
   } = tenant;
 
-  const resolvedKey = apiKey
-    || process.env.ANTHROPIC_API_KEY
-    || process.env.CLAUDE_API_KEY;
-
-  // If no API key at all, return a solid rule-based default
-  if (!resolvedKey) {
+  // Pure BYOK: callers pass the resolved key (or null). No env-var fallback
+  // here — that would silently use the platform key for SaaS tenants who
+  // hit soul-generation before pasting their own key. The rule-based
+  // fallback below is good enough for that case until they paste a key
+  // and trigger an explicit regenerate.
+  if (!apiKey) {
     return buildFallbackSoul(tenant);
   }
+  const resolvedKey = apiKey;
 
   const industryDefault = INDUSTRY_DEFAULTS[vertical] || INDUSTRY_DEFAULTS.other;
 

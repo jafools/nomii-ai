@@ -1,9 +1,12 @@
 /**
  * StepApiKey — Onboarding step for entering/validating an LLM API key.
  *
- * Offers two paths:
- *   1. BYOK: paste your own Anthropic API key (validated in real-time)
- *   2. Managed AI: skip key entry, uses platform key (higher plan required)
+ * Pure BYOK on SaaS as of v3.3.27: every tenant paste their own Anthropic
+ * key here (validated in real-time). The "Skip for now" affordance was
+ * removed when the platform-key fallback was — there is no working chat
+ * path that bypasses this step. Tenants flagged managed_ai_enabled
+ * (internal master/enterprise opt-in only) skip this step automatically
+ * via the alreadyValidated branch.
  */
 import { useState } from "react";
 import { Key, ExternalLink, CheckCircle, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
@@ -93,12 +96,22 @@ const StepApiKey = ({ onComplete, tenant }) => {
         </Button>
       </form>
 
-      <div style={{ textAlign: "center", marginTop: 24 }}>
-        <p style={{ fontSize: 12, color: T.mute, margin: "0 0 8px" }}>Don't have an API key?</p>
-        <button onClick={handleSkip} style={{ fontSize: 12, color: T.teal, background: "none", border: "none", padding: 0, cursor: "pointer", borderBottom: `1px solid ${T.teal}40`, fontFamily: T.sans }}>
-          Skip for now — add one later in Settings
-        </button>
-      </div>
+      <details style={{ marginTop: 20, background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 10, padding: "14px 18px" }}>
+        <summary style={{ fontSize: 13, fontWeight: 600, color: T.teal, cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ display: "inline-block", transform: "rotate(0deg)", transition: "transform 0.15s" }}>▸</span>
+          How do I get an API key?
+        </summary>
+        <ol style={{ fontSize: 13, color: T.inkSoft, lineHeight: 1.65, marginTop: 14, marginBottom: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+          <li>Sign up at <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" style={{ color: T.teal }}>console.anthropic.com</a> and verify your email.</li>
+          <li>Add a payment method under <strong>Settings → Billing</strong>, or use the free starter credits Anthropic gives new accounts.</li>
+          <li>Go to <strong>Settings → API keys</strong> and click <strong>Create key</strong>. Name it "Shenmay" so it's easy to find later.</li>
+          <li>Copy the key (starts with <span style={{ fontFamily: T.mono }}>sk-ant-…</span>) — Anthropic only shows it once.</li>
+          <li>Paste it above and hit <strong>Validate &amp; save</strong>.</li>
+        </ol>
+        <p style={{ fontSize: 12, color: T.mute, lineHeight: 1.55, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.paperEdge}`, marginBottom: 0 }}>
+          Costs scale with usage — most small-business chats run roughly $0.003&ndash;$0.01 per customer message on Claude Sonnet. You can change or remove your key anytime in <strong>Settings &rarr; AI API key</strong>.
+        </p>
+      </details>
     </div>
   );
 };

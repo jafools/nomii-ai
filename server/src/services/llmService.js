@@ -1,18 +1,41 @@
 /**
  * SHENMAY AI — LLM Service
  *
- * Handles all calls to the Claude API (or mock fallback).
- * Supports per-tenant API keys (BYOK) and a global fallback key (managed AI).
+ * Handles all calls to the Claude API.
  *
- * Priority:
- *   1. Tenant's own API key (BYOK — stored encrypted in DB)
- *   2. Global platform key (managed AI — ANTHROPIC_API_KEY env var)
- *   3. Mock responses (development / no key configured)
+ * SaaS is pure BYOK as of v3.3.27: every tenant must have a validated
+ * llm_api_key on their tenant row, OR be flagged managed_ai_enabled
+ * (reserved for internal master/enterprise accounts whose key the operator
+ * has explicitly chosen to provide via env). The platform-key env-var
+ * fallback only fires when SHENMAY_DEPLOYMENT=selfhosted, where the
+ * operator owns the box and the env-key IS their BYOK.
+ *
+ * Resolution priority (resolveApiKey):
+ *   1. tenant.managed_ai_enabled = true → platform env key
+ *      (master/enterprise opt-in, set explicitly in DB — never via Stripe)
+ *   2. tenant has validated BYOK → decrypt and return
+ *   3. SaaS → null (caller surfaces "Add your API key in Settings")
+ *      Self-hosted → platform env key fallback (operator-provided)
  */
 
 const Anthropic = require('@anthropic-ai/sdk');
 const { decrypt } = require('./apiKeyService');
 const { Tokenizer, BreachError } = require('./piiTokenizer');
+const { isSelfHosted } = require('../config/plans');
+
+/**
+ * Thrown when an LLM call is attempted but no API key is resolvable for the
+ * tenant. Callers should catch this and surface a friendly, audience-appropriate
+ * message: operator-facing endpoints say "Add your API key in Settings",
+ * customer-facing widget says "We're having trouble responding right now".
+ */
+class NoApiKeyError extends Error {
+  constructor(message = 'No API key configured for this tenant') {
+    super(message);
+    this.name = 'NoApiKeyError';
+    this.code = 'NO_API_KEY';
+  }
+}
 
 // Cache Anthropic clients by API key hash to avoid re-creating
 const _clientCache = new Map();
@@ -87,16 +110,18 @@ function getClient(apiKey) {
 /**
  * Resolve which API key to use for a tenant.
  *
- * Key selection priority:
- *   1. managed_ai_enabled = true  → always use platform key (Growth/Professional plans)
- *   2. Tenant's own validated BYOK key (Starter plan)
- *   3. Global platform key as fallback (development / master accounts)
+ * Pure BYOK on SaaS — see file header for the policy.
+ *
+ *   1. managed_ai_enabled=true  → platform env key
+ *      (master/enterprise opt-in only; Stripe webhook does NOT set this)
+ *   2. validated BYOK on tenant → decrypt + return
+ *   3. SaaS → null;  self-hosted → platform env key (operator's BYOK)
  *
  * @param {object} tenant - Tenant record (needs llm_api_key_encrypted, llm_api_key_iv, llm_api_key_validated, managed_ai_enabled)
  * @returns {string|null} The API key to use, or null if none available
  */
 function resolveApiKey(tenant) {
-  // 1. Managed AI plan → always use platform key
+  // 1. Managed AI opt-in → platform key
   if (tenant && tenant.managed_ai_enabled) {
     const globalKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
     if (globalKey) return globalKey;
@@ -113,11 +138,14 @@ function resolveApiKey(tenant) {
     }
   }
 
-  // 3. Global platform key fallback (development / master accounts without managed flag)
-  const globalKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
-  if (globalKey) return globalKey;
+  // 3. Self-hosted only: operator's env-var key is their BYOK. SaaS has no
+  //    equivalent fallback — the absence of a tenant key is a hard failure
+  //    so paid plans can't drift onto the platform's key by accident.
+  if (isSelfHosted()) {
+    const globalKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+    if (globalKey) return globalKey;
+  }
 
-  // 4. No key available
   return null;
 }
 
@@ -137,10 +165,12 @@ function resolveApiKey(tenant) {
  *                                        Used to persist breach log on BreachError.
  */
 async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null, opts = {}) {
-  const key = apiKey || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
-  if (!key) throw new Error('No API key configured');
+  // resolveApiKey is the single source of truth for key resolution. No
+  // env-var fallback inside the call sites — that would silently bypass
+  // the BYOK policy for tenants who happen to call this directly.
+  if (!apiKey) throw new NoApiKeyError();
 
-  const client = getClient(key);
+  const client = getClient(apiKey);
   const tokenizer = opts.tokenizer || null;
 
   let sendSystem = systemPrompt;
@@ -204,10 +234,9 @@ async function callClaudeWithTools(
   apiKey = null,
   opts = {}
 ) {
-  const key = apiKey || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
-  if (!key) throw new Error('No API key configured');
+  if (!apiKey) throw new NoApiKeyError();
 
-  const client    = getClient(key);
+  const client    = getClient(apiKey);
   const tokenizer = opts.tokenizer || null;
 
   // Format tool definitions for Anthropic API
@@ -388,8 +417,10 @@ async function getAgentResponse({
   if (provider === 'claude' || provider === 'anthropic') {
     const apiKey = resolveApiKey(tenant);
     if (!apiKey) {
-      console.warn('[LLM] No API key available for tenant, falling back to mock');
-      return generateMockResponse(customerName, lastUserMessage, agentName);
+      // Pure BYOK: refuse to silently mock. Caller decides how to surface
+      // this — operator-facing endpoints say "Add your API key in Settings",
+      // customer-facing widget says "having trouble responding".
+      throw new NoApiKeyError();
     }
 
     const tokenizer = buildTokenizer({ tenant, memoryFile, soulFile });
@@ -429,4 +460,5 @@ module.exports = {
   buildTokenizer,
   tokenizationEnabledFor,
   logBreach,
+  NoApiKeyError,
 };

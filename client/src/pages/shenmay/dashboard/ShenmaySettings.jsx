@@ -1,6 +1,7 @@
 import { TOKENS as T, Kicker, Display, Lede } from "@/components/shenmay/ui/ShenmayUI";
 
 import CompanyProfile      from "./settings/CompanyProfile";
+import ApiKeySection      from "./settings/ApiKeySection";
 import WidgetSection       from "./settings/WidgetSection";
 import ProductsSection     from "./settings/ProductsSection";
 import AgentSoulSection    from "./settings/AgentSoulSection";
@@ -20,6 +21,7 @@ const ShenmaySettings = () => (
       <Lede>Manage your company, agent, widget, webhooks, and data access.</Lede>
     </div>
     <CompanyProfile />
+    <ApiKeySection />
     <AgentSoulSection />
     <WidgetSection />
     <EmailTemplatesSection />
