@@ -1,9 +1,12 @@
 /**
  * StepApiKey — Onboarding step for entering/validating an LLM API key.
  *
- * Offers two paths:
- *   1. BYOK: paste your own Anthropic API key (validated in real-time)
- *   2. Managed AI: skip key entry, uses platform key (higher plan required)
+ * Pure BYOK on SaaS as of v3.3.27: every tenant paste their own Anthropic
+ * key here (validated in real-time). The "Skip for now" affordance was
+ * removed when the platform-key fallback was — there is no working chat
+ * path that bypasses this step. Tenants flagged managed_ai_enabled
+ * (internal master/enterprise opt-in only) skip this step automatically
+ * via the alreadyValidated branch.
  */
 import { useState } from "react";
 import { Key, ExternalLink, CheckCircle, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
@@ -94,10 +97,13 @@ const StepApiKey = ({ onComplete, tenant }) => {
       </form>
 
       <div style={{ textAlign: "center", marginTop: 24 }}>
-        <p style={{ fontSize: 12, color: T.mute, margin: "0 0 8px" }}>Don't have an API key?</p>
-        <button onClick={handleSkip} style={{ fontSize: 12, color: T.teal, background: "none", border: "none", padding: 0, cursor: "pointer", borderBottom: `1px solid ${T.teal}40`, fontFamily: T.sans }}>
-          Skip for now — add one later in Settings
-        </button>
+        <p style={{ fontSize: 12, color: T.mute, margin: 0, lineHeight: 1.55 }}>
+          Need a key? Get one at{" "}
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: T.teal, textDecoration: "none", borderBottom: `1px solid ${T.teal}40` }}>
+            console.anthropic.com
+          </a>
+          {" "}— Anthropic gives new accounts free credits to start.
+        </p>
       </div>
     </div>
   );

@@ -563,6 +563,10 @@ router.post('/:id/summarize', async (req, res, next) => {
         if (!msgRows.length) return;
 
         const apiKey = resolveApiKey(conv);
+        if (!apiKey) {
+          console.warn(`[Portal] Force summarize skipped for conversation ${req.params.id} — tenant has no validated API key`);
+          return;
+        }
         const currentMemory = safeDecryptJson(conv.memory_file);
         const updatedMemory = JSON.parse(JSON.stringify(currentMemory || {}));
 

@@ -29,7 +29,7 @@ const jwt     = require('jsonwebtoken');
 const crypto  = require('crypto');
 const db      = require('../db');
 const { buildSystemPrompt }                      = require('../engine/promptBuilder');
-const { getAgentResponse, callClaudeWithTools, callClaude, sanitiseResponse, resolveApiKey, buildTokenizer } = require('../services/llmService');
+const { getAgentResponse, callClaudeWithTools, callClaude, sanitiseResponse, resolveApiKey, buildTokenizer, NoApiKeyError } = require('../services/llmService');
 const { BreachError } = require('../services/piiTokenizer');
 const { updateMemoryAfterSession, updateMemoryAfterExchange } = require('../engine/memoryUpdater');
 const { getToolDefinitions }                     = require('../tools/registry');
@@ -1376,6 +1376,16 @@ router.post(
         // message to the end customer so they rephrase without the PII.
         console.error(`[Widget][chat][llm] BreachError blocked request — ${llmErr.findings.length} finding(s), conversation=${conversation_id}`);
         agentResponse = 'I noticed some sensitive information in that message. For your security, I can\'t process it in this form. Please rephrase without the specific details and I\'ll be happy to help.';
+      } else if (llmErr instanceof NoApiKeyError) {
+        // Pure BYOK: this tenant hasn't pasted (or has revoked) an API key.
+        // The end-customer can't fix this — only the operator can. Show a
+        // generic message and tag the log so the operator can find their
+        // stuck conversations by tenant_id when they finally configure a key.
+        console.warn(
+          `[Widget][chat][no-key] tenant=${tenant_id} conv=${conversation_id} ` +
+          `msgs=${existingMessages.length + 1} — chat blocked, tenant has no validated API key`
+        );
+        agentResponse = 'I\'m having trouble connecting right now. Please try again in a moment.';
       } else {
         // Tag the failure so grepping backend logs for `[Widget][chat][llm]` lands
         // on the exact cause of the user-facing "Sorry, I had trouble responding".

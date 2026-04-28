@@ -122,6 +122,11 @@ router.post('/', async (req, res) => {
         const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.starter;
 
         if (tenantId && object.subscription) {
+          // Pure BYOK as of v3.3.27 — never auto-flip managed_ai_enabled on
+          // a paid Stripe upgrade. The customer's BYOK paste in Settings is
+          // the only path to a working chat. Internal master/enterprise
+          // accounts that need the platform key are flagged in the DB
+          // directly, not via this webhook.
           await db.query(
             `UPDATE subscriptions SET
                plan                    = $1,
@@ -130,14 +135,14 @@ router.post('/', async (req, res) => {
                stripe_customer_id      = COALESCE(stripe_customer_id, $3),
                max_customers           = $4,
                max_messages_month      = $5,
-               managed_ai_enabled      = $6,
-               max_agents              = $8,
+               managed_ai_enabled      = false,
+               max_agents              = $7,
                current_period_start    = NOW(),
                current_period_end      = NOW() + INTERVAL '1 month',
                updated_at              = NOW()
-             WHERE tenant_id = $7`,
+             WHERE tenant_id = $6`,
             [plan, object.subscription, object.customer, limits.max_customers,
-             limits.max_messages_month, limits.managed_ai, tenantId, limits.max_agents]
+             limits.max_messages_month, tenantId, limits.max_agents]
           );
           console.log(`[Stripe] Tenant ${tenantId} activated on ${plan} plan`);
         } else {
