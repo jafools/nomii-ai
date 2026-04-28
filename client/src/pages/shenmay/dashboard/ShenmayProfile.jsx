@@ -63,11 +63,11 @@ const PersonalInfo = ({ admin, onUpdated }) => {
 
   const errStyle = { fontFamily: T.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: T.danger, marginTop: 6 };
 
-  const role = admin?.role || "admin";
+  const role = admin?.role || "owner";
   const roleBadge = {
-    admin: { color: T.teal,    label: "Admin" },
-    owner: { color: T.tealDark, label: "Owner" },
-    agent: { color: T.mute,    label: "Agent" },
+    owner:  { color: T.tealDark, label: "Owner" },
+    member: { color: T.teal,     label: "Admin" },
+    agent:  { color: T.mute,     label: "Agent" },
   };
   const badge = roleBadge[role] || { color: T.mute, label: role };
 
