@@ -42,7 +42,10 @@ const LabelsSection = () => {
   const cancel = () => setEditing(null);
 
   const handleSave = async () => {
-    if (!formName.trim()) return;
+    if (!formName.trim()) {
+      toast({ title: "Label name is required", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       if (editing === "new") {
