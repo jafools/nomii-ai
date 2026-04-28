@@ -5,7 +5,77 @@
 
 ---
 
-## Last updated: 2026-04-28 (afternoon) — **v3.3.23 + v3.3.24 SHIPPED** — Conversations + Customer-detail walks
+## Last updated: 2026-04-28 (late afternoon) — **v3.3.25 SHIPPED** — Stale-key-drift project-wide sweep (bug class CLOSED)
+
+Session arc: After v3.3.24 PR #156 surfaced two stale-key drifts in one PR (the third occurrence following v3.3.16 PAGE_TITLES), promote-on-third-duplicate triggered a project-wide sweep grepping every DB CHECK constraint enum value + every API response field name against `client/src` lookup tables and read sites. 2 more drifts found, 0 false positives, 1 PR ([#158](https://github.com/jafools/shenmay-ai/pull/158)), 1 release tag, 1 5×5 gate (11/11 success), 0 rollbacks. Bug class CLOSED.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.24 | **v3.3.25** |
+| PRs merged | — | 1 (#158) + this docs wrap |
+| Files audited | — | All 16 CHECK constraint enums + 25 portal `_at` columns + every `(role|status|mode|severity) === "..."` site |
+| Confirmed drifts | — | 2 |
+| False positives ruled out | — | All `_at`-suffix-stripped reads (`last_message`, `widget_verified` are intentional derived fields) |
+| 5×5 release gate | — | 11/11 success ([Run 25050961128](https://github.com/jafools/shenmay-ai/actions/runs/25050961128)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-fF5Jp6Z8.js` | `index-Dibo3Sxe.js` |
+
+### Ship log (Apr 28 late afternoon)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#158](https://github.com/jafools/shenmay-ai/pull/158) | `edd9c0d` | chore(audit): close stale-key-drift bug class with project-wide sweep. **Two drifts in one PR.** (1) `ShenmayProfile.jsx:67` — `roleBadge` keyed on `admin` (with default `role = admin?.role \|\| "admin"`). DB enum `tenant_admins.role` ∈ `{owner, member, agent}` — `admin` is never a real value. `ShenmayTeam.jsx:7-11` already uses canonical `member: { label: "Admin" }`. Profile was the outlier — `member`-role admins viewing their own profile saw the literal string "member" as the badge text. Renamed lookup key + flipped loading default to `"owner"`. (2) `ShenmayOverview.jsx:233` — `c.status === "closed" ? T.mute : T.teal`. DB enum `conversations.status` ∈ `{active, ended, escalated}` — `closed` is never a real value. Dead branch meant ended convos on the dashboard's Recent Conversations panel rendered teal instead of the intended muted grey. Flipped to `"ended"`. |
+| 5×5 gate v3.3.25 | `edd9c0d` | [Run 25050961128](https://github.com/jafools/shenmay-ai/actions/runs/25050961128) — 11/11 success. |
+| **v3.3.25** | tag at `edd9c0d` | GHCR rebuilt + Hetzner deployed `:3.3.25`. Bundle `index-Dibo3Sxe.js`. |
+
+### What got captured this session
+
+- **Stale-key-drift bug class is CLOSED.** Audit covered 16 DB CHECK enums + 25 portal `_at` columns + all `(role|status|mode|severity) === "..."` comparison sites. Two drifts found and fixed; rest of codebase confirmed clean. The same recipe (grep DB enums → grep client lookup tables; grep `_at` columns → grep client property reads) catches future drifts of this shape.
+- **Audit time vs find rate.** Total wall-clock ~30 min for the sweep — same envelope as the v3.3.21 silent-fail sweep. 2 hits in 16 enums + 25 `_at` columns + ~50 comparison sites is roughly the expected drift rate for a codebase that's been through 3 prior reactive fixes.
+- **The "vaccinated" sites are now cataloged.** Every CHECK enum has been verified against client lookups; every `_at` column has been verified against client reads. Future regressions of this shape would be NEW code introducing the bug, not pre-existing untouched sites. Worth a feedback memory entry.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before push | ✅ 2532 modules, 4.17s |
+| All 5 PR CI checks | ✅ Green |
+| 5×5 release gate (10 cells + verdict) | ✅ 11/11 green |
+| GHCR `:3.3.25` image rebuild after tag push | ✅ Backend + frontend pulled cleanly |
+| Hetzner `/api/health` after `compose up -d` | ✅ `{"status":"ok","service":"shenmay-ai"}` |
+| Hetzner backend image | ✅ `ghcr.io/jafools/shenmay-backend:3.3.25` |
+| Public bundle hash | ✅ `index-Dibo3Sxe.js` (was `index-fF5Jp6Z8.js` on v3.3.24) |
+
+### Cleanup done this session
+
+- ✅ Branch `chore/stale-key-drift-sweep` deleted on remote after squash-merge.
+- ✅ No prod tenant data created — pure code-audit sweep.
+- ✅ Stray Git Bash quirk files cleaned.
+
+### Still-open queue for next session
+
+**Bug-class status: stale-key-drift is now CLOSED.** All 16 CHECK enums + 25 `_at` columns + all comparison sites audited. If the pattern resurfaces it'll be a new variant or a regression in newly-added code, not a known unfixed instance.
+
+**MCP-testable surfaces remaining**
+- Concerns sidebar deep-walk — never UI-walked; source-verified `COALESCE(ended_at, NOW())` shape on `PATCH /api/portal/concerns/:id/resolve`.
+- AI tools / Team / Plans & billing — never deep-walked.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless).
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (afternoon) — **v3.3.23 + v3.3.24 SHIPPED** — Conversations + Customer-detail walks
 
 Session arc: After v3.3.22 closed the Settings UI walk, picked up the still-queued **Conversations sidebar / detail walk** (re-validate v3.3.18 `ended_at` + v3.3.19 `sent_by_admin_id` since shipping) and the **Customer detail Soul/Memory walk** (queued since v3.3.17 era — needed real chat round-trip OR DB-seed). Two separate fresh-tenant Mailinator passes against prod, two PRs, two release tags. Bug discovered: the encryption layer's `safeDecryptJson` is transparent (passes plain objects through unchanged), so DB-INSERTed plain JSONB into `customers.soul_file` / `memory_file` renders identically to LLM-generated encrypted blobs — no LLM key required for the Soul/Memory walk.
 
