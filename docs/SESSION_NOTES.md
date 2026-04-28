@@ -5,7 +5,96 @@
 
 ---
 
-## Last updated: 2026-04-28 (morning) — **v3.3.21 SHIPPED** — Project-wide silent-fail sweep (3rd-occurrence promote)
+## Last updated: 2026-04-28 (mid-morning) — **v3.3.22 SHIPPED** — Settings UI deep-test walk
+
+Session arc: After v3.3.21 closed the silent-fail bug class via project-wide audit, ran the still-queued FULL Settings UI walk via Chrome MCP — fresh Mailinator tenant, signup → verify-email → DB-skip onboarding (`UPDATE tenants SET onboarding_steps = '...', widget_verified_at = NOW()`) → walked all 11 sections (Company Profile / Agent Soul / Widget / Email Templates / Webhooks / Data API / Products / Conversation Labels / Connectors / Privacy / Anonymous-only). 3 customer-facing issues surfaced + fixed in one PR.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.21 | **v3.3.22** |
+| PRs merged | — | 1 (#153) + this docs wrap |
+| Sections walked | — | 11 |
+| Bugs fixed | — | 3 |
+| Sections clean (no fix needed) | — | 8 |
+| 5×5 release gate | — | 11/11 success ([Run 25041902026](https://github.com/jafools/shenmay-ai/actions/runs/25041902026)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-C8-f5yvh.js` | `index-CSI75vkp.js` |
+
+### Ship log (Apr 28 mid-morning)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#153](https://github.com/jafools/shenmay-ai/pull/153) | `8fbdd34` | fix(settings): plug 3 dead-end UX gaps from Apr-28 Settings deep-test walk. (1) `DataApiSection.jsx` lines 65/75 — inline curl examples in "Example API calls" referenced `api.pontensolutions.com` instead of `shenmay.ai` (rebrand leak in customer-facing API docs visible inside `/dashboard/settings`). Both URLs resolve (legacy alias) but docs should match the host customer is on. Flipped both to `https://shenmay.ai/api/v1/customers`. (2) `ConnectorsSection.jsx` line 17 — `human.takeover` event labeled "Advisor took over" (legacy Knomi financial-advisor wording). Conversations sidebar standardized on "Take over" + green HUMAN badge in v3.3.19; customer-facing notify-on label should match. Flipped to "Human took over". Event value (`human.takeover`) and webhook payload shape unchanged. (3) `LabelsSection.jsx` line 45 — `handleSave` had `if (!formName.trim()) return;` bare return. Submit button has `disabled={!formName.trim()}` guard but the input's `onKeyDown={e => e.key === "Enter" && handleSave()}` bypasses it — Enter on whitespace fired handleSave, hit bare return, no toast. Same canonical fix as v3.3.21. |
+| 5×5 gate v3.3.22 | `8fbdd34` | [Run 25041902026](https://github.com/jafools/shenmay-ai/actions/runs/25041902026) — 11/11 success. |
+| **v3.3.22** | tag at `8fbdd34` | GHCR rebuilt + Hetzner deployed `:3.3.22`. Bundle `index-CSI75vkp.js`. |
+
+### What got captured this session
+
+- **Source-level audit + light browser verification beats full UI exhaustion for known bug shapes.** Spent ~5 min on signup + DB onboarding skip, ~10 min visually walking all 11 sections to enumerate structure + spot wording issues, ~10 min reading source for the 6 sections that needed deeper analysis, ~5 min applying fixes + grep audit. Total ~30 min triage. Compare to ~60-90 min for a full button-by-button click-through. The Chrome MCP visual walk is good for "do these sections render correctly + do their controls exist" — source review is faster for "do these handlers have correct validation + do these strings match the rebrand."
+- **Enter-key path can bypass disabled-button guards.** v3.3.21 swept the `required` + `.trim()` + bare-return pattern across all forms, but missed a sibling pattern: input has `onKeyDown={Enter && submit}` while button is `disabled={!trim()}`. Click is blocked, Enter isn't. The `LabelsSection.jsx` fix is essentially the v3.3.21 sweep continuing — bug class is wider than just `required`-attribute paths. Worth noting in the next sweep.
+- **`pontensolutions.com` audit stayed clean** apart from this one Data API site. 19 other matches in `client/src` were intentional (corporate links, marketing site refs, code-provenance comments). Bug class for marketing-site-leak inside the SaaS dashboard is now closed.
+- **`Advisor` audit stayed mostly clean** apart from the one Connectors label. 3 mentions in `ShenmayConversationDetail.jsx` are JSX comments only (lines 90 / 312 / 406) — internal terminology, not rendered. Customer-visible string "Rate AI" already correct.
+- **DB-skip-onboarding pattern is now the standard for non-LLM-blocked deep-tests.** `UPDATE tenants SET onboarding_steps = '{...}'::jsonb, widget_verified_at = NOW()` lets you reach `/dashboard/*` in ~5 seconds without LLM key + without the 6-step wizard. Same shape as the customer-CSV-API + DB-seed patterns from earlier deep-tests. Worth a memory entry.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before push | ✅ 2532 modules, 4.19s |
+| All 5 PR CI checks (client-build / server-test / e2e-saas / onprem-e2e / selfhosted-smoke) | ✅ Green |
+| 5×5 release gate (10 cells + verdict) | ✅ 11/11 green |
+| GHCR `:3.3.22` image rebuild after tag push | ✅ Backend + frontend pulled cleanly |
+| Hetzner `/api/health` after `compose up -d` | ✅ `{"status":"ok","service":"shenmay-ai"}` |
+| Hetzner backend image | ✅ `ghcr.io/jafools/shenmay-backend:3.3.22` |
+| Public bundle hash | ✅ `index-CSI75vkp.js` (was `index-C8-f5yvh.js` on v3.3.21) |
+| Test tenant cleanup | ✅ Cascade-delete (`DELETE FROM tenants WHERE id = '9d8f0b8e-...'`) |
+
+### Cleanup done this session
+
+- ✅ Branch `fix/settings-walk-apr28` deleted on remote after squash-merge.
+- ✅ Test tenant `9d8f0b8e-15a7-4631-b1ac-d9f39842c4e6` (DT Settings Lab / shenmay-set-walk-apr28@mailinator.com) cascade-deleted from prod.
+- ✅ Stray Git Bash quirk files cleaned before each `git add`.
+
+### What got verified clean (8 sections, no fixes needed)
+
+| Section | Notes |
+|---|---|
+| Company Profile | v3.3.20 fix holds — `required` dropped on Company Name + `.trim()` toast + URL onBlur error display all working |
+| Agent Soul | "No soul yet" empty state + Generate button — no input forms to test |
+| Widget | Read-only widget key + verification status + embed snippet — all pulling correct shenmay.ai origin |
+| Email Templates | Reply-To uses onBlur regex check + `setReplyToError`; not-required field; empty allowed; invalid email caught |
+| Webhooks | Empty + invalid URL toasts already present (PR #149/v3.3.20 era); `<input type="url">` lives outside `<form>` so HTML5 doesn't pre-empt React |
+| Products & Services | v3.3.20 fix holds — both handleAdd + handleEditSave have toast on whitespace |
+| Privacy & PII Protection | Owner-only toggle, no input forms; Apr 19 v1.1.0 baseline still correct |
+| Anonymous-only mode | Owner-only toggle, no input forms; v3.3.0 baseline still correct |
+
+### Still-open queue for next session
+
+**Bug-class status: silent-fail across all known surfaces is now CLOSED** through three layers:
+- v3.3.12 / v3.3.16 / v3.3.20: reactive fixes for `required` + `.trim()` shape on submit buttons
+- v3.3.21: project-wide audit — closed the `required`-attribute path
+- v3.3.22: enter-key path bypassing disabled-button guard (Labels)
+
+**More MCP-testable surfaces**
+- Customer detail with realistic Soul/Memory data — still queued. Needs a real chat round-trip first to populate Soul/Memory rendering paths.
+- Conversations sidebar deep-walk — last visited in v3.3.17; could re-walk now that v3.3.18 (`ended_at`) and v3.3.19 (human attribution) shipped.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless).
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (morning) — **v3.3.21 SHIPPED** — Project-wide silent-fail sweep (3rd-occurrence promote)
 
 Session arc: After v3.3.20 closed three more silent-fail sites in `/dashboard/settings`, the `required` + `.trim()` + bare-return pattern was now on its **third occurrence** (v3.3.12 Profile names → v3.3.16 Customer Data Category/Label → v3.3.20 Products + CompanyProfile). Per the documented "promote on the third duplicate" rule, ran a project-wide sweep for any remaining instances of this bug class. Triaged all 22 `client/src` files containing the literal `required` token; found **3 confirmed hits across 2 onboarding-step files** (Step1CompanyProfile + Step2Products). All other matches were false positives (display-only text, prop names, or already-validated handlers with proper toast/error display). Code-level audit only — no UI walk needed since the bug shape is fully documented from prior fixes.
 
