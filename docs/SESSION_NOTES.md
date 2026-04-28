@@ -5,7 +5,87 @@
 
 ---
 
-## Last updated: 2026-04-28 (late afternoon) — **v3.3.25 SHIPPED** — Stale-key-drift project-wide sweep (bug class CLOSED)
+## Last updated: 2026-04-28 (evening) — **Audit-only walk** — Concerns + Team + Plans & billing + AI tools + Profile (5 surfaces, ALL CLEAN, no PR)
+
+Session arc: After v3.3.25 closed the stale-key-drift bug class via project-wide sweep, picked up the Concerns sidebar deep-walk (queued since v3.3.17 era — UI never walked despite the source-verified `COALESCE(ended_at, NOW())` shape) plus opportunistic clean-walks of Team / Plans & billing / AI tools / Profile while logged into the same fresh tenant. **All five surfaces clean.** No code changes shipped. Production stays on v3.3.25.
+
+### Headline numbers
+
+| | Result |
+|---|---:|
+| Production tag | unchanged at **v3.3.25** |
+| PRs merged | 0 (audit-only) + this docs wrap |
+| Surfaces walked | **5 fresh surfaces** — Concerns (full), Team (basic), Plans & billing (basic), AI tools (empty-state), Profile (v3.3.25 verify) |
+| Bugs found | 0 |
+| Rollbacks | 0 |
+| Bundle hash on prod | `index-Dibo3Sxe.js` (unchanged from v3.3.25) |
+
+### What got walked
+
+**1. Concerns sidebar — full walk.**
+- `/dashboard/concerns` lists conversations where `status='escalated'` (no `flags` table involvement; concerns are just escalated conversations).
+- Top-bar PAGE_TITLES correctly shows "Concerns".
+- Sidebar nav badge "4" → "3" → "0 (hides)" correctly tracks open count.
+- Notice banner shows "{N} open concerns" + "{M} NEW" pill (unread count).
+- Customer-name fallback: empty `first_name + last_name` renders as "Unknown" cleanly.
+- Read vs unread distinction: red dot prefix + "Jump in" button (unread) vs no dot + "View" button (read).
+- **Resolve flow verified end-to-end via DB inspection**: PATCH `/api/portal/concerns/:id/resolve` returns 200, conversation flips `status='ended'` + `ended_at` populated to brand-new timestamp (matches v3.3.18 bulk-Resolve shape — `COALESCE(ended_at, NOW())`). Resolved row removed from list. Toast "Concern resolved" appears. Sidebar badge decrements.
+- Jump-in navigates to `/dashboard/conversations/:id`.
+- Refresh button re-fetches the list.
+- Empty state: "All clear." display + green CheckCircle icon + "No open concerns" kicker + helpful copy.
+
+**2. Team — basic walk.** Renders cleanly. Top-bar "Team". "1 / 1 agents on the trial plan" + "Invite agent" affordance (didn't test invite flow). Agent table shows owner row with "Owner / Active" status. Trial banner: "Trial includes 1 seat. Upgrade to invite more agents."
+
+**3. Plans & billing — basic walk.** Renders cleanly. Top-bar "Plans & billing". Trial badge + "Plan limit reached" warning + Customers usage 3/1 (DB-seeded past trial limit, expected) + Messages 0/20. "Recommended next: Starter" plan comparison + "Contact sales" CTA.
+
+**4. AI tools — empty-state walk.** Renders cleanly. Top-bar "AI tools". Empty state: "Your AI has no tools yet" + helpful copy + "Add your first tool" button. Did not exercise tool-creation flow (deeper walk for next session).
+
+**5. Profile — v3.3.25 verification.** Renders cleanly. Top-bar "Profile". **"Owner" badge correctly displays** (was the v3.3.25 fix target — `roleBadge.admin` → `member` rename + `|| "owner"` default; owner-role users were never affected, but it's good to confirm the fix didn't regress this path). Personal info + Change password sections render correctly.
+
+### What got captured
+
+- **The Concerns surface is one of the cleanest customer-facing surfaces** I've audited so far — clean enough to be the model for what other surfaces should look like. Single-purpose endpoint, simple list + Resolve interaction, tight empty-state, sidebar-badge integration, source-verified backend with no fancy logic. Likely "boring" by design = correctly nothing to fix.
+- **DB-seed pattern works for non-conversation-attribute UI testing too.** Same SQL DO-block seeded conversations with mixed status/unread/empty-name combinations, exercising the "Unknown" customer-name fallback + read-vs-unread + multi-customer rendering paths in one fixture.
+- **Audit-only sessions are valid release-cycle outputs** when the surfaces are genuinely clean. Per the v3.3.21 silent-fail-sweep precedent, no PR needed when no bugs surface — just SESSION_NOTES + vault docs catalog the "vaccinated" sites for next-cycle decision-making.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| Concerns single-Resolve sets `ended_at` (4 concerns × `COALESCE(ended_at, NOW())`) | ✅ DB confirms 4/4 ended with sequential timestamps |
+| Top-bar PAGE_TITLES holds for `/dashboard/{concerns,team,plans,tools,profile}` | ✅ All 5 correct |
+| Sidebar "Concerns" badge tracks open count + hides when zero | ✅ |
+| Empty-name customer falls back to "Unknown" | ✅ |
+| v3.3.25 Profile fix in prod | ✅ "Owner" badge renders correctly |
+| Test tenant cleanup | ✅ Cascade-delete (`DELETE FROM tenants WHERE id = '7c8d530f-...'`) |
+
+### Cleanup done this session
+
+- ✅ Test tenant `7c8d530f-1e40-4310-b9ff-73036dd9602d` (DT Concerns Walk / shenmay-concerns-walk-apr28@mailinator.com) cascade-deleted (3 customers + 4 conversations + 9 messages).
+- ✅ Local-only seed script not committed.
+
+### Still-open queue for next session
+
+**MCP-testable surfaces remaining**
+- AI tools — only empty-state walked; tool-creation flow still untouched (more setup-heavy due to LLM-test requirement).
+- Team invite flow — only the empty-team state walked.
+- Plans & billing — upgrade flow / Stripe checkout NOT exercised.
+- Conversations sidebar walk surfaces actually all clean now post-v3.3.23 + v3.3.24 + v3.3.25 fixes.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless).
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (late afternoon) — **v3.3.25 SHIPPED** — Stale-key-drift project-wide sweep (bug class CLOSED)
 
 Session arc: After v3.3.24 PR #156 surfaced two stale-key drifts in one PR (the third occurrence following v3.3.16 PAGE_TITLES), promote-on-third-duplicate triggered a project-wide sweep grepping every DB CHECK constraint enum value + every API response field name against `client/src` lookup tables and read sites. 2 more drifts found, 0 false positives, 1 PR ([#158](https://github.com/jafools/shenmay-ai/pull/158)), 1 release tag, 1 5×5 gate (11/11 success), 0 rollbacks. Bug class CLOSED.
 
