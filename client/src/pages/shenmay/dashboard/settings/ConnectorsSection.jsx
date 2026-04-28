@@ -14,7 +14,7 @@ const CONNECTOR_EVENTS = [
   { value: "conversation.started",   label: "New conversation started"  },
   { value: "conversation.escalated", label: "Conversation escalated"    },
   { value: "handoff.requested",      label: "Human support requested"   },
-  { value: "human.takeover",         label: "Advisor took over"         },
+  { value: "human.takeover",         label: "Human took over"           },
   { value: "human.handback",         label: "Handed back to AI"         },
   { value: "csat.received",          label: "CSAT rating received"      },
 ];

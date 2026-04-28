@@ -62,7 +62,7 @@ const DataApiSection = () => {
     setTimeout(() => setter(false), 2000);
   };
 
-  const exampleSnippet = `curl -X POST https://api.pontensolutions.com/api/v1/customers \\
+  const exampleSnippet = `curl -X POST https://shenmay.ai/api/v1/customers \\
   -H "Authorization: Bearer YOUR_DATA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -72,7 +72,7 @@ const DataApiSection = () => {
   }'
 
 # Push data records for that client:
-curl -X POST https://api.pontensolutions.com/api/v1/customers/client-123/records \\
+curl -X POST https://shenmay.ai/api/v1/customers/client-123/records \\
   -H "Authorization: Bearer YOUR_DATA_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
