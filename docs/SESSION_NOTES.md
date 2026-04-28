@@ -5,7 +5,77 @@
 
 ---
 
-## Last updated: 2026-04-28 (evening) — **Audit-only walk** — Concerns + Team + Plans & billing + AI tools + Profile (5 surfaces, ALL CLEAN, no PR)
+## Last updated: 2026-04-28 (late evening) — **v3.3.26 SHIPPED** — Tool-builder client-side validation for required config fields
+
+Session arc: After the audit-only Concerns+4-surfaces walk, picked up the AI tools tool-creation flow walk (had been deferred from the Concerns-walk session). Walked the 3-step builder modal across all 5 tool types (`lookup`, `calculate`, `report`, `escalate`, `connect`), surfacing 1 UX gap: Step 3 had no client-side validation for required config fields, so the 3 types with required fields (lookup/calculate/connect) sent empty config to the server, got a 400 with a dev-facing error like `"lookup tools require a data_category in config"`, and that raw string surfaced in the modal's ErrorBanner. Step 2 already had nice friendly validation — Step 3 was the outlier.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.25 | **v3.3.26** |
+| PRs merged | — | 1 (#161) + this docs wrap |
+| Tool types walked | — | 5/5 (lookup/calculate/report/escalate/connect) |
+| Bugs fixed | — | 1 (3 of 5 types affected by the same shape) |
+| 5×5 release gate | — | 11/11 success ([Run 25053180753](https://github.com/jafools/shenmay-ai/actions/runs/25053180753)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-Dibo3Sxe.js` | `index-Kv81G5Qa.js` |
+
+### Ship log (Apr 28 late evening)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#161](https://github.com/jafools/shenmay-ai/pull/161) | `89691fa` | fix(tools): client-side validation for required config fields in builder + edit. Three of five tool types have a `required: true` config field per [tools-routes.js:43-131](server/src/routes/portal/tools-routes.js#L43): `lookup`/`calculate` need `data_category`, `connect` needs `webhook_url`. Step 3 of `CreateToolModal` had no guard before submit — empty config sent to server, 400 returned with `"lookup tools require a data_category in config"` (dev-facing string), surfaced raw in the ErrorBanner. Same modal's Step 2 already had friendly validation. New `findFirstMissingRequiredField(configFields, config)` helper in `_shared.js`; both `CreateToolModal.handleSave` and `EditToolModal.handleSave` call it before submitting and surface `"Please fill in: <field label>"` via `setError`. EditToolModal also got a missing `displayName.trim()` guard. |
+| 5×5 gate v3.3.26 | `89691fa` | [Run 25053180753](https://github.com/jafools/shenmay-ai/actions/runs/25053180753) — 11/11 success. |
+| **v3.3.26** | tag at `89691fa` | GHCR rebuilt + Hetzner deployed `:3.3.26`. Bundle `index-Kv81G5Qa.js`. Verified live: friendly toast "Please fill in: Which category of data?" shown for `lookup` with empty config; no server call fired (intercepted client-side). |
+
+### What got captured this session
+
+- **Server-error-leak-into-UI is a sibling pattern to silent-fail.** Both come from incomplete client-side validation paths; silent-fail (v3.3.20-22 era) returns nothing visible, server-error-leak surfaces a developer-facing string instead of a friendly one. Same fix shape applies — guard the field client-side before the server has to reject. Worth noting for future audits: any modal/form that includes "Final settings" + dynamic config fields driven by a server-supplied schema (`config_fields`, `field_definitions`, etc.) is a candidate.
+- **The `config_fields` schema on the server is the natural contract** — required-status + label + key are all defined server-side, fetched via `GET /api/portal/tools/types`, and the client just renders and submits. The fix uses the same schema (`typeInfo?.config_fields`) to drive validation, so adding new tool types with new required fields automatically gets validated without further client changes. Schema-driven validation FTW.
+- **Walking 5 of 5 tool types vs walking 1 found the same hit ratio.** Hitting all 5 took ~3× longer than testing one, but it confirmed the bug was the bug class (3 affected) not just one site. Worth doing for type-driven UIs to prevent shipping a fix that only addresses the obvious case.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before push | ✅ 2532 modules, 4.30s |
+| All 5 PR CI checks | ✅ Green |
+| 5×5 release gate (10 cells + verdict) | ✅ 11/11 green |
+| GHCR `:3.3.26` image rebuild after tag push | ✅ |
+| Hetzner `/api/health` after `compose up -d` | ✅ |
+| Hetzner backend image | ✅ `ghcr.io/jafools/shenmay-backend:3.3.26` |
+| Public bundle hash | ✅ `index-Kv81G5Qa.js` (was `index-Dibo3Sxe.js`) |
+| In-prod fix verification (Chrome MCP) | ✅ Friendly toast "Please fill in: Which category of data?" shown; no server POST fired |
+
+### Cleanup done this session
+
+- ✅ Branch `fix/tool-builder-required-config-validation` deleted on remote.
+- ✅ Test tenant `5339cf1b-73e5-4442-b99f-069483124ba2` (DT Tools Walk / shenmay-tools-walk-apr28@mailinator.com) cascade-deleted.
+- ✅ Stray Git Bash quirk files cleaned.
+
+### Still-open queue for next session
+
+**MCP-testable surfaces remaining**
+- AI tools — only the create-flow now done; **TestModal** (sandbox + real-customer test runs) NOT exercised.
+- AI tools — Edit modal validation fix lands here too but Edit flow itself (saving config changes, deletion) NOT exercised.
+- Team — invite flow.
+- Plans & billing — Stripe upgrade path.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless).
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (evening) — **Audit-only walk** — Concerns + Team + Plans & billing + AI tools + Profile (5 surfaces, ALL CLEAN, no PR)
 
 Session arc: After v3.3.25 closed the stale-key-drift bug class via project-wide sweep, picked up the Concerns sidebar deep-walk (queued since v3.3.17 era — UI never walked despite the source-verified `COALESCE(ended_at, NOW())` shape) plus opportunistic clean-walks of Team / Plans & billing / AI tools / Profile while logged into the same fresh tenant. **All five surfaces clean.** No code changes shipped. Production stays on v3.3.25.
 
