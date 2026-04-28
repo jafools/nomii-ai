@@ -5,7 +5,79 @@
 
 ---
 
-## Last updated: 2026-04-27 (night) — **v3.3.18 + v3.3.19 + v3.3.20 SHIPPED** — Triple-tag session: Resolve `ended_at` + human-reply attribution + Settings audit
+## Last updated: 2026-04-28 (morning) — **v3.3.21 SHIPPED** — Project-wide silent-fail sweep (3rd-occurrence promote)
+
+Session arc: After v3.3.20 closed three more silent-fail sites in `/dashboard/settings`, the `required` + `.trim()` + bare-return pattern was now on its **third occurrence** (v3.3.12 Profile names → v3.3.16 Customer Data Category/Label → v3.3.20 Products + CompanyProfile). Per the documented "promote on the third duplicate" rule, ran a project-wide sweep for any remaining instances of this bug class. Triaged all 22 `client/src` files containing the literal `required` token; found **3 confirmed hits across 2 onboarding-step files** (Step1CompanyProfile + Step2Products). All other matches were false positives (display-only text, prop names, or already-validated handlers with proper toast/error display). Code-level audit only — no UI walk needed since the bug shape is fully documented from prior fixes.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.20 | **v3.3.21** |
+| PRs merged | — | 1 (#151) + this docs wrap |
+| Files audited | — | 22 (all `client/src` files containing `required`) |
+| Confirmed silent-fail hits | — | 3 (Step1CompanyProfile name + Step2Products handleAdd + handleEditSave) |
+| False positives ruled out | — | 19 (already-validated, button-disabled guards, display-only) |
+| 5×5 release gate | — | 11/11 success ([Run 25040399630](https://github.com/jafools/shenmay-ai/actions/runs/25040399630)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-D4uJCw1T.js` | `index-C8-f5yvh.js` |
+
+### Ship log (Apr 28 morning)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#151](https://github.com/jafools/shenmay-ai/pull/151) | `3f7e0a6` | fix(onboarding): plug 3 silent-fail submit paths in Step1/Step2 — project-wide audit. Same shape as v3.3.12/v3.3.16/v3.3.20: HTML5 `required` accepts whitespace, React `.trim()` rejects with bare return, no toast. (1) `Step1CompanyProfile.jsx handleSubmit` — `required` on Company Name input but submit only validated URL — whitespace company name HTML5-passed and persisted as `" "` in `tenants.name`, breaking dashboard header + widget greeting. Mirrors v3.3.20 case 3. Drop `required` + add explicit `.trim()` toast. (2) `Step2Products.jsx handleAdd` — bare return on empty/whitespace name + `required` on input. Mirrors v3.3.20 case 1. Drop `required` + toast. (3) `Step2Products.jsx handleEditSave` — bare return on empty/whitespace name. Inline-edit form lives in a `<table>` not a `<form>` so no `required` to drop, but UX still wrong. Add toast. |
+| 5×5 gate v3.3.21 | `3f7e0a6` | [Run 25040399630](https://github.com/jafools/shenmay-ai/actions/runs/25040399630) — 11/11 success (10 saas/onprem cells × 5 + repeatability-verdict). |
+| **v3.3.21** | tag at `3f7e0a6` | GHCR rebuilt + Hetzner deployed `:3.3.21`. Bundle `index-C8-f5yvh.js`. |
+
+### What got captured this session
+
+- **Promote-on-third-duplicate works for closing a bug class without waiting for the 4th occurrence to surface in deep-test.** When v3.3.20 fixed the same shape for the 3rd time, the heuristic said: stop reacting, sweep proactively. The sweep itself was ~30 min wall-clock end-to-end (read 22 files in parallel batches, apply 3 fixes, build, PR, 5×5, deploy). Compare to ~1h+ of UI-walk + bug-find + fix-on-the-fly per deep-test cycle. Net cost much lower than waiting for hit #4.
+- **22-file triage in 4 parallel `Read` calls is faster than 22 sequential reads.** Tools like Read take a few seconds each; batching them in a single message makes the triage I/O-parallel rather than sequential. Total triage wall-clock: ~3 minutes for 22 files.
+- **The fix-shape catalog is now strong enough to be applied without a UI walk.** v3.3.20 already proved code-audit can substitute for a fresh-tenant Mailinator deep-test on this specific bug class. v3.3.21 confirms it scales: project-wide sweep, no human verification, 11/11 5×5 gate green, deploy clean. Worth keeping the rule tight: applies only to bug shapes fixed ≥2 times before. New bug classes still need a UI walk.
+- **The "false positive" review is the load-bearing step.** 19 grep hits required reading the actual handler to confirm they weren't silent-fails. The patterns that turned out OK (already-fixed, button-disabled-on-empty-trim guards, display-only with no submit) are themselves worth cataloging — they're the "vaccinated" sites that won't need re-checking next time.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before push | ✅ 2532 modules, 4.67s, no warnings |
+| All 5 PR CI checks (client-build / server-test / e2e-saas / onprem-e2e / selfhosted-smoke) | ✅ Green |
+| 5×5 release gate (10 cells + verdict) | ✅ 11/11 green |
+| GHCR `:3.3.21` image rebuild after tag push | ✅ Backend + frontend pulled cleanly |
+| Hetzner `/api/health` after `compose up -d` | ✅ `{"status":"ok","service":"shenmay-ai"}` |
+| Hetzner backend image | ✅ `ghcr.io/jafools/shenmay-backend:3.3.21` |
+| Hetzner frontend image | ✅ `ghcr.io/jafools/shenmay-frontend:3.3.21` |
+| Public bundle hash | ✅ `index-C8-f5yvh.js` (was `index-D4uJCw1T.js` on v3.3.20) |
+
+### Cleanup done this session
+
+- ✅ Branches `chore/silent-fail-required-trim-sweep` deleted on remote after squash-merge.
+- ✅ Stray Git Bash quirk files cleaned before each `git add`.
+- ✅ No prod tenant data created — pure code-audit sweep.
+
+### Still-open queue for next session
+
+**Bug-class status: silent-fail `required` + `.trim()` is now CLOSED.** All four known sites + project-wide audit complete. If the pattern resurfaces it'll be a new variant or a regression in newly-added code, not a known unfixed instance.
+
+**More MCP-testable surfaces**
+- Customer detail with realistic Soul/Memory data — still queued. Needs a real chat round-trip first to populate Soul/Memory rendering paths (bio fields + family + personality tags + goals/concerns).
+- A FULL Settings UI walk — last done at code-level only (Apr 27 night). Fresh-tenant Chrome MCP walk through Webhooks/Labels/Connectors/DataApi/EmailTemplates is still on the table for UI-only issues.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos still public + pulling clean for pre-rebrand image tags. Manual GHCR delete via dashboard if you want them GC'd. Otherwise harmless.
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-27 (night) — **v3.3.18 + v3.3.19 + v3.3.20 SHIPPED** — Triple-tag session: Resolve `ended_at` + human-reply attribution + Settings audit
 
 Session arc: Austin came in tired of deep-test fatigue ("when will there be a fully successful one?") and asked to grind through three workstreams in one session: (1) the small bulk-Resolve `ended_at` backend fix flagged out-of-scope from v3.3.17, (2) the bigger human-reply attribution feature (also flagged out-of-scope from v3.3.17 — schema migration + backend wiring + UI), and (3) a `/dashboard/settings` deep-test. Shipped all three as separate releases with separate 5×5 release gates, no rollbacks, no incidents. WS3 used a code-level pattern audit instead of a UI walk — found 3 instances of the documented v3.3.12/v3.3.16 `required` + `.trim()` silent-fail pattern via grep alone, ~10x faster than a fresh-tenant Chrome MCP walk.
 
