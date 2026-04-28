@@ -27,3 +27,20 @@ export function slugify(str) {
     .replace(/^[^a-z]+/, "")
     .slice(0, 64) || "my_tool";
 }
+
+// ── Required-field validation for the tool builder + edit modals ────────────
+// Returns the first config_fields entry whose `required: true` and is empty
+// (or whitespace-only). Returns null when all required fields are filled.
+// Used to surface friendly client-side errors before the server's dev-facing
+// "<type> tools require a <key> in config" rejection.
+export function findFirstMissingRequiredField(configFields, config) {
+  if (!Array.isArray(configFields)) return null;
+  for (const field of configFields) {
+    if (!field.required) continue;
+    const value = config?.[field.key];
+    const isEmpty = value === undefined || value === null
+      || (typeof value === "string" && !value.trim());
+    if (isEmpty) return field;
+  }
+  return null;
+}

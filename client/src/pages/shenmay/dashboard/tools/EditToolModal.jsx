@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TYPE_EMOJI } from "./_shared";
+import { TYPE_EMOJI, findFirstMissingRequiredField } from "./_shared";
 import { ModalShell, ErrorBanner, Spinner, ToolTypeBadge, ConfigFields } from "./_primitives";
 
 export default function EditToolModal({ tool, toolTypes, onClose, onSave }) {
@@ -12,7 +12,10 @@ export default function EditToolModal({ tool, toolTypes, onClose, onSave }) {
   const typeInfo = toolTypes?.find(t => t.type === tool.tool_type);
 
   async function handleSave() {
+    if (!displayName.trim()) { setError("Please give your tool a name."); return; }
     if (!trigger.trim()) { setError("Please describe when to use this tool."); return; }
+    const missing = findFirstMissingRequiredField(typeInfo?.config_fields, config);
+    if (missing) { setError(`Please fill in: ${missing.label}`); return; }
     setSaving(true); setError(null);
     try {
       await onSave(tool.id, { display_name: displayName.trim(),

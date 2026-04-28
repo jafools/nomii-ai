@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronRight, CheckCircle2 } from "lucide-react";
-import { TYPE_STYLE, TYPE_EMOJI, slugify } from "./_shared";
+import { TYPE_STYLE, TYPE_EMOJI, slugify, findFirstMissingRequiredField } from "./_shared";
 import { ModalShell, ErrorBanner, Spinner, ToolTypeBadge, ConfigFields } from "./_primitives";
 
 export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
@@ -17,6 +17,8 @@ export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
 
   async function handleSave() {
     if (!trigger.trim()) { setError("Please describe when your AI should use this tool."); return; }
+    const missing = findFirstMissingRequiredField(typeInfo?.config_fields, config);
+    if (missing) { setError(`Please fill in: ${missing.label}`); return; }
     setSaving(true); setError(null);
     try {
       await onCreate({ name: machineName, display_name: displayName.trim(),
