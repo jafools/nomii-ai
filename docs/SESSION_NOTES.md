@@ -5,7 +5,90 @@
 
 ---
 
-## Last updated: 2026-04-28 (mid-morning) — **v3.3.22 SHIPPED** — Settings UI deep-test walk
+## Last updated: 2026-04-28 (afternoon) — **v3.3.23 + v3.3.24 SHIPPED** — Conversations + Customer-detail walks
+
+Session arc: After v3.3.22 closed the Settings UI walk, picked up the still-queued **Conversations sidebar / detail walk** (re-validate v3.3.18 `ended_at` + v3.3.19 `sent_by_admin_id` since shipping) and the **Customer detail Soul/Memory walk** (queued since v3.3.17 era — needed real chat round-trip OR DB-seed). Two separate fresh-tenant Mailinator passes against prod, two PRs, two release tags. Bug discovered: the encryption layer's `safeDecryptJson` is transparent (passes plain objects through unchanged), so DB-INSERTed plain JSONB into `customers.soul_file` / `memory_file` renders identically to LLM-generated encrypted blobs — no LLM key required for the Soul/Memory walk.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.22 | **v3.3.24** |
+| PRs merged | — | 2 (#155 + #156) + this docs wrap |
+| Surfaces walked | — | Conversations sidebar + detail (full) + Customer detail (Soul/Memory full + partial + empty paths) |
+| Bugs fixed | — | 3 |
+| 5×5 release gates | — | 2 × 11/11 success ([Run 25048526812](https://github.com/jafools/shenmay-ai/actions/runs/25048526812), [Run 25049590967](https://github.com/jafools/shenmay-ai/actions/runs/25049590967)) |
+| Rollbacks | — | 0 |
+| Bundle hash on prod | `index-CSI75vkp.js` | `index-fF5Jp6Z8.js` |
+
+### Ship log (Apr 28 afternoon)
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#155](https://github.com/jafools/shenmay-ai/pull/155) | `10fe08a` | fix(conv-detail): plug silent-fail Label button on tenants with no labels. `ShenmayConversationDetail.jsx:359` had `disabled={allLabels.length === 0}`, so on a fresh tenant with no Conversation Labels created yet, clicking "Label" on a conversation did literally nothing — no toast, no tooltip, no link to Settings. Same shape as the v3.3.20-22 silent-fail bug class but applied to a view affordance instead of a submit path. Drop the all-labels-empty disable, render the popover even when empty, add a `<Link to="/dashboard/settings">No labels yet — manage in Settings →</Link>` empty-state row. |
+| 5×5 gate v3.3.23 | `10fe08a` | [Run 25048526812](https://github.com/jafools/shenmay-ai/actions/runs/25048526812) — 11/11 success. |
+| **v3.3.23** | tag at `10fe08a` | GHCR rebuilt + Hetzner deployed `:3.3.23`. Bundle `index-DDonfrPQ.js`. Verified in prod via Chrome MCP — dark popover renders "No labels yet — manage in Settings →" link. |
+| [#156](https://github.com/jafools/shenmay-ai/pull/156) | `2435a92` | fix(customer-detail): correct stale onboarding-status key + last-seen field. **Two bugs in one PR, both stale-key-drift class.** (1) `ShenmayCustomerDetail.jsx:11` keyed `statusStyle` on `completed` (with -d) but DB enum is `complete` — every customer past initial state fell back to `statusStyle.new` and rendered as "New" badge. List page at `ShenmayCustomers.jsx:10` already used the canonical `complete`; detail page was the only outlier. (2) `ShenmayCustomerDetail.jsx:127` read `customer.last_interaction` but server returns `last_interaction_at` (matching DB column + Overview page at `ShenmayOverview.jsx:348`) — always rendered "Last seen Never". Both verified via direct API call (`{onboarding_status: "complete", last_interaction_at: <timestamp>}` returned, UI ignored both). |
+| 5×5 gate v3.3.24 | `2435a92` | [Run 25049590967](https://github.com/jafools/shenmay-ai/actions/runs/25049590967) — 11/11 success. |
+| **v3.3.24** | tag at `2435a92` | GHCR rebuilt + Hetzner deployed `:3.3.24`. Bundle `index-fF5Jp6Z8.js`. Verified in prod via Chrome MCP — green "COMPLETE" badge + "LAST SEEN APRIL 28, 2026" both render correctly. |
+
+### What got captured this session
+
+- **DB-seed plain-JSONB Soul/Memory works because the crypto layer is transparent.** `server/src/services/cryptoService.js` `safeDecryptJson` calls `isEncrypted(val)` first — a plain object (no `__enc`/`__iv` envelope) is returned as-is (passthrough). So Customer detail walks no longer need an LLM key + real chat round-trip — INSERT a plain JSON object into `customers.soul_file` and `customers.memory_file` and the read path renders it identically. This unblocks the entire Soul/Memory walk path that was queued behind "needs real LLM round-trip first" since v3.3.17.
+- **Stale-key-drift is the new bug class for v3.3.24-era walks.** v3.3.16 (PAGE_TITLES `find(startsWith)` first-match) was the first instance; v3.3.24 added two more (`statusStyle` keyed `completed` vs DB `complete`, plus `customer.last_interaction` vs API `last_interaction_at`). All three follow the same pattern: a lookup table or property name diverges from its source-of-truth, and the consumer silently falls back to a default branch (the `||` fallback or the lookup miss fallback) instead of erroring. Worth a memory entry on **how to find these** — grep all enum values used in the DB schema's CHECK constraints against client/src + server/src lookups, plus diff-check every API-response property name against client read sites. PR #156 closed two such drifts; the audit pass would close the rest.
+- **The Apr-28 walks together prove the v3.3.18 + v3.3.19 fixes are still good.** Bulk Resolve sets `ended_at` end-to-end (DB-seeded 5 conversations, bulk-selected 2 active Alex convos via the hover-checkbox path, clicked Resolve, verified DB rows now show `ended_at` populated to a brand-new timestamp + Cory's pre-existing `ended_at` preserved by `COALESCE`). HUMAN attribution renders correctly across both the inline detail panel + standalone `/dashboard/conversations/:id` page (green HUMAN badge + sender name "Conv Walk" appears on every `sent_by_admin_id`-tagged message; auto-injected handback message correctly shows NO HUMAN tag).
+- **Promote-on-third-duplicate triggered for stale-key-drift.** v3.3.16 (PAGE_TITLES) was occurrence 1; v3.3.24 PR #156 was occurrences 2+3 in a single PR. Per the documented rule, the next session should sweep all enum/property lookups in `client/src` against their authoritative sources (DB CHECK constraints, server response shapes). Catalog the "vaccinated" sites (already-correct) so they don't need re-checking.
+
+### What got verified end-to-end
+
+| Check | Result |
+|---|---|
+| `npm run build` (client) before each PR push | ✅ both 2532 modules, ~4.5s |
+| All 5 PR CI checks ×2 (client-build / server-test / e2e-saas / onprem-e2e / selfhosted-smoke) | ✅ 10/10 green |
+| 5×5 release gate ×2 (10 cells + verdict each) | ✅ 22/22 green |
+| GHCR `:3.3.23` + `:3.3.24` image rebuilds after tag pushes | ✅ Backend + frontend pulled cleanly both times |
+| Hetzner `/api/health` after each `compose up -d` | ✅ both `{"status":"ok","service":"shenmay-ai"}` |
+| Hetzner backend image after each deploy | ✅ `ghcr.io/jafools/shenmay-backend:3.3.23` then `:3.3.24` |
+| Public bundle hashes | ✅ `index-DDonfrPQ.js` (v3.3.23) → `index-fF5Jp6Z8.js` (v3.3.24) |
+| v3.3.18 bulk-Resolve `ended_at` regression check | ✅ End-to-end via DB-seeded conversations + UI bulk-Resolve + DB `SELECT` |
+| v3.3.19 `sent_by_admin_id` regression check | ✅ Both detail + inline panel render green HUMAN badge + sender name |
+| v3.3.16 PAGE_TITLES regression check | ✅ Holds for both `/dashboard/conversations/:id` and `/dashboard/customers/:id` |
+| v3.3.17 stale-selection regression check | ✅ Filter swap auto-falls-back to first item when previous selection no longer in list |
+| v3.3.23 Label popover empty-state | ✅ Verified live on prod after deploy — dark popover with Settings link |
+| v3.3.24 status badge + last-seen | ✅ Verified live on prod after deploy — "COMPLETE" badge + formatted date |
+| Test tenant cleanup | ✅ Cascade-delete (`DELETE FROM tenants WHERE id = 'd8c6518b-...'`) |
+
+### Cleanup done this session
+
+- ✅ Branches `fix/conv-detail-label-empty-state` + `fix/customer-detail-status-and-last-seen` deleted on remote after squash-merge.
+- ✅ Test tenant `d8c6518b-2408-4afa-9a02-7818d7299fbd` (DT Conv Walk / shenmay-conv-walk-apr28@mailinator.com) cascade-deleted from prod (3 customers + 5 conversations + 21 messages all removed).
+- ✅ Stray Git Bash quirk files cleaned before each `git add`.
+- ✅ Local-only seed scripts not checked in.
+
+### Still-open queue for next session
+
+**MCP-testable surfaces remaining**
+- Concerns sidebar deep-walk — never touched; surfaces `flags` + concerns-routes single-Resolve flow (v3.3.18 `COALESCE(ended_at, NOW())` shape applies here too, source-verified but UI not walked).
+- AI tools surface — never deep-walked.
+- Team / Plans & billing — never deep-walked.
+
+**Project-wide audit pass (next session)**
+- Stale-key-drift sweep: grep DB CHECK enum values + API response property names against `client/src` lookup tables and read sites. v3.3.16 + v3.3.24 PR #156 closed three sites; the audit closes the bug class.
+
+**Cosmetic / housekeeping**
+- `nomii-*` GHCR repos cleanup (manual, harmless).
+
+**Ops / Austin-only**
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1)
+- Rotate the $3-budget Anthropic key
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (mid-morning) — **v3.3.22 SHIPPED** — Settings UI deep-test walk
 
 Session arc: After v3.3.21 closed the silent-fail bug class via project-wide audit, ran the still-queued FULL Settings UI walk via Chrome MCP — fresh Mailinator tenant, signup → verify-email → DB-skip onboarding (`UPDATE tenants SET onboarding_steps = '...', widget_verified_at = NOW()`) → walked all 11 sections (Company Profile / Agent Soul / Widget / Email Templates / Webhooks / Data API / Products / Conversation Labels / Connectors / Privacy / Anonymous-only). 3 customer-facing issues surfaced + fixed in one PR.
 
