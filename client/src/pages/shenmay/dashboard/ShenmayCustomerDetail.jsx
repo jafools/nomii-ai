@@ -8,10 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { TOKENS as T, Kicker, Display, Lede, Button } from "@/components/shenmay/ui/ShenmayUI";
 
 const statusStyle = {
-  completed: { bg: "rgba(45,106,79,0.12)", color: "#2D6A4F", label: "Completed" },
+  complete:    { bg: "rgba(45,106,79,0.12)", color: "#2D6A4F", label: "Complete" },
   in_progress: { bg: "rgba(59,130,246,0.12)", color: "#60A5FA", label: "In Progress" },
-  pending: { bg: "rgba(245,158,11,0.12)", color: "#A6660E", label: "Pending" },
-  new: { bg: "#EDE7D7", color: "#6B6B64", label: "New" },
+  pending:     { bg: "rgba(245,158,11,0.12)", color: "#A6660E", label: "Pending" },
+  new:         { bg: "#EDE7D7",                color: "#6B6B64", label: "New" },
 };
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "Never";
@@ -124,7 +124,7 @@ const ShenmayCustomerDetail = () => {
             {st.label}
           </span>
           <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.08em", color: T.mute, textTransform: "uppercase" }}>
-            Last seen {fmtDate(customer.last_interaction)}
+            Last seen {fmtDate(customer.last_interaction_at)}
           </span>
         </div>
       </div>
