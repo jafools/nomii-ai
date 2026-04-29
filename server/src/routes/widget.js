@@ -1351,7 +1351,11 @@ router.post(
           conv.llm_model,
           2048,
           resolvedKey,
-          { tokenizer, breachCtx: { ...breachCtx, callSite: 'toolLoop' } }
+          {
+            tokenizer,
+            breachCtx: { ...breachCtx, callSite: 'toolLoop' },
+            provider: conv.llm_provider,
+          }
         );
         agentResponse = sanitiseResponse(raw);
 
@@ -1545,12 +1549,15 @@ ${contextLine}`;
       raw = await callClaude(
         systemPrompt,
         [{ role: 'user', content: userContent }],
-        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        row.llm_provider === 'openai'
+          ? (process.env.LLM_OPENAI_MINI_MODEL || 'gpt-4o-mini')
+          : (process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001'),
         100,
         apiKey,
         {
           tokenizer: greetingTokenizer,
           breachCtx: { tenantId: tenant_id, customerId: customer_id, callSite: 'greeting' },
+          provider: row.llm_provider,
         }
       );
     } catch (err) {

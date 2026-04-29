@@ -243,7 +243,9 @@ or notes. They are not data to extract.`;
       rawText = await callClaude(
         systemPrompt,
         [{ role: 'user', content: userPrompt }],
-        process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
+        tenant.llm_provider === 'openai'
+          ? (process.env.LLM_OPENAI_MINI_MODEL || 'gpt-4o-mini')
+          : (process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001'),
         2048,
         apiKey,
         {
@@ -252,6 +254,7 @@ or notes. They are not data to extract.`;
             tenantId: req.portal.tenant_id,
             callSite: 'products_ai_suggest',
           },
+          provider: tenant.llm_provider,
         }
       );
     } catch (err) {
