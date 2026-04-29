@@ -14,6 +14,7 @@
 const router = require('express').Router();
 const db = require('../../db');
 const { markStepComplete } = require('../../utils/onboarding');
+const { resolveApiKey } = require('../../services/llmService');
 
 router.put('/', async (req, res, next) => {
   try {
@@ -48,16 +49,17 @@ router.put('/', async (req, res, next) => {
           const { generateAgentSoul } = require('../../engine/soulGenerator');
           const { rows } = await db.query(
             `SELECT name, agent_name, vertical, company_description, website_url,
-                    api_key_encrypted, llm_provider FROM tenants WHERE id = $1`,
+                    llm_api_key_encrypted, llm_api_key_iv, llm_api_key_validated,
+                    managed_ai_enabled, llm_provider
+             FROM tenants WHERE id = $1`,
             [req.portal.tenant_id]
           );
           if (!rows[0]) return;
           const tenant = rows[0];
-          let apiKey = null;
-          if (tenant.api_key_encrypted) {
-            const { decrypt } = require('../../services/apiKeyService');
-            try { apiKey = decrypt(tenant.api_key_encrypted); } catch { /* use platform key */ }
-          }
+          // resolveApiKey returns null when no usable key is available;
+          // generateAgentSoul handles null by returning a rule-based fallback,
+          // so the auto-regenerate still produces a coherent template.
+          const apiKey = resolveApiKey(tenant);
           const soul = await generateAgentSoul(tenant, apiKey);
           await db.query(
             `UPDATE tenants SET agent_soul_template = $1 WHERE id = $2`,
