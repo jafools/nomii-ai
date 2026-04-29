@@ -5,7 +5,55 @@
 
 ---
 
-## Last updated: 2026-04-29 (afternoon) — **v3.4.0 LIVE** — multi-LLM v1 ships, OpenAI provider on prod, wire-test catch validated the release-gate principle
+## Last updated: 2026-04-29 (afternoon, late) — **v3.4.1 LIVE** — quick-follow release with carry-over hygiene fixes
+
+Sub-session arc: Austin gave permission to keep working after v3.4.0 shipped. Picked up two carry-over items that had been sitting in the queue, plus opportunistic Hetzner cleanup. Both fixes shipped, dispatched the 5×5 gate, cut v3.4.1 ~2 hours after v3.4.0.
+
+### Headline numbers (v3.4.0 → v3.4.1 sub-session)
+
+| | Result |
+|---|---|
+| Production tag | **v3.4.1** (was v3.4.0) |
+| PRs merged | 2 — [#172](https://github.com/jafools/shenmay-ai/pull/172) (auto-regen fix) + [#173](https://github.com/jafools/shenmay-ai/pull/173) (npm audit clearing) |
+| 5×5 release gate | **11/11 green** ([Run 25107502044](https://github.com/jafools/shenmay-ai/actions/runs/25107502044)) |
+| Vulns closed | 2 high-severity (nodemailer DoS + path-to-regexp ReDoS) — `npm audit` now reports **0** |
+| Hetzner disk reclaimed | ~4 GB (docker image prune kept :3.3.26/:3.3.27/:3.4.0 for rollback, dropped older) |
+| Wall-clock from v3.4.0 → v3.4.1 | ~2 hours |
+
+### What v3.4.1 ships
+
+| PR | What |
+|---|---|
+| [#172](https://github.com/jafools/shenmay-ai/pull/172) | fix(portal): repair soul auto-regen on company profile update — `company-routes.js` was calling `require('../../services/apiKeyService')` for a `decrypt(x)` that doesn't exist (file removed in the v2→v3 rename), reading legacy `api_key_encrypted` column instead of `llm_api_key_encrypted`, and using single-arg decrypt instead of the canonical two-arg `decrypt(encrypted, iv)`. Bare `catch {}` swallowed the `Cannot find module` error so apiKey always stayed null. Net effect: every tenant who updated their company profile got a silent no-op on soul regeneration. Fix replaces the broken block with `resolveApiKey(tenant)` — the canonical post-v3.3.27 resolver, same one widget chat uses. |
+| [#173](https://github.com/jafools/shenmay-ai/pull/173) | chore(deps): clear npm audit — nodemailer ^6.9.14 → ^8.0.7 (semver-major) closes 5 advisories incl. high-severity addressparser DoS + SMTP command injection via CRLF in EHLO/HELO. path-to-regexp transitive bumped via `npm audit fix`. Email service uses only canonical `createTransport({ host, port, secure, auth, pool, maxConnections, maxMessages })` + `sendMail({ from, to, subject, html, text, replyTo })` APIs that have been stable since nodemailer v3+; e2e-saas + onprem-e2e jobs (which exercise email-sending paths) green on PR CI. |
+
+### Hetzner ops cleanup (this sub-session)
+
+- Deleted `~/backups/pre-phase7-rename-2026-04-23-082027.sql` (641KB, stale post-Phase-7 rebrand backup, post-May-1 was the safe-to-clean date)
+- `docker system prune -a -f --filter 'until=24h'` reclaimed 1.418 GB of dead images (kept :3.3.26/:3.3.27/:3.4.0 for rollback) + cleared 1.174 GB build cache
+- After-state: 7 images total, 1.01 GB on disk, only 252MB reclaimable (last 24h images), build cache 0
+- Verified no orphan `nomii-ai_pgdata` volume (the Phase 7 rename via pg_dump/restore left zero `nomii-*` artifacts)
+
+### Carry-over for next session (still queued, not addressed this run)
+
+**Ops / Austin-only:**
+- Decide master/admin tenant `managed_ai_enabled=true` flag
+- UptimeRobot monitor #3 type flip
+- Anthropic key rotation already done mid-session (new $3 key in use)
+
+**Cosmetic:**
+- `nomii-*` GHCR repos cleanup — gh CLI token lacks `read:packages` scope to script it, manual via UI
+
+**Future phases:**
+- ponten-solutions marketing-site copy update — "Choose between Claude (recommended) or OpenAI" positioning. Lovable manual-publish required after copy update.
+- Phase 2 base-URL providers (Together / Groq / Azure OpenAI / Ollama / vLLM / OpenRouter)
+- Soul/memory prompt re-tuning if early OpenAI customers report visibly worse agent quality
+
+> No new feedback memories captured in this sub-session — both fixes were textbook applications of patterns already in memory.
+
+---
+
+## Previous: 2026-04-29 (afternoon) — **v3.4.0 LIVE** — multi-LLM v1 ships, OpenAI provider on prod, wire-test catch validated the release-gate principle
 
 Session arc: Austin came back with the OpenAI key we'd been holding the v3.4.0 tag for. Plan was a 6-step staging walk → 5×5 gate → tag → Hetzner. The walk found the exact bug class the hold was designed to catch: static schema-translation tests (24/24 in [tests/openai-adapter.test.js](tests/openai-adapter.test.js)) pass, but real wire round-trip fails because the dispatch sites pass a **stale Claude model name** to the OpenAI adapter. Fixed it ([PR #170](https://github.com/jafools/shenmay-ai/pull/170)), re-ran the chat round-trip on staging (both providers ✅), passed the 11/11 release gate, tagged v3.4.0, deployed to Hetzner. Multi-LLM v1 is live — every Shenmay tenant can now pick OpenAI as their LLM provider in Settings.
 
