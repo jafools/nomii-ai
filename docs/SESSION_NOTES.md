@@ -5,7 +5,113 @@
 
 ---
 
-## Last updated: 2026-04-28 (night) — **v3.3.27 SHIPPED** — Pure BYOK on SaaS + Settings → AI API key UI
+## Last updated: 2026-04-29 (afternoon) — **v3.4.0 LIVE** — multi-LLM v1 ships, OpenAI provider on prod, wire-test catch validated the release-gate principle
+
+Session arc: Austin came back with the OpenAI key we'd been holding the v3.4.0 tag for. Plan was a 6-step staging walk → 5×5 gate → tag → Hetzner. The walk found the exact bug class the hold was designed to catch: static schema-translation tests (24/24 in [tests/openai-adapter.test.js](tests/openai-adapter.test.js)) pass, but real wire round-trip fails because the dispatch sites pass a **stale Claude model name** to the OpenAI adapter. Fixed it ([PR #170](https://github.com/jafools/shenmay-ai/pull/170)), re-ran the chat round-trip on staging (both providers ✅), passed the 11/11 release gate, tagged v3.4.0, deployed to Hetzner. Multi-LLM v1 is live — every Shenmay tenant can now pick OpenAI as their LLM provider in Settings.
+
+### Headline numbers
+
+| | Start | End |
+|---|---:|---:|
+| Production tag | v3.3.27 | **v3.4.0** |
+| PRs merged this session | — | 1 ([#170](https://github.com/jafools/shenmay-ai/pull/170)) — surgical wire-bug fix |
+| Files changed | — | 4 (+64 / −5) |
+| New unit tests | — | 5 (29 total in openai-adapter.test.js, was 24) |
+| 5×5 release gate | — | **11/11 green** ([Run 25106021661](https://github.com/jafools/shenmay-ai/actions/runs/25106021661)) |
+| OpenAI live verification | unverified | **6/6 PASS** end-to-end |
+| Anthropic regression check | — | **PASS** end-to-end (live wire) |
+| Wall-clock | — | ~75 min |
+| OpenAI cost (entire session) | — | < $0.10 |
+
+### Ship log
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#170](https://github.com/jafools/shenmay-ai/pull/170) | `9fea7c4` | fix(llm): use provider-correct default model at chat dispatch sites — adds `getDefaultModel(provider, role)` helper to `services/llm/index.js`, replaces `conv.llm_model` reads at 3 dispatch sites (`widget.js` standard path, `widget.js` tool-loop path, `tools-routes.js` test-tool path) so dispatch trusts the active provider's adapter default instead of the (potentially stale) stored column. 5 regression tests added. |
+| **v3.4.0** | `9fea7c4` | shipped to GHCR + deployed to Hetzner (`ghcr.io/jafools/shenmay-backend:3.4.0`, `ghcr.io/jafools/shenmay-frontend:3.4.0`) |
+
+### The bug we caught (validates the wire-test release-gate principle)
+
+The Phase 1b multi-LLM PR ([#168](https://github.com/jafools/shenmay-ai/pull/168), shipped overnight Apr 28→29) cleanly added the OpenAI provider:
+- Dispatch layer correctly routes by `tenant.llm_provider`
+- 24 schema-translation unit tests cover the OpenAI ↔ Anthropic message + tool-call shape conversion
+- 5×5 release gate passed under `LLM_PROVIDER=mock`
+
+But: **`tenants.llm_model` is set once at signup-time** with the Anthropic default (`claude-sonnet-4-20250514`) and is **never updated** when the tenant later switches provider via Settings → AI API key. So a tenant who picks OpenAI ends up in this state:
+
+```
+llm_provider          = 'openai'      ← updated on key save
+llm_api_key_provider  = 'openai'      ← updated on key save
+llm_model             = 'claude-sonnet-4-20250514'  ← STALE, never touched
+```
+
+Widget chat passes `conv.llm_model` to the openaiAdapter, which forwards `claude-sonnet-4-20250514` to OpenAI's API → 404 → customer sees "Sorry, I had trouble responding." Static tests cover the algorithm; only the live wire call exercises `tenants.llm_model` × provider drift.
+
+This is exactly what `feedback_static_tests_dont_catch_wire_quirks.md` predicted last night. **The memory paid for itself.**
+
+### Why the fix is read-side, not write-side
+
+Three options on the table:
+1. **Write-side**: update `llm_model` in `api-key-routes.js` when provider changes. Surgical (~5 lines), but doesn't help any tenant already in a drifted state, and any future drift (direct DB update, missing migration step) recreates the bug.
+2. **Adapter-side**: make openaiAdapter detect Claude-shaped model names and override. Generic, but adds branching to a hot path and weirdens the adapter's contract.
+3. **Read-side at dispatch**: resolve a provider-correct model at chat-call time, ignoring the stored column. ← chosen.
+
+Option 3 matches the resolution pattern already used by `soulGenerator.js` (which is why soul gen worked while chat didn't during the staging walk — soul gen ignored the stored column, widget chat trusted it). `tenants.llm_model` is now effectively a vestigial column — Shenmay doesn't currently let tenants pick a custom model anyway.
+
+The general bug class: **fallback expressions of the form `stored_value || default` only fire when stored_value is null/empty. They don't catch drift, where stored_value is set but stale/wrong.** `tools-routes.js:361` had this exact pattern (`tenant.llm_model || (tenant.llm_provider === 'openai' ? gpt-4o : claude-default)`) — fixed in the same PR. New feedback memory captures this generically.
+
+### What got walked on staging (8/8 PASS, including the failure → re-test cycle)
+
+Test tenant `992e20b9-…` on `nomii-staging.pontensolutions.com`:
+
+1. ✅ Tenant signup via Mailinator + DB-skip onboarding
+2. ✅ Settings → AI API key — provider dropdown, warning banner with 3 risk bullets, OpenAI placeholder + console.openai.com link
+3. ✅ **Validate & save key** — first live OpenAI wire call. Header flips to "OpenAI · GPT-4o", status "GPT-4o key …BQ4A active and validated"
+4. ✅ **Test connection** button — second wire call, "Connection OK" toast + inline ✓
+5. ✅ **Soul regen** via Generate Soul — third wire call, structured output round-trip (Identity + Communication Principles, all fields populated). Minor "personalised personalised" duplicate word — generic LLM hiccup, not OpenAI-specific
+6. 🚨 **Chat round-trip** — initial run **FAILED** with "Sorry, I had trouble responding." Pulled backend logs, found `404 The model claude-sonnet-4-20250514 does not exist`. Traced to widget.js dispatch passing `conv.llm_model` raw.
+7. (off-screen) Branched, fixed, tested, opened PR #170, CI 5/5 pass, squash-merged, pulled `:edge` on staging
+8. ✅ **Chat round-trip retry** — succeeded. OpenAI gpt-4o returned a coherent (if generic) response about "v340 Live Walk Co"
+9. ✅ **Anthropic toggle + chat round-trip** (post-fix regression check) — Austin pasted his replaced Anthropic key, "Anthropic · Claude" header rendered, widget chat returned a richer persona-shaped response
+
+### Pre-existing bug FLAGGED (not addressed this session, still queued)
+
+`server/src/routes/portal/company-routes.js:50-59` auto-regenerate path uses the legacy `api_key_encrypted` column name + single-arg `decrypt()` call. Already documented in last session's wrap-up; carry-over for next session.
+
+### Cleanup done this session
+
+- ✅ Test tenant `992e20b9-…` cascade-deleted from staging
+- ✅ PR #170 squash-merged + branch deleted
+- ✅ Tag v3.4.0 pushed to GHCR (rebuild succeeded)
+- ✅ Hetzner deployed: `docker inspect shenmay-backend --format '{{.Config.Image}}'` → `ghcr.io/jafools/shenmay-backend:3.4.0` ✓
+- ✅ Health check: `curl https://shenmay.ai/api/health` → 200, body `{"status":"ok"}`
+- ✅ Stray git-bash quirk files cleaned (still bites, still captured)
+
+### Carry-over for next session
+
+**Bug fixes (small, independent):**
+- `company-routes.js` decrypt + column-name bug (still pre-existing, soul auto-regenerate path)
+
+**Ops / Austin-only:**
+- Anthropic key was **rotated** mid-session — old $3-budget key is now retired, new key is the one used for the Anthropic regression test
+- Decide master/admin tenant `managed_ai_enabled=true` flag
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup is now safe (post May 1 — that's *yesterday*)
+
+**Cosmetic:**
+- `nomii-*` GHCR repos cleanup (manual, harmless)
+
+**Future phases:**
+- ponten-solutions marketing-site copy update — "Choose between Claude (recommended) or OpenAI" positioning
+- Phase 2 base-URL providers (Together / Groq / Azure OpenAI / Ollama / vLLM / OpenRouter) — separate scoping pass when self-hosted prospects ask
+- npm audit fix for the 2 high-severity transitive vulns flagged on `openai` install
+- Soul/memory prompt re-tuning if early OpenAI customers report visibly worse agent quality
+
+> Cross-repo work belongs in the vault under `projects/`, not here. Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (night) — **v3.3.27 SHIPPED** — Pure BYOK on SaaS + Settings → AI API key UI
 
 Session arc: Austin asked about kicking the platform-key fallback when trial tenants subscribe, and whether we should support any-LLM-provider. After auditing `resolveApiKey` it turned out the leak was wider than thought — Tier 3 (env-var fallback) fired for ANY tenant without a BYOK or `managed_ai_enabled` flag, including paid plans, so paid SaaS customers were transparently spending the platform's `$ANTHROPIC_API_KEY` budget. Austin chose pure BYOK (every plan including trial = BYOK only). Implemented + shipped the close-the-leak path AND realized mid-PR that the friendly "Add your API key in Settings" error message was a lie — there was no Settings → API key section. Added that + an onboarding walkthrough in the same PR so the BYOK story shipped complete. Multi-LLM-provider support deferred to a future phase.
 
