@@ -21,6 +21,7 @@ const db = require('../../db');
 const {
   callClaudeWithTools, resolveApiKey,
 } = require('../../services/llmService');
+const { getDefaultModel } = require('../../services/llm');
 const { toToolDefinition }     = require('../../tools/customToolLoader');
 const { handleCustomTool }     = require('../../tools/custom_tool_handler');
 const { incrementMessageCount } = require('../../middleware/subscription');
@@ -358,9 +359,7 @@ router.post('/:toolId/test', async (req, res, next) => {
         [{ role: 'user', content: message.trim() }],
         toolDefs,
         testExecutor,
-        tenant.llm_model || (tenant.llm_provider === 'openai'
-          ? (process.env.LLM_OPENAI_MODEL || 'gpt-4o')
-          : 'claude-sonnet-4-20250514'),
+        getDefaultModel(tenant.llm_provider, 'sonnet'),
         1024,
         apiKey,
         { provider: tenant.llm_provider }

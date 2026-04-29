@@ -55,8 +55,23 @@ function listProviders() {
   return Object.keys(REGISTRY);
 }
 
+/**
+ * Resolve the canonical default model for a given provider + role.
+ *
+ * Why this exists: `tenants.llm_model` is set at signup-time and never
+ * updated when the tenant later switches provider (e.g. anthropic →
+ * openai), so the column can hold a Claude name while `llm_provider`
+ * is `openai`. Sending that mismatched name to the OpenAI adapter
+ * round-trips a 404 from OpenAI's API. Dispatch sites should call
+ * this helper instead of trusting the stored column.
+ */
+function getDefaultModel(provider, role = 'sonnet') {
+  return getAdapter(provider).defaultModel(role);
+}
+
 module.exports = {
   getAdapter,
   normalizeProvider,
   listProviders,
+  getDefaultModel,
 };

@@ -300,6 +300,41 @@ group('Adapter defaultModel', () => {
 });
 
 
+// ── Registry-level getDefaultModel (regression test for v3.4.0 wire bug) ─────
+// `tenants.llm_model` is set at signup time with the Anthropic default and
+// never updated when the tenant later switches provider — so the column
+// can hold a Claude name while `llm_provider='openai'`. Dispatch sites
+// must call getDefaultModel(provider) and ignore the stored column.
+group('getDefaultModel(provider, role)', () => {
+  test('Anthropic provider resolves to a Claude model', () => {
+    assert(registry.getDefaultModel('anthropic', 'sonnet').startsWith('claude-'));
+    assert(registry.getDefaultModel('anthropic', 'haiku').startsWith('claude-'));
+  });
+
+  test('OpenAI provider resolves to a GPT model regardless of stored llm_model', () => {
+    assert(registry.getDefaultModel('openai', 'sonnet').startsWith('gpt-4o'));
+    assert(registry.getDefaultModel('openai', 'haiku') === 'gpt-4o-mini');
+  });
+
+  test('Legacy "claude" provider name normalizes to anthropic', () => {
+    assert(registry.getDefaultModel('claude', 'sonnet').startsWith('claude-'));
+  });
+
+  test('Default role is sonnet', () => {
+    assertEqual(
+      registry.getDefaultModel('openai'),
+      registry.getDefaultModel('openai', 'sonnet')
+    );
+  });
+
+  test('Throws for unknown provider', () => {
+    let threw = false;
+    try { registry.getDefaultModel('palm'); } catch (e) { threw = true; }
+    assert(threw, 'expected throw on unknown provider');
+  });
+});
+
+
 console.log('');
 console.log(`== Results: ${passed} passed, ${failed} failed ==`);
 process.exit(failed === 0 ? 0 : 1);

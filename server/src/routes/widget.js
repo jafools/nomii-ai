@@ -30,6 +30,7 @@ const crypto  = require('crypto');
 const db      = require('../db');
 const { buildSystemPrompt }                      = require('../engine/promptBuilder');
 const { getAgentResponse, callClaudeWithTools, callClaude, sanitiseResponse, resolveApiKey, buildTokenizer, NoApiKeyError } = require('../services/llmService');
+const { getDefaultModel } = require('../services/llm');
 const { BreachError } = require('../services/piiTokenizer');
 const { updateMemoryAfterSession, updateMemoryAfterExchange } = require('../engine/memoryUpdater');
 const { getToolDefinitions }                     = require('../tools/registry');
@@ -1343,12 +1344,17 @@ router.post(
         // Combined: custom tools take priority, fall through to universal
         const toolExecutor = buildCombinedExecutor(customExecutor, universalExecutor);
 
+        // tenants.llm_model is set at signup time and never updated when the
+        // tenant later switches provider, so trust the active provider's
+        // adapter default instead of the (potentially stale) stored column.
+        const dispatchModel = getDefaultModel(conv.llm_provider, 'sonnet');
+
         const raw = await callClaudeWithTools(
           systemPrompt,
           llmMessages,
           toolDefs,
           toolExecutor,
-          conv.llm_model,
+          dispatchModel,
           2048,
           resolvedKey,
           {
@@ -1361,10 +1367,14 @@ router.post(
 
       } else {
         // ── Standard path (no tools, or mock) ─────────────────────────────────
+        // See note on dispatchModel in the tool-loop branch above — same
+        // rationale applies here.
+        const dispatchModel = getDefaultModel(conv.llm_provider, 'sonnet');
+
         agentResponse = await getAgentResponse({
           systemPrompt,
           messages:        llmMessages,
-          model:           conv.llm_model,
+          model:           dispatchModel,
           customerName:    `${conv.first_name} ${conv.last_name}`,
           agentName:       agentDisplayName,
           lastUserMessage: sanitized,
