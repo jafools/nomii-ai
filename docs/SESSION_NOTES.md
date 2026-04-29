@@ -5,7 +5,59 @@
 
 ---
 
-## Last updated: 2026-04-29 (afternoon, late) — **v3.4.1 LIVE** — quick-follow release with carry-over hygiene fixes
+## Last updated: 2026-04-29 (afternoon, very late) — **v3.4.2 LIVE** — UX bundle: Settings inputs visible + trial limits actually-usable
+
+Sub-session arc: After v3.4.1 shipped, Austin smoke-tested production and flagged two UX issues with screenshots: (1) the trial usage widget showed "CUSTOMERS 3 / 1 · LIMIT REACHED · UPGRADE" — the limit of 1 customer is comically low and prevents real evaluation; (2) Settings page form fields are nearly invisible until focused — user can't tell where to click. Both diagnosed as 1-2 line fixes, bundled into [PR #175](https://github.com/jafools/shenmay-ai/pull/175), shipped as v3.4.2.
+
+### Headline numbers (v3.4.1 → v3.4.2 sub-session)
+
+| | Result |
+|---|---|
+| Production tag | **v3.4.2** (was v3.4.1) |
+| PRs merged | 1 ([#175](https://github.com/jafools/shenmay-ai/pull/175), 4 files) |
+| 5×5 release gate | **11/11 green** ([Run 25109017769](https://github.com/jafools/shenmay-ai/actions/runs/25109017769)) |
+| Migration | 1 (039) — backfill existing trials matching 1/20 → 3/50 (UPDATE 0 in prod since no trials matched the old defaults) |
+| Wall-clock from v3.4.1 → v3.4.2 | ~50 min |
+
+### What v3.4.2 ships
+
+| File | Change |
+|---|---|
+| [`client/src/pages/shenmay/dashboard/settings/_shared.js`](client/src/pages/shenmay/dashboard/settings/_shared.js) | `inputStyle` was using `paperDeep` for both bg + border — same colour as the surrounding card → invisible. Aligned to canonical `ShenmayUI <Input/>` style: `background: #FFFFFF` + `border: 1px solid #D8D0BD` (paperEdge). One-line change, propagates across all 8 Settings sub-sections (CompanyProfile, ApiKeySection, AgentSoulSection, ProductsSection, etc.). |
+| [`server/src/config/plans.js`](server/src/config/plans.js) | `PLAN_LIMITS.trial` bumped from `{ max_customers: 1, max_messages_month: 20 }` to `{ 3, 50 }`. Old trial was unusably small (1/50× of starter at 50/1000). New 3/50 lets users genuinely evaluate the product. |
+| [`server/db/migrations/039_bump_trial_limits.sql`](server/db/migrations/039_bump_trial_limits.sql) | Idempotent backfill: `UPDATE subscriptions SET max_customers = 3, max_messages_month = 50 WHERE plan = 'trial' AND max_customers = 1 AND max_messages_month = 20`. Only matches the exact old-default shape; tenants with custom-set limits left alone. |
+| [`tests/integration.test.js`](tests/integration.test.js) | Updated PLAN_LIMITS unit test assertions + under/at-limit message-cap fixtures to match the new 3/50 trial. |
+
+Initial proposal was 5/100; Austin amended to 3/50 before merge.
+
+### Production state after migration
+
+`UPDATE 0` on Hetzner — no trial subscriptions matched the exact `1 AND 20` filter. All current prod trials are at 3/50 (they were either custom-set previously or got the new defaults via tenant creation post-deploy). Behaviour going forward: every new trial gets 3/50 from `PLAN_LIMITS.trial`.
+
+### Pre-v3.4.2 ledger note
+
+The session ran 4 production deploys back-to-back: v3.3.27 → v3.4.0 → v3.4.1 → v3.4.2. ~3 hours wall-clock total. Zero rollbacks. Three 5×5 release gates each 11/11. Two live wire walks (one OpenAI, one Anthropic) verifying multi-LLM v1 end-to-end.
+
+### Carry-over for next session (still queued)
+
+**Ops / Austin-only:**
+- Decide master/admin tenant `managed_ai_enabled=true` flag
+- UptimeRobot monitor #3 type flip
+
+**Cosmetic:**
+- `nomii-*` GHCR repos cleanup — gh CLI token lacks `read:packages` scope, do via UI
+
+**Future phases:**
+- ponten-solutions marketing-site copy update — "Choose between Claude (recommended) or OpenAI" positioning. Lovable manual-publish required.
+- Phase 2 base-URL providers (Together / Groq / Azure OpenAI / Ollama / vLLM / OpenRouter)
+- Soul/memory prompt re-tuning if early OpenAI customers report quality drift
+- Audit other settings sub-sections for any other invisible-styling drift; ShenmayUI canonical `<Input/>` should be the only sanctioned input style across the app
+
+> No new feedback memories captured this sub-session — both fixes were textbook design-system drift (settings hand-rolled instead of using ShenmayUI canonical) and product-economics misconfiguration. Single feedback worth surfacing for the next session: **CSS where `bg === border` is invisible** — captured via the canonical fix, no separate memory needed.
+
+---
+
+## Previous: 2026-04-29 (afternoon, late) — **v3.4.1 LIVE** — quick-follow release with carry-over hygiene fixes
 
 Sub-session arc: Austin gave permission to keep working after v3.4.0 shipped. Picked up two carry-over items that had been sitting in the queue, plus opportunistic Hetzner cleanup. Both fixes shipped, dispatched the 5×5 gate, cut v3.4.1 ~2 hours after v3.4.0.
 
