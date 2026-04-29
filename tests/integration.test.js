@@ -443,21 +443,21 @@ async function runTests() {
   });
 
   await test('trial plan under limit → true', () => {
-    const sub = { plan: 'trial', messages_used_this_month: 50, max_messages_month: 100 };
+    const sub = { plan: 'trial', messages_used_this_month: 25, max_messages_month: 50 };
     assert(isWithinMessageLimit(sub) === true);
   });
 
   await test('trial plan at limit → false', () => {
-    const sub = { plan: 'trial', messages_used_this_month: 100, max_messages_month: 100 };
+    const sub = { plan: 'trial', messages_used_this_month: 50, max_messages_month: 50 };
     assert(isWithinMessageLimit(sub) === false);
   });
 
   console.log('\nPLAN_LIMITS');
 
-  await test('trial limits: 100 msg/mo, 5 customers', () => {
+  await test('trial limits: 50 msg/mo, 3 customers', () => {
     const trial = PLAN_LIMITS.trial;
-    assert(trial.max_messages_month === 100, `Expected 100, got ${trial.max_messages_month}`);
-    assert(trial.max_customers === 5, `Expected 5, got ${trial.max_customers}`);
+    assert(trial.max_messages_month === 50, `Expected 50, got ${trial.max_messages_month}`);
+    assert(trial.max_customers === 3, `Expected 3, got ${trial.max_customers}`);
   });
 
   await test('starter limits: 1000 msg/mo, 50 customers', () => {

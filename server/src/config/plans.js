@@ -42,7 +42,7 @@ const { envVar } = require('../utils/env');
 // — every customer brings their own key.
 /** @type {Record<PlanName, PlanLimits>} */
 const PLAN_LIMITS = {
-  trial:        { max_customers: 5,     max_messages_month: 100,    managed_ai: false, max_agents: 1   },
+  trial:        { max_customers: 3,     max_messages_month: 50,     managed_ai: false, max_agents: 1   },
   starter:      { max_customers: 50,    max_messages_month: 1000,   managed_ai: false, max_agents: 10  },
   growth:       { max_customers: 250,   max_messages_month: 5000,   managed_ai: false, max_agents: 25  },
   professional: { max_customers: 1000,  max_messages_month: 25000,  managed_ai: false, max_agents: 100 },
