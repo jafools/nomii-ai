@@ -5,7 +5,108 @@
 
 ---
 
-## Last updated: 2026-04-28 (night) — **v3.3.27 SHIPPED** — Pure BYOK on SaaS + Settings → AI API key UI
+## Last updated: 2026-04-29 (morning) — **Multi-LLM v1 MERGED to main, v3.4.0 TAG HELD** — OpenAI provider added, staging walked clean
+
+Session arc: Austin asked to scope multi-LLM provider support, then said "build this autonomously while I sleep." Phase 1a (refactor) + Phase 1b (OpenAI provider) shipped end-to-end across 3 PRs ([#165](https://github.com/jafools/shenmay-ai/pull/165), [#168](https://github.com/jafools/shenmay-ai/pull/168), handoff [#167](https://github.com/jafools/shenmay-ai/pull/167)) overnight. Morning Austin merged the safe ones, walked staging in 6 verifiable checks, and decided to hold the v3.4.0 tag until he gets an OpenAI key for a live wire-protocol verification (the only thing static schema-translation tests can't catch).
+
+### Headline numbers
+
+| | Result |
+|---|---:|
+| Production tag | unchanged at **v3.3.27** |
+| Main moved to SHA | `a42c1e2` (was `ea9eb67`) |
+| `:edge` (staging) | rebuilt to v3.4.0-shaped code |
+| PRs merged | 4 (#164 v3.3.27 wrap, #165 Phase 1a, #167 handoff, #168 OpenAI) |
+| Files changed (net) | 23 (+1,810 / −330) |
+| New unit tests | **24** (schema translation), all green; total 70/70 (46 tokenizer + 24 NEW) |
+| Lint + build | clean (0 errors, 13 pre-existing client warnings) |
+| Migrations | 0 (every column already exists from migration 010) |
+| New deps | 1 (`openai@^6.35`) |
+| Hard boundaries during overnight build | All respected (no merge / no tag / no Hetzner / no 5×5 dispatch) |
+| Staging walks | 6/6 PASS |
+| Live OpenAI verification | **NOT done** (no key) — held until Austin has one |
+
+### Ship log
+
+| Tag / PR | SHA | What |
+|---|---|---|
+| [#164](https://github.com/jafools/shenmay-ai/pull/164) | `2eb79a8` | docs(session-notes): wrap v3.3.27 — Pure BYOK + Settings → AI API key UI (was open before this session) |
+| [#165](https://github.com/jafools/shenmay-ai/pull/165) | `5055915` | chore(llm): introduce ProviderAdapter abstraction (Phase 1a, **zero behavior change**) — `server/src/services/llm/anthropicAdapter.js` + `index.js` registry. `llmService.js` becomes thin shim, legacy `callClaude` / `callClaudeWithTools` / `validateApiKey` names preserved as back-compat. `soulGenerator.js:89` cleanup (was bypassing helper with `new Anthropic` direct, now routes through `chat()`). Includes formal `docs/MULTI_LLM_SCOPING.md`. |
+| [#167](https://github.com/jafools/shenmay-ai/pull/167) | `36f4500` | docs: overnight handoff doc at `docs/OVERNIGHT_MULTI_LLM_HANDOFF.md` |
+| [#168](https://github.com/jafools/shenmay-ai/pull/168) | `a42c1e2` | feat(llm): **OpenAI provider support** — full backend (`openaiAdapter.js` with Anthropic↔OpenAI shape conversion, 8 call sites plumbed for provider dispatch, `me-routes.js` exposes `llm_api_key_provider` + `llm_provider`) + frontend (provider dropdown + warning banner + first-switch confirmation modal in both Settings and onboarding) + 24 schema-translation unit tests. **Compose forward fix** (`docker-compose.yml` + `docker-compose.selfhosted.yml`) for `LLM_OPENAI_MODEL` + `LLM_OPENAI_MINI_MODEL` — caught by env-forwarding CI lint after first push. |
+| **v3.4.0** | NOT TAGGED | held pending live OpenAI key wire-protocol test |
+
+### What got walked on staging (6/6 PASS)
+
+Test tenant `c9435c65-…` on `nomii-staging.pontensolutions.com`, `:edge` rebuilt at `a42c1e2`. All 6 checks via Chrome MCP + DB-mock + portal-token-authed `/api/portal/me` fetch:
+
+1. **Tenant signup + DB-skip** — Mailinator `shenmay-multi-llm-v340-staging@mailinator.com`, then DB-skip onboarding to dashboard.
+2. **UI rendering** — provider dropdown shows both `Anthropic Claude (recommended)` + `OpenAI`. Switching to OpenAI fires the warning banner with all 3 risk bullets ("less consistent persona / weaker memory continuity / subtly different tone"). Walkthrough copy is provider-aware: 2 `platform.openai.com` links + `sk-…` placeholder when OpenAI selected.
+3. **DB-mock OpenAI Mode 2** — `UPDATE … llm_api_key_provider='openai', llm_provider='openai', last4='ai01'`. Reload renders header "OpenAI · GPT-4o", Mode 2 status "GPT-4o key …ai01 active and validated", all 3 buttons present (Test connection / Replace key / Delete).
+4. **Bi-directional toggle** — Reset DB to `llm_api_key_provider='anthropic', llm_provider='claude', last4='abcd'`. Reload renders header "Anthropic · Claude", "Claude key …abcd active and validated". Confirms the provider→short-name lookup (`pickedInfo.short`) renders both ways.
+5. **First-switch confirmation modal** — Click Replace key → switch dropdown to `openai` → fill fake key → submit. Modal heading "Switch to OpenAI?" with body "Your agent's persona and memory may behave differently after this change. Existing soul + memory files stay where they are…" and "Claude is the recommended provider for Shenmay's agent-quality guarantees." Cancel + red "Switch to OpenAI" buttons render. Cancel preserves DB state (no save fired). Confirms scoping spec's unmissable-confirmation requirement.
+6. **`/api/portal/me` schema additions** — fetch with portal token returns `llm_api_key_provider: 'anthropic'` + `llm_provider: 'claude'` + `llm_api_key_last4: 'abcd'` + `llm_api_key_validated: true` + `deployment_mode: 'saas'`. Confirms me-routes change is live.
+
+### What's NOT verified (deferred until Austin has an OpenAI key)
+
+- Live OpenAI key validation (validateApiKey hits `/v1/chat/completions`)
+- Real chat round-trip through OpenAI (widget message in → response out)
+- Tool-call schema in actual wire format (only static-translation-tested today)
+- Soul + memory generation on OpenAI tenants (Risk #2 in scoping doc — quality may differ from Claude)
+- Anthropic regression at chat-round-trip layer (also needs a key on staging)
+
+The static schema-translation tests cover the algorithmic part of the OpenAI adapter (24 unit tests, both directions, malformed-JSON degradation). What they CAN'T catch: SDK version quirks, undocumented OpenAI response shape edge cases, real-world tool-call argument escaping. First customer who picks OpenAI without us live-testing it will hit those if they exist.
+
+### Patterns surfaced this session (memory-worthy)
+
+- **Stacked PRs auto-close when their base branch is deleted on squash-merge.** GitHub auto-closes a PR if the branch it targets gets deleted (which `--delete-branch` does on the parent merge). Workaround: open a fresh PR retargeting main + force-push the rebased branch. Better: retarget the stacked PR to `main` BEFORE merging the parent, OR merge without `--delete-branch`. Bit me on #166 → recovered as #168. Captured to memory.
+- **Env-forwarding lint catches new `process.env.X` usages that aren't wired into either compose file** — already captured in [`feedback_compose_fallback_overrides_code_default`](memory/feedback_compose_fallback_overrides_code_default.md) but this session reinforced it (caught `LLM_OPENAI_MODEL` + `LLM_OPENAI_MINI_MODEL`, fix was a 4-line compose forward).
+- **Static schema-translation tests are not enough; live wire test is the only thing that catches SDK quirks.** This is why we're holding v3.4.0 — the unit tests prove the algorithm, not the wire format. Worth memorializing as a release-gate principle.
+- **Adapter abstraction landed clean in one autonomous session because zero-behavior-change was the contract.** PR1 stripped to pure restructure, then PR2 added the new provider on top. If bundled, every regression would be ambiguous. Diagnostic premium real.
+- **Pure BYOK rule from v3.3.27 held cleanly under multi-provider.** `resolveApiKey` is provider-agnostic — it just decrypts; the dispatch layer above picks the right adapter. Soul/memory follow chat provider naturally because they thread through `tenant.llm_provider`.
+
+### Pre-existing bug FLAGGED but NOT FIXED (out of scope for this PR set)
+
+`server/src/routes/portal/company-routes.js:50-59` auto-regenerate path reads `api_key_encrypted` (legacy column name; should be `llm_api_key_encrypted`) and calls `decrypt(x)` single-arg (should be two-arg). Currently fails silently → soulGenerator falls back to rule-based. Worth its own small fix PR. Documented in handoff doc + here for next-session pickup.
+
+### Cleanup done this session
+
+- ✅ Test tenant `c9435c65-…` cascade-deleted from staging.
+- ✅ All 4 PRs merged + branches deleted on remote.
+- ✅ #166 (auto-closed) replaced cleanly by #168.
+- ✅ Env-forwarding fix landed in #168 itself.
+- ✅ Stray git-bash quirk files cleaned.
+
+### Still-open queue for next session
+
+**Highest priority (blocks v3.4.0 tag):**
+- **Live OpenAI key wire test** — Austin signs up at platform.openai.com, drops $5 in credits, generates a key. Then ~5 min staging walk: paste key → save → widget chat → confirm Test connection → switch back to Anthropic. Then dispatch 5×5 release gate against main → cut `v3.4.0` → SSH to Hetzner to deploy.
+
+**Bug fixes (small, independent):**
+- `company-routes.js` decrypt + column-name bug (pre-existing, soul auto-regenerate path)
+
+**Ops / Austin-only carry-over:**
+- Rotate $3-budget Anthropic key (still safe to do anytime now)
+- Decide master/admin tenant `managed_ai_enabled=true` flag
+- UptimeRobot monitor #3 type flip
+- Volume rename backup cleanup (recheck on/after May 1 — that's *today* now, so safe to clean up the old `nomii-ai_pgdata` backup if any remains)
+
+**Cosmetic:**
+- `nomii-*` GHCR repos cleanup (manual, harmless)
+
+**Future phases:**
+- Cost-copy update once OpenAI per-message pricing landed
+- ponten-solutions marketing-site copy update with "and OpenAI" positioning
+- Phase 2 base-URL providers (Together / Groq / Azure OpenAI / Ollama / vLLM / OpenRouter) — separate scoping pass when self-hosted prospects ask
+- npm audit fix for the 2 high-severity transitive vulns flagged on `openai` install
+- Soul/memory prompt re-tuning if early OpenAI customers report visibly worse agent quality
+
+> Cross-repo work (Polygon UK W1, Lateris, ponten-solutions, etc.) belongs in
+> the vault under `projects/`, not here. This file is Shenmay-only.
+
+---
+
+## Previous: 2026-04-28 (night) — **v3.3.27 SHIPPED** — Pure BYOK on SaaS + Settings → AI API key UI
 
 Session arc: Austin asked about kicking the platform-key fallback when trial tenants subscribe, and whether we should support any-LLM-provider. After auditing `resolveApiKey` it turned out the leak was wider than thought — Tier 3 (env-var fallback) fired for ANY tenant without a BYOK or `managed_ai_enabled` flag, including paid plans, so paid SaaS customers were transparently spending the platform's `$ANTHROPIC_API_KEY` budget. Austin chose pure BYOK (every plan including trial = BYOK only). Implemented + shipped the close-the-leak path AND realized mid-PR that the friendly "Add your API key in Settings" error message was a lie — there was no Settings → API key section. Added that + an onboarding walkthrough in the same PR so the BYOK story shipped complete. Multi-LLM-provider support deferred to a future phase.
 
