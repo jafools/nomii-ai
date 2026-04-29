@@ -1,7 +1,15 @@
 /**
  * SHENMAY AI — LLM Service
  *
- * Handles all calls to the Claude API.
+ * Thin public surface over the LLM provider adapters in ./llm/. Holds
+ * the cross-cutting concerns that aren't provider-specific:
+ *   - tenant API key resolution (resolveApiKey — pure BYOK rules from v3.3.27)
+ *   - PII tokenizer construction (buildTokenizer + tokenizationEnabledFor)
+ *   - breach logging (logBreach)
+ *   - the high-level getAgentResponse entry point that the chat path calls
+ *
+ * Provider SDK details (Anthropic SDK calls, OpenAI SDK calls, tool-call
+ * schema translation, model name defaults) live in ./llm/<provider>Adapter.js.
  *
  * SaaS is pure BYOK as of v3.3.27: every tenant must have a validated
  * llm_api_key on their tenant row, OR be flagged managed_ai_enabled
@@ -16,12 +24,18 @@
  *   2. tenant has validated BYOK → decrypt and return
  *   3. SaaS → null (caller surfaces "Add your API key in Settings")
  *      Self-hosted → platform env key fallback (operator-provided)
+ *
+ * The legacy function names `callClaude`, `callClaudeWithTools`, and
+ * `validateApiKey` are preserved for back-compat with existing call sites
+ * (8 call sites at the time of the Phase 1a refactor). They internally
+ * dispatch through the adapter registry. New code should prefer `chat`,
+ * `chatWithTools`, and `validateKey`.
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
 const { decrypt } = require('./apiKeyService');
 const { Tokenizer, BreachError } = require('./piiTokenizer');
 const { isSelfHosted } = require('../config/plans');
+const { getAdapter, normalizeProvider } = require('./llm');
 
 /**
  * Thrown when an LLM call is attempted but no API key is resolvable for the
@@ -37,9 +51,6 @@ class NoApiKeyError extends Error {
   }
 }
 
-// Cache Anthropic clients by API key hash to avoid re-creating
-const _clientCache = new Map();
-
 // Global emergency kill-switch. Set PII_TOKENIZER_ENABLED=false to force-off
 // for every tenant regardless of per-tenant flag. Default is enabled.
 const TOKENIZER_GLOBAL_ENABLED =
@@ -54,8 +65,7 @@ const TOKENIZER_GLOBAL_ENABLED =
  */
 function tokenizationEnabledFor(tenant) {
   if (!TOKENIZER_GLOBAL_ENABLED) return false;
-  if (!tenant) return true; // safest default
-  // Explicitly false → off; anything else (true/null/undefined) → on.
+  if (!tenant) return true;
   return tenant.pii_tokenization_enabled !== false;
 }
 
@@ -84,28 +94,10 @@ async function logBreach({ tenantId, conversationId, customerId, callSite, findi
     );
     console.warn(`[PII] BLOCKED outbound request — ${findings.length} residual finding(s), tenant=${tenantId || 'unknown'}, site=${callSite}`);
   } catch (err) {
-    // Logging the breach log failure is itself important — but don't escalate.
     console.error('[PII] Failed to persist breach log:', err.message);
   }
 }
 
-/**
- * Get or create an Anthropic client for a given API key.
- */
-function getClient(apiKey) {
-  if (!apiKey) {
-    throw new Error('No API key available');
-  }
-
-  // Use SHA-256 hash of key as cache key to avoid collisions
-  const crypto = require('crypto');
-  const cacheKey = crypto.createHash('sha256').update(apiKey).digest('hex').slice(0, 16);
-  if (_clientCache.has(cacheKey)) return _clientCache.get(cacheKey);
-
-  const client = new Anthropic({ apiKey, timeout: 60000, maxRetries: 1 });
-  _clientCache.set(cacheKey, client);
-  return client;
-}
 
 /**
  * Resolve which API key to use for a tenant.
@@ -149,80 +141,73 @@ function resolveApiKey(tenant) {
   return null;
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// New provider-aware API. Phase 1a (this commit) only knows about Anthropic;
+// Phase 1b adds OpenAI dispatch via the same surface.
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * Call Claude API with a system prompt and message history (no tools).
+ * Single-turn chat. Dispatches to the adapter for the given provider.
  *
- * Tokenization flow (when `opts.tokenizer` is provided):
- *   1. Tokenize systemPrompt + messages, producing an in-memory TokenMap.
- *   2. Run the breach detector on the tokenized payload. If anything that
- *      looks like PII remains, THROW BreachError (caller blocks + logs).
- *   3. Send the tokenized payload to Anthropic.
- *   4. Detokenize Claude's response using the same map before returning.
- *
- * @param {object} [opts]
- * @param {Tokenizer} [opts.tokenizer]   Pre-built tokenizer with tenant context.
- * @param {object}    [opts.breachCtx]   { tenantId, conversationId, customerId, callSite }
- *                                        Used to persist breach log on BreachError.
+ * @param {object} opts
+ * @param {string} opts.provider     - 'anthropic' (default) | 'openai' (Phase 1b)
+ * @param {string} opts.systemPrompt
+ * @param {Array}  opts.messages
+ * @param {string} [opts.model]
+ * @param {number} [opts.maxTokens]
+ * @param {string} opts.apiKey
+ * @param {Tokenizer} [opts.tokenizer]
+ * @param {object} [opts.breachCtx]
  */
-async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null, opts = {}) {
-  // resolveApiKey is the single source of truth for key resolution. No
-  // env-var fallback inside the call sites — that would silently bypass
-  // the BYOK policy for tenants who happen to call this directly.
-  if (!apiKey) throw new NoApiKeyError();
-
-  const client = getClient(apiKey);
-  const tokenizer = opts.tokenizer || null;
-
-  let sendSystem = systemPrompt;
-  let sendMessages = messages;
-  let tokenMap = null;
-
-  if (tokenizer) {
-    const sys = tokenizer.tokenize(systemPrompt);
-    tokenMap = sys.map;
-    sendSystem = sys.text;
-    const msgs = tokenizer.tokenizeMessages(messages, tokenMap);
-    sendMessages = msgs.messages;
-
-    try {
-      tokenizer.auditOutbound(sendSystem, sendMessages);
-    } catch (err) {
-      if (err instanceof BreachError) {
-        await logBreach({ ...(opts.breachCtx || {}), findings: err.findings });
-        throw err; // caller translates to safe user response
-      }
-      throw err;
-    }
-  }
-
-  const response = await client.messages.create({
-    model: model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
-    max_tokens: maxTokens,
-    system: sendSystem,
-    messages: sendMessages,
-  });
-
-  const rawText = response.content[0]?.text ?? '';
-  return tokenizer ? tokenizer.detokenize(rawText, tokenMap) : rawText;
+async function chat(opts = {}) {
+  if (!opts.apiKey) throw new NoApiKeyError();
+  const adapter = getAdapter(opts.provider || 'anthropic');
+  return adapter.chat({ ...opts, logBreach });
 }
 
 /**
- * Call Claude with tool-use enabled — the full agentic loop.
- *
- * Claude may call tools multiple times before giving a final text response.
- * Each tool call is executed via the provided toolExecutor function, and the
- * result is fed back to Claude so it can continue reasoning.
- *
- * @param {string}   systemPrompt   — full system prompt
- * @param {Array}    messages        — LLM message history
- * @param {Array}    toolDefs        — tool definitions from registry.getToolDefinitions()
- *                                    each: { name, description, inputSchema }
- * @param {Function} toolExecutor    — async (toolName, params) => result
- *                                    bound to request context by the caller
- * @param {string}   model           — Claude model string
- * @param {number}   maxTokens       — max tokens per response
- * @param {string}   apiKey          — resolved API key
- * @returns {string}  Final text response from Claude
+ * Multi-turn chat with tool-use. Dispatches to the adapter.
+ */
+async function chatWithTools(opts = {}) {
+  if (!opts.apiKey) throw new NoApiKeyError();
+  const adapter = getAdapter(opts.provider || 'anthropic');
+  return adapter.chatWithTools({ ...opts, logBreach });
+}
+
+/**
+ * Validate an API key for a given provider.
+ */
+async function validateKey(apiKey, provider = 'anthropic') {
+  const adapter = getAdapter(provider);
+  return adapter.validateKey(apiKey);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Legacy back-compat shims. Existing call sites used these names — kept here
+// so the Phase 1a refactor is zero-behavior-change. New code should use the
+// `chat` / `chatWithTools` / `validateKey` functions above.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @deprecated Use `chat({ provider, ... })` instead. Kept for back-compat.
+ */
+async function callClaude(systemPrompt, messages, model, maxTokens = 1024, apiKey = null, opts = {}) {
+  return chat({
+    provider: 'anthropic',
+    systemPrompt,
+    messages,
+    model,
+    maxTokens,
+    apiKey,
+    tokenizer: opts.tokenizer || null,
+    breachCtx: opts.breachCtx || null,
+  });
+}
+
+/**
+ * @deprecated Use `chatWithTools({ provider, ... })` instead. Kept for back-compat.
  */
 async function callClaudeWithTools(
   systemPrompt,
@@ -234,108 +219,27 @@ async function callClaudeWithTools(
   apiKey = null,
   opts = {}
 ) {
-  if (!apiKey) throw new NoApiKeyError();
-
-  const client    = getClient(apiKey);
-  const tokenizer = opts.tokenizer || null;
-
-  // Format tool definitions for Anthropic API
-  const anthropicTools = toolDefs.map(t => ({
-    name:         t.name,
-    description:  t.description,
-    input_schema: t.inputSchema,
-  }));
-
-  // Tokenize system prompt + initial messages once. The TokenMap carries
-  // across loop iterations so repeated identifiers get consistent tokens.
-  let tokenMap  = null;
-  let sendSystem = systemPrompt;
-  let currentMessages = [...messages];
-
-  if (tokenizer) {
-    const sys = tokenizer.tokenize(systemPrompt);
-    tokenMap = sys.map;
-    sendSystem = sys.text;
-    const msgs = tokenizer.tokenizeMessages(currentMessages, tokenMap);
-    currentMessages = msgs.messages;
-  }
-
-  const MAX_TOOL_ROUNDS = 6; // safety ceiling — prevent runaway loops
-
-  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    if (tokenizer) {
-      try {
-        tokenizer.auditOutbound(sendSystem, currentMessages);
-      } catch (err) {
-        if (err instanceof BreachError) {
-          await logBreach({ ...(opts.breachCtx || {}), findings: err.findings });
-          throw err;
-        }
-        throw err;
-      }
-    }
-
-    const response = await client.messages.create({
-      model:      model || process.env.LLM_SONNET_MODEL || 'claude-sonnet-4-20250514',
-      max_tokens: maxTokens,
-      system:     sendSystem,
-      messages:   currentMessages,
-      tools:      anthropicTools,
-    });
-
-    // If Claude finished with text (no tool calls), we're done
-    const hasToolUse = response.content.some(b => b.type === 'tool_use');
-    if (!hasToolUse || response.stop_reason === 'end_turn') {
-      const textBlocks = response.content.filter(b => b.type === 'text');
-      const joined = textBlocks.map(b => b.text).join('\n').trim();
-      return tokenizer ? tokenizer.detokenize(joined, tokenMap) : joined;
-    }
-
-    // Claude wants to call tools — add its response to history.
-    // Response content may contain tokenized text in text blocks; it's fine
-    // to feed back as-is since we'll re-tokenize any raw text on next audit.
-    currentMessages.push({ role: 'assistant', content: response.content });
-
-    // Execute each tool call. Tool inputs reference the tokenized text
-    // Claude saw, so we must DETOKENIZE them back to real values before
-    // executing against the DB, then RE-TOKENIZE the result going back in.
-    const toolResults = [];
-    for (const block of response.content) {
-      if (block.type !== 'tool_use') continue;
-
-      let execInput = block.input;
-      if (tokenizer) {
-        // Shallow-walk input object and detokenize any string values.
-        execInput = {};
-        for (const [k, v] of Object.entries(block.input || {})) {
-          execInput[k] = typeof v === 'string' ? tokenizer.detokenize(v, tokenMap) : v;
-        }
-      }
-
-      console.log(`[LLM] Tool call: ${block.name}`);
-      const result = await toolExecutor(block.name, execInput);
-      let resultStr = JSON.stringify(result);
-
-      if (tokenizer) {
-        const tok = tokenizer.tokenize(resultStr, tokenMap);
-        resultStr = tok.text;
-      }
-
-      toolResults.push({
-        type:        'tool_result',
-        tool_use_id: block.id,
-        content:     resultStr,
-      });
-    }
-
-    // Feed results back to Claude as the next user turn
-    currentMessages.push({ role: 'user', content: toolResults });
-  }
-
-  // Safety fallback if loop limit is hit
-  console.warn('[LLM] Tool loop hit max rounds — returning fallback response');
-  return 'I was working through your question but ran into a processing limit. Could you rephrase or ask me to focus on one thing at a time?';
+  return chatWithTools({
+    provider: 'anthropic',
+    systemPrompt,
+    messages,
+    tools: toolDefs,
+    executor: toolExecutor,
+    model,
+    maxTokens,
+    apiKey,
+    tokenizer: opts.tokenizer || null,
+    breachCtx: opts.breachCtx || null,
+  });
 }
+
+/**
+ * @deprecated Use `validateKey(apiKey, provider)` instead. Kept for back-compat.
+ */
+async function validateApiKey(apiKey, provider = 'anthropic') {
+  return validateKey(apiKey, provider);
+}
+
 
 /**
  * Generate a mock response for development/testing without an API key.
@@ -362,39 +266,12 @@ function sanitiseResponse(text) {
     .trim();
 }
 
-/**
- * Validate an API key by making a minimal test call.
- * Returns { valid: boolean, error?: string }
- */
-async function validateApiKey(apiKey, provider = 'anthropic') {
-  if (provider !== 'anthropic') {
-    return { valid: false, error: `Provider "${provider}" is not yet supported. Only "anthropic" is available.` };
-  }
-
-  try {
-    const client = new Anthropic({ apiKey });
-    await client.messages.create({
-      model: process.env.LLM_HAIKU_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 10,
-      messages: [{ role: 'user', content: 'Say "ok"' }],
-    });
-    return { valid: true };
-  } catch (err) {
-    if (err.status === 401) {
-      return { valid: false, error: 'Invalid API key. Please check and try again.' };
-    }
-    if (err.status === 403) {
-      return { valid: false, error: 'API key does not have permission. Check your Anthropic account.' };
-    }
-    return { valid: false, error: err.message || 'Could not validate API key.' };
-  }
-}
 
 /**
  * Main entry point — chooses real or mock, supports per-tenant keys.
  *
  * When tenant.pii_tokenization_enabled is true (default) AND a memory_file
- * is available, outbound text is tokenized before hitting Anthropic and
+ * is available, outbound text is tokenized before hitting the provider and
  * swapped back on response. Breaches are log-and-block: if our detector
  * finds residual PII in the tokenized payload, the request never leaves
  * this process and the user sees a safe retry message.
@@ -407,54 +284,65 @@ async function getAgentResponse({
   agentName,
   lastUserMessage,
   tenant,
-  memoryFile,           // optional — enables name pseudonymization
-  soulFile,             // optional — enables name pseudonymization
-  breachCtx,            // { tenantId, conversationId, customerId, callSite }
+  memoryFile,
+  soulFile,
+  breachCtx,
 }) {
-  // Determine provider: use tenant setting, then env, then mock
-  const provider = tenant?.llm_provider || process.env.LLM_PROVIDER || 'mock';
+  // Determine provider: use tenant setting, then env, then mock.
+  const rawProvider = tenant?.llm_provider || process.env.LLM_PROVIDER || 'mock';
 
-  if (provider === 'claude' || provider === 'anthropic') {
-    const apiKey = resolveApiKey(tenant);
-    if (!apiKey) {
-      // Pure BYOK: refuse to silently mock. Caller decides how to surface
-      // this — operator-facing endpoints say "Add your API key in Settings",
-      // customer-facing widget says "having trouble responding".
-      throw new NoApiKeyError();
-    }
-
-    const tokenizer = buildTokenizer({ tenant, memoryFile, soulFile });
-
-    try {
-      const raw = await callClaude(
-        systemPrompt,
-        messages,
-        model,
-        1024,
-        apiKey,
-        { tokenizer, breachCtx: { ...(breachCtx || {}), callSite: 'chat' } }
-      );
-      return sanitiseResponse(raw);
-    } catch (err) {
-      if (err instanceof BreachError) {
-        // Log-and-block: request was NOT sent to Anthropic. Return a safe,
-        // generic message that signals to the user to retry without PII.
-        console.error(`[LLM] BreachError blocked chat request — ${err.findings.length} finding(s)`);
-        return 'I noticed some sensitive information in that message. For your security, I can\'t process it in this form. Please rephrase without the specific details and I\'ll be happy to help.';
-      }
-      throw err;
-    }
+  if (rawProvider === 'mock') {
+    return generateMockResponse(customerName, lastUserMessage, agentName);
   }
 
-  return generateMockResponse(customerName, lastUserMessage, agentName);
+  // Normalize 'claude' → 'anthropic' so downstream code only sees canonical names.
+  const provider = normalizeProvider(rawProvider);
+
+  const apiKey = resolveApiKey(tenant);
+  if (!apiKey) {
+    // Pure BYOK: refuse to silently mock. Caller decides how to surface
+    // this — operator-facing endpoints say "Add your API key in Settings",
+    // customer-facing widget says "having trouble responding".
+    throw new NoApiKeyError();
+  }
+
+  const tokenizer = buildTokenizer({ tenant, memoryFile, soulFile });
+
+  try {
+    const raw = await chat({
+      provider,
+      systemPrompt,
+      messages,
+      model,
+      maxTokens: 1024,
+      apiKey,
+      tokenizer,
+      breachCtx: { ...(breachCtx || {}), callSite: 'chat' },
+    });
+    return sanitiseResponse(raw);
+  } catch (err) {
+    if (err instanceof BreachError) {
+      console.error(`[LLM] BreachError blocked chat request — ${err.findings.length} finding(s)`);
+      return 'I noticed some sensitive information in that message. For your security, I can\'t process it in this form. Please rephrase without the specific details and I\'ll be happy to help.';
+    }
+    throw err;
+  }
 }
 
+
 module.exports = {
+  // High-level entry
   getAgentResponse,
+  // New provider-aware API
+  chat,
+  chatWithTools,
+  validateKey,
+  // Legacy back-compat (preserve names; route through new API)
   callClaude,
   callClaudeWithTools,
-  generateMockResponse,
   validateApiKey,
+  // Helpers exposed for callers + tests
+  generateMockResponse,
   resolveApiKey,
   sanitiseResponse,
   buildTokenizer,
