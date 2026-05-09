@@ -527,8 +527,9 @@ const CustomerDataSection = ({ customerId }) => {
             <p className="text-[12px] font-semibold text-[#6B6B64] uppercase tracking-wider">New Record</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-[#6B6B64] mb-1">Category <span className="text-red-400">*</span></label>
+                <label htmlFor="cd-record-category" className="block text-[11px] text-[#6B6B64] mb-1">Category <span className="text-red-400">*</span></label>
                 <input
+                  id="cd-record-category"
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   placeholder="e.g. portfolio, goals"
@@ -537,8 +538,9 @@ const CustomerDataSection = ({ customerId }) => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-[#6B6B64] mb-1">Label <span className="text-red-400">*</span></label>
+                <label htmlFor="cd-record-label" className="block text-[11px] text-[#6B6B64] mb-1">Label <span className="text-red-400">*</span></label>
                 <input
+                  id="cd-record-label"
                   value={form.label}
                   onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
                   placeholder="e.g. Account Balance"
@@ -549,8 +551,9 @@ const CustomerDataSection = ({ customerId }) => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-[#6B6B64] mb-1">Value</label>
+                <label htmlFor="cd-record-value" className="block text-[11px] text-[#6B6B64] mb-1">Value</label>
                 <input
+                  id="cd-record-value"
                   value={form.value}
                   onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
                   placeholder="e.g. $245,000"
@@ -559,8 +562,9 @@ const CustomerDataSection = ({ customerId }) => {
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-[#6B6B64] mb-1">Type</label>
+                <label htmlFor="cd-record-value-type" className="block text-[11px] text-[#6B6B64] mb-1">Type</label>
                 <input
+                  id="cd-record-value-type"
                   value={form.value_type}
                   onChange={(e) => setForm((f) => ({ ...f, value_type: e.target.value }))}
                   placeholder="currency / date / text"
@@ -599,8 +603,12 @@ const CustomerDataSection = ({ customerId }) => {
               <div key={cat} className="rounded-xl overflow-hidden" style={{ border: "1px solid #EDE7D7" }}>
                 {/* Category header */}
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={!!expanded[cat]}
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#F5F1E8] transition-colors"
                   onClick={() => toggleCategory(cat)}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCategory(cat); } }}
                   style={{ background: "#EDE7D7" }}
                 >
                   <div className="flex items-center gap-2">
@@ -657,8 +665,22 @@ const CustomerDataSection = ({ customerId }) => {
 
       {/* Confirm delete modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setConfirmDelete(null)}>
-          <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} onClick={(e) => e.stopPropagation()}>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => setConfirmDelete(null)}
+          onKeyDown={e => { if (e.key === "Escape" || e.key === "Enter" || e.key === " ") { e.preventDefault(); setConfirmDelete(null); } }}
+        >
+          <div
+            role="presentation"
+            className="rounded-2xl p-6 max-w-sm w-full mx-4"
+            style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(122,31,26,0.1)" }}>
                 <Trash2 size={18} style={{ color: "#7A1F1A" }} />
@@ -760,8 +782,22 @@ const DeleteCustomerCard = ({ customerId, navigate }) => {
       </div>
 
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => !deleting && setShowConfirm(false)}>
-          <div className="rounded-2xl p-6 max-w-md w-full mx-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} onClick={(e) => e.stopPropagation()}>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => !deleting && setShowConfirm(false)}
+          onKeyDown={e => { if ((e.key === "Escape" || e.key === "Enter" || e.key === " ") && !deleting) { e.preventDefault(); setShowConfirm(false); } }}
+        >
+          <div
+            role="presentation"
+            className="rounded-2xl p-6 max-w-md w-full mx-4"
+            style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(122,31,26,0.1)" }}>
                 <AlertTriangle size={20} style={{ color: "#7A1F1A" }} />

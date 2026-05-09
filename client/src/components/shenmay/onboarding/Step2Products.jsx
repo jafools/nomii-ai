@@ -443,10 +443,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
             style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
           >
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+              <label htmlFor="s2-name" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Name *
               </label>
               <input
+                id="s2-name"
                 type="text"
                 maxLength={200}
                 value={form.name}
@@ -457,10 +458,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+              <label htmlFor="s2-description" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Description
               </label>
               <textarea
+                id="s2-description"
                 rows={2}
                 maxLength={1000}
                 value={form.description}
@@ -472,10 +474,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+                <label htmlFor="s2-category" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                   Category
                 </label>
                 <input
+                  id="s2-category"
                   type="text"
                   maxLength={100}
                   value={form.category}
@@ -486,10 +489,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+                <label htmlFor="s2-price-info" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                   Price / Cost Info
                 </label>
                 <input
+                  id="s2-price-info"
                   type="text"
                   maxLength={100}
                   value={form.price_info}
@@ -501,10 +505,11 @@ const Step2Products = ({ advance, markComplete, stepIndex, shenmayTenant }) => {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+              <label htmlFor="s2-notes" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Notes
               </label>
               <input
+                id="s2-notes"
                 type="text"
                 maxLength={500}
                 value={form.notes}

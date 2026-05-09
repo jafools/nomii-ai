@@ -133,7 +133,7 @@ export default function TestModal({ tool, onClose }) {
           {/* Real customer picker */}
           {mode === "real" && (
             <div className="relative">
-              <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+              <label htmlFor="tm-customer-search" className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
                 Select test customer
               </label>
               {selectedCust ? (
@@ -152,6 +152,7 @@ export default function TestModal({ tool, onClose }) {
               ) : (
                 <>
                   <input
+                    id="tm-customer-search"
                     type="text"
                     value={customerSearch}
                     onChange={e => { setCSearch(e.target.value); setShowDrop(true); }}
@@ -208,10 +209,11 @@ export default function TestModal({ tool, onClose }) {
 
           {/* Message input */}
           <div>
-            <label className="block text-[11px] font-semibold mb-2" style={{ color: "#6B6B64" }}>
+            <label htmlFor="tm-sample-message" className="block text-[11px] font-semibold mb-2" style={{ color: "#6B6B64" }}>
               Sample customer message
             </label>
             <textarea
+              id="tm-sample-message"
               value={message}
               onChange={e => setMessage(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canRun) handleRun(); }}

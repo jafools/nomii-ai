@@ -80,20 +80,20 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Company Name</label>
-          <input type="text" maxLength={200} value={form.name} onChange={set("name")} placeholder="Acme Financial Services" className={inp} style={inpStyle} />
+          <label htmlFor="s1-name" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Company Name</label>
+          <input id="s1-name" type="text" maxLength={200} value={form.name} onChange={set("name")} placeholder="Acme Financial Services" className={inp} style={inpStyle} />
           <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>Your customers will see this name when chatting with your agent.</p>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Agent Name</label>
-          <input type="text" maxLength={100} value={form.agent_name} onChange={set("agent_name")} placeholder="e.g. Ava, Support Bot, your brand name" className={inp} style={inpStyle} />
+          <label htmlFor="s1-agent-name" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Agent Name</label>
+          <input id="s1-agent-name" type="text" maxLength={100} value={form.agent_name} onChange={set("agent_name")} placeholder="e.g. Ava, Support Bot, your brand name" className={inp} style={inpStyle} />
           <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>What should your AI agent introduce itself as?</p>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Industry</label>
-          <select required value={form.vertical} onChange={set("vertical")} className={inp + " cursor-pointer"} style={inpStyle}>
+          <label htmlFor="s1-vertical" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Industry</label>
+          <select id="s1-vertical" required value={form.vertical} onChange={set("vertical")} className={inp + " cursor-pointer"} style={inpStyle}>
             <option value="" disabled style={{ background: "#EDE7D7" }}>What industry are you in?</option>
             {INDUSTRIES.map((v) => <option key={v.value} value={v.value} style={{ background: "#EDE7D7" }}>{v.label}</option>)}
           </select>
@@ -102,17 +102,17 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Chat Window Color</label>
+            <label htmlFor="s1-primary-color" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Chat Window Color</label>
             <div className="flex items-center gap-2">
-              <input type="color" value={form.primary_color} onChange={set("primary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "#D8D0BD", backgroundColor: "#EDE7D7" }} />
+              <input id="s1-primary-color" type="color" value={form.primary_color} onChange={set("primary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "#D8D0BD", backgroundColor: "#EDE7D7" }} />
               <input type="text" value={form.primary_color} onChange={set("primary_color")} className={inp + " flex-1"} style={inpStyle} maxLength={7} />
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>Colors the chat header and your customers' message bubbles.</p>
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Chat Bubble Color</label>
+            <label htmlFor="s1-secondary-color" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Chat Bubble Color</label>
             <div className="flex items-center gap-2">
-              <input type="color" value={form.secondary_color} onChange={set("secondary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "#D8D0BD", backgroundColor: "#EDE7D7" }} />
+              <input id="s1-secondary-color" type="color" value={form.secondary_color} onChange={set("secondary_color")} className="h-10 w-12 rounded-lg border cursor-pointer p-0.5" style={{ borderColor: "#D8D0BD", backgroundColor: "#EDE7D7" }} />
               <input type="text" value={form.secondary_color} onChange={set("secondary_color")} className={inp + " flex-1"} style={inpStyle} maxLength={7} />
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: "#6B6B64" }}>The floating button on your website visitors will click to open the chat.</p>
@@ -120,8 +120,9 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Website URL</label>
+          <label htmlFor="s1-website-url" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Website URL</label>
           <input
+            id="s1-website-url"
             type="url"
             value={form.website_url}
             onChange={set("website_url")}
@@ -137,8 +138,9 @@ const Step1CompanyProfile = ({ shenmayTenant, setShenmayTenant, advance, stepInd
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Company Description</label>
+          <label htmlFor="s1-company-description" className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B64" }}>Company Description</label>
           <textarea
+            id="s1-company-description"
             rows={4}
             maxLength={2000}
             value={form.company_description}

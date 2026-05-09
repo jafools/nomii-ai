@@ -311,10 +311,11 @@ const ShenmayConversationDetail = () => {
           </div>
           {/* Handback note — context the advisor can leave for the AI on next turn */}
           <div>
-            <label className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
+            <label htmlFor="conv-handback-note" className="block text-[11px] font-semibold mb-1.5" style={{ color: "#6B6B64" }}>
               Note for AI when handing back <span style={{ color: "#6B6B64" }}>(optional)</span>
             </label>
             <textarea
+              id="conv-handback-note"
               value={handbackNote}
               onChange={e => setHandbackNote(e.target.value)}
               maxLength={1000}

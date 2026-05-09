@@ -234,7 +234,15 @@ const ShenmayOverview = () => {
               return (
                 <div
                   key={id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => navigate(`/dashboard/conversations/${id}`)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/dashboard/conversations/${id}`);
+                    }
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",

@@ -361,7 +361,14 @@ const ShenmayDashboardLayout = () => {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 40 }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(26,29,26,0.35)", backdropFilter: "blur(4px)" }} onClick={() => setMobileOpen(false)} />
+          <div
+            role="button"
+            aria-label="Close menu"
+            tabIndex={0}
+            style={{ position: "absolute", inset: 0, background: "rgba(26,29,26,0.35)", backdropFilter: "blur(4px)" }}
+            onClick={() => setMobileOpen(false)}
+            onKeyDown={e => { if (e.key === "Escape" || e.key === "Enter" || e.key === " ") { e.preventDefault(); setMobileOpen(false); } }}
+          />
           <aside style={{ position: "relative", width: 280, height: "100%", display: "flex", flexDirection: "column", zIndex: 50, overflow: "auto", background: T.paperDeep, borderRight: `1px solid ${T.paperEdge}` }}>
             <button onClick={() => setMobileOpen(false)} style={{ position: "absolute", top: 20, right: 16, color: T.mute, background: "none", border: "none", cursor: "pointer", zIndex: 10 }}>
               <X size={18} />
