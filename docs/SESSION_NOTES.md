@@ -5,7 +5,64 @@
 
 ---
 
-## Last updated: 2026-05-09 — **PR #178 OPEN** — Brand Learning Phase 1 (anon-visitor learning loop) + dashboard surface
+## Last updated: 2026-05-09 — **v3.5.0 LIVE** — Brand Learning Phase 1 shipped to prod
+
+Sub-session arc: After PR #178 was opened earlier in the day, Austin returned and asked to merge → tag → dispatch to prod. CI on PR caught a real env-forwarding issue (new `BRAND_LEARNING_INTERVAL_MS` not forwarded in either docker-compose). Fixed in a follow-up commit, CI re-ran 5/5 green, squash-merged. Dispatched 5×5 release gate against main → 11/11 green. Tagged v3.5.0, GHCR images published, deployed to Hetzner. One migration hiccup on first deploy (CHECK constraint not idempotent) — recovered by dropping the constraint so backend's auto-migrate retry could re-add it cleanly. Production v3.5.0 LIVE, healthy, brand-learning worker running with 0 opted-in tenants.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| Production tag | **v3.5.0** (was v3.4.3) |
+| PR | [#178](https://github.com/jafools/shenmay-ai/pull/178) MERGED · squash commit `109b790` |
+| 5×5 release gate | **11/11 green** ([Run 25599975934](https://github.com/jafools/shenmay-ai/actions/runs/25599975934)) — 5× SaaS + 5× on-prem + verdict |
+| Wall-clock from "merge plz" → backend healthy on prod | ~10 min |
+| Backend image | `ghcr.io/jafools/shenmay-backend:3.5.0` |
+| Frontend image | `ghcr.io/jafools/shenmay-frontend:3.5.0` |
+| Brand-learning worker | started, ran 1 cycle, found 0 opted-in tenants → completed in 77ms |
+| Public health | `GET https://shenmay.ai` returned 200 via Cloudflare |
+| Migration 040 | applied (manually first, then auto-migrate retry succeeded after constraint fixup) |
+
+### Production schema (verified post-deploy)
+
+`tenants` now has 9 brand-learning cols: `brand_learning_enabled` (default FALSE), `brand_learning_min_sessions` (default 3), `brand_learning_auto_apply` (default TRUE), `brand_soul` / `brand_memory` / `audience_profile` (JSONB nullable), `brand_learning_processed_at`, `brand_learning_last_run_at`, `brand_learning_sessions_processed`. CHECK constraint `brand_learning_min_sessions_range` (1..50) is in place.
+
+`brand_learning_incidents` table exists with PK + FK to tenants (ON DELETE CASCADE) + type CHECK enum (`pii_breach | distill_skip_no_key | distill_failed | promotion_blocked | kill_switch_used | auto_disabled`) + composite index on `(tenant_id, created_at DESC)`.
+
+### Environment forwarding fixup (mid-deploy)
+
+PR-CI caught that `BRAND_LEARNING_INTERVAL_MS` (new env var introduced in `worker.js` for cadence override) wasn't forwarded by either compose file. Lint script `scripts/check-env-forwarding.js` flagged it explicitly. Fixed via follow-up commit `8856c7e` adding `BRAND_LEARNING_INTERVAL_MS: ${BRAND_LEARNING_INTERVAL_MS:-}` (empty default — code default in worker.js stays authoritative, per `feedback_compose_fallback_overrides_code_default.md`).
+
+### Migration-idempotency hiccup (worth knowing for next migration)
+
+PostgreSQL ≤16 does **NOT** support `ADD CONSTRAINT ... IF NOT EXISTS` for CHECK constraints. Migration 040's CHECK constraint addition (`ALTER TABLE tenants ADD CONSTRAINT brand_learning_min_sessions_range ...`) is therefore not idempotent. When I applied 040 manually via `docker exec ... psql` BEFORE letting the backend auto-migrate run, the constraint got installed. When the new v3.5.0 backend started, its migration runner tried to run 040 again (because the runner tracks state in its own `schema_migrations` table that manual psql doesn't touch) — `ADD CONSTRAINT` failed because the constraint already existed. Backend entered restart loop.
+
+**Recovery (executed):** `ALTER TABLE tenants DROP CONSTRAINT IF EXISTS brand_learning_min_sessions_range;` on Hetzner. Backend's next restart re-added the constraint cleanly via the migration runner; 040 marked as applied; healthy.
+
+**Carry-over (low priority):** patch migration 040 to wrap the `ADD CONSTRAINT` in a `DO $$ ... pg_constraint check ... END $$;` block for proper idempotency. This is defensive — fresh installs work fine; the bug only triggers on the "manually-then-auto" path that this deploy specifically hit. Not blocking; can roll into the next release.
+
+**Lesson:** **Don't run migrations manually before letting the backend auto-migrate.** I learned during this deploy that the backend runs its migration runner on every startup. Manual psql is redundant and risks the idempotency gap above. Future deploys: just `docker compose up -d` and watch logs.
+
+### Carry-over for next session
+
+**Now that v3.5.0 is LIVE, recommended next step is canary:**
+1. Enable on Austin's master/test tenant: `docker exec shenmay-db psql -U shenmay -d shenmay_ai -c "UPDATE tenants SET brand_learning_enabled=true WHERE slug='<test-tenant>'"`
+2. Walk ≥3 anon sessions through the widget on that tenant's site
+3. Wait for next 24h cycle (or hit `POST /api/portal/brand-learning/run-now` from the dashboard)
+4. Verify dashboard `/dashboard/brand-learning` surfaces candidates with progress bars
+5. After 1 week clean operation, consider opening up to friendly-customer beta
+
+**Defensive cleanup (file as low-priority issue):**
+- Patch migration 040 to make `ADD CONSTRAINT` idempotent via `DO $$ ... END $$;` block
+- Audit all migrations 001-040 for similar `ADD CONSTRAINT` patterns that could trip the same gap
+
+**Marketing copy:** "Your AI gets smarter the more it talks." Marketing pitch lands when Phase 2 ships the Settings toggle.
+
+> New memory captured: **PostgreSQL ≤16 has no `ADD CONSTRAINT IF NOT EXISTS`** — CHECK / FK / UNIQUE constraints all suffer this. Use `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='...' AND conrelid='...'::regclass) THEN ALTER TABLE ... ADD CONSTRAINT ... END IF; END $$;`. Generalises across the v3.x migration set.
+
+---
+
+## Previous: 2026-05-09 (earlier) — **PR #178 OPEN** — Brand Learning Phase 1 (anon-visitor learning loop) + dashboard surface
 
 Sub-session arc: Austin asked to scope and build a "brand AI learns over time from anonymous-visitor conversations" feature. Followed scope → build → self-review → ship pattern. Wrote `docs/BRAND_LEARNING_SCOPE.md` first with 7 explicit decision points; Austin returned with "all stars" + new requirement (dashboard surface so tenants can SEE the AI is learning) + go-AFK instruction. Built autonomously end-to-end through PR.
 

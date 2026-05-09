@@ -32,9 +32,24 @@ ALTER TABLE tenants
 -- direct-DB write or a future API edit from disabling promotion entirely
 -- (N=0 → every observation promotes) or pinning it so high nothing ever
 -- promotes (N=10000 → silent no-op).
-ALTER TABLE tenants
-  ADD CONSTRAINT brand_learning_min_sessions_range
-  CHECK (brand_learning_min_sessions BETWEEN 1 AND 50);
+--
+-- Wrapped in a DO block because PostgreSQL ≤16 has no
+-- `ADD CONSTRAINT IF NOT EXISTS` — direct ALTER TABLE ADD CONSTRAINT
+-- throws "constraint already exists" on second run, which trips the
+-- backend's auto-migrate idempotency. See
+-- feedback_pg_add_constraint_no_if_not_exists memory.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'brand_learning_min_sessions_range'
+      AND conrelid = 'tenants'::regclass
+  ) THEN
+    ALTER TABLE tenants
+      ADD CONSTRAINT brand_learning_min_sessions_range
+      CHECK (brand_learning_min_sessions BETWEEN 1 AND 50);
+  END IF;
+END$$;
 
 -- Audit table for brand-learning incidents. Visible to tenant in dashboard;
 -- catches anything the worker had to defend against (PII residue,
