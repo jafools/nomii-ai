@@ -159,7 +159,7 @@ const ShenmaySetup = () => {
 
               <form onSubmit={(e) => { e.preventDefault(); next(); }} style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
                 <Field id="companyName" label="Company name">
-                  <Input id="companyName" type="text" placeholder="Acme Corp" value={companyName} onChange={(e) => setCompanyName(e.target.value)} autoFocus />
+                  <Input id="companyName" type="text" placeholder="Acme Corp" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 </Field>
 
                 {error && <Notice tone="danger">{error}</Notice>}
@@ -179,7 +179,7 @@ const ShenmaySetup = () => {
 
               <form onSubmit={(e) => { e.preventDefault(); next(); }} style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 20 }}>
                 <Field id="email" label="Email">
-                  <Input id="email" type="email" placeholder="you@yourcompany.com" value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
+                  <Input id="email" type="email" placeholder="you@yourcompany.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </Field>
 
                 <Field id="password" label="Password">
@@ -230,7 +230,6 @@ const ShenmaySetup = () => {
                       placeholder="sk-ant-..."
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      autoFocus
                       style={{ paddingRight: 40, fontFamily: showApiKey ? T.sans : T.mono, letterSpacing: showApiKey ? "-0.01em" : "0.05em" }}
                     />
                     <button type="button" onClick={() => setShowApiKey((v) => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
