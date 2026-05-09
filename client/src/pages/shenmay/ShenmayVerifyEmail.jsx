@@ -33,18 +33,22 @@ const ShenmayVerifyEmail = () => {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
+    let redirectTimer = null;
     verifyEmail(token)
       .then(() => {
         if (cancelled) return;
         setStatus("success");
-        setTimeout(() => navigate("/onboarding", { replace: true }), 1500);
+        redirectTimer = setTimeout(() => navigate("/onboarding", { replace: true }), 1500);
       })
       .catch((err) => {
         if (cancelled) return;
         setStatus("error");
         setErrorMsg(err?.message || "This verification link has expired or is invalid. Please request a new one.");
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
   }, [token, navigate]);
 
   const handleResend = async (e) => {

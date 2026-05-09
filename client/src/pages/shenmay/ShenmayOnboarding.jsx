@@ -169,12 +169,12 @@ const ShenmayOnboarding = () => {
   const stepProps = { shenmayTenant, setShenmayTenant, shenmayUser, markComplete, advance };
 
   const stepComponents = [
-    <Step1CompanyProfile {...stepProps} stepIndex={0} />,
-    <Step2Products {...stepProps} stepIndex={1} />,
-    <Step3Customers {...stepProps} stepIndex={2} />,
-    <StepApiKey onComplete={() => { markComplete(3); advance(3); }} tenant={shenmayTenant} />,
-    <StepTools {...stepProps} stepIndex={4} onSkip={() => advance(4)} />,
-    <Step4InstallWidget {...stepProps} stepIndex={5} onWidgetVerified={onWidgetVerified} />,
+    <Step1CompanyProfile key="company" {...stepProps} stepIndex={0} />,
+    <Step2Products key="products" {...stepProps} stepIndex={1} />,
+    <Step3Customers key="customers" {...stepProps} stepIndex={2} />,
+    <StepApiKey key="api-key" onComplete={() => { markComplete(3); advance(3); }} tenant={shenmayTenant} />,
+    <StepTools key="tools" {...stepProps} stepIndex={4} onSkip={() => advance(4)} />,
+    <Step4InstallWidget key="install-widget" {...stepProps} stepIndex={5} onWidgetVerified={onWidgetVerified} />,
   ];
 
   return (
