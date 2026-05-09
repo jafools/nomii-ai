@@ -106,9 +106,13 @@ const detectors = [
   },
   {
     NAME: 'POSTCODE',
-    // US ZIP (5 or 5+4), UK postcode, Swedish postnummer (5 digits with space).
+    // US ZIP (5 or 5+4), UK postcode, Canadian postal (A1A 1A1 / A1A1A1),
+    // Swedish postnummer (5 digits with space).
     // Bounded with word/context to avoid matching anywhere.
-    pattern: /\b(?:\d{5}(?:-\d{4})?|[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|\d{3}\s?\d{2})\b/g,
+    // Canadian alternation added 2026-05-09 alongside the brand-learning fuzz
+    // test that surfaced the M5V 2H1 gap — strictly additive, no existing
+    // matches lose coverage.
+    pattern: /\b(?:\d{5}(?:-\d{4})?|[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}|[A-Z]\d[A-Z]\s?\d[A-Z]\d|\d{3}\s?\d{2})\b/g,
     validate: (m) => {
       // Exclude likely false positives: bare 5-digit that could be a year or
       // an account number. Only tokenize if clearly postcode-shaped.

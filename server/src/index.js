@@ -319,5 +319,15 @@ app.use((err, req, res, next) => {
     } catch (err) {
       console.error('[Startup] Data retention job failed to start:', err.message);
     }
+
+    // ── Start brand-learning worker ──────────────────────────────────────────
+    // Nightly distillation of anonymous-visitor conversations into per-tenant
+    // brand_soul / brand_memory / audience_profile. Opt-in per tenant.
+    // See docs/BRAND_LEARNING_SCOPE.md.
+    try {
+      require('./services/brandLearning').start();
+    } catch (err) {
+      console.error('[Startup] Brand-learning worker failed to start:', err.message);
+    }
   });
 })();

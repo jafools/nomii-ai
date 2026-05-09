@@ -107,6 +107,13 @@ router.use('/products', require('./portal/products-routes'));
 router.use('/customers', require('./portal/customers-routes'));
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// BRAND LEARNING — anon-visitor learning loop, see docs/BRAND_LEARNING_SCOPE.md
+// Read-only by default; toggle/run-now/kill-switch are owner-gated inside.
+// ═══════════════════════════════════════════════════════════════════════════
+router.use('/brand-learning', require('./portal/brand-learning-routes'));
+
+
 // GET /api/portal/search — unified search across customers + conversations
 router.get('/search', async (req, res, next) => {
   try {

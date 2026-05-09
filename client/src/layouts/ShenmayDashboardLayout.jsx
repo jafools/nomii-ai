@@ -29,6 +29,7 @@ import {
   Flag,
   MessageCircle,
   TrendingUp,
+  Brain,
 } from "lucide-react";
 
 // ── Notification helpers ───────────────────────────────────────────────
@@ -110,6 +111,7 @@ const NAV = [
   { label: "Customers",         icon: Users,           to: "/dashboard/customers" },
   { label: "Concerns",          icon: AlertTriangle,   to: "/dashboard/concerns",       badge: "concerns" },
   { label: "AI tools",          icon: Wrench,          to: "/dashboard/tools" },
+  { label: "Brand learning",    icon: Brain,           to: "/dashboard/brand-learning" },
   { label: "Team",              icon: Users2,          to: "/dashboard/team" },
   { label: "Plans & billing",   icon: Zap,             to: "/dashboard/plans" },
   { label: "Settings",          icon: Settings,        to: "/dashboard/settings" },
@@ -122,6 +124,7 @@ const PAGE_TITLES = {
   "/dashboard/customers": "Customers",
   "/dashboard/concerns": "Concerns",
   "/dashboard/tools": "AI tools",
+  "/dashboard/brand-learning": "Brand learning",
   "/dashboard/team": "Team",
   "/dashboard/plans": "Plans & billing",
   "/dashboard/settings": "Settings",

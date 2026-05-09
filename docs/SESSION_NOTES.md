@@ -5,7 +5,109 @@
 
 ---
 
-## Last updated: 2026-04-29 (afternoon, very late) — **v3.4.2 LIVE** — UX bundle: Settings inputs visible + trial limits actually-usable
+## Last updated: 2026-05-09 — **PR #178 OPEN** — Brand Learning Phase 1 (anon-visitor learning loop) + dashboard surface
+
+Sub-session arc: Austin asked to scope and build a "brand AI learns over time from anonymous-visitor conversations" feature. Followed scope → build → self-review → ship pattern. Wrote `docs/BRAND_LEARNING_SCOPE.md` first with 7 explicit decision points; Austin returned with "all stars" + new requirement (dashboard surface so tenants can SEE the AI is learning) + go-AFK instruction. Built autonomously end-to-end through PR.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR | **[#178](https://github.com/jafools/shenmay-ai/pull/178)** — feat: anon-visitor brand learning loop — Phase 1 + dashboard |
+| Branch | `feat/brand-learning-anon` |
+| Migration | 040 (`brand_learning` cols on tenants + `brand_learning_incidents` table) |
+| Files added | 12 (6 backend services + 1 portal route + 1 dashboard page + 1 migration + 1 scope doc + 1 unit test) |
+| Files modified | 8 (App.tsx, dashboard layout, shenmayApi.js, package.json, server/index.js, portal.js, widget.js, piiTokenizer/detectors/index.js) |
+| Tests | 25 new unit tests + 100-payload PII fuzz; total 100/100 unit-test green (46 + 29 + 25) |
+| Lint | server clean; client 0 errors (13 pre-existing warnings, none from new code) |
+| Build | Vite production build green |
+| Production state | **v3.4.3 unchanged** — feature not yet merged or tagged |
+
+### What PR #178 ships (Phase 1 — read-only dashboard, default OFF per tenant)
+
+**Backend** (`server/src/services/brandLearning/`)
+- `scrub.js` — wraps `piiTokenizer` for pre-distillation regex pass
+- `distill.js` — Haiku call with anti-extraction system prompt + output normalizer (oversize trim + shape validation)
+- `promote.js` — frequency-threshold promotion (N=3 default; tunable per tenant via `tenants.brand_learning_min_sessions` with `1..50` CHECK constraint)
+- `worker.js` — nightly orchestrator (24h `setInterval`, mirrors `jobs/dataRetention.js` lifecycle pattern)
+- `render.js` — renders `brand_soul` into the anon-widget system prompt (capped at top 12 FAQs / 8 processes / 6 voice cues; includes "NEVER reference this section explicitly" directive)
+- `index.js` — module barrel
+
+**Wiring**
+- `widget.js` system prompt — injects `brand_soul` only when `tenant.brand_learning_enabled === true && isAnonVisitorEmail(customer.email)`
+- `portal.js` — mounts `/api/portal/brand-learning` sub-router
+- `server/src/index.js` — starts worker on listen alongside `dataRetention`
+- `routes/portal/brand-learning-routes.js` — GET (read state), POST `/toggle`, POST `/run-now` (5-min cooldown), POST `/kill-switch`. Toggle / run-now / kill-switch are owner-gated.
+
+**Frontend**
+- `client/src/pages/shenmay/dashboard/ShenmayBrandLearning.jsx` — celebratory progress UX with stat tiles, candidate progress bars (count/threshold), audience profile, audit log, owner-only run-now + kill-switch
+- New "Brand learning" sidebar nav with Brain icon + PAGE_TITLES entry
+- 4 new API client methods in `shenmayApi.js`
+
+**Migration 040**
+- `tenants` gets 7 new cols: `brand_learning_enabled` (default FALSE), `brand_learning_min_sessions` (default 3 + 1..50 CHECK), `brand_learning_auto_apply` (default TRUE), `brand_soul`/`brand_memory`/`audience_profile` (JSONB nullable), `brand_learning_processed_at`/`brand_learning_last_run_at`/`brand_learning_sessions_processed`
+- `brand_learning_incidents` table with type CHECK enum: `pii_breach | distill_skip_no_key | distill_failed | promotion_blocked | kill_switch_used | auto_disabled`
+
+**PII detector** — extended `POSTCODE` regex to recognize Canadian postal codes (A1A 1A1 / A1A1A1). Strictly additive, all 46 existing tokenizer tests still green. Surfaced by the new fuzz test.
+
+### Six layers of PII defense (per scope doc §5)
+
+1. **Pre-distillation regex scrub** via existing piiTokenizer (email, phone, SSN, CC, IBAN, postcode incl. Canadian, account #, DOB)
+2. **LLM-prompt anti-extraction** — distillation system prompt forbids any sentence containing identifying detail; treats embedded prompt-injection as visitor's input, doesn't follow it
+3. **Outbound audit** — `quickScanForResidualPii` on the final brand_soul JSON before any DB write; aborts and logs `pii_breach` on residue
+4. **Frequency promotion** — N=3 distinct sessions default before a fact promotes from `brand_memory` → `brand_soul`
+5. **Tenant review UI** — Phase 1 ships read-only; Phase 2 adds edit/delete
+6. **Owner-only kill-switch** — wipes all 3 artifacts, resets watermark, disables learning, logs incident
+
+### Default decisions locked (per scope §13, all ★)
+
+| # | Decision | Default |
+|---|---|---|
+| 1 | Cadence | Nightly batch worker |
+| 2 | Auto-apply | TRUE |
+| 3 | Artifacts | Three columns (brand_soul / brand_memory / audience_profile) |
+| 4 | Threshold | N=3 distinct sessions |
+| 5 | Anon→identified | Pull anon turns up to identification moment |
+| 6 | BYOK | Use tenant's key; log `distill_skip_no_key` if none |
+| 7 | New tenants | OFF — opt-in |
+
+### Verification done
+
+- `npm run lint:server` — clean
+- `npm run lint:client` — 0 errors (13 pre-existing warnings, none from new files)
+- `npm run build` — green (Vite production)
+- `node tests/tokenizer.test.js` — **46/46**
+- `node tests/openai-adapter.test.js` — **29/29**
+- `node tests/brand-learning.test.js` — **25/25** (incl. 100-payload PII fuzz)
+- Self-review against bug-class memories (||-fallback drift, stale-key, server-error-leak, Object.entries+find, HTML5 pre-empt, etc.) — clean
+
+### Carry-over for next session
+
+**Before v3.5.0 tag:**
+- Manual canary: enable `brand_learning_enabled=true` on a test tenant via DB or `/toggle` API, walk ≥3 anon sessions through widget, confirm dashboard surfaces candidates and watermark advances
+- Dispatch `e2e-repeatability.yml` 5×5 against `main` after merge — required release gate per CLAUDE.md
+- After 1+ week clean canary on test tenant, tag `v3.5.0` and deploy to Hetzner per `docs/RELEASING.md`
+
+**Phase 2 (separate PR after Phase 1 GA):**
+- Edit/delete UI for individual learned facts in the dashboard
+- Weekly approval-gate emails when `brand_learning_auto_apply=false`
+- Settings page toggle (currently controlled via owner-gated POST /toggle endpoint only)
+- Audit log filter UI (currently shows last 25 incidents read-only)
+
+**Phase 3 (later):**
+- Conversion-weighted quality signals
+- Cross-conversation pattern detection ("12 visitors this week asked about X" → suggest tenant adds X to company profile)
+- Vector retrieval via existing AgentDB HNSW for semantic Q&A lookup at chat time
+- Multi-language partition of brand_soul (currently English-assumed)
+
+**Marketing copy when Phase 2 ships:**
+- "Your AI gets smarter the more it talks." Marketing pitch lands when Settings toggle is exposed.
+
+> New feedback worth keeping: **lazy-load LLM-SDK requires inside functions, not at module top, when the module also exports pure helpers.** Caught when `tests/brand-learning.test.js` couldn't load `normalizeObservations` from `distill.js` because the top-level `require('../llmService')` transitively pulled in the Anthropic SDK (not installed in the worktree). Fix: move the require inside `distillBrandObservations`. Pattern: any service module that's a mix of pure helpers + LLM caller should lazy-load the LLM dep so tests can use the helpers without the SDK installed.
+
+---
+
+## Previous: 2026-04-29 (afternoon, very late) — **v3.4.2 LIVE** — UX bundle: Settings inputs visible + trial limits actually-usable
 
 Sub-session arc: After v3.4.1 shipped, Austin smoke-tested production and flagged two UX issues with screenshots: (1) the trial usage widget showed "CUSTOMERS 3 / 1 · LIMIT REACHED · UPGRADE" — the limit of 1 customer is comically low and prevents real evaluation; (2) Settings page form fields are nearly invisible until focused — user can't tell where to click. Both diagnosed as 1-2 line fixes, bundled into [PR #175](https://github.com/jafools/shenmay-ai/pull/175), shipped as v3.4.2.
 

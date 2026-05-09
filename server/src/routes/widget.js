@@ -44,7 +44,8 @@ const { encryptJson, safeDecryptJson } = require('../services/cryptoService');
 const { fireWebhooks }               = require('../services/webhookService');
 const { fireNotifications }          = require('../services/notificationService');
 const { UNRESTRICTED_PLANS, NOTIFICATION_TYPES } = require('../config/plans');
-const { ANON_EMAIL_DOMAIN, anonEmailNotLikeGuard } = require('../constants/anonDomains');
+const { ANON_EMAIL_DOMAIN, anonEmailNotLikeGuard, isAnonVisitorEmail } = require('../constants/anonDomains');
+const { renderBrandSoulForPrompt } = require('../services/brandLearning');
 
 // ── In-app notification helper ─────────────────────────────────────────────
 // Fire-and-forget. Errors are swallowed so they never interrupt the request.
@@ -1167,7 +1168,7 @@ router.post(
     // 1. Load tenant + customer data (including API key fields for BYOK)
     const { rows: convRows } = await db.query(
       `SELECT
-         c.id as customer_id, c.first_name, c.last_name,
+         c.id as customer_id, c.first_name, c.last_name, c.email,
          c.soul_file, c.memory_file,
          c.onboarding_status, c.onboarding_categories_completed,
          t.id as tenant_id, t.name as tenant_name, t.agent_name,
@@ -1176,7 +1177,8 @@ router.post(
          t.llm_provider, t.llm_model, t.website_url,
          t.llm_api_key_encrypted, t.llm_api_key_iv, t.llm_api_key_validated,
          t.enabled_tools, t.tool_configs,
-         t.pii_tokenization_enabled
+         t.pii_tokenization_enabled,
+         t.brand_learning_enabled, t.brand_soul
        FROM customers c
        JOIN tenants t ON c.tenant_id = t.id
        WHERE c.id = $1 AND t.id = $2`,
@@ -1233,7 +1235,7 @@ router.post(
       onboarding_categories_completed:  conv.onboarding_categories_completed,
     };
 
-    const systemPrompt = buildSystemPrompt({
+    let systemPrompt = buildSystemPrompt({
       tenant:        tenantCtx,
       customer:      customerCtx,
       customerData:  customerData,
@@ -1241,6 +1243,17 @@ router.post(
       handbackNote:  handbackNote,
       widgetGreeted: existingMessages.length === 0,
     });
+
+    // ── Brand Learning · inject brand_soul for anonymous visitors ────────────
+    // The anon-only loop (v3.5+) accumulates aggregate, PII-scrubbed,
+    // business-relevant patterns from prior anonymous chats. Inject the
+    // distilled context for anon visitors only — identified customers get
+    // their own per-customer Soul + Memory through buildSystemPrompt above.
+    if (conv.brand_learning_enabled === true && isAnonVisitorEmail(conv.email)) {
+      const brandSoul = safeDecryptJson(conv.brand_soul);
+      const brandBlock = renderBrandSoulForPrompt(brandSoul);
+      if (brandBlock) systemPrompt += brandBlock;
+    }
 
     // If there was a handback note, consume it now (single-use — clear after this turn)
     if (handbackNote) {
