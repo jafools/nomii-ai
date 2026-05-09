@@ -115,12 +115,16 @@ export const inputStyle = {
 
 export const inputFocusHandlers = {
   onFocus: (e) => {
-    e.currentTarget.style.borderColor = T.ink;
-    e.currentTarget.style.boxShadow = `0 0 0 3px ${T.teal}1F`;
+    Object.assign(e.currentTarget.style, {
+      borderColor: T.ink,
+      boxShadow: `0 0 0 3px ${T.teal}1F`,
+    });
   },
   onBlur: (e) => {
-    e.currentTarget.style.borderColor = T.paperEdge;
-    e.currentTarget.style.boxShadow = "none";
+    Object.assign(e.currentTarget.style, {
+      borderColor: T.paperEdge,
+      boxShadow: "none",
+    });
   },
 };
 
@@ -189,13 +193,17 @@ export function Button({ variant = "primary", size = "md", children, style, ...r
       }}
       onMouseEnter={(e) => {
         if (rest.disabled) return;
-        e.currentTarget.style.background = v.hoverBg;
-        e.currentTarget.style.borderColor = v.hoverBorder;
+        Object.assign(e.currentTarget.style, {
+          background: v.hoverBg,
+          borderColor: v.hoverBorder,
+        });
       }}
       onMouseLeave={(e) => {
         if (rest.disabled) return;
-        e.currentTarget.style.background = v.background;
-        e.currentTarget.style.borderColor = v.border.split(" ").pop();
+        Object.assign(e.currentTarget.style, {
+          background: v.background,
+          borderColor: v.border.split(" ").pop(),
+        });
       }}
     >
       {children}

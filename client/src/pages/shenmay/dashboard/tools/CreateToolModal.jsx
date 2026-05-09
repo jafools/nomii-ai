@@ -44,8 +44,8 @@ export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
               onClick={() => { setType(tt.type); setStep(2); }}
               className="flex items-start gap-4 p-4 rounded-xl text-left transition-all duration-150"
               style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = s.border; e.currentTarget.style.background = s.bg; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#EDE7D7"; e.currentTarget.style.background = "#EDE7D7"; }}
+              onMouseEnter={e => Object.assign(e.currentTarget.style, { borderColor: s.border, background: s.bg })}
+              onMouseLeave={e => Object.assign(e.currentTarget.style, { borderColor: "#EDE7D7", background: "#EDE7D7" })}
             >
               <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-xl"
                 style={{ background: s.bg, border: `1px solid ${s.border}` }}>
@@ -91,7 +91,7 @@ export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
           style={{ color: "#6B6B64" }}>Tool name</label>
         <input id="ctm-tool-name" type="text" value={displayName} onChange={e => setName(e.target.value)}
           placeholder={`e.g. ${typeInfo?.label || "My Tool"}`}
-          maxLength={80} autoFocus
+          maxLength={80}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
           style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
           onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}

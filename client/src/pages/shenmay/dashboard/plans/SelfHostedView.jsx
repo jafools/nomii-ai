@@ -170,8 +170,8 @@ export default function SelfHostedView({ currentPlan, isTrialPlan, usage, licens
                   background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 6,
                   outline: "none", transition: "border-color 180ms",
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = T.ink; e.currentTarget.style.boxShadow = `0 0 0 3px ${T.teal}1F`; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = T.paperEdge; e.currentTarget.style.boxShadow = "none"; }}
+                onFocus={(e) => Object.assign(e.currentTarget.style, { borderColor: T.ink, boxShadow: `0 0 0 3px ${T.teal}1F` })}
+                onBlur={(e) => Object.assign(e.currentTarget.style, { borderColor: T.paperEdge, boxShadow: "none" })}
               />
             </div>
 

@@ -258,8 +258,8 @@ const ShenmayTeam = () => {
                       disabled={removing === agent.id}
                       style={{ padding: 6, borderRadius: 4, background: "none", border: "none", color: `${T.danger}88`, cursor: "pointer", transition: "background 180ms, color 180ms" }}
                       title={`Remove ${agent.email}`}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#F3E8E4"; e.currentTarget.style.color = T.danger; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = `${T.danger}88`; }}
+                      onMouseEnter={(e) => Object.assign(e.currentTarget.style, { background: "#F3E8E4", color: T.danger })}
+                      onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: "transparent", color: `${T.danger}88` })}
                     >
                       {removing === agent.id ? <RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={13} />}
                     </button>

@@ -98,8 +98,8 @@ const ShenmayCustomers = () => {
               background: "#FFFFFF", border: `1px solid ${T.paperEdge}`, borderRadius: 6,
               outline: "none", transition: "border-color 180ms",
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = T.ink; e.currentTarget.style.boxShadow = `0 0 0 3px ${T.teal}1F`; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = T.paperEdge; e.currentTarget.style.boxShadow = "none"; }}
+            onFocus={(e) => Object.assign(e.currentTarget.style, { borderColor: T.ink, boxShadow: `0 0 0 3px ${T.teal}1F` })}
+            onBlur={(e) => Object.assign(e.currentTarget.style, { borderColor: T.paperEdge, boxShadow: "none" })}
           />
           {search && (
             <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.mute, cursor: "pointer", padding: 4 }}>
@@ -157,8 +157,8 @@ const ShenmayCustomers = () => {
                   fontFamily: T.sans,
                   transition: "border-color 180ms, transform 180ms, background 180ms",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.ink; e.currentTarget.style.background = T.paper; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.paperEdge; e.currentTarget.style.background = "#FFFFFF"; }}
+                onMouseEnter={(e) => Object.assign(e.currentTarget.style, { borderColor: T.ink, background: T.paper })}
+                onMouseLeave={(e) => Object.assign(e.currentTarget.style, { borderColor: T.paperEdge, background: "#FFFFFF" })}
               >
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
                   <div style={{ width: 54, height: 54, borderRadius: "50%", background: `${T.teal}12`, color: T.teal, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 500, marginBottom: 14 }}>

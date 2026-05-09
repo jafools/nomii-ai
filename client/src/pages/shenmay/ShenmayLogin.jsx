@@ -44,14 +44,14 @@ const Input = ({ id, label, right, ...rest }) => (
         outline: "none",
         transition: "border-color 180ms ease, box-shadow 180ms ease",
       }}
-      onFocus={(e) => {
-        e.currentTarget.style.borderColor = INK;
-        e.currentTarget.style.boxShadow = `0 0 0 3px ${TEAL}1F`;
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderColor = PAPER_EDGE;
-        e.currentTarget.style.boxShadow = "none";
-      }}
+      onFocus={(e) => Object.assign(e.currentTarget.style, {
+        borderColor: INK,
+        boxShadow: `0 0 0 3px ${TEAL}1F`,
+      })}
+      onBlur={(e) => Object.assign(e.currentTarget.style, {
+        borderColor: PAPER_EDGE,
+        boxShadow: "none",
+      })}
     />
   </div>
 );
