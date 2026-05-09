@@ -68,6 +68,11 @@ services:
       WIDGET_CHAT_RATE_LIMIT_MAX: ${WIDGET_CHAT_RATE_LIMIT_MAX:-100}
       WIDGET_CHAT_PER_SESSION_MAX: ${WIDGET_CHAT_PER_SESSION_MAX:-30}
       WIDGET_CHAT_PER_TENANT_MAX: ${WIDGET_CHAT_PER_TENANT_MAX:-1000}
+      # Brand-learning worker cadence (ms). Default = 24h = 86400000.
+      # Empty value falls through to the code default — see
+      # server/src/services/brandLearning/worker.js. Do not set a hardcoded
+      # `:-N` default here unless the code default is bumped to match.
+      BRAND_LEARNING_INTERVAL_MS: ${BRAND_LEARNING_INTERVAL_MS:-}
       GLOBAL_RATE_LIMIT_MAX: ${GLOBAL_RATE_LIMIT_MAX:-150}
       PORTAL_RATE_LIMIT_MAX: ${PORTAL_RATE_LIMIT_MAX:-30}
       REGISTER_RATE_LIMIT_MAX: ${REGISTER_RATE_LIMIT_MAX:-3}
