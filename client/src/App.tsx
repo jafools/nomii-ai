@@ -23,6 +23,7 @@ import ShenmayProfile from "./pages/shenmay/dashboard/ShenmayProfile";
 import ShenmayPlans from "./pages/shenmay/dashboard/ShenmayPlans";
 import ShenmayTeam from "./pages/shenmay/dashboard/ShenmayTeam";
 import ShenmayTools from "./pages/shenmay/dashboard/ShenmayTools";
+import ShenmayBrandLearning from "./pages/shenmay/dashboard/ShenmayBrandLearning";
 import ShenmayAcceptInvite from "./pages/shenmay/ShenmayAcceptInvite";
 import ShenmayProtectedRoute from "./components/shenmay/ShenmayProtectedRoute";
 import { ShenmayAuthProvider } from "./contexts/ShenmayAuthContext";
@@ -129,6 +130,7 @@ const App = () => (
             <Route path="customers/:id" element={<ShenmayCustomerDetail />} />
             <Route path="concerns" element={<ShenmayConcerns />} />
             <Route path="tools" element={<ShenmayTools />} />
+            <Route path="brand-learning" element={<ShenmayBrandLearning />} />
             <Route path="team" element={<ShenmayTeam />} />
             <Route path="plans" element={<ShenmayPlans />} />
             {/* Common-sense URL — sidebar labels the entry "Plans & billing"

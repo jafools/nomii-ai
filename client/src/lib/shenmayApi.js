@@ -433,3 +433,25 @@ export const acceptInvite = async (token, password, first_name, last_name) => {
   }
   return data;
 };
+
+// Brand Learning — anonymous-visitor learning loop (v3.5+)
+// Read state, toggle, force-run, kill switch. See docs/BRAND_LEARNING_SCOPE.md.
+/**
+ * Read brand-learning state for the authenticated tenant.
+ * Returns { enabled, summary, brand_soul, brand_memory, audience_profile,
+ *           recent_incidents, ... }.
+ */
+export const getBrandLearning = () =>
+  apiRequest("GET", "/api/portal/brand-learning");
+
+/** Owner-only. Enable or disable the nightly learning loop. */
+export const toggleBrandLearning = (enabled) =>
+  apiRequest("POST", "/api/portal/brand-learning/toggle", { enabled });
+
+/** Owner-only. Force-run a distillation cycle now (5-min cooldown). */
+export const runBrandLearningNow = () =>
+  apiRequest("POST", "/api/portal/brand-learning/run-now");
+
+/** Owner-only. Wipe all 3 artifacts and disable learning. */
+export const killBrandLearning = () =>
+  apiRequest("POST", "/api/portal/brand-learning/kill-switch");

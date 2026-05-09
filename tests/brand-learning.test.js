@@ -1,0 +1,477 @@
+/**
+ * SHENMAY AI — Brand Learning Unit Tests
+ *
+ * Pure-JS unit tests — no DB, no server, no network. Runs in ~50ms.
+ *
+ * Coverage:
+ *   - scrub.js: regex detectors strip PII before distillation
+ *   - scrub.js: replacement count + types reflect what was found
+ *   - promote.js: N-1 distinct sessions does NOT promote
+ *   - promote.js: N distinct sessions DOES promote
+ *   - promote.js: cross-tenant data is impossible (helper purity)
+ *   - promote.js: candidates list size is capped
+ *   - distill.js: normalizeObservations drops bad shapes safely
+ *   - render.js: empty brand_soul renders empty
+ *   - render.js: populated brand_soul renders a usable text block
+ *   - PII fuzz: 100 synthetic conversations with diverse PII shapes do not
+ *     leak through quickScanForResidualPii once scrubbed
+ *
+ * Run:  node tests/brand-learning.test.js
+ */
+
+'use strict';
+
+const {
+  scrubMessagesForDistillation,
+  quickScanForResidualPii,
+} = require('../server/src/services/brandLearning/scrub');
+
+const {
+  applyAndPromote,
+  canonicalKey,
+} = require('../server/src/services/brandLearning/promote');
+
+const {
+  normalizeObservations,
+} = require('../server/src/services/brandLearning/distill');
+
+const {
+  renderBrandSoulForPrompt,
+} = require('../server/src/services/brandLearning/render');
+
+// ── Test runner (matches existing tests/tokenizer.test.js style) ─────────────
+
+let passed = 0;
+let failed = 0;
+const failures = [];
+
+function test(name, fn) {
+  try {
+    fn();
+    console.log(`  ✓ ${name}`);
+    passed++;
+  } catch (err) {
+    console.log(`  ✗ ${name}`);
+    console.log(`    ${err.message || err}`);
+    failed++;
+    failures.push({ name, message: err.message || String(err) });
+  }
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message || 'Assertion failed');
+}
+function assertEqual(a, b, message) {
+  if (a !== b) throw new Error(`${message || 'Values differ'}\n      expected: ${JSON.stringify(b)}\n      actual:   ${JSON.stringify(a)}`);
+}
+function assertNotContains(hay, needle, message) {
+  if (String(hay).includes(needle)) throw new Error(`${message || 'Contains forbidden value'}: "${hay}" should NOT include "${needle}"`);
+}
+function assertContains(hay, needle, message) {
+  if (!String(hay).includes(needle)) throw new Error(`${message || 'Does not contain'}: expected "${hay}" to include "${needle}"`);
+}
+
+console.log('\n== Brand Learning Unit Tests ==\n');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. scrub.js — PII pre-distillation pass
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('Scrub');
+
+test('email is replaced by [EMAIL_n] token', () => {
+  const messages = [
+    { role: 'customer', content: 'My email is jane@example.com' },
+    { role: 'agent',    content: 'Got it!' },
+  ];
+  const { scrubbedText, replacementCount } = scrubMessagesForDistillation(messages);
+  assertNotContains(scrubbedText, 'jane@example.com');
+  assertContains(scrubbedText, '[EMAIL_');
+  assert(replacementCount >= 1, 'expected at least one replacement');
+});
+
+test('phone number is replaced', () => {
+  const messages = [{ role: 'customer', content: 'Call me at 555-123-4567' }];
+  const { scrubbedText } = scrubMessagesForDistillation(messages);
+  assertNotContains(scrubbedText, '555-123-4567');
+  assertContains(scrubbedText, '[PHONE_');
+});
+
+test('SSN is replaced', () => {
+  const messages = [{ role: 'customer', content: 'My SSN is 555-12-3456 if it helps' }];
+  const { scrubbedText } = scrubMessagesForDistillation(messages);
+  assertNotContains(scrubbedText, '555-12-3456');
+  assertContains(scrubbedText, '[SSN_');
+});
+
+test('multiple distinct emails get distinct tokens', () => {
+  const messages = [
+    { role: 'customer', content: 'I am alice@test.com' },
+    { role: 'customer', content: 'My friend is bob@test.com' },
+  ];
+  const { scrubbedText, replacementsByType } = scrubMessagesForDistillation(messages);
+  assertNotContains(scrubbedText, 'alice@test.com');
+  assertNotContains(scrubbedText, 'bob@test.com');
+  assert(replacementsByType.EMAIL >= 2, 'expected EMAIL count >= 2');
+});
+
+test('same email used twice yields same token', () => {
+  const messages = [
+    { role: 'customer', content: 'I am jane@example.com' },
+    { role: 'customer', content: 'Yeah that jane@example.com one' },
+  ];
+  const { scrubbedText, replacementsByType } = scrubMessagesForDistillation(messages);
+  assertEqual(replacementsByType.EMAIL, 1, 'same email must dedup to one token');
+  // Token should appear at least twice in the text
+  const matches = scrubbedText.match(/\[EMAIL_1\]/g) || [];
+  assert(matches.length >= 2, 'expected the same token to appear in both messages');
+});
+
+test('empty messages array returns empty result', () => {
+  const { scrubbedText, replacementCount } = scrubMessagesForDistillation([]);
+  assertEqual(scrubbedText, '');
+  assertEqual(replacementCount, 0);
+});
+
+test('messages with non-string content are skipped silently', () => {
+  const messages = [
+    { role: 'customer', content: null },
+    { role: 'customer', content: 'Hello' },
+    { role: 'customer', content: 42 },
+  ];
+  const { scrubbedText } = scrubMessagesForDistillation(messages);
+  assertContains(scrubbedText, 'Hello');
+});
+
+test('quickScanForResidualPii returns [] on clean text', () => {
+  const findings = quickScanForResidualPii('What is your return policy?');
+  assertEqual(findings.length, 0);
+});
+
+test('quickScanForResidualPii catches an unscrubbed email', () => {
+  const findings = quickScanForResidualPii('My email is sneaky@example.com');
+  assert(findings.length > 0, 'expected at least one finding');
+  assertContains(findings.join(','), 'EMAIL');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. promote.js — frequency-threshold promotion
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nPromote');
+
+test('canonicalKey is whitespace and case insensitive', () => {
+  assertEqual(canonicalKey('  Do You Ship?'), 'do you ship');
+  assertEqual(canonicalKey('Do you ship'), 'do you ship');
+  assertEqual(canonicalKey('do  you   ship'), 'do you ship');
+});
+
+test('canonicalKey strips punctuation', () => {
+  assertEqual(canonicalKey("What's your return policy?!"), 'what s your return policy');
+});
+
+test('first observation accumulates in brand_memory but does NOT promote', () => {
+  const result = applyAndPromote({
+    currentSoul: {},
+    currentMemory: {},
+    currentAudience: {},
+    candidates: {
+      faqs: [{ question: 'Do you ship to Canada?', suggested_answer: 'Yes', frequency_signal: '1x' }],
+    },
+    minSessions: 3,
+    thisBatchSessions: 1,
+  });
+  assertEqual(result.promotedCount, 0);
+  assertEqual(result.addedCandidates, 1);
+  assert(Array.isArray(result.nextMemory.candidate_faqs), 'candidate_faqs should be an array');
+  assertEqual(result.nextMemory.candidate_faqs.length, 1);
+  assert(!Array.isArray(result.nextSoul.faqs) || result.nextSoul.faqs.length === 0, 'nothing in soul yet');
+});
+
+test('threshold reached promotes candidate to brand_soul', () => {
+  // Simulate three nightly cycles seeing the same question
+  let soul = {};
+  let memory = {};
+  let audience = {};
+
+  for (let i = 0; i < 3; i++) {
+    const r = applyAndPromote({
+      currentSoul: soul,
+      currentMemory: memory,
+      currentAudience: audience,
+      candidates: {
+        faqs: [{ question: 'What is your refund window?', suggested_answer: '30 days', frequency_signal: '1x' }],
+      },
+      minSessions: 3,
+      thisBatchSessions: 1,
+    });
+    soul = r.nextSoul;
+    memory = r.nextMemory;
+    audience = r.nextAudience;
+  }
+
+  assert(Array.isArray(soul.faqs), 'soul.faqs should exist');
+  assertEqual(soul.faqs.length, 1, 'should have promoted exactly one FAQ');
+  assertEqual(soul.faqs[0].session_count, 3);
+  assertContains(soul.faqs[0].question, 'refund window');
+  // Candidate is removed from memory once promoted
+  assert(
+    !Array.isArray(memory.candidate_faqs) || memory.candidate_faqs.length === 0,
+    'candidate should be cleared from memory after promotion',
+  );
+});
+
+test('different N=2 threshold means promotion at second sighting', () => {
+  let soul = {};
+  let memory = {};
+  let audience = {};
+
+  for (let i = 0; i < 2; i++) {
+    const r = applyAndPromote({
+      currentSoul: soul,
+      currentMemory: memory,
+      currentAudience: audience,
+      candidates: { faqs: [{ question: 'How long is shipping?', suggested_answer: '5-7 days' }] },
+      minSessions: 2,
+      thisBatchSessions: 1,
+    });
+    soul = r.nextSoul;
+    memory = r.nextMemory;
+    audience = r.nextAudience;
+  }
+
+  assertEqual((soul.faqs || []).length, 1, 'should promote at N=2');
+});
+
+test('processes follow the same threshold rule', () => {
+  let soul = {};
+  let memory = {};
+  let audience = {};
+
+  for (let i = 0; i < 3; i++) {
+    const r = applyAndPromote({
+      currentSoul: soul,
+      currentMemory: memory,
+      currentAudience: audience,
+      candidates: {
+        processes: [{ name: 'Reset password', description: 'Click forgot password, enter email' }],
+      },
+      minSessions: 3,
+      thisBatchSessions: 1,
+    });
+    soul = r.nextSoul;
+    memory = r.nextMemory;
+    audience = r.nextAudience;
+  }
+
+  assertEqual((soul.processes || []).length, 1);
+});
+
+test('audience cues promote into audience_profile after threshold', () => {
+  let soul = {};
+  let memory = {};
+  let audience = {};
+
+  for (let i = 0; i < 3; i++) {
+    const r = applyAndPromote({
+      currentSoul: soul,
+      currentMemory: memory,
+      currentAudience: audience,
+      candidates: {
+        audience_cues: { common_pain_points: ['pricing transparency'] },
+      },
+      minSessions: 3,
+      thisBatchSessions: 1,
+    });
+    soul = r.nextSoul;
+    memory = r.nextMemory;
+    audience = r.nextAudience;
+  }
+
+  assertEqual((audience.common_pain_points || []).length, 1);
+  assertEqual(audience.common_pain_points[0], 'pricing transparency');
+});
+
+test('helper does not mutate inputs (purity)', () => {
+  const inputSoul = { faqs: [] };
+  const inputMemory = {};
+  const inputAudience = {};
+
+  applyAndPromote({
+    currentSoul: inputSoul,
+    currentMemory: inputMemory,
+    currentAudience: inputAudience,
+    candidates: { faqs: [{ question: 'test', suggested_answer: '' }] },
+    minSessions: 3,
+    thisBatchSessions: 1,
+  });
+
+  // Original inputs untouched
+  assertEqual(inputSoul.faqs.length, 0);
+  assertEqual(Object.keys(inputMemory).length, 0);
+  assertEqual(Object.keys(inputAudience).length, 0);
+});
+
+test('candidates above cap get truncated', () => {
+  // 220 distinct candidates; cap is 200
+  const faqs = [];
+  for (let i = 0; i < 220; i++) {
+    faqs.push({ question: `Question number ${i}`, suggested_answer: `Answer ${i}` });
+  }
+  const r = applyAndPromote({
+    currentSoul: {},
+    currentMemory: {},
+    currentAudience: {},
+    candidates: { faqs },
+    minSessions: 3,
+    thisBatchSessions: 1,
+  });
+  assert(r.nextMemory.candidate_faqs.length <= 200, `expected ≤200, got ${r.nextMemory.candidate_faqs.length}`);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. distill.js — normalizeObservations
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nDistill normalize');
+
+test('normalize drops malformed entries', () => {
+  const raw = {
+    faqs: [
+      { question: 'good one', suggested_answer: 'yes' },
+      { question: 42 },                                  // bad — non-string
+      { suggested_answer: 'orphan' },                    // bad — no question
+      'not an object',                                   // bad — not an object
+    ],
+    unknown_top_level_key: 'should be ignored',
+  };
+  const out = normalizeObservations(raw);
+  assertEqual(out.faqs.length, 1, 'only the first faq should survive');
+  assert(!('unknown_top_level_key' in out), 'unknown keys must be dropped');
+});
+
+test('normalize handles null/non-object input', () => {
+  assertEqual(JSON.stringify(normalizeObservations(null)), '{}');
+  assertEqual(JSON.stringify(normalizeObservations('hi')), '{}');
+  assertEqual(JSON.stringify(normalizeObservations(42)), '{}');
+});
+
+test('normalize trims oversized strings', () => {
+  const big = 'x'.repeat(10_000);
+  const out = normalizeObservations({
+    faqs: [{ question: big, suggested_answer: big, frequency_signal: big }],
+  });
+  assert(out.faqs[0].question.length <= 500);
+  assert(out.faqs[0].suggested_answer.length <= 1000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. render.js — prompt block rendering
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nRender');
+
+test('empty brand_soul renders empty string', () => {
+  assertEqual(renderBrandSoulForPrompt(null), '');
+  assertEqual(renderBrandSoulForPrompt({}), '');
+  assertEqual(renderBrandSoulForPrompt({ faqs: [], processes: [], voice_cues: [] }), '');
+});
+
+test('populated brand_soul renders a usable block', () => {
+  const block = renderBrandSoulForPrompt({
+    faqs: [{ question: 'Do you ship?', answer: 'Yes', session_count: 5 }],
+    processes: [{ name: 'Refund', description: 'Email support', session_count: 4 }],
+    voice_cues: [{ cue: 'Casual tone', session_count: 3 }],
+  });
+  assertContains(block, 'LEARNED BRAND CONTEXT');
+  assertContains(block, 'Do you ship?');
+  assertContains(block, 'Refund');
+  assertContains(block, 'Casual tone');
+});
+
+test('block instructs the agent NEVER to reveal it', () => {
+  const block = renderBrandSoulForPrompt({
+    faqs: [{ question: 'q', answer: 'a', session_count: 3 }],
+  });
+  assertContains(block, 'NEVER reference this section explicitly');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. PII fuzz — 100 synthetic anon conversations + diverse PII shapes
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nPII fuzz');
+
+test('100 synthetic conversations with diverse PII produce no PII residue', () => {
+  // PII shapes the regex detectors are designed to catch. Generic order /
+  // reference IDs without an "account|acct|konto" keyword prefix are
+  // deliberately OUT of scope for the regex layer (too easy to false-positive
+  // on inventory IDs, sku numbers, etc.) — they're caught downstream by the
+  // LLM anti-extraction prompt + the worker's auditOutbound step before any
+  // DB write. The fuzz test validates scrub-layer coverage of the shapes the
+  // detectors are designed to catch.
+  const piiSamples = [
+    'jane.doe@example.com',
+    'bob+tag@gmail.co.uk',
+    'support@shenmay.ai',
+    '555-123-4567',
+    '(415) 555-0199',
+    '+44 20 7946 0958',
+    '111-22-3333',
+    '987 65 4321',
+    '4111 1111 1111 1111',
+    '5500-0000-0000-0004',
+    'GB82 WEST 1234 5698 7654 32',
+    'DE89 3704 0044 0532 0130 00',
+    '1990-04-12',
+    '04/12/1990',
+    'SW1A 1AA',
+    '90210',
+    'M5V 2H1',
+    'Account 0123456789',
+  ];
+
+  const templates = [
+    'Hi I would like to know more, my email is {pii}',
+    'You can reach me at {pii} thanks',
+    'Charge it to {pii}',
+    'My DOB is {pii}',
+    'Mailing address {pii}',
+    'I called from {pii}',
+    'Reference number is {pii}',
+    'Order shipped to {pii}',
+    'Try the card {pii} for me',
+  ];
+
+  for (let i = 0; i < 100; i++) {
+    const pii = piiSamples[i % piiSamples.length];
+    const tmpl = templates[i % templates.length];
+    const messages = [
+      { role: 'customer', content: tmpl.replace('{pii}', pii) },
+      { role: 'agent',    content: 'Thanks, looking into that.' },
+    ];
+    const { scrubbedText } = scrubMessagesForDistillation(messages);
+
+    // The literal PII MUST NOT appear in the scrubbed transcript.
+    if (scrubbedText.includes(pii)) {
+      throw new Error(`PII leaked at iteration ${i} — payload "${pii}" still in scrubbed text`);
+    }
+    // And the residual scanner must find no remaining PII patterns.
+    const findings = quickScanForResidualPii(scrubbedText);
+    if (findings.length > 0) {
+      throw new Error(`residual PII at iteration ${i}: ${findings.join(',')} (transcript: ${scrubbedText.slice(0, 200)})`);
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log(`\n== Results: ${passed} passed, ${failed} failed ==\n`);
+if (failed > 0) {
+  console.log('Failures:');
+  for (const f of failures) {
+    console.log(`  - ${f.name}: ${f.message}`);
+  }
+  process.exit(1);
+}
+process.exit(0);
