@@ -248,10 +248,11 @@ const ApiKeySection = () => {
           )}
 
           <div>
-            <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">
+            <label htmlFor="ak-llm-provider" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">
               LLM provider
             </label>
             <select
+              id="ak-llm-provider"
               value={pickedProvider}
               onChange={(e) => { setPickedProvider(e.target.value); setTestResult(null); }}
               className={inputClass}

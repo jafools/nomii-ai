@@ -37,9 +37,9 @@ export default function EditToolModal({ tool, toolTypes, onClose, onSave }) {
       </div>
 
       <div className="mb-5">
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+        <label htmlFor="etm-tool-name" className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
           style={{ color: "#6B6B64" }}>Tool name</label>
-        <input type="text" value={displayName} onChange={e => setName(e.target.value)}
+        <input id="etm-tool-name" type="text" value={displayName} onChange={e => setName(e.target.value)}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none"
           style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
           onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}
@@ -47,9 +47,9 @@ export default function EditToolModal({ tool, toolTypes, onClose, onSave }) {
       </div>
 
       <div className="mb-5">
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+        <label htmlFor="etm-trigger" className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
           style={{ color: "#6B6B64" }}>When should your AI use this?</label>
-        <textarea value={trigger} onChange={e => setTrigger(e.target.value)} rows={3}
+        <textarea id="etm-trigger" value={trigger} onChange={e => setTrigger(e.target.value)} rows={3}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none"
           style={{ background: "#EDE7D7", border: "1px solid #D8D0BD", color: "#1A1D1A" }}
           onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}

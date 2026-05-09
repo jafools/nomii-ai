@@ -31,16 +31,16 @@ const WidgetSection = () => {
     <div className="rounded-2xl p-6 space-y-5" style={card}>
       <h3 className="text-sm font-semibold text-[#3A3D39]">Widget</h3>
       <div>
-        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Your Widget Key</label>
+        <label htmlFor="ws-widget-key" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Your Widget Key</label>
         <div className="flex gap-2">
-          <input type="text" readOnly value={widgetKey} className={inputClass + " flex-1 font-mono text-xs"} style={inputStyle} />
+          <input id="ws-widget-key" type="text" readOnly value={widgetKey} className={inputClass + " flex-1 font-mono text-xs"} style={inputStyle} />
           <button onClick={() => copy(widgetKey, setCopiedKey)} className="px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-1.5 transition-colors" style={{ border: "1px solid #EDE7D7", color: "#6B6B64" }}>
             {copiedKey ? <><Check size={14} style={{ color: "#2D6A4F" }} /> Copied</> : <><Copy size={14} /> Copy</>}
           </button>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Verification Status</label>
+        <div className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Verification Status</div>
         {shenmayTenant?.widget_verified ? (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: "rgba(45,106,79,0.12)", color: "#2D6A4F" }}>
             <Check size={12} /> Connected
@@ -53,7 +53,7 @@ const WidgetSection = () => {
         )}
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Embed Snippet</label>
+        <div className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Embed Snippet</div>
         <div className="relative">
           <pre className="p-4 rounded-xl text-xs font-mono overflow-x-auto whitespace-pre-wrap" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>{snippet}</pre>
           <button onClick={() => copy(snippet, setCopiedSnippet)} className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7", color: "#6B6B64" }}>

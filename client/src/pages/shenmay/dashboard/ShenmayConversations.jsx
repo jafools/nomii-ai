@@ -203,9 +203,19 @@ const ConversationList = ({
               >
                 {/* Checkbox — visible on hover or when any items selected */}
                 <div
+                  role="checkbox"
+                  aria-checked={isChecked}
+                  tabIndex={0}
                   className={`flex items-center justify-center self-stretch px-2 shrink-0 cursor-pointer transition-opacity ${anySelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                   style={{ minWidth: 32 }}
                   onClick={e => { e.stopPropagation(); onToggleSelect?.(id); }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleSelect?.(id);
+                    }
+                  }}
                 >
                   {isChecked
                     ? <CheckSquare size={14} style={{ color: "#0F5F5C" }} />

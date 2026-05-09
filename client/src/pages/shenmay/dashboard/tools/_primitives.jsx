@@ -144,10 +144,10 @@ export function ConfigFields({ fields, config, onChange, toolType }) {
           </div>
           {authType === "api_key" && (
             <div>
-              <label className={labelClass} style={{ color: "#6B6B64" }}>
+              <label htmlFor="prim-auth-header-name" className={labelClass} style={{ color: "#6B6B64" }}>
                 Header name <span style={{ color: "#7A1F1A" }}>*</span>
               </label>
-              <input type="text" value={config.auth_header_name ?? ""}
+              <input id="prim-auth-header-name" type="text" value={config.auth_header_name ?? ""}
                 onChange={e => onChange("auth_header_name", e.target.value)}
                 placeholder="e.g. X-Api-Key" className={inputClass} style={inputStyle}
                 onFocus={e => e.target.style.borderColor = "rgba(15,95,92,0.5)"}

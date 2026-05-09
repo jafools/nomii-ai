@@ -108,28 +108,29 @@ const CompanyProfile = () => {
       <h3 className="text-sm font-semibold text-[#3A3D39]">Company Profile</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Name</label>
-          <input type="text" value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
+          <label htmlFor="cp-name" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Name</label>
+          <input id="cp-name" type="text" value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Agent Name</label>
-          <input type="text" value={form.agent_name} onChange={set("agent_name")} className={inputClass} style={inputStyle} />
+          <label htmlFor="cp-agent-name" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Agent Name</label>
+          <input id="cp-agent-name" type="text" value={form.agent_name} onChange={set("agent_name")} className={inputClass} style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Chat Bubble Label</label>
-          <input type="text" value={form.chat_bubble_name} onChange={set("chat_bubble_name")} placeholder="e.g. Chat with Steve" className={inputClass} style={inputStyle} />
+          <label htmlFor="cp-chat-bubble" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Chat Bubble Label</label>
+          <input id="cp-chat-bubble" type="text" value={form.chat_bubble_name} onChange={set("chat_bubble_name")} placeholder="e.g. Chat with Steve" className={inputClass} style={inputStyle} />
           <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>Text shown on the floating chat button. Defaults to "Chat with [Agent Name]" if blank.</p>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Industry</label>
-          <select value={form.vertical} onChange={set("vertical")} className={inputClass + " cursor-pointer"} style={{ ...inputStyle, colorScheme: "dark" }}>
+          <label htmlFor="cp-vertical" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Industry</label>
+          <select id="cp-vertical" value={form.vertical} onChange={set("vertical")} className={inputClass + " cursor-pointer"} style={{ ...inputStyle, colorScheme: "dark" }}>
             <option value="" style={{ background: "#1a2235", color: "#6B6B64" }}>Select…</option>
             {INDUSTRIES.map((v) => <option key={v.value} value={v.value} style={{ background: "#1a2235", color: "#1A1D1A" }}>{v.label}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Website URL</label>
+          <label htmlFor="cp-website-url" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Website URL</label>
           <input
+            id="cp-website-url"
             type="url"
             value={form.website_url}
             onChange={set("website_url")}
@@ -144,16 +145,16 @@ const CompanyProfile = () => {
           {urlError && <p className="text-[12px] mt-1.5" style={{ color: "#7A1F1A" }}>{urlError}</p>}
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Primary Color</label>
+          <label htmlFor="cp-primary-color" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Primary Color</label>
           <div className="flex items-center gap-2">
-            <input type="color" value={form.primary_color} onChange={set("primary_color")} className="w-10 h-9 rounded-lg cursor-pointer p-0.5" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} />
+            <input id="cp-primary-color" type="color" value={form.primary_color} onChange={set("primary_color")} className="w-10 h-9 rounded-lg cursor-pointer p-0.5" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }} />
             <input type="text" value={form.primary_color} onChange={set("primary_color")} maxLength={7} className={inputClass + " flex-1"} style={inputStyle} />
           </div>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Description</label>
-        <textarea rows={3} value={form.company_description} onChange={set("company_description")} className={inputClass} style={inputStyle} />
+        <label htmlFor="cp-company-description" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Company Description</label>
+        <textarea id="cp-company-description" rows={3} value={form.company_description} onChange={set("company_description")} className={inputClass} style={inputStyle} />
       </div>
       <div className="flex items-center gap-3">
         <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>

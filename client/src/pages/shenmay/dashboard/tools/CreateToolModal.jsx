@@ -87,9 +87,9 @@ export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
       </div>
 
       <div className="mb-5">
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+        <label htmlFor="ctm-tool-name" className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
           style={{ color: "#6B6B64" }}>Tool name</label>
-        <input type="text" value={displayName} onChange={e => setName(e.target.value)}
+        <input id="ctm-tool-name" type="text" value={displayName} onChange={e => setName(e.target.value)}
           placeholder={`e.g. ${typeInfo?.label || "My Tool"}`}
           maxLength={80} autoFocus
           className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
@@ -102,9 +102,9 @@ export default function CreateToolModal({ toolTypes, onClose, onCreate }) {
       </div>
 
       <div className="mb-6">
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+        <label htmlFor="ctm-trigger" className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5"
           style={{ color: "#6B6B64" }}>When should your AI use this?</label>
-        <textarea value={trigger} onChange={e => setTrigger(e.target.value)}
+        <textarea id="ctm-trigger" value={trigger} onChange={e => setTrigger(e.target.value)}
           rows={4}
           placeholder={typeInfo?.example || "Describe in plain English when your AI should use this…"}
           maxLength={500}

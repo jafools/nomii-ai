@@ -208,8 +208,9 @@ const WebhooksSection = () => {
           <p className="text-[12px] font-semibold text-[#3A3D39]">New webhook</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
+              <label htmlFor="wh-add-label" className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
               <input
+                id="wh-add-label"
                 type="text"
                 placeholder="e.g. Slack alerts"
                 value={form.label}
@@ -219,8 +220,9 @@ const WebhooksSection = () => {
               />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL <span style={{ color: "#0F5F5C" }}>*</span></label>
+              <label htmlFor="wh-add-url" className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL <span style={{ color: "#0F5F5C" }}>*</span></label>
               <input
+                id="wh-add-url"
                 type="url"
                 required
                 placeholder="https://your-server.com/hooks/shenmay"
@@ -232,7 +234,7 @@ const WebhooksSection = () => {
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events to send</label>
+            <div className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events to send</div>
             <div className="flex flex-wrap gap-2">
               {ALL_EVENTS.map(ev => {
                 const on = form.event_types.includes(ev.value);
@@ -295,16 +297,16 @@ const WebhooksSection = () => {
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
-                      <input type="text" value={editForm.label} onChange={e => setEditForm(f => ({ ...f, label: e.target.value }))} className={inputClass} style={inputStyle} />
+                      <label htmlFor={`wh-edit-label-${h.id}`} className="block text-[11px] font-medium text-[#6B6B64] mb-1">Label</label>
+                      <input id={`wh-edit-label-${h.id}`} type="text" value={editForm.label} onChange={e => setEditForm(f => ({ ...f, label: e.target.value }))} className={inputClass} style={inputStyle} />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL</label>
-                      <input type="url" value={editForm.url} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} className={inputClass} style={inputStyle} />
+                      <label htmlFor={`wh-edit-url-${h.id}`} className="block text-[11px] font-medium text-[#6B6B64] mb-1">Endpoint URL</label>
+                      <input id={`wh-edit-url-${h.id}`} type="url" value={editForm.url} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} className={inputClass} style={inputStyle} />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events</label>
+                    <div className="block text-[11px] font-medium text-[#6B6B64] mb-2">Events</div>
                     <div className="flex flex-wrap gap-2">
                       {ALL_EVENTS.map(ev => {
                         const on = editForm.event_types?.includes(ev.value);

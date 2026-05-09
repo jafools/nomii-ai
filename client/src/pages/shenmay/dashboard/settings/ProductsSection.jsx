@@ -106,21 +106,21 @@ const ProductsSection = () => {
       {showForm && (
         <form onSubmit={handleAdd} className="rounded-xl p-5 space-y-4" style={{ background: "#EDE7D7", border: "1px solid #EDE7D7" }}>
           <div>
-            <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Name *</label>
-            <input type="text" maxLength={200} value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
+            <label htmlFor="ps-add-name" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Name *</label>
+            <input id="ps-add-name" type="text" maxLength={200} value={form.name} onChange={set("name")} className={inputClass} style={inputStyle} />
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Description</label>
-            <textarea rows={2} maxLength={1000} value={form.description} onChange={set("description")} className={inputClass} style={inputStyle} />
+            <label htmlFor="ps-add-description" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Description</label>
+            <textarea id="ps-add-description" rows={2} maxLength={1000} value={form.description} onChange={set("description")} className={inputClass} style={inputStyle} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Category</label>
-              <input type="text" maxLength={100} value={form.category} onChange={set("category")} className={inputClass} style={inputStyle} />
+              <label htmlFor="ps-add-category" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Category</label>
+              <input id="ps-add-category" type="text" maxLength={100} value={form.category} onChange={set("category")} className={inputClass} style={inputStyle} />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Price Info</label>
-              <input type="text" maxLength={100} value={form.price_info} onChange={set("price_info")} className={inputClass} style={inputStyle} />
+              <label htmlFor="ps-add-price-info" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Price Info</label>
+              <input id="ps-add-price-info" type="text" maxLength={100} value={form.price_info} onChange={set("price_info")} className={inputClass} style={inputStyle} />
             </div>
           </div>
           <button type="submit" disabled={saving} className="px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #0F5F5C, #083A38)", color: "#F5F1E8" }}>
@@ -146,21 +146,21 @@ const ProductsSection = () => {
               return (
                 <div key={pid} className="rounded-xl p-5 space-y-3" style={{ background: "rgba(15,95,92,0.04)", border: "1px solid rgba(15,95,92,0.15)" }}>
                   <div>
-                    <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Name *</label>
-                    <input type="text" value={editForm.name} onChange={setEdit("name")} className={inputClass} style={inputStyle} />
+                    <label htmlFor={`ps-edit-name-${pid}`} className="block text-[12px] font-medium text-[#6B6B64] mb-1">Name *</label>
+                    <input id={`ps-edit-name-${pid}`} type="text" value={editForm.name} onChange={setEdit("name")} className={inputClass} style={inputStyle} />
                   </div>
                   <div>
-                    <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Description</label>
-                    <textarea rows={2} value={editForm.description} onChange={setEdit("description")} className={inputClass} style={inputStyle} />
+                    <label htmlFor={`ps-edit-description-${pid}`} className="block text-[12px] font-medium text-[#6B6B64] mb-1">Description</label>
+                    <textarea id={`ps-edit-description-${pid}`} rows={2} value={editForm.description} onChange={setEdit("description")} className={inputClass} style={inputStyle} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Category</label>
-                      <input type="text" value={editForm.category} onChange={setEdit("category")} className={inputClass} style={inputStyle} />
+                      <label htmlFor={`ps-edit-category-${pid}`} className="block text-[12px] font-medium text-[#6B6B64] mb-1">Category</label>
+                      <input id={`ps-edit-category-${pid}`} type="text" value={editForm.category} onChange={setEdit("category")} className={inputClass} style={inputStyle} />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#6B6B64] mb-1">Price Info</label>
-                      <input type="text" value={editForm.price_info} onChange={setEdit("price_info")} className={inputClass} style={inputStyle} />
+                      <label htmlFor={`ps-edit-price-info-${pid}`} className="block text-[12px] font-medium text-[#6B6B64] mb-1">Price Info</label>
+                      <input id={`ps-edit-price-info-${pid}`} type="text" value={editForm.price_info} onChange={setEdit("price_info")} className={inputClass} style={inputStyle} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">

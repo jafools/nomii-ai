@@ -76,16 +76,17 @@ const EmailTemplatesSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">From Name</label>
-          <input type="text" value={form.email_from_name} onChange={set("email_from_name")} maxLength={100}
+          <label htmlFor="et-from-name" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">From Name</label>
+          <input id="et-from-name" type="text" value={form.email_from_name} onChange={set("email_from_name")} maxLength={100}
             placeholder="e.g. Acme Co Support" className={inputClass} style={inputStyle} />
           <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
             Appears as the sender name. Defaults to "Shenmay AI" if blank.
           </p>
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Reply-To Address</label>
+          <label htmlFor="et-reply-to" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Reply-To Address</label>
           <input
+            id="et-reply-to"
             type="email"
             value={form.email_reply_to}
             onChange={set("email_reply_to")}
@@ -108,8 +109,8 @@ const EmailTemplatesSection = () => {
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Email Footer</label>
-        <textarea rows={2} value={form.email_footer} onChange={set("email_footer")} maxLength={500}
+        <label htmlFor="et-footer" className="block text-[12px] font-medium text-[#6B6B64] mb-1.5">Email Footer</label>
+        <textarea id="et-footer" rows={2} value={form.email_footer} onChange={set("email_footer")} maxLength={500}
           placeholder="e.g. Acme Co · 123 Main St, Suite 400 · Springfield, IL 62701"
           className={inputClass} style={inputStyle} />
         <p className="text-[11px] mt-1" style={{ color: "#6B6B64" }}>
