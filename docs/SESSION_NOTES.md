@@ -5,6 +5,73 @@
 
 ---
 
+## Last updated: 2026-05-11 — **v3.5.2 LIVE** — react-doctor cleanup (3 PRs, 2 release tags, 2 prod deploys)
+
+Sub-session arc: Austin shared an Aiden Bai tweet about [react-doctor](https://www.react.doctor) v2 ("your agent writes bad React code, this catches it"). Loaded computer-use + Claude-in-Chrome MCPs to read the tweet through Austin's main desktop, ran the tool on `client/`, triaged the 624-issue / 74-score report into real-bug PRs vs noise, shipped two release cycles in one session.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PRs merged | **[#180](https://github.com/jafools/shenmay-ai/pull/180)** correctness · **[#181](https://github.com/jafools/shenmay-ai/pull/181)** a11y · **[#182](https://github.com/jafools/shenmay-ai/pull/182)** round 2 |
+| Tags | **v3.5.1** (covers #180+#181) → **v3.5.2** (adds #182) |
+| Production deploys | 2 — Hetzner SSH-deploy, both health-checked clean, zero rollbacks |
+| 5×5 release gates | 2 dispatches, **11/11 + 11/11 green** (runs 25610077327, 25658456255) |
+| react-doctor score | **74 → 79** ("Needs work" → "Great") |
+| Total issues | **624 → 548** (-76, -12%) |
+| Rules fully cleared | `react/jsx-key`, `react-doctor/effect-needs-cleanup`, `jsx-a11y/label-has-associated-control`, `jsx-a11y/click-events-have-key-events`, `jsx-a11y/no-autofocus`, `react-doctor/js-batch-dom-css` |
+| Files touched | 25 across client/ (no server changes; no DB migrations) |
+| Lint/build | 0 new lint errors across all 3 PRs; pre-existing 13 warnings unchanged |
+
+### Per-PR breakdown
+
+**#180 (v3.5.1) — fix(client): react-doctor correctness — JSX keys + setTimeout cleanup**
+- `ShenmayOnboarding.jsx:171-178` — added stable string keys (`company`, `products`, `customers`, `api-key`, `tools`, `install-widget`) to the `stepComponents` array literal. Latent bug since the array renders one-at-a-time via `stepComponents[activeStep]`, but lint-flagged anyway.
+- `ShenmayVerifyEmail.jsx:33-48` — captured the post-verify `setTimeout` id in `redirectTimer`, added `clearTimeout` to the cleanup function alongside the existing `cancelled` guard. Real leak under unmount-during-1500ms-grace.
+- **Skipped** the 2× `mutable-in-deps` warnings on `ShenmayDashboardLayout.jsx:323-324` — `location` there is from react-router-dom's `useLocation()` (reactive), not `window.location`. Linter pattern-matches the identifier name. Documented in commit.
+
+**#181 (v3.5.1) — chore(client,a11y): pair labels + add keyboard handlers**
+- 52 `<label>` → input `htmlFor`/`id` pairings across 14 files. Per-file prefix convention (`cp-*`, `ws-*`, `ps-add-*`/`ps-edit-*-${pid}`, `wh-add-*`/`wh-edit-*-${h.id}`, `et-*`, `ak-*`, `ctm-*`, `etm-*`, `tm-*`, `prim-*`, `s1-*`, `s2-*`, `cd-*`, `conv-*`).
+- 4 `<label>` demoted to `<div>` where the element was labeling a status badge / `<pre>` / event-list flex-row (not a real form control).
+- 8 click-only divs got `role`/`tabIndex`/`onKeyDown` — conversation row checkbox, dashboard overview row link, mobile nav backdrop, customer-detail category headers + 2× modal backdrops. For modal "stop propagation" inner shells, added `role="presentation"` + matching `onKeyDown={e => e.stopPropagation()}`.
+- A11y category dropped 166 → 98 (-68; extra 8 from knock-on effects of adding role/tabIndex).
+
+**#182 (v3.5.2) — chore(client): react-doctor round 2 — autoFocus + batch .style**
+- 5× `autoFocus` removed (ShenmaySetup steps 1/2/3, LabelsSection inline form, CreateToolModal name input). Trades the per-step focus affordance for screen-reader / keyboard-nav predictability. Can be re-added later via useRef + useEffect if anyone complains.
+- 16× sequential `e.currentTarget.style.X = ...; .style.Y = ...` collapsed to single `Object.assign(e.currentTarget.style, { X, Y })` calls across 8 sites: `ShenmayUI.jsx` (inputFocusHandlers + Button hover), `SelfHostedView.jsx` (license-key input), `ShenmayCustomers.jsx` (search input + grid-card hover), `ShenmayTeam.jsx` (remove-button hover), `ShenmayLogin.jsx` (input focus/blur), `CreateToolModal.jsx` (tool-type card hover). Reduces hover/focus layout thrashing.
+- Performance category 53 → 37, Accessibility 98 → 93.
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.2` |
+| Hetzner repo | checked out at `v3.5.2`, `IMAGE_TAG=3.5.2` running |
+| Internal `/api/health` | 200 OK |
+| Cloudflare-routed health | 200 OK |
+| Staging | `:edge` auto-refresh timer continues — same code as v3.5.2 |
+
+### What didn't get fixed this round
+
+- **41× array-index-as-key** — sampled and triaged but **deliberately skipped**. Most are loading-state skeleton placeholders (`[...Array(n)].map((_, i) => <div key={i} ...>)`) or read-only soul/memory display lists where the underlying array doesn't reorder during user interaction. Proper triage of the real-bug subset is round 3 material.
+- **287× Architecture** — em dashes (the LLM fingerprint — funny but cosmetic), inline styles (×130), redundant `w-N h-N` → `size-N` (×70, Tailwind 3.4 codemod opportunity), useReducer suggestions. All style/policy preferences, no functional bugs.
+- **88× tiny-text** (font-size: 10px) — real UX debt but a design-policy question, not mechanical.
+- **14× hydration mismatch** — known false positive (we're a SPA, no SSR).
+- **2× mutable-in-deps** in `ShenmayDashboardLayout` — false positive (react-router `useLocation`).
+
+### Patterns to lift into MEMORY.md (round 3 or next session)
+
+- **MCP-driven third-party tool eval**: load computer-use → switch monitor → read browser tab via screenshot → swap to Claude-in-Chrome MCP for DOM access → fetch tweet content that WebFetch 402'd on. Repeatable pattern for "what's this link Austin sent me" questions.
+- **react-doctor v0.1.4** as a periodic quarterly audit (NOT in CI — false-positive rate on SPA+styled components is too high to gate on). Run from `client/`, takes ~9s for 82 files. Score ≥ 80 worth aiming for; beyond that diminishing returns vs effort.
+- **Two-tag release marathon in one session** is fine when both tag deltas are surgical/additive and 5×5 stays green. Cost ≈ 25 min per tag (5×5 + docker publish + SSH deploy + verify).
+
+### Release-cycle housekeeping
+
+- `.claude/worktrees/affectionate-jepsen-024ec5/` worktree is now on `chore/react-doctor-round2` (merged-to-main → safe to remove). 3 PR branches still on origin (`fix/react-doctor-correctness`, `chore/react-doctor-a11y`, `chore/react-doctor-round2`) — Austin can `gh pr` cleanup or leave them.
+- Sibling worktrees `heuristic-wing-e3e4af` (`docs/v3-5-0-wrap`) and `nifty-northcutt-6ed5b5` (`docs/session-notes-v330`) untouched.
+
+---
+
 ## Last updated: 2026-05-09 — **PR #178 OPEN** — Brand Learning Phase 1 (anon-visitor learning loop) + dashboard surface
 
 Sub-session arc: Austin asked to scope and build a "brand AI learns over time from anonymous-visitor conversations" feature. Followed scope → build → self-review → ship pattern. Wrote `docs/BRAND_LEARNING_SCOPE.md` first with 7 explicit decision points; Austin returned with "all stars" + new requirement (dashboard surface so tenants can SEE the AI is learning) + go-AFK instruction. Built autonomously end-to-end through PR.
