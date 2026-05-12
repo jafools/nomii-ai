@@ -5,6 +5,7 @@ import ApiKeySection      from "./settings/ApiKeySection";
 import WidgetSection       from "./settings/WidgetSection";
 import ProductsSection     from "./settings/ProductsSection";
 import AgentSoulSection    from "./settings/AgentSoulSection";
+import BrandLearningSection from "./settings/BrandLearningSection";
 import DataApiSection      from "./settings/DataApiSection";
 import WebhooksSection     from "./settings/WebhooksSection";
 import LabelsSection       from "./settings/LabelsSection";
@@ -23,6 +24,7 @@ const ShenmaySettings = () => (
     <CompanyProfile />
     <ApiKeySection />
     <AgentSoulSection />
+    <BrandLearningSection />
     <WidgetSection />
     <EmailTemplatesSection />
     <WebhooksSection />

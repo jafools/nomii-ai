@@ -7,16 +7,144 @@
  * the brand. We require N≥threshold distinct sessions to surface the same
  * observation before it promotes from `brand_memory` into `brand_soul`.
  *
- * Today's deduplication is intentionally simple: lowercase + strip
- * punctuation + collapse whitespace, then exact-match on the canonical
- * key. Variants that the LLM phrases slightly differently each night
- * will accumulate as separate entries — they'll only promote if the
- * exact phrasing recurs. That's safer than fuzzy matching (which would
- * risk merging unrelated observations). When this becomes a constraint
- * (Phase 3), we'll add semantic dedup via the existing AgentDB HNSW.
+ * Deduplication has two layers:
+ *   1. Exact-match fast path: lowercase + strip punctuation + collapse
+ *      whitespace, then byte-equality on the canonical key.
+ *   2. Fuzzy fallback: when no exact match, compute Szymkiewicz–Simpson
+ *      overlap on stopword-stripped content tokens. Two candidates merge
+ *      when overlap ≥ FUZZY_THRESHOLD AND both sides have ≥ FUZZY_MIN_TOKENS
+ *      content tokens (so 1–2 word stubs only match exactly).
+ *
+ * The fuzzy layer exists because Haiku rephrases the same concept across
+ * cycles ("pricing transparency" vs "is pricing transparent" vs "why is
+ * pricing confusing"). Without it, every cycle creates a parallel
+ * candidate row and nothing ever crosses the promotion threshold — the
+ * v3.5.2 prod canary confirmed this failure mode for everything except
+ * stable-phrasing FAQs.
+ *
+ * Within a single cycle we also track touched canonical_keys per bucket
+ * so multiple paraphrases emitted by the LLM in the same call only
+ * increment session_count by 1 total — preserving the design intent
+ * that "one cycle = one repetition signal".
+ *
+ * Phase 3 will replace the token-overlap heuristic with AgentDB HNSW
+ * semantic dedup (handles synonyms, multi-language).
  */
 
 'use strict';
+
+// ── Fuzzy-match tuning ─────────────────────────────────────────────────
+//
+// FUZZY_THRESHOLD: Szymkiewicz–Simpson overlap coefficient required to treat
+// two canonical keys as the same observation. 0.6 means the shorter set must
+// share ≥60% of its content tokens with the longer set. Empirically picked
+// against the v3.5.2 canary's actual variant pairs:
+//   "pricing transparency"           ↔ "is pricing transparent" → 1.00
+//   "why is pricing confusing"       ↔ "is pricing transparent" → 0.50 (no merge)
+//   "what are your business hours"   ↔ "your hours of operation" → 0.67
+// Lower → more aggressive merging, more false positives. Higher → more
+// duplicate candidates, slower promotion. Tune via canary in prod.
+const FUZZY_THRESHOLD = 0.6;
+
+// FUZZY_MIN_TOKENS: minimum content tokens (after stopword removal) on BOTH
+// sides for fuzzy matching to even be attempted. Short canonical keys like
+// "do you ship" → {ship} are too sparse for overlap to be meaningful, so
+// they only match via exact equality.
+const FUZZY_MIN_TOKENS = 2;
+
+// Small conservative stopword list. Intentionally narrow — we only strip
+// words that carry no topic signal in customer-AI exchanges. Topic-bearing
+// words (pricing, hours, refund, shipping, order, account) stay even when
+// common, because they're the signal that makes paraphrases match.
+const STOPWORDS = new Set([
+  'a', 'an', 'the',
+  'and', 'or', 'but', 'if', 'so', 'as', 'than', 'then',
+  'of', 'to', 'in', 'on', 'at', 'for', 'from', 'by', 'with', 'about',
+  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am',
+  'do', 'does', 'did', 'done', 'have', 'has', 'had',
+  'i', 'me', 'my', 'mine',
+  'you', 'your', 'yours',
+  'we', 'us', 'our', 'ours',
+  'they', 'them', 'their', 'theirs',
+  'this', 'that', 'these', 'those', 'it', 'its',
+  'can', 'could', 'should', 'would', 'will', 'may', 'might', 'must',
+  'what', 'when', 'where', 'why', 'how', 'who', 'which',
+  'not', 'no',
+  's', 't', 're', 've', 'll', 'd', 'm',
+]);
+
+/**
+ * Split a canonical key into its content-bearing tokens. Input is assumed
+ * pre-normalized via `canonicalKey()` (lowercased, punctuation stripped,
+ * whitespace collapsed) — see that function's contract below.
+ *
+ * @param {string} key
+ * @returns {Set<string>}
+ */
+function tokenizeForSimilarity(key) {
+  if (!key || typeof key !== 'string') return new Set();
+  const out = new Set();
+  for (const tok of key.split(/\s+/)) {
+    if (!tok) continue;
+    if (tok.length < 2) continue;      // single letters (a, b) carry no signal
+    if (STOPWORDS.has(tok)) continue;
+    out.add(tok);
+  }
+  return out;
+}
+
+/**
+ * Szymkiewicz–Simpson overlap coefficient: |A ∩ B| / min(|A|, |B|).
+ * Returns 0 when either set is empty. Symmetric, between 0 and 1.
+ */
+function overlapScore(setA, setB) {
+  if (!setA || !setB) return 0;
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let inter = 0;
+  for (const t of setA) if (setB.has(t)) inter++;
+  return inter / Math.min(setA.size, setB.size);
+}
+
+/**
+ * Find an entry in `entries` that matches `newKey` either exactly or — when
+ * no exact match — fuzzily via stopword-stripped token overlap.
+ *
+ * Exact match is the fast path and runs first. Fuzzy match is the fallback,
+ * gated on FUZZY_MIN_TOKENS to keep short keys exact-only.
+ *
+ * Returns the entry object (which the caller mutates in place to bump
+ * session_count etc.), or null if nothing matched.
+ *
+ * Exposed for unit tests.
+ */
+function findSimilarEntry(newKey, entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return null;
+  if (!newKey) return null;
+
+  // Exact match — fast path, preserves prior behavior byte-for-byte.
+  for (const e of entries) {
+    if (e && e.canonical_key === newKey) return e;
+  }
+
+  // Fuzzy fallback. Require enough content tokens on the new side to make
+  // the overlap meaningful; if too sparse, only exact matching applies.
+  const newTokens = tokenizeForSimilarity(newKey);
+  if (newTokens.size < FUZZY_MIN_TOKENS) return null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const e of entries) {
+    if (!e || typeof e.canonical_key !== 'string') continue;
+    const eTokens = tokenizeForSimilarity(e.canonical_key);
+    if (eTokens.size < FUZZY_MIN_TOKENS) continue;
+    const score = overlapScore(newTokens, eTokens);
+    if (score >= FUZZY_THRESHOLD && score > bestScore) {
+      best = e;
+      bestScore = score;
+    }
+  }
+  return best;
+}
 
 /**
  * Apply this cycle's distilled candidates to the existing brand_memory,
@@ -55,6 +183,19 @@ function applyAndPromote({
   let blockedCount  = 0;
   let addedCandidates = 0;
 
+  // Per-bucket "touched this cycle" tracker. When the LLM emits multiple
+  // paraphrases of the same concept in one cycle, fuzzy match steers them
+  // all to the same existing entry — but we only want session_count to
+  // increment by `thisBatchSessions` once per cycle, not per paraphrase.
+  const touchedFaqs = new Set();
+  const touchedProcesses = new Set();
+  const touchedVoiceCues = new Set();
+  const touchedAudience = {
+    common_pain_points:   new Set(),
+    common_objections:    new Set(),
+    common_request_types: new Set(),
+  };
+
   // ── FAQs ───────────────────────────────────────────────────────────────
   if (Array.isArray(candidates.faqs)) {
     nextMemory.candidate_faqs = nextMemory.candidate_faqs || [];
@@ -65,44 +206,54 @@ function applyAndPromote({
       if (!key) continue;
 
       // If already promoted, just re-increment its session_count (audit only).
-      const promoted = nextSoul.faqs.find(f => f.canonical_key === key);
+      const promoted = findSimilarEntry(key, nextSoul.faqs);
       if (promoted) {
-        promoted.session_count = (promoted.session_count || 0) + thisBatchSessions;
-        promoted.last_seen_at  = nowIso();
+        if (!touchedFaqs.has(promoted.canonical_key)) {
+          promoted.session_count = (promoted.session_count || 0) + thisBatchSessions;
+          promoted.last_seen_at  = nowIso();
+          touchedFaqs.add(promoted.canonical_key);
+        }
         continue;
       }
 
       // Otherwise it lives in brand_memory until it crosses the threshold.
-      const existing = nextMemory.candidate_faqs.find(f => f.canonical_key === key);
+      const existing = findSimilarEntry(key, nextMemory.candidate_faqs);
       if (existing) {
+        if (touchedFaqs.has(existing.canonical_key)) {
+          // Another paraphrase of this concept already counted in this cycle.
+          continue;
+        }
         existing.session_count = (existing.session_count || 0) + thisBatchSessions;
         existing.last_seen_at  = nowIso();
+        touchedFaqs.add(existing.canonical_key);
         // Promote if threshold reached
         if (existing.session_count >= minSessions) {
           nextSoul.faqs.push({
             question: existing.question,
             answer:   existing.suggested_answer,
-            canonical_key: key,
+            canonical_key: existing.canonical_key,
             session_count: existing.session_count,
             first_seen_at: existing.first_seen_at,
             promoted_at:   nowIso(),
             last_seen_at:  nowIso(),
           });
           // Remove from candidates list once promoted
-          nextMemory.candidate_faqs = nextMemory.candidate_faqs.filter(f => f.canonical_key !== key);
+          nextMemory.candidate_faqs = nextMemory.candidate_faqs.filter(f => f.canonical_key !== existing.canonical_key);
           promotedCount++;
         } else {
           blockedCount++;
         }
       } else {
-        nextMemory.candidate_faqs.push({
+        const newEntry = {
           question: cand.question,
           suggested_answer: cand.suggested_answer || '',
           canonical_key: key,
           session_count: thisBatchSessions,
           first_seen_at: nowIso(),
           last_seen_at:  nowIso(),
-        });
+        };
+        nextMemory.candidate_faqs.push(newEntry);
+        touchedFaqs.add(key);
         addedCandidates++;
         blockedCount++;
       }
@@ -118,28 +269,33 @@ function applyAndPromote({
       const key = canonicalKey(cand.name);
       if (!key) continue;
 
-      const promoted = nextSoul.processes.find(p => p.canonical_key === key);
+      const promoted = findSimilarEntry(key, nextSoul.processes);
       if (promoted) {
-        promoted.session_count = (promoted.session_count || 0) + thisBatchSessions;
-        promoted.last_seen_at  = nowIso();
+        if (!touchedProcesses.has(promoted.canonical_key)) {
+          promoted.session_count = (promoted.session_count || 0) + thisBatchSessions;
+          promoted.last_seen_at  = nowIso();
+          touchedProcesses.add(promoted.canonical_key);
+        }
         continue;
       }
 
-      const existing = nextMemory.candidate_processes.find(p => p.canonical_key === key);
+      const existing = findSimilarEntry(key, nextMemory.candidate_processes);
       if (existing) {
+        if (touchedProcesses.has(existing.canonical_key)) continue;
         existing.session_count = (existing.session_count || 0) + thisBatchSessions;
         existing.last_seen_at  = nowIso();
+        touchedProcesses.add(existing.canonical_key);
         if (existing.session_count >= minSessions) {
           nextSoul.processes.push({
             name: existing.name,
             description: existing.description,
-            canonical_key: key,
+            canonical_key: existing.canonical_key,
             session_count: existing.session_count,
             first_seen_at: existing.first_seen_at,
             promoted_at:   nowIso(),
             last_seen_at:  nowIso(),
           });
-          nextMemory.candidate_processes = nextMemory.candidate_processes.filter(p => p.canonical_key !== key);
+          nextMemory.candidate_processes = nextMemory.candidate_processes.filter(p => p.canonical_key !== existing.canonical_key);
           promotedCount++;
         } else {
           blockedCount++;
@@ -153,6 +309,7 @@ function applyAndPromote({
           first_seen_at: nowIso(),
           last_seen_at:  nowIso(),
         });
+        touchedProcesses.add(key);
         addedCandidates++;
         blockedCount++;
       }
@@ -170,20 +327,23 @@ function applyAndPromote({
       const key = canonicalKey(cue);
       if (!key) continue;
 
-      if (nextSoul.voice_cues.some(v => v.canonical_key === key)) continue;
+      // Already promoted — skip silently (matches prior behavior for voice).
+      if (findSimilarEntry(key, nextSoul.voice_cues)) continue;
 
-      const existing = nextMemory.candidate_voice_cues.find(v => v.canonical_key === key);
+      const existing = findSimilarEntry(key, nextMemory.candidate_voice_cues);
       if (existing) {
+        if (touchedVoiceCues.has(existing.canonical_key)) continue;
         existing.session_count = (existing.session_count || 0) + thisBatchSessions;
         existing.last_seen_at  = nowIso();
+        touchedVoiceCues.add(existing.canonical_key);
         if (existing.session_count >= minSessions) {
           nextSoul.voice_cues.push({
             cue: existing.cue,
-            canonical_key: key,
+            canonical_key: existing.canonical_key,
             session_count: existing.session_count,
             promoted_at:   nowIso(),
           });
-          nextMemory.candidate_voice_cues = nextMemory.candidate_voice_cues.filter(v => v.canonical_key !== key);
+          nextMemory.candidate_voice_cues = nextMemory.candidate_voice_cues.filter(v => v.canonical_key !== existing.canonical_key);
           promotedCount++;
         } else {
           blockedCount++;
@@ -196,6 +356,7 @@ function applyAndPromote({
           first_seen_at: nowIso(),
           last_seen_at:  nowIso(),
         });
+        touchedVoiceCues.add(key);
         addedCandidates++;
         blockedCount++;
       }
@@ -224,19 +385,37 @@ function applyAndPromote({
 
       nextMemory.candidate_audience[candKey] = nextMemory.candidate_audience[candKey] || [];
 
+      // Synthetic entry list for already-promoted audience items so we can
+      // reuse findSimilarEntry. audience_profile stores raw strings (not
+      // entry objects), so we wrap them. We maintain this snapshot in sync
+      // with nextAudience[profileKey] so freshly-promoted items in this
+      // same cycle are also matched (matches prior live-array semantics).
+      const promotedAudienceEntries = nextAudience[profileKey].map(v => ({
+        canonical_key: canonicalKey(v),
+      }));
+
+      const touchedBucket = touchedAudience[candKey];
+
       for (const item of list) {
         const key = canonicalKey(item);
         if (!key) continue;
 
-        if (nextAudience[profileKey].some(p => canonicalKey(p) === key)) continue;
+        // Already promoted into audience_profile — skip.
+        if (findSimilarEntry(key, promotedAudienceEntries)) continue;
 
-        const existing = nextMemory.candidate_audience[candKey].find(p => p.canonical_key === key);
+        const existing = findSimilarEntry(key, nextMemory.candidate_audience[candKey]);
         if (existing) {
+          if (touchedBucket.has(existing.canonical_key)) continue;
           existing.session_count = (existing.session_count || 0) + thisBatchSessions;
           existing.last_seen_at  = nowIso();
+          touchedBucket.add(existing.canonical_key);
           if (existing.session_count >= minSessions) {
             nextAudience[profileKey].push(existing.value);
-            nextMemory.candidate_audience[candKey] = nextMemory.candidate_audience[candKey].filter(p => p.canonical_key !== key);
+            // Keep snapshot in sync so a later iteration in this cycle that
+            // fuzzy-matches the just-promoted item skips it instead of
+            // creating a parallel candidate.
+            promotedAudienceEntries.push({ canonical_key: existing.canonical_key });
+            nextMemory.candidate_audience[candKey] = nextMemory.candidate_audience[candKey].filter(p => p.canonical_key !== existing.canonical_key);
             promotedCount++;
           } else {
             blockedCount++;
@@ -249,6 +428,7 @@ function applyAndPromote({
             first_seen_at: nowIso(),
             last_seen_at:  nowIso(),
           });
+          touchedBucket.add(key);
           addedCandidates++;
           blockedCount++;
         }
@@ -326,4 +506,10 @@ function capCandidates(container, key, max) {
 module.exports = {
   applyAndPromote,
   canonicalKey,
+  // Exported for unit tests + tuning visibility.
+  findSimilarEntry,
+  tokenizeForSimilarity,
+  overlapScore,
+  FUZZY_THRESHOLD,
+  FUZZY_MIN_TOKENS,
 };
