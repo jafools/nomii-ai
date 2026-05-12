@@ -13,6 +13,8 @@ import {
   PlayCircle,
   AlertOctagon,
   ShieldCheck,
+  Trash2,
+  ArrowUpCircle,
 } from "lucide-react";
 import {
   TOKENS as T,
@@ -27,6 +29,8 @@ import {
   toggleBrandLearning,
   runBrandLearningNow,
   killBrandLearning,
+  deleteBrandLearningItem,
+  promoteBrandLearningItem,
 } from "@/lib/shenmayApi";
 
 // ── Local helpers ───────────────────────────────────────────────────────
@@ -52,6 +56,8 @@ const INCIDENT_LABELS = {
   promotion_blocked:    "Candidates held below threshold",
   kill_switch_used:     "Kill switch invoked",
   auto_disabled:        "Learning auto-disabled after repeated failures",
+  manual_delete:        "Owner deleted a learned fact",
+  manual_promote:       "Owner promoted a candidate manually",
 };
 
 // ── UI atoms ────────────────────────────────────────────────────────────
@@ -78,6 +84,59 @@ const StatTile = ({ icon: Icon, label, value, color = T.ink, sub }) => (
     {sub && (
       <div style={{ fontSize: 12, color: T.mute }}>{sub}</div>
     )}
+  </div>
+);
+
+// Owner-only inline curation buttons. Shown next to each list item.
+// `onPromote` is undefined for already-promoted items (delete only).
+const CurateActions = ({ onPromote, onDelete, busy, label }) => (
+  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+    {onPromote && (
+      <button
+        type="button"
+        onClick={onPromote}
+        disabled={busy}
+        title="Promote now (skip the session-count threshold)"
+        aria-label={`Promote ${label} now`}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: 4,
+          borderRadius: 4,
+          cursor: busy ? "not-allowed" : "pointer",
+          color: T.teal,
+          opacity: busy ? 0.4 : 0.7,
+          display: "inline-flex",
+          alignItems: "center",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = busy ? 0.4 : 1; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = busy ? 0.4 : 0.7; }}
+      >
+        <ArrowUpCircle size={14} />
+      </button>
+    )}
+    <button
+      type="button"
+      onClick={onDelete}
+      disabled={busy}
+      title="Delete this learned fact"
+      aria-label={`Delete ${label}`}
+      style={{
+        background: "transparent",
+        border: "none",
+        padding: 4,
+        borderRadius: 4,
+        cursor: busy ? "not-allowed" : "pointer",
+        color: T.danger || "#B33A3A",
+        opacity: busy ? 0.4 : 0.6,
+        display: "inline-flex",
+        alignItems: "center",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.opacity = busy ? 0.4 : 1; }}
+      onMouseLeave={e => { e.currentTarget.style.opacity = busy ? 0.4 : 0.6; }}
+    >
+      <Trash2 size={14} />
+    </button>
   </div>
 );
 
@@ -166,6 +225,37 @@ export default function ShenmayBrandLearning() {
       await fetchState();
     } catch (err) {
       toast({ title: "Kill switch failed", description: err.message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Owner-only single-item curation. Confirms destructive deletes; promotions
+  // are reversible (owner can re-delete) so no prompt.
+  const handleDeleteItem = async (source, bucket, canonical_key, label) => {
+    if (!isOwner) return;
+    if (!window.confirm(`Delete "${label}" from the brand's learned knowledge?`)) return;
+    setBusy(true);
+    try {
+      await deleteBrandLearningItem({ source, bucket, canonical_key });
+      toast({ title: "Deleted", description: label });
+      await fetchState();
+    } catch (err) {
+      toast({ title: "Could not delete", description: err.message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePromoteItem = async (source, bucket, canonical_key, label) => {
+    if (!isOwner) return;
+    setBusy(true);
+    try {
+      await promoteBrandLearningItem({ source, bucket, canonical_key });
+      toast({ title: "Promoted", description: label });
+      await fetchState();
+    } catch (err) {
+      toast({ title: "Could not promote", description: err.message, variant: "destructive" });
     } finally {
       setBusy(false);
     }
@@ -293,10 +383,17 @@ export default function ShenmayBrandLearning() {
               <li key={i} style={{ borderLeft: `2px solid ${T.teal}`, paddingLeft: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <MessageCircleQuestion size={14} color={T.teal} />
-                  <strong style={{ fontSize: 14, color: T.ink }}>{f.question}</strong>
+                  <strong style={{ fontSize: 14, color: T.ink, flex: 1, minWidth: 0 }}>{f.question}</strong>
                   <span style={{ fontFamily: T.mono, fontSize: 10, color: T.mute, letterSpacing: "0.1em" }}>
                     {f.session_count}× SESSIONS
                   </span>
+                  {isOwner && (
+                    <CurateActions
+                      busy={busy}
+                      label={f.question}
+                      onDelete={() => handleDeleteItem("soul", "faqs", f.canonical_key, f.question)}
+                    />
+                  )}
                 </div>
                 {f.answer && (
                   <p style={{ margin: "6px 0 0", fontSize: 13, color: T.inkSoft, lineHeight: 1.6 }}>{f.answer}</p>
@@ -321,6 +418,14 @@ export default function ShenmayBrandLearning() {
                   {f.question}
                 </span>
                 <ProgressBar count={f.session_count || 0} threshold={min} />
+                {isOwner && (
+                  <CurateActions
+                    busy={busy}
+                    label={f.question}
+                    onPromote={() => handlePromoteItem("memory", "candidate_faqs", f.canonical_key, f.question)}
+                    onDelete={() => handleDeleteItem("memory", "candidate_faqs", f.canonical_key, f.question)}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -335,10 +440,17 @@ export default function ShenmayBrandLearning() {
               <li key={i} style={{ borderLeft: `2px solid ${T.tealDark || T.teal}`, paddingLeft: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Workflow size={14} color={T.tealDark || T.teal} />
-                  <strong style={{ fontSize: 14, color: T.ink }}>{p.name}</strong>
+                  <strong style={{ fontSize: 14, color: T.ink, flex: 1, minWidth: 0 }}>{p.name}</strong>
                   <span style={{ fontFamily: T.mono, fontSize: 10, color: T.mute, letterSpacing: "0.1em" }}>
                     {p.session_count}× SESSIONS
                   </span>
+                  {isOwner && (
+                    <CurateActions
+                      busy={busy}
+                      label={p.name}
+                      onDelete={() => handleDeleteItem("soul", "processes", p.canonical_key, p.name)}
+                    />
+                  )}
                 </div>
                 {p.description && (
                   <p style={{ margin: "6px 0 0", fontSize: 13, color: T.inkSoft, lineHeight: 1.6 }}>{p.description}</p>
@@ -361,7 +473,14 @@ export default function ShenmayBrandLearning() {
               {soul.voice_cues.map((v, i) => (
                 <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                   <Mic size={13} color={T.teal} style={{ marginTop: 4, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: T.inkSoft, lineHeight: 1.5 }}>{v.cue || v}</span>
+                  <span style={{ fontSize: 13, color: T.inkSoft, lineHeight: 1.5, flex: 1, minWidth: 0 }}>{v.cue || v}</span>
+                  {isOwner && v.canonical_key && (
+                    <CurateActions
+                      busy={busy}
+                      label={v.cue || v}
+                      onDelete={() => handleDeleteItem("soul", "voice_cues", v.canonical_key, v.cue || v)}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -373,9 +492,30 @@ export default function ShenmayBrandLearning() {
         </SectionCard>
 
         <SectionCard kicker="Figure 06 · Audience profile" title="Who's reaching out — in aggregate">
-          <AudienceList label="Common pain points" items={audience.common_pain_points} />
-          <AudienceList label="Common objections" items={audience.common_objections} />
-          <AudienceList label="Common request types" items={audience.common_request_types} />
+          <AudienceList
+            label="Common pain points"
+            items={audience.common_pain_points}
+            bucket="common_pain_points"
+            isOwner={isOwner}
+            busy={busy}
+            onDelete={handleDeleteItem}
+          />
+          <AudienceList
+            label="Common objections"
+            items={audience.common_objections}
+            bucket="common_objections"
+            isOwner={isOwner}
+            busy={busy}
+            onDelete={handleDeleteItem}
+          />
+          <AudienceList
+            label="Common request types"
+            items={audience.common_request_types}
+            bucket="common_request_types"
+            isOwner={isOwner}
+            busy={busy}
+            onDelete={handleDeleteItem}
+          />
           {!hasAudience(audience) && (
             <Lede style={{ fontSize: 13, color: T.mute, margin: 0 }}>
               Audience patterns will appear once enough anonymous conversations have been distilled.
@@ -427,7 +567,7 @@ export default function ShenmayBrandLearning() {
   );
 }
 
-function AudienceList({ label, items }) {
+function AudienceList({ label, items, bucket, isOwner, busy, onDelete }) {
   if (!Array.isArray(items) || items.length === 0) return null;
   return (
     <div style={{ marginBottom: 14 }}>
@@ -437,7 +577,16 @@ function AudienceList({ label, items }) {
       </Kicker>
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
         {items.slice(0, 8).map((p, i) => (
-          <li key={i} style={{ fontSize: 13, color: T.inkSoft }}>· {p}</li>
+          <li key={i} style={{ fontSize: 13, color: T.inkSoft, display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <span style={{ flex: 1, minWidth: 0 }}>· {p}</span>
+            {isOwner && onDelete && bucket && (
+              <CurateActions
+                busy={busy}
+                label={p}
+                onDelete={() => onDelete("audience_profile", bucket, p, p)}
+              />
+            )}
+          </li>
         ))}
       </ul>
     </div>

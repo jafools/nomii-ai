@@ -43,6 +43,12 @@ const {
   renderBrandSoulForPrompt,
 } = require('../server/src/services/brandLearning/render');
 
+const {
+  deleteItem,
+  promoteItem,
+  validateTarget,
+} = require('../server/src/services/brandLearning/curate');
+
 // ── Test runner (matches existing tests/tokenizer.test.js style) ─────────────
 
 let passed = 0;
@@ -544,6 +550,157 @@ test('candidates above cap get truncated', () => {
     thisBatchSessions: 1,
   });
   assert(r.nextMemory.candidate_faqs.length <= 200, `expected ≤200, got ${r.nextMemory.candidate_faqs.length}`);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2.5. curate.js — owner curation helpers (delete/promote individual items)
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nCurate');
+
+test('validateTarget rejects unknown source', () => {
+  let threw = false;
+  try { validateTarget('garbage', 'faqs'); } catch { threw = true; }
+  assert(threw, 'should throw on unknown source');
+});
+
+test('validateTarget rejects unknown bucket for known source', () => {
+  let threw = false;
+  try { validateTarget('soul', 'common_pain_points'); } catch { threw = true; }
+  assert(threw, 'audience buckets are not valid for source=soul');
+});
+
+test('deleteItem removes a promoted FAQ from brand_soul.faqs', () => {
+  const state = {
+    soul: { faqs: [
+      { canonical_key: 'do you ship', question: 'Do you ship?', answer: 'Yes' },
+      { canonical_key: 'what are your hours', question: 'What are your hours?', answer: 'Mon-Fri' },
+    ]},
+    memory: {},
+    audience: {},
+  };
+  const r = deleteItem(state, { source: 'soul', bucket: 'faqs', canonical_key: 'do you ship' });
+  assert(r.removed, 'should report removed=true');
+  assertEqual(state.soul.faqs.length, 1);
+  assertEqual(state.soul.faqs[0].canonical_key, 'what are your hours');
+});
+
+test('deleteItem on missing canonical_key returns removed=false', () => {
+  const state = { soul: { faqs: [{ canonical_key: 'a' }] }, memory: {}, audience: {} };
+  const r = deleteItem(state, { source: 'soul', bucket: 'faqs', canonical_key: 'nonexistent' });
+  assert(!r.removed);
+  assertEqual(state.soul.faqs.length, 1, 'array untouched');
+});
+
+test('deleteItem on a memory candidate', () => {
+  const state = {
+    soul: {},
+    memory: { candidate_faqs: [
+      { canonical_key: 'a', question: 'A?', session_count: 2 },
+      { canonical_key: 'b', question: 'B?', session_count: 1 },
+    ]},
+    audience: {},
+  };
+  const r = deleteItem(state, { source: 'memory', bucket: 'candidate_faqs', canonical_key: 'a' });
+  assert(r.removed);
+  assertEqual(state.memory.candidate_faqs.length, 1);
+  assertEqual(state.memory.candidate_faqs[0].canonical_key, 'b');
+});
+
+test('deleteItem on raw-string audience_profile matches via canonicalKey()', () => {
+  const state = {
+    soul: {}, memory: {},
+    // audience_profile values are RAW STRINGS, not objects (per migration 040).
+    audience: { common_pain_points: ['Pricing transparency on the website', 'Slow shipping'] },
+  };
+  // canonical_key for "Pricing transparency on the website" → "pricing transparency on the website"
+  const r = deleteItem(state, {
+    source: 'audience_profile',
+    bucket: 'common_pain_points',
+    canonical_key: 'pricing transparency on the website',
+  });
+  assert(r.removed);
+  assertEqual(state.audience.common_pain_points.length, 1);
+  assertEqual(state.audience.common_pain_points[0], 'Slow shipping');
+});
+
+test('deleteItem on audience_profile accepts the RAW user-facing string too', () => {
+  // The dashboard renders raw strings; the easiest client call is to pass
+  // the raw display string back unchanged. The helper canonicalizes both
+  // sides so either form (raw / pre-canonicalized) works.
+  const state = {
+    soul: {}, memory: {},
+    audience: { common_pain_points: ['Pricing transparency on the website', 'Slow shipping'] },
+  };
+  const r = deleteItem(state, {
+    source: 'audience_profile',
+    bucket: 'common_pain_points',
+    canonical_key: 'Pricing transparency on the website!',   // raw + extra punctuation
+  });
+  assert(r.removed, 'should match even with raw casing + punctuation');
+  assertEqual(state.audience.common_pain_points.length, 1);
+});
+
+test('promoteItem moves a candidate FAQ into brand_soul.faqs', () => {
+  const state = {
+    soul: { faqs: [] },
+    memory: { candidate_faqs: [
+      { canonical_key: 'do you ship', question: 'Do you ship?', suggested_answer: 'Yes worldwide', session_count: 2, first_seen_at: '2026-05-01T00:00:00Z' },
+    ]},
+    audience: {},
+  };
+  const r = promoteItem(state, { source: 'memory', bucket: 'candidate_faqs', canonical_key: 'do you ship' });
+  assert(r.promoted, 'should report promoted=true');
+  assertEqual(state.memory.candidate_faqs.length, 0, 'candidate removed from memory');
+  assertEqual(state.soul.faqs.length, 1, 'one item now in soul');
+  assertEqual(state.soul.faqs[0].canonical_key, 'do you ship');
+  assertEqual(state.soul.faqs[0].answer, 'Yes worldwide', 'suggested_answer becomes answer on promotion');
+  assert(state.soul.faqs[0].manually_promoted, 'manually_promoted flag set');
+  assert(state.soul.faqs[0].promoted_at, 'promoted_at stamped');
+});
+
+test('promoteItem moves an audience candidate into audience_profile (raw string)', () => {
+  const state = {
+    soul: {}, audience: { common_pain_points: [] },
+    memory: { candidate_audience: { common_pain_points: [
+      { canonical_key: 'pricing transparency', value: 'Pricing transparency on the site', session_count: 2 },
+    ]}},
+  };
+  const r = promoteItem(state, {
+    source: 'audience_candidate',
+    bucket: 'common_pain_points',
+    canonical_key: 'pricing transparency',
+  });
+  assert(r.promoted);
+  assertEqual(state.audience.common_pain_points.length, 1);
+  assertEqual(state.audience.common_pain_points[0], 'Pricing transparency on the site');
+  assertEqual(state.memory.candidate_audience.common_pain_points.length, 0);
+});
+
+test('promoteItem on a non-promotable source throws', () => {
+  const state = { soul: { faqs: [{ canonical_key: 'a' }] }, memory: {}, audience: {} };
+  let threw = false;
+  try { promoteItem(state, { source: 'soul', bucket: 'faqs', canonical_key: 'a' }); } catch { threw = true; }
+  assert(threw, 'should refuse to promote something already in soul');
+});
+
+test('promoteItem on missing canonical_key returns promoted=false', () => {
+  const state = { soul: { faqs: [] }, memory: { candidate_faqs: [] }, audience: {} };
+  const r = promoteItem(state, { source: 'memory', bucket: 'candidate_faqs', canonical_key: 'nothing-here' });
+  assert(!r.promoted);
+});
+
+test('promoted process retains description', () => {
+  const state = {
+    soul: { processes: [] },
+    memory: { candidate_processes: [
+      { canonical_key: 'place an order', name: 'Place an order', description: 'Visit site, add to cart, check out', session_count: 2 },
+    ]},
+    audience: {},
+  };
+  const r = promoteItem(state, { source: 'memory', bucket: 'candidate_processes', canonical_key: 'place an order' });
+  assert(r.promoted);
+  assertEqual(state.soul.processes[0].description, 'Visit site, add to cart, check out');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

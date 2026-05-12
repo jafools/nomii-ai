@@ -455,3 +455,19 @@ export const runBrandLearningNow = () =>
 /** Owner-only. Wipe all 3 artifacts and disable learning. */
 export const killBrandLearning = () =>
   apiRequest("POST", "/api/portal/brand-learning/kill-switch");
+
+/**
+ * Owner-only. Delete one learned fact (or pending candidate) by canonical_key.
+ * source:  "soul" | "memory" | "audience_profile" | "audience_candidate"
+ * bucket:  the bucket inside that source — see SOURCES in curate.js for the
+ *          allow-list (e.g. "faqs", "candidate_faqs", "common_pain_points").
+ */
+export const deleteBrandLearningItem = ({ source, bucket, canonical_key }) =>
+  apiRequest("POST", "/api/portal/brand-learning/items/delete", { source, bucket, canonical_key });
+
+/**
+ * Owner-only. Manually promote a pending candidate into the promoted bag.
+ * source must be "memory" or "audience_candidate".
+ */
+export const promoteBrandLearningItem = ({ source, bucket, canonical_key }) =>
+  apiRequest("POST", "/api/portal/brand-learning/items/promote", { source, bucket, canonical_key });
