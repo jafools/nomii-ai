@@ -5,7 +5,64 @@
 
 ---
 
-## Last updated: 2026-05-11 — **v3.5.2 LIVE** — react-doctor cleanup (3 PRs, 2 release tags, 2 prod deploys)
+## Last updated: 2026-05-12 — **v3.5.3 LIVE** — Brand-learning Phase 1.5 (semantic dedup + Settings toggle + migration patch)
+
+Sub-session arc: yesterday's v3.5.2 canary on Apples confirmed Haiku rephrases the same concept each cycle, so byte-equal `canonical_key` matching produced parallel `candidate_faqs` rows at `session_count=1` instead of one row at `session_count=3`. Nothing promoted past stable-phrasing FAQs (hours, order). Today: ship one stacked PR with the dedup fix + Settings UI gap-close + migration idempotency patch. Merge → 5×5 → tag → Hetzner → prod re-canary in ~25 min wall clock.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#184](https://github.com/jafools/shenmay-ai/pull/184)** — semantic dedup + Settings toggle + migration idempotency |
+| Tag | **v3.5.3** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** (run [25726635661](https://github.com/jafools/shenmay-ai/actions/runs/25726635661)) |
+| Unit tests | brand-learning **40/40** (29 existing + 11 new) |
+| Files touched | 5 (1 server / 1 migration / 1 test / 2 client) |
+| Prod canary cycle-3 promotions | **5** (vs 3 on v3.5.2) — `audience_profile` populated for the first time ever |
+
+### What v3.5.3 does
+
+**A) `promote.js` — Phase 1.5 semantic dedup.** Szymkiewicz–Simpson overlap (`|A ∩ B| / min(|A|, |B|)`) on stopword-stripped canonical_key tokens. Threshold `0.6`, gated on `≥2` content tokens each side. Wired into all 4 buckets (faqs / processes / voice_cues / audience cues). Per-bucket `touchedThisCycle` Set prevents intra-cycle double-counting when LLM emits 3 paraphrases in one call. Exact-match fast path preserved byte-for-byte. Limitation: anchored on first-seen `canonical_key`, NOT transitive — pinned by `LIMITATION` test, Phase 3 HNSW will replace.
+
+**B) `BrandLearningSection.jsx` — Settings page card.** Owner-gated, slotted between AgentSoul and Widget on `/dashboard/settings`. Inline on/off toggle + 3-stat grid + last-cycle timestamp + link to `/dashboard/brand-learning`. Closes the Phase 1 carry-over "no UI to flip it on" gap.
+
+**C) Migration 040 idempotency.** `ADD CONSTRAINT brand_learning_min_sessions_range` wrapped in `DO`-block + `pg_constraint` check. PG ≤16 has no `ADD CONSTRAINT IF NOT EXISTS`. Verified against prod's existing constraint pre-tag — `DO` block no-op'd cleanly.
+
+### Prod canary results — apples-to-apples vs yesterday
+
+| Bucket | v3.5.2 yesterday | v3.5.3 today |
+|---|---|---|
+| `brand_soul.faqs` promoted | 2 | 2 ✓ |
+| **`audience_profile.pain_points`** | **0** | **1 ("Pricing transparency...")** |
+| **`audience_profile.request_types`** | **0** | **1 ("Business hours inquiry")** |
+| `candidate_faqs` parallel rows | 3 | 2 (-33%) |
+| `candidate_audience.pain_points` | 6 | 3 (**-50%**) |
+| `candidate_audience.request_types` | 8 | 4 (**-50%**) |
+
+Audience-profile populating is the killer result — was always empty before because Haiku rephrased and byte-equal missed.
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.3` |
+| Hetzner repo | checked out at `v3.5.3` |
+| Internal `/api/health` | 200 OK |
+| Brand-learning worker | running, 0 opted-in tenants (Apples reset post-canary) |
+| Settings page (`/dashboard/settings`) | now has Brand-learning section between AgentSoul and Widget |
+| 5×5 release gate | 11/11 green pre-tag |
+
+### Carry-over
+
+1. **Phase 2 polish:** edit/delete UI for individual learned facts, weekly approval-gate emails when `brand_learning_auto_apply=false`, audit-log filter view in the dashboard.
+2. **Phase 3 (the real semantic dedup):** AgentDB HNSW with embeddings. Catches synonyms (refund/return), handles multi-language, transitive across cycles. Bumped in priority — Phase 1.5 helps but doesn't close it.
+3. **Threshold tuning:** `FUZZY_THRESHOLD = 0.6` was empirically picked. May lower to 0.55 if Phase 2 walks still show residual parallel candidates. Don't go below 0.5 (false-positive zone for 2-token sets).
+4. **Marketing line:** "Your AI gets smarter the more it talks." Now actually true for FAQs AND audience patterns, not just stable-phrasing FAQs.
+
+---
+
+## Previous: 2026-05-11 — **v3.5.2 LIVE** — react-doctor cleanup (3 PRs, 2 release tags, 2 prod deploys)
 
 Sub-session arc: Austin shared an Aiden Bai tweet about [react-doctor](https://www.react.doctor) v2 ("your agent writes bad React code, this catches it"). Loaded computer-use + Claude-in-Chrome MCPs to read the tweet through Austin's main desktop, ran the tool on `client/`, triaged the 624-issue / 74-score report into real-bug PRs vs noise, shipped two release cycles in one session.
 
