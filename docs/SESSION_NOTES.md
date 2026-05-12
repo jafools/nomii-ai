@@ -5,7 +5,63 @@
 
 ---
 
-## Last updated: 2026-05-12 — **v3.5.3 LIVE** — Brand-learning Phase 1.5 (semantic dedup + Settings toggle + migration patch)
+## Last updated: 2026-05-12 (PM) — **v3.5.4 LIVE** — Brand-learning Phase 2 (owner curation)
+
+Sub-session arc: with v3.5.3 just shipped and Apples' prod canary confirming the dedup actually works, the next gap is owner control. Without curation, a brand owner can watch their AI learn but can't intervene — they can't delete an FAQ that promoted by mistake, and they can't manually promote a pending candidate they already know is correct. Ship Phase 2 same-day: pure helper + 2 portal routes + migration 041 + frontend wiring across 6 dashboard surfaces.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#186](https://github.com/jafools/shenmay-ai/pull/186)** — owner curation (delete + manually promote) |
+| Tag | **v3.5.4** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** (run [25731540707](https://github.com/jafools/shenmay-ai/actions/runs/25731540707)) |
+| Unit tests | brand-learning **52/52** (40 prior + 12 new curate tests) |
+| Files touched | 6 (2 new server: curate.js + migration 041; 1 server route extension; 1 test extension; 2 client: API helpers + dashboard) |
+| Wall-clock merge → prod live | ~17 min (merge → 5×5 → tag → GHCR → Hetzner → smoke) |
+
+### What v3.5.4 does
+
+**`server/src/services/brandLearning/curate.js`** — pure helpers `deleteItem` + `promoteItem` operating on a `{ soul, memory, audience }` bundle. Returns new state + the affected item. SOURCES allow-list covers the 4 valid sources (`soul` / `memory` / `audience_profile` / `audience_candidate`) with per-source bucket whitelists. Promoted entries get `manually_promoted: true` for audit visibility. Audience-profile asymmetry (raw strings vs entry objects) handled by canonicalizing both sides — client can pass raw display strings.
+
+**2 new portal endpoints** (owner-gated):
+- `POST /api/portal/brand-learning/items/delete`
+- `POST /api/portal/brand-learning/items/promote`
+
+Each emits a `manual_delete` / `manual_promote` row in `brand_learning_incidents` with admin_id + target + affected item.
+
+**Migration 041** extends the incidents.type CHECK enum to accept the 2 new audit types. Wrapped in `DO`-block with `_check_v2` name-detection so re-runs are no-ops (mirrors 040's idempotency pattern). Dry-run verified against prod schema pre-tag — old `brand_learning_incidents_type_check` dropped cleanly, new `_check_v2` installed.
+
+**Frontend** — `<CurateActions>` atom (trash icon + optional up-arrow). Wired into all 6 visible surfaces on `/dashboard/brand-learning`:
+- Promoted FAQs / processes / voice cues in brand_soul (delete-only)
+- Pending FAQ candidates in the "Watching" section (delete + Approve-now)
+- All 3 audience_profile lists via updated `AudienceList` component (delete-only)
+
+Destructive deletes prompt via `window.confirm`; promotions are non-destructive so no prompt. 2 new `INCIDENT_LABELS` entries for the audit log section.
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.4` |
+| Hetzner repo | checked out at `v3.5.4` |
+| Internal `/api/health` | 200 OK |
+| Brand-learning worker | running, 0 opted-in tenants |
+| `/dashboard/brand-learning` | now has owner-only trash + Approve-now buttons across 6 list surfaces |
+| 5×5 release gate | 11/11 green pre-tag |
+| Prod bundle | `index-CTUT5yym.js`, contains all 4 new curation strings |
+
+### Carry-over
+
+1. **Phase 2.5 polish (smaller):** weekly approval-gate emails when `brand_learning_auto_apply=false`, audit-log filter view in the dashboard, edit-the-answer UI (currently only delete + promote, not edit).
+2. **Phase 3 — semantic dedup via HNSW:** still bumped in priority. Replaces the token-overlap heuristic from v3.5.3 with embedding similarity → catches synonyms, multi-language, transitive across cycles. Closes the LIMITATION test pin.
+3. **Distill-prompt anchoring (complementary 1-hr win):** feed existing brand_memory canonical_keys to the LLM as a "reuse-or-skip" list so it converges on existing phrasings at generation time. Pairs naturally with both the v3.5.3 fuzzy match AND with whatever Phase 3 brings.
+4. **Apples canary on the new buttons:** seed candidates, click trash + Approve-now via Chrome MCP / direct UI to prove the round-trip works in a browser session. Static bundle verification + unit tests don't cover the live React state machine — should walk it once.
+
+---
+
+## Previous: 2026-05-12 — **v3.5.3 LIVE** — Brand-learning Phase 1.5 (semantic dedup + Settings toggle + migration patch)
 
 Sub-session arc: yesterday's v3.5.2 canary on Apples confirmed Haiku rephrases the same concept each cycle, so byte-equal `canonical_key` matching produced parallel `candidate_faqs` rows at `session_count=1` instead of one row at `session_count=3`. Nothing promoted past stable-phrasing FAQs (hours, order). Today: ship one stacked PR with the dedup fix + Settings UI gap-close + migration idempotency patch. Merge → 5×5 → tag → Hetzner → prod re-canary in ~25 min wall clock.
 
