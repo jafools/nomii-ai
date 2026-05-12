@@ -26,8 +26,9 @@
 
 const router = require('express').Router();
 const db = require('../../db');
-const { safeDecryptJson } = require('../../services/cryptoService');
+const { safeDecryptJson, encryptJson } = require('../../services/cryptoService');
 const { runOneTenant } = require('../../services/brandLearning');
+const { deleteItem, promoteItem, SOURCES } = require('../../services/brandLearning/curate');
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -214,6 +215,120 @@ router.post('/kill-switch', async (req, res, next) => {
     );
 
     res.json({ ok: true, wiped: true });
+  } catch (err) { next(err); }
+});
+
+// ── Curation: load → mutate → persist + audit ───────────────────────────
+//
+// Shared pipeline for /items/delete and /items/promote. Pulls the 3
+// encrypted JSONB artifacts into plain JS, hands them to the pure helper,
+// then re-encrypts + writes back atomically with an audit row. Errors at
+// any step bail without partial writes.
+async function applyCurationAction({ tenantId, adminId, action, target }) {
+  const { rows } = await db.query(
+    `SELECT brand_soul, brand_memory, audience_profile FROM tenants WHERE id = $1`,
+    [tenantId],
+  );
+  if (rows.length === 0) return { error: 'tenant_not_found', status: 404 };
+
+  const state = {
+    soul:     safeDecryptJson(rows[0].brand_soul)       || {},
+    memory:   safeDecryptJson(rows[0].brand_memory)     || {},
+    audience: safeDecryptJson(rows[0].audience_profile) || {},
+  };
+
+  let outcome;
+  try {
+    outcome = action === 'delete'
+      ? deleteItem(state, target)
+      : promoteItem(state, target);
+  } catch (err) {
+    return { error: err.message, status: 400 };
+  }
+
+  if (action === 'delete' && !outcome.removed) return { error: 'not_found', status: 404 };
+  if (action === 'promote' && !outcome.promoted) return { error: 'not_found', status: 404 };
+
+  await db.query(
+    `UPDATE tenants
+       SET brand_soul       = $1,
+           brand_memory     = $2,
+           audience_profile = $3
+     WHERE id = $4`,
+    [
+      JSON.stringify(encryptJson(state.soul)),
+      JSON.stringify(encryptJson(state.memory)),
+      JSON.stringify(encryptJson(state.audience)),
+      tenantId,
+    ],
+  );
+
+  // Audit row — captures who/what/where so the curation surface is reviewable.
+  await db.query(
+    `INSERT INTO brand_learning_incidents (tenant_id, type, detail) VALUES ($1, $2, $3)`,
+    [
+      tenantId,
+      action === 'delete' ? 'manual_delete' : 'manual_promote',
+      JSON.stringify({
+        admin_id:      adminId,
+        source:        target.source,
+        bucket:        target.bucket,
+        canonical_key: target.canonical_key,
+        item:          action === 'delete' ? outcome.removedItem : outcome.promotedItem,
+        at:            new Date().toISOString(),
+      }),
+    ],
+  );
+
+  return { ok: true, outcome };
+}
+
+// ── POST /items/delete — owner removes a fact (promoted or pending) ─────
+
+router.post('/items/delete', async (req, res, next) => {
+  try {
+    if (!isOwner(req)) return res.status(403).json({ error: 'Owner role required' });
+
+    const { source, bucket, canonical_key } = req.body || {};
+    if (!source || !bucket || !canonical_key) {
+      return res.status(400).json({ error: 'Body must include source, bucket, canonical_key' });
+    }
+
+    const result = await applyCurationAction({
+      tenantId: req.portal.tenant_id,
+      adminId:  req.portal.admin_id,
+      action:   'delete',
+      target:   { source, bucket, canonical_key },
+    });
+
+    if (result.error) return res.status(result.status).json({ error: result.error });
+    res.json({ ok: true, deleted: result.outcome.removedItem });
+  } catch (err) { next(err); }
+});
+
+// ── POST /items/promote — owner manually promotes a pending candidate ───
+
+router.post('/items/promote', async (req, res, next) => {
+  try {
+    if (!isOwner(req)) return res.status(403).json({ error: 'Owner role required' });
+
+    const { source, bucket, canonical_key } = req.body || {};
+    if (!source || !bucket || !canonical_key) {
+      return res.status(400).json({ error: 'Body must include source, bucket, canonical_key' });
+    }
+    if (source !== 'memory' && source !== 'audience_candidate') {
+      return res.status(400).json({ error: 'Only memory or audience_candidate items can be promoted' });
+    }
+
+    const result = await applyCurationAction({
+      tenantId: req.portal.tenant_id,
+      adminId:  req.portal.admin_id,
+      action:   'promote',
+      target:   { source, bucket, canonical_key },
+    });
+
+    if (result.error) return res.status(result.status).json({ error: result.error });
+    res.json({ ok: true, promoted: result.outcome.promotedItem });
   } catch (err) { next(err); }
 });
 
