@@ -13,6 +13,7 @@ const promote = require('./promote');
 const scrub = require('./scrub');
 const distill = require('./distill');
 const renderer = require('./render');
+const embeddings = require('./embeddings');
 
 module.exports = {
   // Cron lifecycle
@@ -30,4 +31,12 @@ module.exports = {
   buildAnchorList: distill.buildAnchorList,
   buildDistillSystem: distill.buildDistillSystem,
   renderBrandSoulForPrompt: renderer.renderBrandSoulForPrompt,
+  // Phase 3 embedding helpers
+  cosineSimilarity: embeddings.cosineSimilarity,
+  cosineDistance: embeddings.cosineDistance,
+  findBestMatch: embeddings.findBestMatch,
+  mergeAllCandidates: embeddings.mergeAllCandidates,
+  resolveEmbedFn: embeddings.resolveEmbedFn,
+  EMBEDDING_BUCKETS: embeddings.EMBEDDING_BUCKETS,
+  DEFAULT_DISTANCE_THRESHOLD: embeddings.DEFAULT_DISTANCE_THRESHOLD,
 };

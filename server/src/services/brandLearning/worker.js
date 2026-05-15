@@ -41,6 +41,7 @@ const {
   normalizeObservations,
 } = require('./distill');
 const { applyAndPromote } = require('./promote');
+const { mergeAllCandidates, resolveEmbedFn } = require('./embeddings');
 
 const INTERVAL_MS = parseInt(process.env.BRAND_LEARNING_INTERVAL_MS || String(24 * 60 * 60 * 1000), 10);
 
@@ -263,6 +264,37 @@ async function runOneTenant(tenantId) {
   }
 
   const candidates = normalizeObservations(candidatesRaw);
+
+  // 5b. Semantic-dedup pre-pass (v3.5.6, Phase 3). When the tenant's API
+  //     key + provider supports embeddings (currently OpenAI only —
+  //     Anthropic doesn't ship an embedding API), embed each new candidate
+  //     and rewrite its display text to match a semantically-similar
+  //     existing entry if one is found above the distance threshold. The
+  //     v3.5.3 token-overlap heuristic in `promote.js` then sees byte-
+  //     equal canonical_keys via its exact-match fast path and merges.
+  //     No-op when no embedFn — pure fallthrough to v3.5.3.
+  const embedFn = resolveEmbedFn({ apiKey, provider });
+  if (embedFn) {
+    try {
+      const mergeStats = await mergeAllCandidates({
+        tenantId: tenant.id,
+        candidates,
+        currentSoul,
+        currentMemory,
+        embedFn,
+      });
+      if (mergeStats.merged > 0 || mergeStats.inserted > 0) {
+        console.log(
+          `[BrandLearning] Embedding pre-pass for ${tenant.id}: ` +
+          `${mergeStats.merged} merged, ${mergeStats.inserted} inserted, ` +
+          `${mergeStats.skipped} byte-equal-skipped, ${mergeStats.errors} errors`,
+        );
+      }
+    } catch (err) {
+      console.warn(`[BrandLearning] Embedding pre-pass failed for ${tenant.id}: ${err.message}`);
+      // Continue — token-overlap fallback in applyAndPromote still works.
+    }
+  }
 
   // 6. Apply + promote. Layer 4. (currentSoul/Memory/Audience decrypted at 4b)
 

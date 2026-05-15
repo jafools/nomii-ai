@@ -29,6 +29,11 @@ const db = require('../../db');
 const { safeDecryptJson, encryptJson } = require('../../services/cryptoService');
 const { runOneTenant } = require('../../services/brandLearning');
 const { deleteItem, promoteItem, SOURCES } = require('../../services/brandLearning/curate');
+const {
+  deleteEmbedding,
+  curateTargetToEmbeddingBucket,
+  canonicalKeyFromCurateItem,
+} = require('../../services/brandLearning/embeddings');
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -205,6 +210,16 @@ router.post('/kill-switch', async (req, res, next) => {
       [req.portal.tenant_id],
     );
 
+    // v3.5.6: drop all embeddings for this tenant so a future re-opt-in
+    // starts from a clean embedding table (mirrors the brand_soul reset
+    // already done above). Fail-soft — table is FK-cascaded on
+    // tenants(id), so a DELETE-from-tenants would also clean this, but
+    // kill-switch keeps the tenant row alive so we have to explicit.
+    await db.query(
+      `DELETE FROM brand_learning_embeddings WHERE tenant_id = $1`,
+      [req.portal.tenant_id],
+    ).catch(err => console.warn(`[BrandLearning] kill-switch embeddings cleanup failed: ${err.message}`));
+
     await db.query(
       `INSERT INTO brand_learning_incidents (tenant_id, type, detail)
        VALUES ($1, 'kill_switch_used', $2)`,
@@ -279,6 +294,19 @@ async function applyCurationAction({ tenantId, adminId, action, target }) {
       }),
     ],
   );
+
+  // v3.5.6: When an item is deleted (NOT promoted — promotion just moves
+  // the entry between soul/memory, the concept's canonical_key is still
+  // active), remove its embedding row so the worker doesn't continue to
+  // anchor future paraphrases on a deleted concept. Fail-soft — embedding
+  // table may not even exist on a tenant that opted in before v3.5.6.
+  if (action === 'delete') {
+    const embBucket = curateTargetToEmbeddingBucket(target.source, target.bucket);
+    const embKey    = canonicalKeyFromCurateItem(target.source, outcome.removedItem);
+    if (embBucket && embKey) {
+      await deleteEmbedding(tenantId, embBucket, embKey);
+    }
+  }
 
   return { ok: true, outcome };
 }
