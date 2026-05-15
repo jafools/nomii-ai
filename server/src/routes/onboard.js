@@ -49,6 +49,39 @@ function issueToken({ tenant_id, admin_id, email, role }) {
   );
 }
 
+// ── Helper: build the {token, tenant, admin} response body ─────────────────
+//
+// Two endpoints (verify, login) build the same payload from a freshly-loaded
+// `row` object after issuing a portal JWT. The shape is consumed by
+// client/src/contexts/ShenmayAuthContext.jsx.
+//
+// `row` must expose the columns listed below (verify omits widget_verified_at
+// so the caller passes widgetVerified=false; login selects it and passes
+// `row.widget_verified_at !== null`).
+function buildAuthResponse(token, row, { widgetVerified }) {
+  return {
+    token,
+    tenant: {
+      id:               row.tenant_id,
+      name:             row.tenant_name,
+      slug:             row.slug,
+      agent_name:       row.agent_name,
+      widget_key:       row.widget_api_key,
+      primary_color:    row.primary_color,
+      secondary_color:  row.secondary_color,
+      onboarding_steps: row.onboarding_steps,
+      widget_verified:  widgetVerified,
+    },
+    admin: {
+      id:         row.admin_id,
+      email:      row.email,
+      first_name: row.first_name,
+      last_name:  row.last_name,
+      role:       row.role,
+    },
+  };
+}
+
 
 // ── POST /api/onboard/register ─────────────────────────────────────────────
 //
@@ -312,27 +345,9 @@ router.get('/verify/:token', async (req, res, next) => {
 
     console.log(`[Onboard] Email verified: ${row.email}`);
 
-    res.json({
-      token: jwtToken,
-      tenant: {
-        id:               row.tenant_id,
-        name:             row.tenant_name,
-        slug:             row.slug,
-        agent_name:       row.agent_name,
-        widget_key:       row.widget_api_key,
-        primary_color:    row.primary_color,
-        secondary_color:  row.secondary_color,
-        onboarding_steps: row.onboarding_steps,
-        widget_verified:  false,
-      },
-      admin: {
-        id:         row.admin_id,
-        email:      row.email,
-        first_name: row.first_name,
-        last_name:  row.last_name,
-        role:       row.role,
-      },
-    });
+    // verify query doesn't select widget_verified_at — admin is fresh out of
+    // signup so widget cannot have been verified yet.
+    res.json(buildAuthResponse(jwtToken, row, { widgetVerified: false }));
 
   } catch (err) { next(err); }
 });
@@ -453,27 +468,9 @@ router.post('/login', async (req, res, next) => {
       role:      row.role,
     });
 
-    res.json({
-      token,
-      tenant: {
-        id:               row.tenant_id,
-        name:             row.tenant_name,
-        slug:             row.slug,
-        agent_name:       row.agent_name,
-        widget_key:       row.widget_api_key,
-        primary_color:    row.primary_color,
-        secondary_color:  row.secondary_color,
-        onboarding_steps: row.onboarding_steps,
-        widget_verified:  row.widget_verified_at !== null,
-      },
-      admin: {
-        id:         row.admin_id,
-        email:      row.email,
-        first_name: row.first_name,
-        last_name:  row.last_name,
-        role:       row.role,
-      },
-    });
+    res.json(buildAuthResponse(token, row, {
+      widgetVerified: row.widget_verified_at !== null,
+    }));
 
   } catch (err) { next(err); }
 });

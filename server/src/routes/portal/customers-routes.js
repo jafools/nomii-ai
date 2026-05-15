@@ -37,6 +37,25 @@ const { markStepComplete } = require('../../utils/onboarding');
 function parsePage(raw, defaultVal = 1)  { const n = parseInt(raw, 10); return isNaN(n) ? defaultVal : Math.max(1, Math.min(n, 10000)); }
 function parseLimit(raw, max = 100, def = 25) { const n = parseInt(raw, 10); return isNaN(n) ? def : Math.max(1, Math.min(n, max)); }
 
+// ── Helper: verify a /customers/:id path-param customer belongs to this tenant.
+//
+// Returns true if the customer exists and the caller can proceed. Returns
+// false after writing a 404 response — the route handler should `return;`
+// immediately. Used by every /customers/:id/data and /customers/:id/labels
+// handler to enforce tenant isolation before touching `customer_data` /
+// `customer_labels` rows that don't carry a tenant_id column of their own.
+async function verifyCustomerOwnership(res, customerId, tenantId) {
+  const { rows } = await db.query(
+    `SELECT id FROM customers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
+    [customerId, tenantId]
+  );
+  if (!rows.length) {
+    res.status(404).json({ error: 'Customer not found' });
+    return false;
+  }
+  return true;
+}
+
 // POST /api/portal/customers/ai-map
 // Accepts { headers: string[], sample_rows: object[] }
 // Asks Claude to map the tenant's CSV columns → our fields.
@@ -627,12 +646,7 @@ router.get('/:id/data', async (req, res, next) => {
     const { id } = req.params;
     const category = req.query.category;
 
-    // Verify customer belongs to this tenant
-    const { rows: cRows } = await db.query(
-      `SELECT id FROM customers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
-      [id, req.portal.tenant_id]
-    );
-    if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
+    if (!await verifyCustomerOwnership(res, id, req.portal.tenant_id)) return;
 
     const { rows } = await db.query(
       `SELECT id, category, label, value, secondary_value, value_type, metadata, recorded_at, source
@@ -676,11 +690,7 @@ router.post('/:id/data', async (req, res, next) => {
       return res.status(400).json({ error: 'metadata must be an object' });
     }
 
-    const { rows: cRows } = await db.query(
-      `SELECT id FROM customers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
-      [id, req.portal.tenant_id]
-    );
-    if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
+    if (!await verifyCustomerOwnership(res, id, req.portal.tenant_id)) return;
 
     const { rows } = await db.query(
       `INSERT INTO customer_data
@@ -712,11 +722,7 @@ router.delete('/:id/data/:category', async (req, res, next) => {
   try {
     const { id, category } = req.params;
 
-    const { rows: cRows } = await db.query(
-      `SELECT id FROM customers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
-      [id, req.portal.tenant_id]
-    );
-    if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
+    if (!await verifyCustomerOwnership(res, id, req.portal.tenant_id)) return;
 
     const { rowCount } = await db.query(
       `DELETE FROM customer_data
@@ -734,11 +740,7 @@ router.delete('/:id/data/:category/:label', async (req, res, next) => {
   try {
     const { id, category, label } = req.params;
 
-    const { rows: cRows } = await db.query(
-      `SELECT id FROM customers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
-      [id, req.portal.tenant_id]
-    );
-    if (!cRows.length) return res.status(404).json({ error: 'Customer not found' });
+    if (!await verifyCustomerOwnership(res, id, req.portal.tenant_id)) return;
 
     const { rowCount } = await db.query(
       `DELETE FROM customer_data
