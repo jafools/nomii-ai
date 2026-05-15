@@ -218,5 +218,4 @@ module.exports = {
   SOURCES,
   // Helpers exposed for tests
   validateTarget,
-  locateArray,
 };

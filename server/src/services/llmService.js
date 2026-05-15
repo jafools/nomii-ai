@@ -4,7 +4,7 @@
  * Thin public surface over the LLM provider adapters in ./llm/. Holds
  * the cross-cutting concerns that aren't provider-specific:
  *   - tenant API key resolution (resolveApiKey — pure BYOK rules from v3.3.27)
- *   - PII tokenizer construction (buildTokenizer + tokenizationEnabledFor)
+ *   - PII tokenizer construction (buildTokenizer)
  *   - breach logging (logBreach)
  *   - the high-level getAgentResponse entry point that the chat path calls
  *
@@ -350,7 +350,6 @@ module.exports = {
   resolveApiKey,
   sanitiseResponse,
   buildTokenizer,
-  tokenizationEnabledFor,
   logBreach,
   NoApiKeyError,
 };

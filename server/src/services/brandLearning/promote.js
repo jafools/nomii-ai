@@ -27,8 +27,11 @@
  * increment session_count by 1 total — preserving the design intent
  * that "one cycle = one repetition signal".
  *
- * Phase 3 will replace the token-overlap heuristic with AgentDB HNSW
- * semantic dedup (handles synonyms, multi-language).
+ * Phase 3 (v3.5.6) adds an embedding-based semantic-dedup pre-pass in
+ * worker.js that rewrites candidate text to match semantically-similar
+ * existing entries before this file's exact-match fast path runs — so
+ * the token-overlap heuristic below remains the fallback layer for
+ * tenants without an embedding-capable provider key.
  */
 
 'use strict';
