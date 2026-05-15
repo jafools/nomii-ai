@@ -45,6 +45,19 @@ const {
 } = require('../server/src/services/brandLearning/distill');
 
 const {
+  cosineSimilarity,
+  cosineDistance,
+  findBestMatch,
+  buildExistingTextMap,
+  mergeBucketPure,
+  resolveEmbedFn,
+  curateTargetToEmbeddingBucket,
+  canonicalKeyFromCurateItem,
+  DEFAULT_DISTANCE_THRESHOLD,
+  EMBEDDING_BUCKETS,
+} = require('../server/src/services/brandLearning/embeddings');
+
+const {
   renderBrandSoulForPrompt,
 } = require('../server/src/services/brandLearning/render');
 
@@ -873,6 +886,349 @@ test('buildAnchorList ignores garbage entries (non-object, missing field, non-st
   assertNotContains(out, '- null');
   assertNotContains(out, 'wrong field');
   assertNotContains(out, '- 42');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3c. embeddings.js — Phase 3 semantic dedup (v3.5.6)
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nEmbedding semantic dedup');
+
+// ---- pure math ----------------------------------------------------------
+
+test('cosineSimilarity identical vectors → 1', () => {
+  const v = [1, 0, 0];
+  assertEqual(cosineSimilarity(v, v), 1);
+});
+
+test('cosineSimilarity orthogonal vectors → 0', () => {
+  assertEqual(cosineSimilarity([1, 0, 0], [0, 1, 0]), 0);
+});
+
+test('cosineSimilarity opposite vectors → -1', () => {
+  assertEqual(cosineSimilarity([1, 0, 0], [-1, 0, 0]), -1);
+});
+
+test('cosineSimilarity handles empty / mismatched / non-array input', () => {
+  assertEqual(cosineSimilarity([], []), 0);
+  assertEqual(cosineSimilarity([1, 2], [1, 2, 3]), 0);
+  assertEqual(cosineSimilarity(null, [1]), 0);
+  assertEqual(cosineSimilarity([0, 0, 0], [1, 0, 0]), 0);
+});
+
+test('cosineDistance equals 1 - similarity', () => {
+  const a = [1, 0, 0];
+  const b = [0.95, 0.31, 0];
+  const sim = cosineSimilarity(a, b);
+  const dist = cosineDistance(a, b);
+  assert(Math.abs(dist - (1 - sim)) < 1e-12);
+  assert(dist > 0 && dist < 0.06, 'small angle → small distance');
+});
+
+// ---- findBestMatch ------------------------------------------------------
+
+test('findBestMatch returns null for empty/null query or stored', () => {
+  assertEqual(findBestMatch([], [{ canonical_key: 'k', embedding: [1, 0] }]), null);
+  assertEqual(findBestMatch([1, 0], []), null);
+  assertEqual(findBestMatch(null, [{ canonical_key: 'k', embedding: [1, 0] }]), null);
+});
+
+test('findBestMatch returns the closest entry when ≤ threshold', () => {
+  const stored = [
+    { canonical_key: 'far',  embedding: [0, 1, 0] },
+    { canonical_key: 'near', embedding: [0.95, 0.31, 0] },
+    { canonical_key: 'mid',  embedding: [0.5, 0.5, 0.5] },
+  ];
+  const best = findBestMatch([1, 0, 0], stored, 0.2);
+  assert(best);
+  assertEqual(best.canonical_key, 'near');
+  assert(best.distance < 0.2);
+});
+
+test('findBestMatch returns null when nothing crosses threshold', () => {
+  const stored = [{ canonical_key: 'far', embedding: [0, 1, 0] }];
+  assertEqual(findBestMatch([1, 0, 0], stored, 0.1), null);
+});
+
+test('findBestMatch skips embeddings with wrong dimensions', () => {
+  const stored = [
+    { canonical_key: 'bad',  embedding: [1, 0] },          // 2-dim
+    { canonical_key: 'good', embedding: [1, 0, 0] },       // 3-dim
+  ];
+  const best = findBestMatch([1, 0, 0], stored, 0.5);
+  assertEqual(best && best.canonical_key, 'good');
+});
+
+// ---- buildExistingTextMap ----------------------------------------------
+
+test('buildExistingTextMap pulls canonical_key → text from object list', () => {
+  const m = buildExistingTextMap(
+    [
+      { question: 'How tall?', canonical_key: 'how tall' },
+      { question: 'What size?', canonical_key: 'what size' },
+    ],
+    'question',
+  );
+  assertEqual(m.get('how tall'), 'How tall?');
+  assertEqual(m.get('what size'), 'What size?');
+  assertEqual(m.size, 2);
+});
+
+test('buildExistingTextMap skips malformed entries', () => {
+  const m = buildExistingTextMap(
+    [
+      null,
+      'bare string',
+      { canonical_key: 'no-question-field' },
+      { question: 42, canonical_key: 'non-string-q' },
+      { question: 'good', canonical_key: 'good-key' },
+    ],
+    'question',
+  );
+  assertEqual(m.size, 1);
+  assertEqual(m.get('good-key'), 'good');
+});
+
+// ---- mergeBucketPure ----------------------------------------------------
+
+test('mergeBucketPure: byte-equal candidate is skipped without embed call', async () => {
+  let embedCalls = 0;
+  const embedFn = async () => { embedCalls++; return [1, 0, 0]; };
+  const candidates = [{ question: 'how tall?', suggested_answer: 'A' }];
+  // existing canonical_key for "how tall?" → "how tall"
+  const existingTexts = new Map([['how tall', 'How tall?']]);
+
+  const r = await mergeBucketPure({
+    candidates, textField: 'question',
+    existingTexts, stored: [], embedFn,
+  });
+  assertEqual(r.skipped, 1);
+  assertEqual(r.merged, 0);
+  assertEqual(r.inserted, 0);
+  assertEqual(embedCalls, 0, 'must not call embedFn when byte-equal exists');
+});
+
+test('mergeBucketPure: semantically-close candidate gets rewritten to existing text', async () => {
+  const embedFn = async (text) => {
+    if (text === 'Why is pricing unclear?') return [0.95, 0.31, 0];
+    if (text === 'Why is pricing confusing?') return [1, 0, 0];
+    return [0, 0, 1];
+  };
+  const candidates = [{ question: 'Why is pricing unclear?', suggested_answer: 'A' }];
+  const existingTexts = new Map([['why is pricing confusing', 'Why is pricing confusing?']]);
+  const stored = [{ canonical_key: 'why is pricing confusing', embedding: [1, 0, 0] }];
+
+  const r = await mergeBucketPure({
+    candidates, textField: 'question',
+    existingTexts, stored, embedFn,
+  });
+  assertEqual(r.merged, 1);
+  assertEqual(r.inserted, 0);
+  // The candidate's question was REWRITTEN in place to the existing text.
+  assertEqual(candidates[0].question, 'Why is pricing confusing?');
+});
+
+test('mergeBucketPure: semantically-distant candidate gets queued for insertion', async () => {
+  const embedFn = async (text) => {
+    if (text === 'Where do you ship?') return [0, 1, 0];
+    return [1, 0, 0];
+  };
+  const candidates = [{ question: 'Where do you ship?', suggested_answer: 'A' }];
+  const existingTexts = new Map([['how tall', 'How tall?']]);
+  const stored = [{ canonical_key: 'how tall', embedding: [1, 0, 0] }];
+
+  const r = await mergeBucketPure({
+    candidates, textField: 'question',
+    existingTexts, stored, embedFn,
+  });
+  assertEqual(r.merged, 0);
+  assertEqual(r.inserted, 1);
+  assertEqual(r.newEmbeddings.length, 1);
+  assertEqual(r.newEmbeddings[0].canonical_key, 'where do you ship');
+  // Candidate text NOT rewritten (no match) — preserves the LLM's original wording.
+  assertEqual(candidates[0].question, 'Where do you ship?');
+});
+
+test('mergeBucketPure: embedFn returning null counts as error, no rewrite, no insert', async () => {
+  const embedFn = async () => null;
+  const candidates = [{ question: 'Anything', suggested_answer: 'A' }];
+  const r = await mergeBucketPure({
+    candidates, textField: 'question',
+    existingTexts: new Map(),
+    stored: [],
+    embedFn,
+  });
+  assertEqual(r.errors, 1);
+  assertEqual(r.merged, 0);
+  assertEqual(r.inserted, 0);
+});
+
+test('mergeBucketPure: textField=null works for bare-string candidates (voice_cues, audience)', async () => {
+  const embedFn = async (text) => {
+    if (text === 'be concise') return [1, 0, 0];
+    if (text === 'keep it short') return [0.97, 0.24, 0];
+    return [0, 0, 1];
+  };
+  const candidates = ['keep it short'];
+  const existingTexts = new Map([['be concise', 'be concise']]);
+  const stored = [{ canonical_key: 'be concise', embedding: [1, 0, 0] }];
+
+  const r = await mergeBucketPure({
+    candidates, textField: null,
+    existingTexts, stored, embedFn,
+  });
+  assertEqual(r.merged, 1);
+  assertEqual(candidates[0], 'be concise', 'string slot rewritten in place');
+});
+
+test('mergeBucketPure: embedFn=null short-circuits with all zeros', async () => {
+  const candidates = [{ question: 'foo' }];
+  const r = await mergeBucketPure({
+    candidates, textField: 'question',
+    existingTexts: new Map(),
+    stored: [],
+    embedFn: null,
+  });
+  assertEqual(r.merged, 0);
+  assertEqual(r.inserted, 0);
+  assertEqual(r.skipped, 0);
+  assertEqual(r.errors, 0);
+});
+
+// ---- Phase 3 LIMITATION-flip test ---------------------------------------
+
+test('Phase 3 fixes the transitive-paraphrase LIMITATION (3 cycles → 1 promotion)', async () => {
+  // Same 3 phrasings as the LIMITATION test in section 2 — but routed
+  // through the v3.5.6 embedding pre-pass before applyAndPromote. With
+  // semantically-close embeddings, all 3 cycles merge and promote.
+  const phrasings = [
+    { question: 'Why is pricing confusing or unclear?',                            suggested_answer: 'A1' },
+    { question: 'Why is your pricing unclear, can you make pricing transparent?', suggested_answer: 'A2' },
+    { question: 'Is pricing transparent and clearly displayed?',                   suggested_answer: 'A3' },
+  ];
+  // Mock embeddings: 3 vectors all within ~0.05–0.10 cosine distance of
+  // each other (mimicking real semantic closeness of paraphrases).
+  const EMB = {
+    [phrasings[0].question]: [1.00, 0.00, 0.00],
+    [phrasings[1].question]: [0.95, 0.31, 0.00],
+    [phrasings[2].question]: [0.90, 0.35, 0.25],
+  };
+  const embedFn = async (text) => EMB[text] || [0, 0, 1];
+
+  let soul = {}, memory = {}, audience = {};
+  let storedFaqs = [];   // simulates the brand_learning_embeddings table for bucket=faqs
+
+  for (const p of phrasings) {
+    const candidates = { faqs: [{ ...p }] };
+
+    // Build existing-text map from soul + memory (same shape the worker uses).
+    const existingTexts = new Map();
+    for (const [k, v] of buildExistingTextMap(soul.faqs || [], 'question')) existingTexts.set(k, v);
+    for (const [k, v] of buildExistingTextMap(memory.candidate_faqs || [], 'question')) {
+      if (!existingTexts.has(k)) existingTexts.set(k, v);
+    }
+
+    const merge = await mergeBucketPure({
+      candidates: candidates.faqs,
+      textField: 'question',
+      existingTexts,
+      stored: storedFaqs,
+      embedFn,
+    });
+
+    // Persist new embeddings for future cycles (simulates the DB upsert).
+    storedFaqs = storedFaqs.concat(merge.newEmbeddings);
+
+    const r = applyAndPromote({
+      currentSoul: soul, currentMemory: memory, currentAudience: audience,
+      candidates, minSessions: 3, thisBatchSessions: 1,
+    });
+    soul = r.nextSoul; memory = r.nextMemory; audience = r.nextAudience;
+  }
+
+  // The LIMITATION test (section 2) ended with: soul.faqs=0, memory.candidate_faqs=2.
+  // Phase 3 fixes this — all 3 cycles merge into one concept that promotes at cycle 3.
+  assertEqual((soul.faqs || []).length, 1, 'all 3 phrasings should resolve to one promoted FAQ');
+  assertEqual((memory.candidate_faqs || []).length, 0, 'candidate should have been promoted out');
+});
+
+// ---- resolveEmbedFn -----------------------------------------------------
+
+test('resolveEmbedFn returns null when key is missing', () => {
+  assertEqual(resolveEmbedFn({ apiKey: '',     provider: 'openai' }), null);
+  assertEqual(resolveEmbedFn({ apiKey: null,   provider: 'openai' }), null);
+  assertEqual(resolveEmbedFn({ apiKey: undefined, provider: 'openai' }), null);
+});
+
+test('resolveEmbedFn returns null for non-OpenAI providers', () => {
+  assertEqual(resolveEmbedFn({ apiKey: 'sk-test', provider: 'anthropic' }), null);
+  assertEqual(resolveEmbedFn({ apiKey: 'sk-test', provider: 'cohere' }), null);
+  assertEqual(resolveEmbedFn({ apiKey: 'sk-test', provider: undefined }), null);
+});
+
+test('resolveEmbedFn returns a function for OpenAI + key (does NOT call the API)', () => {
+  const fn = resolveEmbedFn({ apiKey: 'sk-test', provider: 'openai' });
+  assert(typeof fn === 'function');
+});
+
+// ---- curate-to-embedding bucket mapping ---------------------------------
+
+test('curateTargetToEmbeddingBucket maps soul + memory pairs to shared concept bucket', () => {
+  assertEqual(curateTargetToEmbeddingBucket('soul',   'faqs'),               'faqs');
+  assertEqual(curateTargetToEmbeddingBucket('memory', 'candidate_faqs'),     'faqs');
+  assertEqual(curateTargetToEmbeddingBucket('soul',   'processes'),          'processes');
+  assertEqual(curateTargetToEmbeddingBucket('memory', 'candidate_processes'), 'processes');
+  assertEqual(curateTargetToEmbeddingBucket('soul',   'voice_cues'),         'voice_cues');
+  assertEqual(curateTargetToEmbeddingBucket('memory', 'candidate_voice_cues'), 'voice_cues');
+});
+
+test('curateTargetToEmbeddingBucket maps audience sources to per-sub-bucket name', () => {
+  assertEqual(curateTargetToEmbeddingBucket('audience_profile',   'common_pain_points'),   'audience_pain_points');
+  assertEqual(curateTargetToEmbeddingBucket('audience_profile',   'common_objections'),    'audience_objections');
+  assertEqual(curateTargetToEmbeddingBucket('audience_profile',   'common_request_types'), 'audience_request_types');
+  assertEqual(curateTargetToEmbeddingBucket('audience_candidate', 'common_pain_points'),   'audience_pain_points');
+});
+
+test('curateTargetToEmbeddingBucket returns null for unknown pairs', () => {
+  assertEqual(curateTargetToEmbeddingBucket('soul', 'unknown'), null);
+  assertEqual(curateTargetToEmbeddingBucket('unknown', 'faqs'), null);
+  assertEqual(curateTargetToEmbeddingBucket('audience_profile', 'unknown'), null);
+});
+
+test('canonicalKeyFromCurateItem reads canonical_key off object entries', () => {
+  assertEqual(canonicalKeyFromCurateItem('soul',   { canonical_key: 'k1', question: 'Q' }), 'k1');
+  assertEqual(canonicalKeyFromCurateItem('memory', { canonical_key: 'k2', name: 'P' }),     'k2');
+  assertEqual(canonicalKeyFromCurateItem('audience_candidate', { canonical_key: 'k3', value: 'v' }), 'k3');
+});
+
+test('canonicalKeyFromCurateItem canonicalizes raw-string audience_profile entries', () => {
+  // audience_profile stores raw strings; canonicalKey() strips punctuation +
+  // lowercases.
+  assertEqual(canonicalKeyFromCurateItem('audience_profile', 'Slow Response Times!'),
+              'slow response times');
+});
+
+test('canonicalKeyFromCurateItem returns null on missing / bad input', () => {
+  assertEqual(canonicalKeyFromCurateItem('soul', null), null);
+  assertEqual(canonicalKeyFromCurateItem('soul', {}), null);
+  assertEqual(canonicalKeyFromCurateItem('audience_profile', null), null);
+  assertEqual(canonicalKeyFromCurateItem('audience_profile', 42), null);
+});
+
+// ---- sanity ------------------------------------------------------------
+
+test('EMBEDDING_BUCKETS list matches migration 042 CHECK constraint', () => {
+  // If you change one, change the other.
+  const expected = [
+    'faqs', 'processes', 'voice_cues',
+    'audience_pain_points', 'audience_objections', 'audience_request_types',
+  ];
+  assertEqual(JSON.stringify(EMBEDDING_BUCKETS), JSON.stringify(expected));
+});
+
+test('DEFAULT_DISTANCE_THRESHOLD is conservative (0.10–0.30)', () => {
+  assert(DEFAULT_DISTANCE_THRESHOLD >= 0.10 && DEFAULT_DISTANCE_THRESHOLD <= 0.30,
+         `threshold ${DEFAULT_DISTANCE_THRESHOLD} should sit in the conservative window`);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
