@@ -5,7 +5,157 @@
 
 ---
 
-## Last updated: 2026-05-12 (PM) — **v3.5.4 LIVE** — Brand-learning Phase 2 (owner curation)
+## Last updated: 2026-05-15 — **v3.5.5 LIVE** — Brand-learning distill-prompt anchoring
+
+Sub-session arc: same-day second ship after the v3.5.4 canary walk (sub-goal 1 of the trilogy `/goal`). Sub-goal 2: feed existing `brand_soul` + `brand_memory` canonical keys to the Haiku distiller as a "reuse-or-skip" anchor list at generation time. Complements the v3.5.3 fuzzy-match post-filter (which catches paraphrases AFTER distillation) by preventing them BEFORE — the LLM sees the existing phrasings up front and converges on them instead of inventing parallel variants each cycle. Phase 3 (HNSW semantic dedup) is still the planned permanent fix; anchoring is the complementary generation-time stopgap.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#188](https://github.com/jafools/shenmay-ai/pull/188)** — distill-prompt anchoring · merge commit `36fb8c8` |
+| Tag | **v3.5.5** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** (run [25919656528](https://github.com/jafools/shenmay-ai/actions/runs/25919656528)) |
+| Unit tests | brand-learning **61/61** (52 existing + 9 new under "Distill anchoring" section) |
+| Files touched | 4 (1 service change + 1 worker change + 1 index change + 1 test extension) |
+| Wall-clock per-PR CI → prod live | ~40 min (5/5 per-PR CI ~3 min → squash-merge → 5×5 dispatch ~14 min → tag → GHCR rebuild ~1 min → Hetzner deploy + smoke ~5 min) |
+| Migration | **none** — pure code change, no schema / no API contract change |
+
+### What v3.5.5 does
+
+**`server/src/services/brandLearning/distill.js`** gets three new exports:
+
+- `buildAnchorList(currentSoul, currentMemory, opts)` — pure helper, capped at `ANCHOR_MAX_PER_BUCKET=20` items per bucket, dedupes case-insensitively across soul + memory, returns `''` when nothing to anchor.
+- `buildDistillSystem(currentSoul, currentMemory)` — returns `DISTILL_SYSTEM` unchanged when no anchor; otherwise APPENDS the anchor section AFTER the absolute-rules block (so the PII anti-extraction rules stay at the top of the prompt, load-bearing position preserved).
+- The existing `distillBrandObservations` now accepts optional `currentSoul` + `currentMemory` params and feeds them through `buildDistillSystem`.
+
+Anchor list draws from 6 buckets: `soul.faqs/processes/voice_cues` + `memory.candidate_audience.{pain_points|objections|request_types}`. Audience candidates are pulled from `brand_memory.candidate_audience.*` (objects with `.value` strings) since `audience_profile.*` (raw strings, promoted) is read-only from distill's perspective.
+
+**`server/src/services/brandLearning/worker.js`** moves the `safeDecryptJson` calls for `currentSoul` + `currentMemory` + `currentAudience` from step 6 (`applyAndPromote`) to step 4b (right after scrub, before distill). Zero extra DB / crypto cost — same 3 reads, just reordered so the decrypted state is available for the anchor list at distill time.
+
+**`server/src/services/brandLearning/index.js`** re-exports `buildAnchorList` + `buildDistillSystem` so tests can import them via the package surface.
+
+**Tests** — 9 new tests under a fresh "Distill anchoring" section in `tests/brand-learning.test.js`:
+1. Empty inputs → `''`
+2. Soul.faqs → renders with correct header
+3. Soul + memory dedupe on lowercase
+4. All 6 buckets covered when populated
+5. Cap respects `opts.maxPerBucket`
+6. Default cap is `ANCHOR_MAX_PER_BUCKET=20`
+7. `buildDistillSystem` empty → identical to `DISTILL_SYSTEM`
+8. `buildDistillSystem` populated → appends, base prompt still at the top
+9. Garbage entries (non-object, missing field, wrong field type) are filtered out
+
+Lint clean. Server smoke `require()` of the brand-learning module confirms exports + behavior. Per-PR CI: 5/5 green (client-build, e2e-saas, onprem-e2e, selfhosted-smoke, server-test).
+
+### Prod smoke
+
+```
+$ docker exec shenmay-backend node -e "const bl=require('./src/services/brandLearning'); …"
+buildAnchorList OK
+buildDistillSystem OK
+distillBrandObservations OK
+normalizeObservations OK
+
+$ buildAnchorList({}, {}) → ""
+$ buildAnchorList({faqs:[{question:'What are your hours?'}]}, {}) → contains "What are your hours?"
+$ buildDistillSystem with one FAQ → length > DISTILL_SYSTEM.length (appends correctly)
+
+$ curl https://shenmay.ai/api/health → {"status":"ok","service":"shenmay-ai", …}
+$ docker inspect shenmay-backend  --format '{{.Config.Image}}' → ghcr.io/jafools/shenmay-backend:3.5.5
+$ docker inspect shenmay-frontend --format '{{.Config.Image}}' → ghcr.io/jafools/shenmay-frontend:3.5.5
+```
+
+Backend logs on startup: migrations 040/041 skipped (already applied), brand-learning worker started, initial cycle ran cleanly with "No tenants opted in — cycle complete" (expected — prod has 0 opted-in tenants since the Apples canary reset in May). No errors.
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.5` |
+| Hetzner repo | checked out at `v3.5.5` |
+| Internal `/api/health` | 200 OK |
+| External `/api/health` | 200 OK via Cloudflare |
+| Brand-learning worker | running, 0 opted-in tenants on prod (anchor logic loaded + smoke-verified on the running container) |
+
+### Carry-over
+
+Sub-goal 2 of the active `/goal` complete. Awaiting user OK before starting:
+
+- **Sub-goal 3 — Phase 3 HNSW semantic dedup** (the big one). Replace v3.5.3 Szymkiewicz–Simpson with OpenAI `text-embedding-3-small` + pgvector HNSW. Install pgvector extension via migration 042, new `brand_learning_embeddings` table with HNSW index, wire `promote.js` to embed canonical_keys + ANN-search same-bucket entries with cosine distance threshold (target ~0.15-0.20, tune via staging canary). Fallback to v3.5.3 token-overlap when no embedding key configured (doesn't block opt-in). Extend `promote.test.js` with deterministic embedding mock. Flip the `LIMITATION` test from pinned-passing-with-known-limitation to actual-passing. Ship as `v3.5.6` with 5×5 gate + Hetzner deploy clean. Confirm via staging canary on a fresh tenant: ≥1 fewer parallel-row per bucket vs v3.5.3 baseline OR audience_profile populating with previously-missed synonyms.
+
+### Patterns to lift into MEMORY.md
+
+- **Anchoring complements fuzzy dedup, doesn't replace it.** Generation-time + post-hoc form a defense-in-depth pair: anchor list catches cases where the LLM would otherwise emit a fresh phrasing for the same concept; fuzzy-match catches cases where anchoring didn't fire (e.g. legitimately new wording that maps to an existing concept). Phase 3 HNSW will catch a third tier: cross-language, transitive (anchored on first-seen vs anchored on similarity).
+- **Pre-decrypt-once pattern.** Worker decrypts brand_soul/memory/audience at step 4b instead of step 6 — same 3 reads, available to both distill (anchor) and applyAndPromote (merge) in one decryption round. Pattern generalizes: any time a service needs decrypted state at two consecutive pipeline stages, decrypt once at the earliest stage.
+
+---
+
+## Previous: 2026-05-15 — **v3.5.4 canary walk on staging — CLEAN, no code changes**
+
+Sub-session arc: 3 days after the v3.5.4 ship, close the carry-over loop from the wrap notes — "Apples canary on the new buttons: seed candidates, click trash + Approve-now via Chrome MCP / direct UI to prove the round-trip works in a browser session. Static bundle verification + unit tests don't cover the live React state machine — should walk it once." Did it on a fresh staging tenant instead of touching Apples on prod. Sub-goal 1 of a 3-step `/goal` covering the trilogy carry-over (canary → distill anchoring → Phase 3 HNSW).
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| Surfaces walked | **7 list sections / 8 distinct curate actions** (3 brand_soul lists, 1 Watching candidates list with delete + promote, 3 audience_profile lists) |
+| Defects found | **0** |
+| Code changes | **none** — audit-only ship |
+| Tag cut | none — pure verification |
+| Network panel | **8/8 POSTs hit 200** (7 → `/items/delete`, 1 → `/items/promote`) |
+| Audit table | **8 rows** in `brand_learning_incidents` (7 `manual_delete` + 1 `manual_promote`) with correct `{source, bucket, canonical_key}` payloads |
+| React state machine | **8/8 lists updated without reload** — counters re-rendered (Learned facts 3→2→3, Pending 2→0), items disappeared from their sections, toasts fired, promoted FAQ migrated to Frequent questions section live |
+| Wall-clock | ~30 min including seed-script authoring |
+
+### How the canary ran
+
+1. **DB-seeded fresh staging tenant** (`Canary Co`, id `11111111-2222-3333-4444-555555555555`) on `pontenprox / shenmay_ai_staging` via single transaction: INSERT `tenants` with `brand_learning_enabled=true` + plain-JSONB `brand_soul`/`brand_memory`/`audience_profile` (per `reference_db_seed_soul_memory` — `safeDecryptJson` passes plain objects through), INSERT `tenant_admins` with bcrypt-hashed password + `email_verified=true`, INSERT `subscriptions` row with `plan='master'` `status='active'` to clear `SubscriptionGate` (every dashboard page is gated, including brand-learning — this is a setup quirk for fresh canary tenants, not a v3.5.4 bug). All 7 lists seeded with at least one entry; `candidate_faqs` got 2 entries so both buttons could be tested independently.
+2. **Pre-flight via curl**: `POST /api/onboard/login` → portal JWT → `GET /api/portal/brand-learning` returned all artifacts decrypted with `summary: {soul:{faqs:1,processes:1,voice_cues:1}, memory:{candidate_faqs:2}, audience:{1,1,1}}`. Pre-walk state confirmed.
+3. **Browser walk via Claude-in-Chrome MCP** (Main Desktop): navigated to `/dashboard/brand-learning`, injected the portal token via `localStorage.setItem('shenmay_portal_token', ...)`, overrode `window.confirm = () => true` (each delete prompts a native confirm dialog that would block automation), then clicked each button via DOM `querySelector('button[aria-label="..."]')` — `CurateActions` exposes a stable per-item `aria-label` so the click target is deterministic.
+4. **Per-action verification** via `read_network_requests` (URL pattern `/brand-learning/items`) — caught all 8 POSTs with `200` status codes in arrival order matching click order.
+5. **Post-walk verification**: re-fetched `GET /api/portal/brand-learning` — soul had exactly 1 FAQ (the promoted one, with `manually_promoted: true` flag set per `curate.js:175`), all other 6 lists at 0. Audit log showed 8 rows with correct types/sources/buckets.
+6. **Cleanup**: `DELETE FROM tenants WHERE id = '...'` cascaded to `tenant_admins`, `subscriptions`, `brand_learning_incidents` — staging back to 0 in all 4 tables.
+
+### What v3.5.4 was verified against
+
+| Surface | Action | Endpoint hit | Status | DB mutation | Audit row | UI updated |
+|---|---|---|---|---|---|---|
+| `brand_soul.faqs` ("What are your business hours?") | delete | `/items/delete` | 200 | faq removed | `manual_delete soul/faqs` | "No questions have crossed…" empty state, Learned facts 3→2 |
+| `brand_memory.candidate_faqs` ("Do you offer free shipping?") | delete | `/items/delete` | 200 | candidate removed | `manual_delete memory/candidate_faqs` | row gone from Watching |
+| `brand_memory.candidate_faqs` ("Can I cancel my subscription anytime?") | promote | `/items/promote` | 200 | candidate moved → `soul.faqs` with `manually_promoted:true` + `last_seen_at`/`promoted_at`/`session_count` populated | `manual_promote memory/candidate_faqs` | Frequent questions section now shows the promoted FAQ with 2× SESSIONS, Watching empty, Learned facts 2→3 |
+| `brand_soul.processes` ("Refund request flow") | delete | `/items/delete` | 200 | process removed | `manual_delete soul/processes` | empty-state message |
+| `brand_soul.voice_cues` ("Visitors prefer concise replies…") | delete | `/items/delete` | 200 | voice cue removed | `manual_delete soul/voice_cues` | empty-state message |
+| `audience_profile.common_pain_points` | delete | `/items/delete` | 200 | raw string removed (canonicalized on both sides per `curate.js:122`) | `manual_delete audience_profile/common_pain_points` | row gone |
+| `audience_profile.common_objections` | delete | `/items/delete` | 200 | raw string removed | `manual_delete audience_profile/common_objections` | row gone |
+| `audience_profile.common_request_types` | delete | `/items/delete` | 200 | raw string removed | `manual_delete audience_profile/common_request_types` | row gone, Audience profile section now empty-state |
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.4` — unchanged (no deploy this session) |
+| Staging `:edge` | exercised end-to-end on a fresh tenant; staging DB clean post-cleanup |
+| Brand-learning worker | 0 opted-in tenants on prod (staging tenant deleted) |
+| v3.5.4 curation buttons | confirmed live React state machine matches static bundle verification + unit tests from May 12 |
+
+### Carry-over
+
+Sub-goal 1 of the active `/goal` (`docs/SESSION_NOTES.md` updated, `.claude/goal/active.md` reflects sub-goal 1 complete). Awaiting user OK before starting:
+
+1. **Sub-goal 2 — distill-prompt anchoring** (~1hr, self-contained). Feed existing `brand_memory` canonical_keys to the Haiku distiller as a "reuse-or-skip" anchor list in the system prompt. Goal: LLM converges on existing phrasings at generation time, complementing the v3.5.3 fuzzy-match post-filter. Plan stub: read `server/src/services/brandLearning/distill.js`, modify system prompt to include anchor list, unit test that anchor list reaches the prompt + degrades on empty brand_memory, ship as v3.5.5 with 5×5 gate + Hetzner deploy.
+2. **Sub-goal 3 — Phase 3 HNSW semantic dedup** (the big one). Replace v3.5.3 Szymkiewicz–Simpson with `text-embedding-3-small` + pgvector HNSW. Plan stub: install pgvector via migration 042, new `brand_learning_embeddings` table, wire `promote.js` to embed + ANN-search same-bucket existing entries, fallback to v3.5.3 token-overlap when no embedding key, flip the `LIMITATION` test, ship as v3.5.6 with 5×5 gate + staging canary showing fewer parallel rows.
+
+### Patterns to lift into MEMORY.md
+
+- **DB-seed + master-subscription canary recipe** — bypasses the 14-day trial + onboarding wizard + subscription gate in one transaction. Combines `reference_db_seed_soul_memory` + `reference_db_skip_onboarding` + new finding (every dashboard page is `SubscriptionGate`-wrapped, so canary tenants need a `subscriptions` row with `plan='master'` or `status='active'`). ~30sec setup, ~5sec cleanup via DELETE cascade.
+- **localStorage token injection + DOM aria-label click** as a faster Chrome MCP pattern than form-fill login + visible-button click. Skips the login form entirely (extra coords + key presses) and survives opacity/visibility quirks (per `feedback_chrome_mcp_hover_no_css_hover`).
+- **`window.confirm = () => true` override** before destructive button clicks in Chrome MCP — native confirms block automation otherwise.
+
+---
+
+## Previous: 2026-05-12 (PM) — **v3.5.4 LIVE** — Brand-learning Phase 2 (owner curation)
 
 Sub-session arc: with v3.5.3 just shipped and Apples' prod canary confirming the dedup actually works, the next gap is owner control. Without curation, a brand owner can watch their AI learn but can't intervene — they can't delete an FAQ that promoted by mistake, and they can't manually promote a pending candidate they already know is correct. Ship Phase 2 same-day: pure helper + 2 portal routes + migration 041 + frontend wiring across 6 dashboard surfaces.
 
