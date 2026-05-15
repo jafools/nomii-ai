@@ -5,7 +5,123 @@
 
 ---
 
-## Last updated: 2026-05-15 — **v3.5.5 LIVE** — Brand-learning distill-prompt anchoring
+## Last updated: 2026-05-15 — **v3.5.6 LIVE** — Brand-learning Phase 3 (embedding semantic dedup)
+
+Sub-session arc: third + final ship of the brand-learning trilogy `/goal` (sub-goal 3 of 3, same day as sub-goals 1 + 2). Replaces the v3.5.3 Szymkiewicz–Simpson token-overlap heuristic with embedding-similarity dedup for the cases token-overlap couldn't handle (synonyms, transitive paraphrases across cycles). The `LIMITATION` test from v3.5.3 that pinned "transitive linking is not supported in v1" is now provably fixed for the embedding path.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#190](https://github.com/jafools/shenmay-ai/pull/190)** — Phase 3 embedding-based semantic dedup · merge commit `d573fcf` |
+| Tag | **v3.5.6** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** (run [25921996242](https://github.com/jafools/shenmay-ai/actions/runs/25921996242)) |
+| Unit tests | brand-learning **90/90** (61 from v3.5.5 + 29 new under "Embedding semantic dedup") |
+| Files touched | 6 (1 new migration · 1 new module · 4 modified) |
+| Migration | **042** auto-applied on backend startup — `brand_learning_embeddings` table created cleanly on prod |
+| Per-PR CI | 1 round-trip after fixing env-forwarding (see below) — 5/5 green |
+
+### Deliberate design pivot vs the original plan
+
+Pre-flight surfaced two material findings that required user input mid-implementation:
+
+1. **pgvector is NOT installed** on Hetzner prod OR Proxmox staging — `postgres:16.9-alpine` doesn't ship it, and adding it would force an on-prem image upgrade. **Decision: store embeddings as JSONB float-arrays, compute cosine in JS.** Sub-ms for Shenmay's per-tenant scale (~40–200 keys/bucket); revisit if any tenant approaches 10k vectors.
+2. **`$OPENAI_API_KEY` is NOT set platform-wide** on Hetzner — Shenmay uses BYOK. **Decision: reuse the tenant's existing BYOK via `resolveApiKey(tenant)`; fall back to v3.5.3 token-overlap when no OpenAI-compatible key is resolvable.** Opt-in is never blocked by missing embeddings.
+
+Both decisions documented in `feedback_pgvector_not_available_on_postgres_alpine` + sister memory.
+
+### What v3.5.6 does
+
+**`server/db/migrations/042_brand_learning_embeddings.sql`** — new table `brand_learning_embeddings (tenant_id, bucket, canonical_key, embedding jsonb, model, created_at)` with PK on `(tenant_id, bucket, canonical_key)` + index on `(tenant_id, bucket)`. CHECK constraint on `bucket` enum wrapped in `DO`-block (PG ≤16 idempotency rule per `feedback_pg_add_constraint_no_if_not_exists`).
+
+**`server/src/services/brandLearning/embeddings.js`** (NEW, 384 LoC) — pure cosine math (`cosineSimilarity`, `cosineDistance`, `findBestMatch`), fail-soft DB ops (`fetchStoredEmbeddings`, `upsertEmbedding`, `deleteEmbedding`), pure-logic merge (`mergeBucketPure` — testable without DB), DB-touching wrapper (`mergeBucketViaEmbeddings`), top-level entry (`mergeAllCandidates` — walks all 6 buckets), provider dispatch (`resolveEmbedFn` returns null for non-OpenAI), curation-side helpers (`curateTargetToEmbeddingBucket`, `canonicalKeyFromCurateItem`).
+
+**`server/src/services/brandLearning/worker.js`** — wires `mergeAllCandidates` between distill (step 5) and `applyAndPromote` (step 6). Pre-decryption from v3.5.5 feeds both the distill anchor AND the embedding pre-pass — zero extra crypto cost. Try/catch keeps the pre-pass fail-soft.
+
+**`server/src/services/brandLearning/index.js`** — re-exports the new public surface.
+
+**`server/src/routes/portal/brand-learning-routes.js`** — `/items/delete` also deletes the matching embedding row; `/kill-switch` wipes all embeddings for the tenant. Keeps the table in sync with `brand_soul` / `brand_memory` after owner curation.
+
+**`tests/brand-learning.test.js`** — 29 new tests under a new "Embedding semantic dedup" section, including:
+- Cosine math correctness (identical / orthogonal / opposite / mismatched dims / empty)
+- `findBestMatch` threshold + dimension-skip behavior
+- `mergeBucketPure` rewrites display text on match, queues inserts on miss, fail-soft on null embed
+- **Phase 3 fixes the transitive-paraphrase LIMITATION** — the 3 pricing FAQ paraphrases that v3.5.3 left as 2 parallel candidate rows now merge into 1 promoted FAQ
+- `resolveEmbedFn` null-for-non-OpenAI gate
+- `curateTargetToEmbeddingBucket` + `canonicalKeyFromCurateItem` mappers
+
+### Mid-PR debug — env-forwarding lint
+
+First per-PR CI run had server-test fail on `scripts/check-env-forwarding.js` — the PR #98 bug-class catcher detected `LLM_BRAND_LEARNING_EMBED_MODEL` referenced in code but not forwarded by either compose file. Added the variable to `docker-compose.yml` + `docker-compose.selfhosted.yml` with the same default the code uses (`text-embedding-3-small`). Local env-forwarding lint then passed, CI re-ran green. **Pattern caught: any new `process.env.X` in server code must land in both compose files in the same PR.**
+
+### Prod smoke (on the running shenmay-backend container)
+
+```
+$ docker exec shenmay-backend node -e "const bl=require('./src/services/brandLearning'); …"
+cosineSimilarity([1,0,0],[1,0,0]): 1
+cosineSimilarity([1,0,0],[0,1,0]): 0
+EMBEDDING_BUCKETS: faqs,processes,voice_cues,audience_pain_points,audience_objections,audience_request_types
+mergeAllCandidates is fn: true
+resolveEmbedFn(anthropic): null         # non-OpenAI → silent skip
+resolveEmbedFn(openai): true            # OpenAI + key → embed fn returned
+
+$ psql -c "SELECT filename FROM schema_migrations WHERE filename LIKE '042%';"
+ 042_brand_learning_embeddings.sql
+
+$ psql -c "\d brand_learning_embeddings"
+tenant_id  uuid       NOT NULL  ON DELETE CASCADE
+bucket     text       NOT NULL  CHECK (in 6 enum values)
+canonical_key  text   NOT NULL
+embedding  jsonb      NOT NULL
+model      text       NOT NULL
+created_at timestamptz NOT NULL DEFAULT now()
+PRIMARY KEY (tenant_id, bucket, canonical_key)
+```
+
+Backend startup logs: migration 042 applied cleanly ("Running" → "✓ Done"), brand-learning worker started, initial cycle "No tenants opted in" (expected — prod still has 0 opted-in tenants). No errors.
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.6` |
+| Hetzner repo | checked out at `v3.5.6` |
+| Migration 042 | applied — `brand_learning_embeddings` table exists |
+| Internal `/api/health` | 200 OK |
+| External `/api/health` | 200 OK via Cloudflare |
+| Brand-learning worker | running, 0 opted-in tenants on prod, embedding path silently skipped (correct — no opted-in tenants to exercise) |
+| Token-overlap fallback (v3.5.3) | still in place as the second layer for non-OpenAI BYOK tenants |
+
+### Trilogy complete — what's the cumulative defense now
+
+For LLM paraphrase divergence, brand-learning now has 3 complementary layers:
+
+1. **Generation-time anchoring** (v3.5.5) — feed existing canonical_keys to Haiku as "reuse-or-skip" list → LLM converges on existing phrasings
+2. **Embedding semantic dedup** (v3.5.6, this ship) — for paraphrases that escape anchoring, embed at distill time + rewrite to existing entry's text → applyAndPromote sees byte-equal match
+3. **Token-overlap heuristic** (v3.5.3) — fallback when no OpenAI-compatible key, OR safety net when embedding service blips → catches the easier paraphrase cases
+
+A new paraphrase has to evade all 3 to land as a parallel candidate row.
+
+### Carry-over
+
+The trilogy `/goal` is **complete**. Three sub-goals shipped same day with three tags + zero rollbacks. Goal status in `.claude/goal/active.md` → achieved.
+
+Follow-ups (none blocking):
+
+1. **Live OpenAI canary on a real opted-in tenant.** The LIMITATION-flip unit test proves the algorithm with deterministic mocks; the prod-container smoke proves the wiring + exports are correct on the running v3.5.6. A live canary with real OpenAI calls + a real tenant's `text-embedding-3-small` round-trips would add wire-format confidence (per `feedback_static_tests_dont_catch_wire_quirks`). Set this up by: spinning up a fresh staging tenant with the master-plan recipe, adding an OpenAI BYOK, opting it into brand-learning, seeding anon conversations across 3 cycles with paraphrased questions, and watching the `[BrandLearning] Embedding pre-pass for X: N merged, M inserted, ...` log line in the worker.
+2. **Threshold tuning.** `DEFAULT_DISTANCE_THRESHOLD=0.18` is empirically reasonable but unwitnessed against real tenant data. After a real opted-in tenant has run a few cycles, audit the merge stats to confirm the threshold is in the right spot (too low → paraphrases miss; too high → unrelated concepts collide).
+3. **Backfill existing tenants.** Tenants who opted into brand-learning on or before v3.5.5 have `brand_soul` / `brand_memory` entries with NO embeddings stored. The worker lazy-backfills — when it encounters a new candidate that doesn't match anything in the (empty) stored set, it inserts. Over a few cycles, the embedding table self-populates. No explicit backfill migration needed.
+
+### Patterns lifted to MEMORY.md
+
+- `feedback_pgvector_not_available_on_postgres_alpine` — pre-flight any vector-based feature against the actual installed extensions before writing the migration; `postgres:N-alpine` images don't include pgvector.
+- `feedback_text_rewrite_pattern_keeps_promote_unchanged` — when you need a new "merge similar candidates" layer on top of an existing exact-match dedup engine, REWRITE the candidate display text to match an existing entry instead of changing the dedup engine's API. The exact-match fast path picks up the rewrite naturally.
+- (Already in memory) — `feedback_compose_fallback_overrides_code_default` reactivated by env-forwarding lint catching `LLM_BRAND_LEARNING_EMBED_MODEL` not being forwarded.
+
+---
+
+## Previous: 2026-05-15 — **v3.5.5 LIVE** — Brand-learning distill-prompt anchoring
 
 Sub-session arc: same-day second ship after the v3.5.4 canary walk (sub-goal 1 of the trilogy `/goal`). Sub-goal 2: feed existing `brand_soul` + `brand_memory` canonical keys to the Haiku distiller as a "reuse-or-skip" anchor list at generation time. Complements the v3.5.3 fuzzy-match post-filter (which catches paraphrases AFTER distillation) by preventing them BEFORE — the LLM sees the existing phrasings up front and converges on them instead of inventing parallel variants each cycle. Phase 3 (HNSW semantic dedup) is still the planned permanent fix; anchoring is the complementary generation-time stopgap.
 
