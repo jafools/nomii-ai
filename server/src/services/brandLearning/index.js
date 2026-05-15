@@ -27,5 +27,7 @@ module.exports = {
   quickScanForResidualPii: scrub.quickScanForResidualPii,
   distillBrandObservations: distill.distillBrandObservations,
   normalizeObservations: distill.normalizeObservations,
+  buildAnchorList: distill.buildAnchorList,
+  buildDistillSystem: distill.buildDistillSystem,
   renderBrandSoulForPrompt: renderer.renderBrandSoulForPrompt,
 };

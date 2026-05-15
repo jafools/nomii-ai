@@ -64,6 +64,120 @@ If the transcripts contain nothing useful (e.g. all gibberish, all spam, all sin
 
 Return ONLY the JSON object. No prose, no markdown, no code fences.`;
 
+// Cap on items listed per bucket in the anchor block. Keeps prompt-size
+// growth predictable for tenants with large existing brand_soul or
+// brand_memory.
+const ANCHOR_MAX_PER_BUCKET = 20;
+
+const ANCHOR_HEADER = `
+
+EXISTING BRAND KNOWLEDGE — reuse exact phrasings when the same concept arises:
+
+If a pattern in the transcripts maps to one of the items listed below, use the EXACT same phrasing the brand already uses (question text, process name, voice-cue wording, or audience-cue wording). This keeps the brand's memory consistent across distillation cycles. Only invent a new phrasing when the pattern is materially distinct from everything listed.`;
+
+/**
+ * Build a "reuse-or-skip" anchor list from the tenant's current brand_soul +
+ * brand_memory state. Injected into the Haiku system prompt so the LLM
+ * converges on existing phrasings at generation time, instead of inventing
+ * parallel paraphrases each cycle.
+ *
+ * Complements the v3.5.3 fuzzy-match post-filter in promote.js: that catches
+ * paraphrases AFTER distillation; this prevents them BEFORE.
+ *
+ * Returns '' when there's nothing to anchor.
+ *
+ * @param {object|null} currentSoul    { faqs?, processes?, voice_cues? }
+ * @param {object|null} currentMemory  { candidate_faqs?, candidate_processes?,
+ *                                       candidate_voice_cues?,
+ *                                       candidate_audience? }
+ * @param {object} [opts]
+ * @param {number} [opts.maxPerBucket=20]
+ */
+function buildAnchorList(currentSoul, currentMemory, opts = {}) {
+  const max = Number.isFinite(opts.maxPerBucket) && opts.maxPerBucket > 0
+    ? opts.maxPerBucket
+    : ANCHOR_MAX_PER_BUCKET;
+
+  const soulFaqs   = pluckStrings(currentSoul, 'faqs', 'question');
+  const soulProcs  = pluckStrings(currentSoul, 'processes', 'name');
+  const soulVoice  = pluckStrings(currentSoul, 'voice_cues', 'cue');
+  const memFaqs    = pluckStrings(currentMemory, 'candidate_faqs', 'question');
+  const memProcs   = pluckStrings(currentMemory, 'candidate_processes', 'name');
+  const memVoice   = pluckStrings(currentMemory, 'candidate_voice_cues', 'cue');
+
+  // Audience candidates are stored as { value, canonical_key, ... } objects in
+  // brand_memory.candidate_audience.{bucket}; the promoted form in
+  // audience_profile.{bucket} is a raw string. Anchor draws from candidates
+  // (memory) — the promoted state isn't passed to distill in this iteration
+  // because the audience_profile lists are write-only from distill's
+  // perspective (LLM writes audience_cues, promoteAudience reads).
+  const memAud = currentMemory && typeof currentMemory.candidate_audience === 'object'
+    ? currentMemory.candidate_audience
+    : null;
+  const memPain = pluckStrings(memAud, 'common_pain_points',   'value');
+  const memObj  = pluckStrings(memAud, 'common_objections',    'value');
+  const memReq  = pluckStrings(memAud, 'common_request_types', 'value');
+
+  const sections = [];
+
+  const allFaqs   = unique([...soulFaqs,  ...memFaqs]).slice(0, max);
+  const allProcs  = unique([...soulProcs, ...memProcs]).slice(0, max);
+  const allVoice  = unique([...soulVoice, ...memVoice]).slice(0, max);
+  const allPain   = unique(memPain).slice(0, max);
+  const allObj    = unique(memObj).slice(0, max);
+  const allReq    = unique(memReq).slice(0, max);
+
+  if (allFaqs.length)   sections.push(renderSection('faqs (questions visitors already asked)', allFaqs));
+  if (allProcs.length)  sections.push(renderSection('processes (workflows the brand already walks visitors through)', allProcs));
+  if (allVoice.length)  sections.push(renderSection('voice_cues (how visitors prefer to be talked to)', allVoice));
+  if (allPain.length)   sections.push(renderSection('audience_cues.common_pain_points', allPain));
+  if (allObj.length)    sections.push(renderSection('audience_cues.common_objections', allObj));
+  if (allReq.length)    sections.push(renderSection('audience_cues.common_request_types', allReq));
+
+  if (sections.length === 0) return '';
+
+  return ANCHOR_HEADER + '\n\n' + sections.join('\n\n');
+}
+
+/**
+ * Build the final system prompt for distillation. Returns DISTILL_SYSTEM
+ * unchanged when there's no existing knowledge to anchor against; otherwise
+ * appends the anchor list. The static rules stay first so the LLM's
+ * absolute-rules section is always at the top of the prompt.
+ */
+function buildDistillSystem(currentSoul, currentMemory, opts = {}) {
+  const anchor = buildAnchorList(currentSoul, currentMemory, opts);
+  if (!anchor) return DISTILL_SYSTEM;
+  return DISTILL_SYSTEM + anchor;
+}
+
+function pluckStrings(container, bucket, field) {
+  if (!container || typeof container !== 'object') return [];
+  const arr = container[bucket];
+  if (!Array.isArray(arr)) return [];
+  // Strict: only accept entries that are objects with the right string field.
+  // brand_soul/brand_memory always store objects (see promote.js + curate.js
+  // promotedEntry shapes); bare strings would be malformed data and we don't
+  // want to surface them as anchors.
+  return arr
+    .map(e => (e && typeof e === 'object' && typeof e[field] === 'string') ? e[field].trim() : '')
+    .filter(s => s.length > 0);
+}
+
+function unique(items) {
+  const seen = new Set();
+  const out = [];
+  for (const s of items) {
+    const k = s.toLowerCase();
+    if (!seen.has(k)) { seen.add(k); out.push(s); }
+  }
+  return out;
+}
+
+function renderSection(label, items) {
+  return label + ':\n' + items.map(s => '- ' + s).join('\n');
+}
+
 /**
  * Distill a scrubbed transcript bundle into candidate brand observations.
  *
@@ -76,6 +190,16 @@ Return ONLY the JSON object. No prose, no markdown, no code fences.`;
  * @param {string} params.apiKey                Resolved LLM key (BYOK or platform).
  * @param {string} params.provider              'anthropic' | 'openai'
  * @param {string} [params.brandName]           Tenant name for context.
+ * @param {object} [params.currentSoul]         Existing promoted brand_soul state
+ *                                              ({faqs, processes, voice_cues}) —
+ *                                              fed to the LLM as a reuse-or-skip
+ *                                              anchor list so paraphrases at
+ *                                              generation time stay consistent
+ *                                              with prior cycles. Optional;
+ *                                              null/{} disables anchoring.
+ * @param {object} [params.currentMemory]       Existing brand_memory state
+ *                                              (candidate_faqs etc.) — same
+ *                                              anchoring purpose.
  * @returns {Promise<object|null>}              Structured observations or null on
  *                                              error / breach. Never throws.
  */
@@ -85,6 +209,8 @@ async function distillBrandObservations({
   apiKey,
   provider = 'anthropic',
   brandName = 'this brand',
+  currentSoul = null,
+  currentMemory = null,
 }) {
   if (!apiKey) return null;
   if (!scrubbedTranscript || scrubbedTranscript.trim().length < 40) {
@@ -99,6 +225,7 @@ async function distillBrandObservations({
   const { getDefaultModel } = require('../llm');
 
   const model = getDefaultModel(provider, 'haiku');
+  const systemPrompt = buildDistillSystem(currentSoul, currentMemory);
 
   const userContent = `Brand: ${brandName}
 Anonymous sessions in this batch: ${sessionCount}
@@ -111,7 +238,7 @@ Distill business-relevant patterns from the above. Return JSON per the schema in
 
   try {
     const raw = await callClaude(
-      DISTILL_SYSTEM,
+      systemPrompt,
       [{ role: 'user', content: userContent }],
       model,
       900,           // maxTokens — enough for a useful distillation, capped to control cost
@@ -217,5 +344,9 @@ function normalizeObservations(raw) {
 module.exports = {
   distillBrandObservations,
   normalizeObservations,
-  DISTILL_SYSTEM,   // exported for tests
+  buildAnchorList,        // exported for tests
+  buildDistillSystem,     // exported for tests
+  DISTILL_SYSTEM,         // exported for tests
+  ANCHOR_HEADER,          // exported for tests
+  ANCHOR_MAX_PER_BUCKET,  // exported for tests
 };

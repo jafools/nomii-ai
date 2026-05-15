@@ -37,6 +37,11 @@ const {
 
 const {
   normalizeObservations,
+  buildAnchorList,
+  buildDistillSystem,
+  DISTILL_SYSTEM,
+  ANCHOR_HEADER,
+  ANCHOR_MAX_PER_BUCKET,
 } = require('../server/src/services/brandLearning/distill');
 
 const {
@@ -737,6 +742,137 @@ test('normalize trims oversized strings', () => {
   });
   assert(out.faqs[0].question.length <= 500);
   assert(out.faqs[0].suggested_answer.length <= 1000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3b. distill.js — buildAnchorList + buildDistillSystem (v3.5.5)
+// ═══════════════════════════════════════════════════════════════════════════
+
+console.log('\nDistill anchoring');
+
+test('buildAnchorList returns empty for null/undefined/empty inputs', () => {
+  assertEqual(buildAnchorList(null, null), '');
+  assertEqual(buildAnchorList(undefined, undefined), '');
+  assertEqual(buildAnchorList({}, {}), '');
+  assertEqual(buildAnchorList({ faqs: [] }, { candidate_faqs: [] }), '');
+  // Non-string entries get filtered out → still no content → empty.
+  assertEqual(buildAnchorList({ faqs: [{}, { question: '' }, { question: '   ' }] }, {}), '');
+});
+
+test('buildAnchorList renders soul.faqs entries under the right header', () => {
+  const out = buildAnchorList(
+    { faqs: [{ question: 'What are your business hours?', canonical_key: 'what are your business hours' }] },
+    null,
+  );
+  assertContains(out, 'EXISTING BRAND KNOWLEDGE');
+  assertContains(out, 'faqs (questions visitors already asked)');
+  assertContains(out, '- What are your business hours?');
+});
+
+test('buildAnchorList merges soul + memory entries into one bucket section, deduping by lowercase', () => {
+  const out = buildAnchorList(
+    { faqs: [{ question: 'Do you ship internationally?' }] },
+    { candidate_faqs: [
+      { question: 'do you ship internationally?' },    // dupe (case-insensitive)
+      { question: 'How long does delivery take?' },
+    ] },
+  );
+  // Dedup: exactly one "Do you ship..." line, in soul casing (first-seen wins).
+  const shipLines = out.split('\n').filter(l => l.toLowerCase().includes('ship internationally'));
+  assertEqual(shipLines.length, 1, 'soul + memory duplicate should collapse to one entry');
+  assertContains(shipLines[0], 'Do you ship internationally?');
+  assertContains(out, 'How long does delivery take?');
+});
+
+test('buildAnchorList covers all 6 buckets (3 soul + audience candidates)', () => {
+  const out = buildAnchorList(
+    {
+      faqs:       [{ question: 'Q1' }],
+      processes:  [{ name: 'P1' }],
+      voice_cues: [{ cue: 'V1' }],
+    },
+    {
+      candidate_faqs:       [{ question: 'Q2' }],
+      candidate_processes:  [{ name: 'P2' }],
+      candidate_voice_cues: [{ cue: 'V2' }],
+      candidate_audience: {
+        common_pain_points:   [{ value: 'Pain 1' }],
+        common_objections:    [{ value: 'Objection 1' }],
+        common_request_types: [{ value: 'Request 1' }],
+      },
+    },
+  );
+  // All 6 section headers present.
+  assertContains(out, 'faqs (questions visitors already asked)');
+  assertContains(out, 'processes (workflows the brand already walks visitors through)');
+  assertContains(out, 'voice_cues (how visitors prefer to be talked to)');
+  assertContains(out, 'audience_cues.common_pain_points');
+  assertContains(out, 'audience_cues.common_objections');
+  assertContains(out, 'audience_cues.common_request_types');
+  // Items from both soul + memory + audience candidates surface.
+  ['Q1','Q2','P1','P2','V1','V2','Pain 1','Objection 1','Request 1']
+    .forEach(s => assertContains(out, s));
+});
+
+test('buildAnchorList caps each bucket at maxPerBucket', () => {
+  const many = (n, prefix) => Array.from({ length: n }, (_, i) => ({ question: `${prefix}${i}` }));
+  const out = buildAnchorList(
+    { faqs: many(50, 'Q') },
+    null,
+    { maxPerBucket: 5 },
+  );
+  // Expect exactly 5 Q-lines + 0 mention of Q5..Q49.
+  const qLines = out.split('\n').filter(l => /^- Q\d+$/.test(l));
+  assertEqual(qLines.length, 5, 'should cap at maxPerBucket=5');
+  assertContains(out, '- Q0');
+  assertContains(out, '- Q4');
+  assertNotContains(out, '- Q5');
+  assertNotContains(out, '- Q49');
+});
+
+test('buildAnchorList default cap is ANCHOR_MAX_PER_BUCKET=20', () => {
+  assertEqual(ANCHOR_MAX_PER_BUCKET, 20, 'sanity check on exported constant');
+  const many = Array.from({ length: 30 }, (_, i) => ({ question: `Q${i}` }));
+  const out = buildAnchorList({ faqs: many }, null);
+  const qLines = out.split('\n').filter(l => /^- Q\d+$/.test(l));
+  assertEqual(qLines.length, 20, 'default cap should be 20');
+});
+
+test('buildDistillSystem returns DISTILL_SYSTEM unchanged when no anchor', () => {
+  assertEqual(buildDistillSystem(null, null), DISTILL_SYSTEM);
+  assertEqual(buildDistillSystem({}, {}), DISTILL_SYSTEM);
+  assertEqual(buildDistillSystem({ faqs: [] }, { candidate_faqs: [] }), DISTILL_SYSTEM);
+});
+
+test('buildDistillSystem appends anchor list when populated', () => {
+  const out = buildDistillSystem(
+    { faqs: [{ question: 'Anchor me' }] },
+    null,
+  );
+  // Base prompt rules MUST still be present (and at the start).
+  assert(out.startsWith(DISTILL_SYSTEM), 'base prompt must remain first — absolute-rules block stays at top');
+  // Anchor section appended.
+  assertContains(out, ANCHOR_HEADER.trim());
+  assertContains(out, '- Anchor me');
+});
+
+test('buildAnchorList ignores garbage entries (non-object, missing field, non-string field)', () => {
+  const out = buildAnchorList(
+    { faqs: [
+      'not an object',                  // bad — bare string in objects bucket
+      null,                              // bad — null entry
+      { name: 'wrong field' },           // bad — wrong field name for faqs
+      { question: 42 },                  // bad — non-string question
+      { question: 'Good one' },          // good
+    ] },
+    null,
+  );
+  assertContains(out, '- Good one');
+  // The bad entries must not slip through.
+  assertNotContains(out, '- not an object');
+  assertNotContains(out, '- null');
+  assertNotContains(out, 'wrong field');
+  assertNotContains(out, '- 42');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
