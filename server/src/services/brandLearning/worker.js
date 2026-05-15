@@ -234,6 +234,14 @@ async function runOneTenant(tenantId) {
   // 4. Scrub. Layer 1.
   const { scrubbedText, replacementCount } = scrubMessagesForDistillation(anonOnly);
 
+  // 4b. Decrypt current state BEFORE distillation so we can feed brand_soul +
+  //     brand_memory canonical_keys to the LLM as a "reuse-or-skip" anchor
+  //     list (v3.5.5). Same plain-JS objects also feed applyAndPromote at
+  //     step 6 — no extra round-trip.
+  const currentSoul     = safeDecryptJson(tenant.brand_soul)       || {};
+  const currentMemory   = safeDecryptJson(tenant.brand_memory)     || {};
+  const currentAudience = safeDecryptJson(tenant.audience_profile) || {};
+
   // 5. Distill. Layer 2.
   const provider = normalizeProvider(tenant.llm_provider);
   const candidatesRaw = await distillBrandObservations({
@@ -242,6 +250,8 @@ async function runOneTenant(tenantId) {
     apiKey,
     provider,
     brandName: tenant.name,
+    currentSoul,
+    currentMemory,
   });
 
   if (candidatesRaw === null) {
@@ -254,10 +264,7 @@ async function runOneTenant(tenantId) {
 
   const candidates = normalizeObservations(candidatesRaw);
 
-  // 6. Apply + promote. Layer 4.
-  const currentSoul     = safeDecryptJson(tenant.brand_soul)       || {};
-  const currentMemory   = safeDecryptJson(tenant.brand_memory)     || {};
-  const currentAudience = safeDecryptJson(tenant.audience_profile) || {};
+  // 6. Apply + promote. Layer 4. (currentSoul/Memory/Audience decrypted at 4b)
 
   const minSessions = tenant.brand_learning_min_sessions || 3;
 
