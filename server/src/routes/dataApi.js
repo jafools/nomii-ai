@@ -125,6 +125,26 @@ async function requireDataApiKey(req, res, next) {
 }
 
 
+// ── Helper: resolve a customer by external_id, enforcing tenant scope ─────────
+//
+// Every /customers/:external_id/records handler shares this lookup. Returns
+// the customer UUID string on success, or null after writing a 404 — the
+// caller should `return;` immediately when null is returned. Caller can pass
+// a custom 404 message (the POST endpoint suggests creating the customer
+// first; GET/DELETE endpoints use a plain "not found" message).
+async function resolveCustomerByExternalId(res, tenantId, externalId, notFoundMessage) {
+  const { rows } = await db.query(
+    `SELECT id FROM customers WHERE tenant_id = $1 AND external_id = $2 AND deleted_at IS NULL`,
+    [tenantId, externalId]
+  );
+  if (rows.length === 0) {
+    res.status(404).json({ error: notFoundMessage || `Customer "${externalId}" not found.` });
+    return null;
+  }
+  return rows[0].id;
+}
+
+
 // ── POST /api/v1/customers ─────────────────────────────────────────────────────
 // Create or update a customer by external_id.
 // If a customer with this external_id already exists for this tenant, it is updated.
@@ -227,16 +247,11 @@ router.post('/customers/:external_id/records', requireDataApiKey, async (req, re
     }
 
     // Resolve customer
-    const { rows: customerRows } = await db.query(
-      `SELECT id FROM customers WHERE tenant_id = $1 AND external_id = $2 AND deleted_at IS NULL`,
-      [req.tenantId, external_id]
+    const customerId = await resolveCustomerByExternalId(
+      res, req.tenantId, external_id,
+      `Customer with external_id "${external_id}" not found. Create them first via POST /api/v1/customers.`
     );
-    if (customerRows.length === 0) {
-      return res.status(404).json({
-        error: `Customer with external_id "${external_id}" not found. Create them first via POST /api/v1/customers.`,
-      });
-    }
-    const customerId = customerRows[0].id;
+    if (customerId === null) return;
 
     // Optional: clear a category before full re-sync
     if (replace_category) {
@@ -299,14 +314,8 @@ router.get('/customers/:external_id/records', requireDataApiKey, async (req, res
     const { external_id } = req.params;
     const { category }    = req.query;
 
-    const { rows: customerRows } = await db.query(
-      `SELECT id FROM customers WHERE tenant_id = $1 AND external_id = $2 AND deleted_at IS NULL`,
-      [req.tenantId, external_id]
-    );
-    if (customerRows.length === 0) {
-      return res.status(404).json({ error: `Customer "${external_id}" not found.` });
-    }
-    const customerId = customerRows[0].id;
+    const customerId = await resolveCustomerByExternalId(res, req.tenantId, external_id);
+    if (customerId === null) return;
 
     const { rows } = await db.query(
       `SELECT category, label, value, secondary_value, metadata, value_type, recorded_at, source
@@ -336,17 +345,12 @@ router.delete('/customers/:external_id/records', requireDataApiKey, async (req, 
   try {
     const { external_id } = req.params;
 
-    const { rows: customerRows } = await db.query(
-      `SELECT id FROM customers WHERE tenant_id = $1 AND external_id = $2 AND deleted_at IS NULL`,
-      [req.tenantId, external_id]
-    );
-    if (customerRows.length === 0) {
-      return res.status(404).json({ error: `Customer "${external_id}" not found.` });
-    }
+    const customerId = await resolveCustomerByExternalId(res, req.tenantId, external_id);
+    if (customerId === null) return;
 
     const { rowCount } = await db.query(
       `DELETE FROM customer_data WHERE customer_id = $1`,
-      [customerRows[0].id]
+      [customerId]
     );
 
     res.json({ success: true, deleted: rowCount });
@@ -361,17 +365,12 @@ router.delete('/customers/:external_id/records/:category', requireDataApiKey, as
   try {
     const { external_id, category } = req.params;
 
-    const { rows: customerRows } = await db.query(
-      `SELECT id FROM customers WHERE tenant_id = $1 AND external_id = $2 AND deleted_at IS NULL`,
-      [req.tenantId, external_id]
-    );
-    if (customerRows.length === 0) {
-      return res.status(404).json({ error: `Customer "${external_id}" not found.` });
-    }
+    const customerId = await resolveCustomerByExternalId(res, req.tenantId, external_id);
+    if (customerId === null) return;
 
     const { rowCount } = await db.query(
       `DELETE FROM customer_data WHERE customer_id = $1 AND category = $2`,
-      [customerRows[0].id, category]
+      [customerId, category]
     );
 
     res.json({ success: true, deleted: rowCount, category });

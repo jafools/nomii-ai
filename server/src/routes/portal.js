@@ -389,7 +389,8 @@ router.use('/badge-counts', require('./portal/badge-counts-routes'));
 // GET /api/portal/visitors  — anonymous (unlogged) widget visitors
 // These are sessions where the host page didn't supply a user email,
 // so we auto-generated anon_<uuid>@visitor.shenmay as the identifier
-// (legacy @visitor.nomii also recognised — see server/src/constants/anonDomains.js).
+// (migration 033 unified all legacy @visitor.nomii rows onto @visitor.shenmay —
+// see server/src/constants/anonDomains.js).
 router.get('/visitors', async (req, res, next) => {
   try {
     const page   = parsePage(req.query.page);
