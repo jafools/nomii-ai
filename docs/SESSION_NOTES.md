@@ -5,7 +5,136 @@
 
 ---
 
-## Last updated: 2026-05-15 — **v3.5.6 LIVE** — Brand-learning Phase 3 (embedding semantic dedup)
+## Last updated: 2026-05-16 — **v3.5.7 LIVE** — Overnight /codebase-cleanup pass
+
+Sub-session arc: Austin paged at bedtime — *"We have a lot of tokens to burn, just do a /codebase-cleanup and patch up whatever you find. Im going to bed."* Autonomous run from an isolated worktree on branch `claude/ecstatic-curie-f10057`. The `anthropic-skills:codebase-cleanup` skill spawned 8 specialist subagents in parallel (dedup, type consolidation, unused code, circular deps, weak types, defensive programming, deprecated/legacy, AI slop), each scoped to a single cleanup dimension. Austin returned in the morning, said "squash merge and push to prod," and the chore-class release flow ran top-to-bottom in ~7 min wall-clock.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#192](https://github.com/jafools/shenmay-ai/pull/192)** — codebase-cleanup pass · squash commit `5efee59` |
+| Tag | **v3.5.7** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** (run [25955654175](https://github.com/jafools/shenmay-ai/actions/runs/25955654175)) |
+| Unit tests | 165/165 local (tokenizer 46 + openai-adapter 29 + brand-learning 90); integration deferred to CI |
+| Files touched | 9 (8 source files + .gitignore for `cleanup-reports/` artifact dir) |
+| Wall-clock merge → live | ~7 min (5×5 gate completed in ~4 min — unusually fast since no real code paths exercise; image build ~3 min; SSH deploy ~1 min) |
+| Migration | **none** — pure refactor + chore, no schema, no API contract change |
+
+### Agent fan-out result
+
+| # | Agent              | Tool used         | Files | Verdict |
+|---|--------------------|-------------------|-------|---------|
+| 1 | Dedup & DRY        | jscpd             | 3     | 3 helpers extracted, ~80 lines collapsed |
+| 2 | Type Consolidation | grep              | 0     | TS surface too small (6 .ts/.tsx files of shadcn primitives) |
+| 3 | Unused Code        | knip + grep       | 3     | 7 module-private demotions (no behaviour change) |
+| 4 | Circular Deps      | madge + dep-cruise| 0     | Zero cycles in server (87 mods) or client (81 mods) |
+| 5 | Weak Types         | grep              | 0     | Zero `any`/`unknown`/`@ts-ignore` |
+| 6 | Defensive Prog.    | grep              | 0     | All 350 try/catches legitimate |
+| 7 | Deprecated/Legacy  | grep + git blame  | 2     | 2 stale narrative comments refreshed |
+| 8 | AI Slop / Comments | grep              | 0     | WHY-style comments enforced project-wide |
+
+**Headline: the codebase is unusually clean** — 5 of 8 agents found zero high-confidence work because the codebase already follows the conventions each agent was looking for.
+
+### What v3.5.7 ships (commit-by-commit)
+
+**Commit 1 — `refactor(server-routes)`:** three behaviour-preserving dedup extractions
+- `server/src/routes/onboard.js` — `buildAuthResponse(token, row, {widgetVerified})` collapses 2× the 20-line `{token, tenant, admin}` JSON shape in `/verify` + `/login` (~35 lines saved). Shape consumed by `ShenmayAuthContext`.
+- `server/src/routes/portal/customers-routes.js` — `verifyCustomerOwnership(res, customerId, tenantId)` collapses 4× repeated `SELECT id FROM customers WHERE id=$1 AND tenant_id=$2 AND deleted_at IS NULL` tenant-isolation check (~20 lines). Helper writes the 404 + returns false → caller bare-returns.
+- `server/src/routes/dataApi.js` — `resolveCustomerByExternalId(res, tenantId, externalId, msg?)` collapses 4× lookup-by-`external_id` (~25 lines). Preserves the custom POST 404 message; GET/DELETE use default.
+
+**jscpd impact:** clones 148 → 141 (−7), duplicated lines 1745 → 1665 (−80).
+
+**Commit 2 — `chore(server)`:** noise removal
+- `llmService.js` — `tokenizationEnabledFor` demoted (internal to `buildTokenizer`)
+- `brandLearning/embeddings.js` — `embed`, `fetchStoredEmbeddings`, `upsertEmbedding`, `mergeBucketViaEmbeddings`, `EMBED_MODEL` demoted. Verified zero external consumers via grep across tests + routes + `services/brandLearning/index.js` barrel.
+- `brandLearning/curate.js` — `locateArray` demoted (internal helper for `deleteItem`/`promoteItem`)
+- `routes/portal.js:391` — refreshed stale comment claiming legacy `@visitor.nomii` was *also recognised*; migration 033 unified all such rows onto `@visitor.shenmay` and the helpers in `server/src/constants/anonDomains.js` only match the canonical domain.
+- `brandLearning/promote.js:30` — refreshed Phase 3 forecast (*"Phase 3 will replace the token-overlap heuristic with AgentDB HNSW"*); Phase 3 (v3.5.6) actually shipped as an OpenAI-embedding pre-pass stacked above this file (`worker.js mergeAllCandidates`), with the token-overlap heuristic kept as the fallback layer.
+- `.gitignore` — ignore `cleanup-reports/` (skill artifacts, regenerated per run).
+
+### Verification
+
+Pre-merge (PR #192):
+- Build: `npm run build` ✓ (Vite production build, 4.91s, 2535 modules)
+- Lint: `npm run lint` ✓ (0 errors, 13 pre-existing warnings unchanged)
+- Unit tests: tokenizer **46/46** + openai-adapter **29/29** + brand-learning **90/90** = **165/165**
+- `node --check` on all 8 modified files + `routes/portal/brand-learning-routes.js` downstream consumer
+- Per-PR CI: client-build / server-test / e2e-saas / onprem-e2e / selfhosted-smoke — **5/5 green**
+
+Post-merge:
+- Post-merge CI on main (squash `5efee59`): **green**
+- 5×5 release gate: **11/11 green** (5 SaaS repeats + 5 on-prem repeats + verdict job)
+
+Deploy:
+- Hetzner SSH: `git checkout v3.5.7`, `docker compose pull` + `up -d`
+- Both containers recreated, DB container untouched
+- Internal `/api/health` (127.0.0.1:3001) → `{"status":"ok"}`
+- External `https://shenmay.ai/api/health` → 200 + same payload
+- `docker inspect`: backend `ghcr.io/jafools/shenmay-backend:3.5.7`, frontend `ghcr.io/jafools/shenmay-frontend:3.5.7`
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.7` |
+| Hetzner repo | checked out at `v3.5.7` |
+| Internal `/api/health` | 200 OK |
+| External `/api/health` | 200 OK via Cloudflare |
+| Brand-learning worker | still running, 0 opted-in tenants on prod (unchanged from v3.5.6) |
+| DB | unchanged — no migration in this tag |
+| Staging (Proxmox) | `:edge` rebuilt post-merge, systemd timer picks up within 5 min |
+
+### Notable gotcha caught + memorised
+
+**knip flagged 172 "unused files" on this CommonJS Node + React codebase — every single one was a false positive.** knip cannot trace:
+- Express dynamic route mounts: `app.use('/api/x', require('./routes/x'))`
+- React-Router page registration (pages in `client/src/pages/...` wired into `<Route>` elements)
+- Worker entry points loaded by `require('./workers/...').start()` at server boot in `server/src/index.js`
+- Static files served from `server/public/`
+- Files referenced only from non-code (docker-compose env, Dockerfiles, CI workflows, npm scripts)
+- Even `concurrently` flagged as unused npm dep (false positive — used in `dev` script)
+
+Spot-checked ~20 flagged files; zero true positives. Memorised as `feedback_knip_false_positives_commonjs_dynamic.md`. **Generalises:** on any CJS Node + React codebase, file-level deletion findings from knip need much more scrutiny than export-level findings. The 7 export-level demotions in this PR were reliable; the 172 file-level deletions would have been catastrophic.
+
+### Stray-file aside (worth a memory cross-reference)
+
+Sub-agents spawned via grep one-liners accidentally created zero-byte files at worktree root from quoted-shell mishaps (`1000)`, `embed(text`, `p.canonical_key`, etc.). Same shape as the existing `feedback_git_bash_stray_file_quirk` memory. Cleaned up via `rm` before staging — no commit pollution. Reminder for future parallel-agent runs: scan `git status` for unexpected file names before staging.
+
+### Carry-over (NOT done — flagged for Austin's judgment)
+
+1. **`Covenant Trust/` root folder** — a true orphan (historical artifact, already in `.dockerignore`), but ambiguous per skill safety rules. Flagged in `cleanup-reports/03-unused-code.md`, not deleted.
+2. **`ShenmayConversations.jsx:544,556` bulk-action catches** — use `console.error` only; could surface a toast since optimistic UI hides failures from the user. UX polish, not a code-quality issue.
+3. **TS migration of `client/src/lib/shenmayApi.js`** + auth contexts — would be the highest-leverage type-safety win (API response shapes become first-class types). Out of scope for cleanup.
+4. **`tsconfig.json` has `strict: false`** / `strictNullChecks: false` / `allowJs: true` — flipping these is a separate architectural decision that would cascade through the `.js` codebase.
+5. **Live OpenAI canary for v3.5.6 brand-learning Phase 3** — still pending from the previous session. The wire-format verification for embedding round-trips on a real opted-in tenant.
+
+### Patterns lifted to MEMORY.md
+
+- `feedback_knip_false_positives_commonjs_dynamic` — knip's CJS dynamic-loading blind spot; cross-reference grep is mandatory before deleting any file from a knip "unused" list.
+- The existing `feedback_git_bash_stray_file_quirk` was re-validated — agents creating zero-byte stray files from shell-quoting still happens; scan `git status` for unexpected names before staging.
+
+### Files modified
+
+```
+.gitignore                                       |  3 +
+server/src/routes/dataApi.js                     | 65 ++++++++++----------
+server/src/routes/onboard.js                     | 81 ++++++++++++-------------
+server/src/routes/portal.js                      |  3 +-
+server/src/routes/portal/customers-routes.js     | 44 +++++++-------
+server/src/services/brandLearning/curate.js      |  1 -
+server/src/services/brandLearning/embeddings.js  |  5 --
+server/src/services/brandLearning/promote.js     |  7 ++-
+server/src/services/llmService.js                |  3 +-
+9 files changed, 105 insertions(+), 107 deletions(-)
+```
+
+Net: ~−2 lines diff total, but ~80 lines of *duplicated* code collapsed into 3 named helpers — the dedup metric is the meaningful one.
+
+---
+
+## Previous: 2026-05-15 — **v3.5.6 LIVE** — Brand-learning Phase 3 (embedding semantic dedup)
 
 Sub-session arc: third + final ship of the brand-learning trilogy `/goal` (sub-goal 3 of 3, same day as sub-goals 1 + 2). Replaces the v3.5.3 Szymkiewicz–Simpson token-overlap heuristic with embedding-similarity dedup for the cases token-overlap couldn't handle (synonyms, transitive paraphrases across cycles). The `LIMITATION` test from v3.5.3 that pinned "transitive linking is not supported in v1" is now provably fixed for the embedding path.
 
