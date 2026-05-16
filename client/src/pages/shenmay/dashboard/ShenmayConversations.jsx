@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getConversations, getConversation, getLabels, bulkConversations, takeoverConversation } from "@/lib/shenmayApi";
 import { relTime, fmtTime } from "@/lib/format";
 import { useShenmayAuth } from "@/contexts/ShenmayAuthContext";
+import { toast } from "@/hooks/use-toast";
 import {
   MessageSquare, AlertTriangle, RefreshCw, ExternalLink, ArrowUpRight,
   Users, Search, X, Circle, ThumbsUp, ThumbsDown, Square, CheckSquare,
@@ -541,7 +542,10 @@ const ShenmayConversations = () => {
       await bulkConversations([...selectedIds], "resolve");
       clearSelection();
       fetchList();
-    } catch (err) { console.error("Bulk resolve failed:", err); }
+    } catch (err) {
+      console.error("Bulk resolve failed:", err);
+      toast({ title: "Could not resolve conversations", description: err.message, variant: "destructive" });
+    }
     finally { setBulkLoading(false); }
   };
 
@@ -553,7 +557,10 @@ const ShenmayConversations = () => {
       await bulkConversations([...selectedIds], "label", { label_id: labelId });
       clearSelection();
       fetchList();
-    } catch (err) { console.error("Bulk label failed:", err); }
+    } catch (err) {
+      console.error("Bulk label failed:", err);
+      toast({ title: "Could not apply label", description: err.message, variant: "destructive" });
+    }
     finally { setBulkLoading(false); }
   };
 
