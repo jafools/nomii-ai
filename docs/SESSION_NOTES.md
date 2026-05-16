@@ -5,7 +5,123 @@
 
 ---
 
-## Last updated: 2026-05-16 — **v3.5.7 LIVE** — Overnight /codebase-cleanup pass
+## Last updated: 2026-05-16 — **v3.5.8 LIVE** — v3.5.7 follow-ups (canary + TS migration + threshold tune)
+
+Sub-session arc: Austin asked to close out all 5 carry-overs from the v3.5.7 SESSION_NOTES in one batched ship. Four were known follow-ups; the fifth (live OpenAI canary) surfaced a real bug — the embedding distance threshold v3.5.6 shipped with was empirically wrong against live `text-embedding-3-small` vectors. Threshold tuning got rolled into the same PR + tag rather than deferring.
+
+### Headline numbers
+
+| | Result |
+|---|---|
+| PR merged | **[#194](https://github.com/jafools/shenmay-ai/pull/194)** — v3.5.7 follow-ups · squash commit `6e6c0f2` |
+| Tag | **v3.5.8** |
+| Production deploy | 1 — Hetzner SSH, health-checked clean, zero rollbacks |
+| 5×5 release gate | **11/11 green** ([run 25962242245](https://github.com/jafools/shenmay-ai/actions/runs/25962242245)) |
+| Per-PR CI | **5/5 green** ([run 25962166739](https://github.com/jafools/shenmay-ai/actions/runs/25962166739)) |
+| Unit tests | tokenizer 46 + openai-adapter 29 + brand-learning **91/91** (was 90 — +1 pinpoint threshold test) = 166/166 |
+| Files touched | 16 (12 deletions + 4 modifications) |
+| Wall-clock per-PR CI → prod live | ~30 min (5×5 ~15 min the long pole) |
+
+### What v3.5.8 ships (commit-by-commit)
+
+**Commit 1 — `chore(repo)`:** delete `Covenant Trust/` folder
+- 12 stale Phase-1 demo artifacts (initial schema, 3 fictional-customer JSON pairs — Jim Thompson / Margaret Chen / Rivera Family — old promptBuilder, 5 architecture/decision docs). Already in `.dockerignore`; never shipped. Names looked like real customers in the repo listing.
+
+**Commit 2 — `fix(conversations)`:** surface bulk-action error toasts
+- `client/src/pages/shenmay/dashboard/ShenmayConversations.jsx` — both bulk handlers (`handleBulkResolve`, `handleBulkLabel`) had bare `console.error` on failure → now also surface via `toast({ variant: "destructive" })`, matching the project's existing `use-toast` convention (e.g. `ShenmayBrandLearning`).
+- Kept `console.error` alongside — toasts are for users, console is for engineers.
+- No new dependency; `toast` was already imported by 13 sibling files.
+
+**Commit 3 — `refactor(api-client)`:** migrate `shenmayApi.js` → `.ts`
+- 473 lines, 104 exports, **zero behaviour change**. Every consumer (19 settings sections + dashboard pages + auth context) keeps identical imports.
+- New exported TS types: `ApiError`, `HttpMethod`, `ProductRecord`, `ConversationFilters`, `LoginError`, `Tenant`, `Admin`, `AuthResponse`, `BrandLearningTarget`.
+- `apiRequest<T = unknown>` is now generic; `verifyEmail` returns typed `AuthResponse`, privacy/anonymous-only toggles return `{ ok: true, ... }`, `completeSetup` returns typed `{ token, tenant }`.
+- Vite path alias `@/lib/shenmayApi` resolves to `.ts` without any config change (same-basename `.js` → `.ts` is the default resolver order). `tsc --noEmit` clean.
+- The git mv landed in commit 2 as a pure rename and the content rewrite landed in commit 3 — squash collapses that cosmetic split.
+
+**Commit 4 — `fix(brand-learning)`:** tune embedding distance threshold 0.18 → 0.30 (canary)
+- **Surfaced by the live OpenAI canary on staging** — see "Canary findings" below for the full data table.
+- New constant: `DEFAULT_DISTANCE_THRESHOLD = 0.30` (within the documented "conservative (0.10–0.30)" envelope, so the existing range test still passes). New pinpoint test asserts the exact 0.30 value so future drift requires a fresh canary.
+- Comment block above the constant captures the canary data + "if you change this, re-run the canary" rule.
+
+### Canary findings (this is the interesting part)
+
+Per yesterday's carry-over note, I ran a live OpenAI canary on the staging container (`shenmay-backend-staging`, `:edge`). Two-step:
+
+1. **Wire-format smoke**: `curl https://api.openai.com/v1/embeddings` with the test key → HTTP 200, 1536-dim vectors from `text-embedding-3-small`. Wire format works as expected by `embeddings.js`.
+
+2. **End-to-end via the module's own code path**: `docker exec -i shenmay-backend-staging node` running a script that calls `bl.resolveEmbedFn({ apiKey, provider: 'openai' })` and exercises `cosineSimilarity` + `cosineDistance` + `findBestMatch` against 9 realistic FAQ paraphrase pairs.
+
+Real `text-embedding-3-small` output (1536-dim):
+
+| Pair | Sim | Dist | Old (0.18) | New (0.30) |
+|---|---:|---:|---|---|
+| "pricing plans" ↔ "pricing plans you offer" | 0.94 | 0.06 | MERGE | MERGE |
+| "ship internationally" ↔ "ship overseas" | 0.92 | 0.08 | MERGE | MERGE |
+| "pricing plans" ↔ "your prices" | 0.72 | 0.28 | ❌ kept apart | MERGE |
+| **"Do you offer refunds?" ↔ "What's your refund policy?"** | **0.74** | **0.26** | ❌ **kept apart (BUG)** | ✓ MERGE |
+| "pricing plans" ↔ "Can you tell me about pricing?" | 0.66 | 0.34 | ❌ kept apart | ❌ kept apart |
+| "ship internationally" ↔ "delivered to Europe" | 0.50 | 0.50 | ❌ kept apart | ❌ kept apart |
+| "offer refunds" ↔ "get my money back" | 0.57 | 0.43 | ❌ kept apart | ❌ kept apart |
+| "pricing plans" ↔ "What time do you close?" | 0.21 | 0.79 | ✓ kept apart | ✓ kept apart |
+
+The bolded row is the bug: a textbook semantic paraphrase ("refunds?" vs "refund policy?") that v3.5.6 was specifically designed to catch but the 0.18 threshold missed. 0.30 catches it. Unrelated pairs are all ≥ 0.43 distance — comfortably outside the new threshold.
+
+**Root cause of the calibration error**: the v3.5.6 unit tests used handcrafted/random mock vectors that don't reflect real `text-embedding-3-small` spread behaviour. The 0.18 default was an honest guess that turned out to be too tight. Caught exactly the way `feedback_static_tests_dont_catch_wire_quirks` predicted: mock tests pass, real wire-format reveals the gap.
+
+### Verification
+
+Pre-merge:
+- `npm run build` ✓ (Vite 5.55s, 2535 modules)
+- `npm run lint` ✓ (0 errors, 13 pre-existing warnings)
+- `npx tsc --noEmit` ✓ (client)
+- Unit tests: 166/166 (tokenizer 46 + openai-adapter 29 + **brand-learning 91**)
+- Per-PR CI: client-build 26s / server-test 48s / e2e-saas 2m20s / onprem-e2e 2m54s / selfhosted-smoke 45s → **5/5 green**
+
+Post-merge:
+- 5×5 release gate: **11/11 green** (5 SaaS + 5 on-prem + verdict)
+
+Deploy:
+- Hetzner SSH `git checkout v3.5.8` → `docker compose pull` + `up -d`
+- Internal `/api/health` (127.0.0.1:3001) → `{"status":"ok"}`
+- External `https://shenmay.ai/api/health` → 200 + same payload
+- `docker inspect`: backend + frontend both `ghcr.io/jafools/shenmay-{backend,frontend}:3.5.8`
+
+### Where things stand on prod
+
+| Surface | State |
+|---|---|
+| https://shenmay.ai | backend + frontend both `:3.5.8` |
+| Hetzner repo | checked out at `v3.5.8` |
+| Internal `/api/health` | 200 OK |
+| External `/api/health` | 200 OK via Cloudflare |
+| Brand-learning worker | still running, **0 opted-in tenants** on prod — the threshold change is a no-op for customer-impact until a tenant opts in with an OpenAI BYOK |
+| DB | unchanged — no migration in this tag |
+
+### Carry-over patterns memorised
+
+- `feedback_static_tests_dont_catch_wire_quirks` was reactivated — pattern confirmed AGAIN: 90/90 unit tests passed against mock vectors for v3.5.6, real wire-format canary surfaced the bug. The mitigation that's worked twice now: pin a `LIMITATION` or pinpoint test that asserts the canary-validated value, so future drift requires a fresh canary run (not just `git push`).
+
+### Carry-over (NOT done, flagged for future sessions)
+
+1. **TS migration of `client/src/contexts/ShenmayAuthContext.jsx`** — would be the next-highest-leverage TS conversion since auth-context state is consumed by every dashboard page.
+2. **tsconfig strict-mode flip** — explicitly deferred this session per Austin's call. Revisit when more files have TS surface.
+3. **`Covenant Trust` cleanup spawn** (rotate `OPENAI_API_KEY`) — the canary key pasted into chat should be rotated by Austin. NOT a code task.
+4. **Threshold backoff verification** — current 0.30 is canary-validated against 9 pairs. Worth a re-canary against 20-30 pairs in 1-2 months when real tenant data exists.
+
+### Files modified
+
+```
+Covenant Trust/                                          (12 files removed)
+client/src/lib/shenmayApi.{js → ts}                      (TS migration)
+client/src/pages/shenmay/dashboard/ShenmayConversations.jsx
+server/src/services/brandLearning/embeddings.js
+tests/brand-learning.test.js
+```
+
+---
+
+## Previous: 2026-05-16 — **v3.5.7 LIVE** — Overnight /codebase-cleanup pass
 
 Sub-session arc: Austin paged at bedtime — *"We have a lot of tokens to burn, just do a /codebase-cleanup and patch up whatever you find. Im going to bed."* Autonomous run from an isolated worktree on branch `claude/ecstatic-curie-f10057`. The `anthropic-skills:codebase-cleanup` skill spawned 8 specialist subagents in parallel (dedup, type consolidation, unused code, circular deps, weak types, defensive programming, deprecated/legacy, AI slop), each scoped to a single cleanup dimension. Austin returned in the morning, said "squash merge and push to prod," and the chore-class release flow ran top-to-bottom in ~7 min wall-clock.
 
