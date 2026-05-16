@@ -38,9 +38,19 @@ const { canonicalKey } = require('./promote');
 const EMBED_MODEL = process.env.LLM_BRAND_LEARNING_EMBED_MODEL || 'text-embedding-3-small';
 
 // Cosine *distance* threshold below which two canonical_keys are treated
-// as the same concept. distance = 1 - similarity, so 0.18 distance ≈ 0.82
-// similarity. Conservative; tune via canary.
-const DEFAULT_DISTANCE_THRESHOLD = 0.18;
+// as the same concept. distance = 1 - similarity, so 0.30 distance ≈ 0.70
+// similarity.
+//
+// Tuned via live OpenAI canary on 2026-05-16 (see session-notes for v3.5.8).
+// Original v3.5.6 value of 0.18 was calibrated against the unit test's mock
+// vectors; real `text-embedding-3-small` output is spread more aggressively,
+// and 0.18 only caught lexical near-paraphrases ("X plans" ↔ "plans X") not
+// the semantic paraphrases v3.5.6 was designed to catch ("Do you offer
+// refunds?" ↔ "What's your refund policy?" only scores 0.74 sim / 0.26 dist).
+// 0.30 keeps unrelated pairs out (canary saw 0.21 sim between "pricing plans"
+// and "What time do you close?" — comfortably above the new threshold's
+// 0.70 sim bar) while merging legitimate paraphrases.
+const DEFAULT_DISTANCE_THRESHOLD = 0.30;
 
 // Conceptual buckets (mirrors migration 042's CHECK constraint). Brand_soul
 // + brand_memory entries for the same concept type share the same bucket

@@ -1231,6 +1231,15 @@ test('DEFAULT_DISTANCE_THRESHOLD is conservative (0.10–0.30)', () => {
          `threshold ${DEFAULT_DISTANCE_THRESHOLD} should sit in the conservative window`);
 });
 
+test('DEFAULT_DISTANCE_THRESHOLD tuned to 0.30 (v3.5.8 canary)', () => {
+  // 2026-05-16 live-OpenAI canary on staging showed 0.18 was too tight to
+  // catch the semantic paraphrases v3.5.6 was designed to merge. See the
+  // comment block above the constant in embeddings.js for the canary data.
+  // If you change this value, run a fresh canary and update both this test
+  // and the comment block.
+  assertEqual(DEFAULT_DISTANCE_THRESHOLD, 0.30);
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 4. render.js — prompt block rendering
 // ═══════════════════════════════════════════════════════════════════════════
